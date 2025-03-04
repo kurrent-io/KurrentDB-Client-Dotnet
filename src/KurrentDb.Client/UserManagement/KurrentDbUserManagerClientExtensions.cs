@@ -3,7 +3,7 @@ namespace KurrentDb.Client;
 /// <summary>
 ///  A set of extension methods for an <see cref="KurrentDbUserManagementClient"/>.
 /// </summary>
-public static class KurrentUserManagerClientExtensions {
+public static class KurrentDbUserManagerClientExtensions {
     /// <summary>
     /// Gets the <see cref="UserDetails"/> of the internal user specified by the supplied <see cref="UserCredentials"/>.
     /// </summary>

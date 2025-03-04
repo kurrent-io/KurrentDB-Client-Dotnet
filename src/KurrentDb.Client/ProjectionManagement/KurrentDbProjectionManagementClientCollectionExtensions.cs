@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 	/// <summary>
 	/// A set of extension methods for <see cref="IServiceCollection"/> which provide support for an <see cref="KurrentDbProjectionManagementClient"/>.
 	/// </summary>
-	public static class KurrentProjectionManagementClientCollectionExtensions {
+	public static class KurrentDbProjectionManagementClientCollectionExtensions {
 		/// <summary>
 		/// Adds an <see cref="KurrentDbProjectionManagementClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
