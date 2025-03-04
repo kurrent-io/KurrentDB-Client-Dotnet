@@ -3,7 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal class StreamMetadataJsonConverter : JsonConverter<StreamMetadata> {
 		public static readonly StreamMetadataJsonConverter Instance = new StreamMetadataJsonConverter();
 

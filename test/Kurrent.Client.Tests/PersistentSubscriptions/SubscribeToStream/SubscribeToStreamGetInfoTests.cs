@@ -1,6 +1,6 @@
 // ReSharper disable InconsistentNaming
 
-using EventStore.Client;
+using KurrentDb.Client;
 using Kurrent.Client.Tests.TestNode;
 
 namespace Kurrent.Client.Tests.PersistentSubscriptions;

@@ -4,7 +4,7 @@ using System.Text.Json;
 using Kurrent.Diagnostics;
 using Kurrent.Diagnostics.Tracing;
 
-namespace EventStore.Client.Diagnostics;
+namespace KurrentDb.Client.Diagnostics;
 
 static class EventMetadataExtensions {
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]

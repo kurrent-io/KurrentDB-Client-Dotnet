@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// Represents the position in a stream or transaction file
 	/// </summary>

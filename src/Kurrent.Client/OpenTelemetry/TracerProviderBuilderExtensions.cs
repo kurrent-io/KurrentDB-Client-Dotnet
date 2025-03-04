@@ -1,4 +1,4 @@
-using EventStore.Client.Diagnostics;
+using KurrentDb.Client.Diagnostics;
 using JetBrains.Annotations;
 using OpenTelemetry.Trace;
 

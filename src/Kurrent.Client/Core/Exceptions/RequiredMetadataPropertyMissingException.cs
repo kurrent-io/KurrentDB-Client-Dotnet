@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// Exception thrown when a required metadata property is missing.
 	/// </summary>

@@ -3,8 +3,8 @@ using System.Net.Http;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using AutoFixture;
-using EventStore.Client;
-using HashCode = EventStore.Client.HashCode;
+using KurrentDb.Client;
+using HashCode = KurrentDb.Client.HashCode;
 
 namespace Kurrent.Client.Tests;
 

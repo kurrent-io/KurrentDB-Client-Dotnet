@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// A structure representing a filter on stream names for read operations.
 	/// </summary>

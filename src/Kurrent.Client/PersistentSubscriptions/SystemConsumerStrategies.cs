@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// System supported consumer strategies for use with persistent subscriptions.
 	/// </summary>

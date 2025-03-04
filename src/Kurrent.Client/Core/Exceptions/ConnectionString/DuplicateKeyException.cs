@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// The exception that is thrown when a key in the KurrentDB connection string is duplicated.
 	/// </summary>

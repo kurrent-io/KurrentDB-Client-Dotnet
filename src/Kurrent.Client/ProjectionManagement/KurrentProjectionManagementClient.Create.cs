@@ -1,9 +1,7 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+using EventStore.Client;
 using EventStore.Client.Projections;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	public partial class KurrentProjectionManagementClient {
 		/// <summary>
 		/// Creates a one-time projection.
@@ -16,7 +14,7 @@ namespace EventStore.Client {
 		public async Task CreateOneTimeAsync(string query, TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Projections.Projections.ProjectionsClient(
+			using var call = new Projections.ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					OneTime = new Empty(),
@@ -40,7 +38,7 @@ namespace EventStore.Client {
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Projections.Projections.ProjectionsClient(
+			using var call = new Projections.ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					Continuous = new CreateReq.Types.Options.Types.Continuous {
@@ -65,7 +63,7 @@ namespace EventStore.Client {
 		public async Task CreateTransientAsync(string name, string query, TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Projections.Projections.ProjectionsClient(
+			using var call = new Projections.ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					Transient = new CreateReq.Types.Options.Types.Transient {

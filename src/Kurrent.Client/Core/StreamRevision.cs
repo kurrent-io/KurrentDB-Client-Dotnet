@@ -1,6 +1,6 @@
 using System;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// A structure referring to the expected stream revision when writing to a stream.
 	/// </summary>

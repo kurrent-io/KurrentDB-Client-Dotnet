@@ -1,3 +1,5 @@
+using KurrentDb.Client;
+
 namespace EventStore.Client.Streams {
 	partial class AppendReq {
 		public AppendReq WithAnyStreamRevision(StreamState expectedState) {

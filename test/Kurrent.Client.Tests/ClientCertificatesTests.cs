@@ -1,6 +1,6 @@
-using EventStore.Client;
 using Humanizer;
 using Kurrent.Client.Tests.TestNode;
+using KurrentDb.Client;
 
 namespace Kurrent.Client.Tests;
 

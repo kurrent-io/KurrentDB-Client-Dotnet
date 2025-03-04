@@ -5,7 +5,7 @@ using Kurrent.Diagnostics;
 using Kurrent.Diagnostics.Telemetry;
 using Kurrent.Diagnostics.Tracing;
 
-namespace EventStore.Client.Diagnostics;
+namespace KurrentDb.Client.Diagnostics;
 
 static class ActivitySourceExtensions {
 	public static async ValueTask<T> TraceClientOperation<T>(

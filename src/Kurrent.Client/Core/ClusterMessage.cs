@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal static class ClusterMessages {
 		public record ClusterInfo(MemberInfo[] Members);
 

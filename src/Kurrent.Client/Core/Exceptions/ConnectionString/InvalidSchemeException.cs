@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// The exception that is thrown when an invalid scheme is defined in the KurrentDB connection string.
 	/// </summary>

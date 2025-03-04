@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace EventStore.Client;
+namespace KurrentDb.Client;
 
 /// <summary>
 /// Exception thrown if there is an attempt to operate inside a

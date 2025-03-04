@@ -1,12 +1,13 @@
 using System.Threading.Channels;
+using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
-using EventStore.Client.Diagnostics;
+using KurrentDb.Client.Diagnostics;
 using Grpc.Core;
 using Kurrent.Client.Core.Serialization;
 using static EventStore.Client.PersistentSubscriptions.PersistentSubscriptions;
 using static EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	public class SubscribeToPersistentSubscriptionOptions {
 		/// <summary>
 		/// The size of the buffer.

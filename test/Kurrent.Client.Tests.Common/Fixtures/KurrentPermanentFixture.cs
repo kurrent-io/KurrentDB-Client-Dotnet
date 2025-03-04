@@ -4,11 +4,11 @@ using System.Net;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Services.Extensions;
-using EventStore.Client;
 using Kurrent.Client.Tests.FluentDocker;
+using KurrentDb.Client;
 using Serilog;
 using static System.TimeSpan;
-using KurrentClient = EventStore.Client.KurrentClient;
+using KurrentClient = KurrentDb.Client.KurrentClient;
 
 namespace Kurrent.Client.Tests;
 

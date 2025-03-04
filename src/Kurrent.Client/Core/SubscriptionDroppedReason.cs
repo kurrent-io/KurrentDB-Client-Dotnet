@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// Represents the reason subscription was dropped.
 	/// </summary>

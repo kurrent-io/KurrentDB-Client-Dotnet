@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Threading.Channels;
+using EventStore.Client;
 using Grpc.Core;
 using Kurrent.Client.Core.Serialization;
 using Microsoft.Extensions.Logging;
@@ -7,7 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using ReadReq = EventStore.Client.Streams.ReadReq;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// The client used for operations on streams.
 	/// </summary>

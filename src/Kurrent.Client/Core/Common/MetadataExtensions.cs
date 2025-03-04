@@ -1,6 +1,6 @@
 using Grpc.Core;
 
-namespace EventStore.Client;
+namespace KurrentDb.Client;
 
 static class MetadataExtensions {
 	public static bool TryGetValue(this Metadata metadata, string key, out string? value) {

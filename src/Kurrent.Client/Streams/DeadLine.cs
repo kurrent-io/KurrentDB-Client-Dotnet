@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 #pragma warning disable CS1591
 	public static class DeadLine {
 #pragma warning restore CS1591

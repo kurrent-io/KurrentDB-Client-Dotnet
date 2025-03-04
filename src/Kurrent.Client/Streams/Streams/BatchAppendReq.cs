@@ -1,5 +1,5 @@
-using System;
 using Google.Protobuf.WellKnownTypes;
+using KurrentDb.Client;
 
 namespace EventStore.Client.Streams {
 	partial class BatchAppendReq {

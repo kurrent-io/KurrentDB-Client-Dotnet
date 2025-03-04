@@ -2,7 +2,7 @@ using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// Represents a persistent subscription connection.
 	/// </summary>

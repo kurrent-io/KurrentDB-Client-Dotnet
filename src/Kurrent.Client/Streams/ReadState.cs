@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// An enumeration representing the state of a read operation.
 	/// </summary>

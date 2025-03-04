@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal class ChannelSelector : IChannelSelector {
 		private readonly IChannelSelector _inner;
 

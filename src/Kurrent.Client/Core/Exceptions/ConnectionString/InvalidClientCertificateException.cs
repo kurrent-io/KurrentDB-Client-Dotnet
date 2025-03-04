@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// The exception that is thrown when a certificate is invalid or not found in the KurrentDB connection string.
 	/// </summary>

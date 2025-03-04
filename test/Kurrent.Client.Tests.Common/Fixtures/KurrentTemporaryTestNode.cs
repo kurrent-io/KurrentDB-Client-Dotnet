@@ -38,7 +38,7 @@ using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
 using Ductus.FluentDocker.Services.Extensions;
-using EventStore.Client;
+using KurrentDb.Client;
 using Kurrent.Client.Tests.FluentDocker;
 using Humanizer;
 using Serilog;

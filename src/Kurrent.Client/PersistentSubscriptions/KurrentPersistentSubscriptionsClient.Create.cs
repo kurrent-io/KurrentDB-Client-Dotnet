@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	partial class KurrentPersistentSubscriptionsClient {
 		private static readonly IDictionary<string, CreateReq.Types.ConsumerStrategy> NamedConsumerStrategyToCreateProto
 			= new Dictionary<string, CreateReq.Types.ConsumerStrategy> {
@@ -205,7 +202,7 @@ namespace EventStore.Client {
 				throw new InvalidOperationException("The server does not support persistent subscriptions to $all.");
 			}
 
-			using var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
+			using var call = new PersistentSubscriptions.PersistentSubscriptionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					Stream = streamName != SystemStreams.AllStream

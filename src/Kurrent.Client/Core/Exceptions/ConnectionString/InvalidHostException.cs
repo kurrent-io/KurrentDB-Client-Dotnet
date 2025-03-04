@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// The exception that is thrown when there is an invalid host in the KurrentDB connection string.
 	/// </summary>

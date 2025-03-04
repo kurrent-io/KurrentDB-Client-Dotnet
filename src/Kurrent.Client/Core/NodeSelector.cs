@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	// Selects a node to connect to from a ClusterInfo, based on the node preference.
 	// Deals with endpoints, no grpc here.
 	// Thread safe.

@@ -2,7 +2,7 @@ using System.Threading.Channels;
 using System.Runtime.CompilerServices;
 using Grpc.Core;
 
-namespace EventStore.Client;
+namespace KurrentDb.Client;
 
 static class AsyncStreamReaderExtensions {
 	public static async IAsyncEnumerable<T> ReadAllAsync<T>(

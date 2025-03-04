@@ -1,7 +1,7 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
-namespace EventStore.Client.Interceptors {
+namespace KurrentDb.Client.Interceptors {
 	internal class ConnectionNameInterceptor : Interceptor {
 		private readonly string _connectionName;
 

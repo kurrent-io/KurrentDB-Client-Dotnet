@@ -1,6 +1,6 @@
 using System;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// A class representing the settings of a persistent subscription.
 	/// </summary>

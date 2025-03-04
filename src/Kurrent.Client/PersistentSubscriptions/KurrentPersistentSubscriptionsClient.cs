@@ -5,7 +5,7 @@ using Kurrent.Client.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// The client used to manage persistent subscriptions in the KurrentDB.
 	/// </summary>

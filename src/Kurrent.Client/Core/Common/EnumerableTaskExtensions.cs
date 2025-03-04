@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace EventStore.Client;
+namespace KurrentDb.Client;
 
 static class EnumerableTaskExtensions {
 	[DebuggerStepThrough]

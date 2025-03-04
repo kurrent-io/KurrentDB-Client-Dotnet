@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal static class NodePreferenceComparers {
 		public static readonly IComparer<ClusterMessages.VNodeState> Leader = new Comparer(state =>
 			state switch {

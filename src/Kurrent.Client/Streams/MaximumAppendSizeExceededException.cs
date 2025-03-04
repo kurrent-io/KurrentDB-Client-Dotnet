@@ -1,6 +1,6 @@
 using System;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// Exception thrown when an append exceeds the maximum size set by the server.
 	/// </summary>

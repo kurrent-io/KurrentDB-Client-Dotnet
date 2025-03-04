@@ -1,5 +1,5 @@
-using EventStore.Client;
-using static EventStore.Client.ClusterMessages.VNodeState;
+using KurrentDb.Client;
+using static KurrentDb.Client.ClusterMessages.VNodeState;
 
 namespace Kurrent.Client.Tests;
 

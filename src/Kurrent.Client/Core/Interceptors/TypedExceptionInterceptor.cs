@@ -1,9 +1,9 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
-using static EventStore.Client.Constants;
+using static KurrentDb.Client.Constants;
 using static Grpc.Core.StatusCode;
 
-namespace EventStore.Client.Interceptors;
+namespace KurrentDb.Client.Interceptors;
 
 class TypedExceptionInterceptor : Interceptor {
 	static readonly Dictionary<string, Func<RpcException, Exception>> DefaultExceptionMap = new() {

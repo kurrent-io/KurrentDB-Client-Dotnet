@@ -1,6 +1,6 @@
 using System;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// Represents stream metadata as a series of properties for system
 	/// data (e.g., MaxAge) and a <see cref="StreamMetadata"/> object for user metadata.

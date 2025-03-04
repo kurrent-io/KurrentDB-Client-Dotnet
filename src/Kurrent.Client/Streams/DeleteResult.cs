@@ -1,6 +1,6 @@
 using System;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// A structure that represents the result of a delete operation.
 	/// </summary>

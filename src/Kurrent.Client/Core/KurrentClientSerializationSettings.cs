@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Kurrent.Client.Core.Serialization;
 
-namespace EventStore.Client;
+namespace KurrentDb.Client;
 
 /// <summary>
 /// Provides configuration options for messages serialization and deserialization in the KurrentDB client.

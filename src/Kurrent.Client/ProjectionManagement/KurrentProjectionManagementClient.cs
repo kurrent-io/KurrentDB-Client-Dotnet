@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	///The client used to manage projections on the KurrentDB.
 	/// </summary>

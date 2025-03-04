@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// Represents an access control list for a stream
 	/// </summary>

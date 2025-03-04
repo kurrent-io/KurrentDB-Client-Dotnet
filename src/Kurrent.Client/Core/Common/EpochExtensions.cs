@@ -1,4 +1,4 @@
-namespace EventStore.Client;
+namespace KurrentDb.Client;
 
 static class EpochExtensions {
 #if NET

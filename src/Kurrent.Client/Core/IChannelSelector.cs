@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal interface IChannelSelector {
 		// Let the channel selector pick an endpoint.
 		Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken);

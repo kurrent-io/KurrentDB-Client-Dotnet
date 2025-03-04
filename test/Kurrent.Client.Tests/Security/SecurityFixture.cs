@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-using EventStore.Client;
+using KurrentDb.Client;
 using Kurrent.Client;
 using Kurrent.Client.Tests.TestNode;
 

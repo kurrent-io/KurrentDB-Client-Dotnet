@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// The exception that is thrown when an invalid setting is found in an KurrentDB connection string.
 	/// </summary>

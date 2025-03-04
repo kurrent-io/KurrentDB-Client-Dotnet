@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal static class TaskExtensions {
 		// To give up waiting for the task, cancel the token.
 		// obvs this wouldn't cancel the task itself.

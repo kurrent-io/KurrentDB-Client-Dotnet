@@ -6,7 +6,7 @@ using Grpc.Core.Interceptors;
 
 using Microsoft.Extensions.Logging;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// A class that represents the settings to use for operations made from an implementation of <see cref="KurrentClientBase"/>.
 	/// </summary>

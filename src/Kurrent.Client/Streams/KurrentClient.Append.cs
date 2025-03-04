@@ -5,7 +5,7 @@ using Google.Protobuf;
 using EventStore.Client.Streams;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using EventStore.Client.Diagnostics;
+using KurrentDb.Client.Diagnostics;
 using Kurrent.Client.Core.Serialization;
 using Kurrent.Diagnostics;
 using Kurrent.Diagnostics.Telemetry;
@@ -13,7 +13,7 @@ using Kurrent.Diagnostics.Tracing;
 using static EventStore.Client.Streams.AppendResp.Types.WrongExpectedVersion;
 using static EventStore.Client.Streams.Streams;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	public partial class KurrentClient {
 		/// <summary>
 		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="EventStore.Client.KurrentClientSettings"/>

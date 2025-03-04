@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	///  A set of extension methods for an <see cref="KurrentClient"/>.
 	/// </summary>

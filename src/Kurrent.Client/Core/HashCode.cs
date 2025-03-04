@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	#pragma warning disable 1591
 	public readonly struct HashCode {
 		private readonly int _value;

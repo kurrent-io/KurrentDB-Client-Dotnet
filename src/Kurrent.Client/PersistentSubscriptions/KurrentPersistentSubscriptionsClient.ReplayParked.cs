@@ -1,12 +1,10 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
 using NotSupportedException = System.NotSupportedException;
 
 #nullable enable
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	partial class KurrentPersistentSubscriptionsClient {
 		/// <summary>
 		/// Retry the parked messages of the persistent subscription
@@ -74,7 +72,7 @@ namespace EventStore.Client {
 				req.Options.NoLimit = new Empty();	
 			}
 
-			await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
+			await new PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
 				.ReplayParkedAsync(req, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken))
 				.ConfigureAwait(false);
 		}

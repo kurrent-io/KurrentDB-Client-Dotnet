@@ -1,4 +1,4 @@
-﻿namespace EventStore.Client {
+﻿namespace KurrentDb.Client {
 	/// <summary>
 	/// An <see cref="IWriteResult"/> that indicates a failed append to a stream.
 	/// </summary>

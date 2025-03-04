@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
-namespace EventStore.Client.Interceptors {
+namespace KurrentDb.Client.Interceptors {
 	// this has become more general than just detecting leader changes.
 	// triggers the action on any rpc exception with StatusCode.Unavailable
 	internal class ReportLeaderInterceptor : Interceptor {

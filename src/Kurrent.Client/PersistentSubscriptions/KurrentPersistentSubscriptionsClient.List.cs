@@ -1,8 +1,9 @@
+using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
 
 #nullable enable
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	partial class KurrentPersistentSubscriptionsClient {
 		/// <summary>
 		/// Lists persistent subscriptions to $all.
@@ -84,7 +85,7 @@ namespace EventStore.Client {
 		private async Task<IEnumerable<PersistentSubscriptionInfo>> ListGrpcAsync(ListReq req, TimeSpan? deadline,
 			UserCredentials? userCredentials, CallInvoker callInvoker, CancellationToken cancellationToken) {
 			
-			using var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
+			using var call = new PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
 				.ListAsync(req, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
 			ListResp? response = await call.ResponseAsync.ConfigureAwait(false);

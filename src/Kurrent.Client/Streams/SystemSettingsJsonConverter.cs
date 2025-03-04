@@ -2,7 +2,7 @@ using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal class SystemSettingsJsonConverter : JsonConverter<SystemSettings> {
 		public static readonly SystemSettingsJsonConverter Instance = new SystemSettingsJsonConverter();
 

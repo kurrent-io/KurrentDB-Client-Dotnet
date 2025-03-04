@@ -1,5 +1,5 @@
-using EventStore.Client;
 using Kurrent.Client.Tests.TestNode;
+using KurrentDb.Client;
 
 namespace Kurrent.Client.Tests.PersistentSubscriptions;
 

@@ -1,5 +1,5 @@
 using System.Text;
-using EventStore.Client;
+using KurrentDb.Client;
 using Kurrent.Client.Tests.TestNode;
 
 namespace Kurrent.Client.Tests;

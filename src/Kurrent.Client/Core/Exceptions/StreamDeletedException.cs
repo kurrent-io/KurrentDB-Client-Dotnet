@@ -1,6 +1,6 @@
 using System;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// Exception thrown if an operation is attempted on a stream which
 	/// has been deleted.

@@ -1,6 +1,6 @@
 using System.Net.Http.Headers;
 using System.Text;
-using EventStore.Client;
+using KurrentDb.Client;
 using static System.Convert;
 
 namespace Kurrent.Client.Tests;

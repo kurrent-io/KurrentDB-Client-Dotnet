@@ -11,7 +11,7 @@ using Org.BouncyCastle.OpenSsl;
 using Org.BouncyCastle.Security;
 #endif
 
-namespace EventStore.Client;
+namespace KurrentDb.Client;
 
 static class X509Certificates {
 	public static X509Certificate2 CreateFromPemFile(string certPemFilePath, string keyPemFilePath) {

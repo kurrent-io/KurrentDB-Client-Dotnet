@@ -1,6 +1,6 @@
 using Grpc.Core;
 
-namespace EventStore.Client;
+namespace KurrentDb.Client;
 
 static class ChannelBaseExtensions {
 	public static async ValueTask DisposeAsync(this ChannelBase channel) {

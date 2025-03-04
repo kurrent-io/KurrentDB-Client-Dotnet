@@ -1,10 +1,7 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using EventStore.Client.Streams;
 using Microsoft.Extensions.Logging;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	public partial class KurrentClient {
 		/// <summary>
 		/// Tombstones a stream asynchronously. Note: Tombstoned streams can never be recreated.
@@ -52,7 +49,7 @@ namespace EventStore.Client {
 			_log.LogDebug("Tombstoning stream {streamName}.", request.Options.StreamIdentifier);
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Streams.Streams.StreamsClient(
+			using var call = new EventStore.Client.Streams.Streams.StreamsClient(
 				channelInfo.CallInvoker).TombstoneAsync(request,
 				KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			var result = await call.ResponseAsync.ConfigureAwait(false);

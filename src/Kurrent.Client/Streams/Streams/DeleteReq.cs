@@ -1,3 +1,5 @@
+using KurrentDb.Client;
+
 namespace EventStore.Client.Streams {
 	partial class DeleteReq {
 		public DeleteReq WithAnyStreamRevision(StreamState expectedState) {

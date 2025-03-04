@@ -2,7 +2,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using static System.Convert;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// Represents either a username/password pair or a JWT token used for authentication and
 	/// authorization to perform operations on the KurrentDB.

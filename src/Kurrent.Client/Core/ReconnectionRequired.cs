@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal abstract record ReconnectionRequired {
 		public record None : ReconnectionRequired {
 			public static None Instance = new();

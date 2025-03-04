@@ -1,11 +1,11 @@
 using System.Threading.Channels;
-using EventStore.Client.Diagnostics;
+using KurrentDb.Client.Diagnostics;
 using EventStore.Client.Streams;
 using Grpc.Core;
 using Kurrent.Client.Core.Serialization;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// Subscribes to all events options.
 	/// </summary>
@@ -412,7 +412,7 @@ namespace EventStore.Client {
 				async Task PumpMessages() {
 					try {
 						var channelInfo = await selectChannelInfo(_cts.Token).ConfigureAwait(false);
-						var client      = new Streams.Streams.StreamsClient(channelInfo.CallInvoker);
+						var client      = new EventStore.Client.Streams.Streams.StreamsClient(channelInfo.CallInvoker);
 						_call = client.Read(_request, _callOptions);
 						await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token)
 							               .ConfigureAwait(false)) {

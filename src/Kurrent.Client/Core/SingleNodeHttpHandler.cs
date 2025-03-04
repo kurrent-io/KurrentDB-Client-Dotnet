@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal class SingleNodeHttpHandler : DelegatingHandler {
 		private readonly KurrentClientSettings _settings;
 

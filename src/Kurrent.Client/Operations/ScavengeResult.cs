@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// An enumeration that represents the result of a scavenge operation.
 	/// </summary>

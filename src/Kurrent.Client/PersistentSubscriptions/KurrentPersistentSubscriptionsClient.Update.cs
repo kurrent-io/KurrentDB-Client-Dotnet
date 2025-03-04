@@ -1,6 +1,7 @@
+using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	public partial class KurrentPersistentSubscriptionsClient {
 		private static readonly IDictionary<string, UpdateReq.Types.ConsumerStrategy> NamedConsumerStrategyToUpdateProto
 			= new Dictionary<string, UpdateReq.Types.ConsumerStrategy> {
@@ -105,7 +106,7 @@ namespace EventStore.Client {
 				throw new InvalidOperationException("The server does not support persistent subscriptions to $all.");
 			}
 
-			using var call = new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(channelInfo.CallInvoker)
+			using var call = new PersistentSubscriptions.PersistentSubscriptionsClient(channelInfo.CallInvoker)
 				.UpdateAsync(new UpdateReq {
 						Options = new UpdateReq.Types.Options {
 							GroupName = groupName,

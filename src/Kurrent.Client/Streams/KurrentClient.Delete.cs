@@ -1,10 +1,7 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using EventStore.Client.Streams;
 using Microsoft.Extensions.Logging;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	public partial class KurrentClient {
 		/// <summary>
 		/// Deletes a stream asynchronously.
@@ -54,7 +51,7 @@ namespace EventStore.Client {
 			CancellationToken cancellationToken) {
 			_log.LogDebug("Deleting stream {streamName}.", request.Options.StreamIdentifier);
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Streams.Streams.StreamsClient(
+			using var call = new EventStore.Client.Streams.Streams.StreamsClient(
 				channelInfo.CallInvoker).DeleteAsync(request,
 				KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			var result = await call.ResponseAsync.ConfigureAwait(false);

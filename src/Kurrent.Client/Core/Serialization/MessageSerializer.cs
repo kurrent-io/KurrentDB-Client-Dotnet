@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using EventStore.Client;
+using KurrentDb.Client;
 
 namespace Kurrent.Client.Core.Serialization;
 

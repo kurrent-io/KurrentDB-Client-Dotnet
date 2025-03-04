@@ -1,8 +1,8 @@
-using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using EventStore.Client;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// An RFC-4122 compliant v4 UUID.
 	/// </summary>

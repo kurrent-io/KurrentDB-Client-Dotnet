@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 #pragma warning disable 1591
 	public record ServerCapabilities(
 		bool SupportsBatchAppend = false,

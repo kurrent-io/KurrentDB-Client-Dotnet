@@ -1,9 +1,8 @@
 // ReSharper disable CheckNamespace
 
-using System;
 using System.Net.Http;
-using EventStore.Client;
 using Grpc.Core.Interceptors;
+using KurrentDb.Client;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 

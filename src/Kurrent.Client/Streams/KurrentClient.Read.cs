@@ -5,7 +5,7 @@ using Kurrent.Client.Core.Serialization;
 using static EventStore.Client.Streams.ReadResp;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	public partial class KurrentClient {
 		/// <summary>
 		/// Asynchronously reads all events. By default, it reads all of them from the start. The options parameter allows you to fine-tune it to your needs.
@@ -200,7 +200,7 @@ namespace EventStore.Client {
 				async Task PumpMessages() {
 					try {
 						var       callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
-						var       client      = new Streams.Streams.StreamsClient(callInvoker);
+						var       client      = new EventStore.Client.Streams.Streams.StreamsClient(callInvoker);
 						using var call        = client.Read(request, callOptions);
 
 						await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken)
@@ -447,7 +447,7 @@ namespace EventStore.Client {
 
 					try {
 						var       callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
-						var       client      = new Streams.Streams.StreamsClient(callInvoker);
+						var       client      = new EventStore.Client.Streams.Streams.StreamsClient(callInvoker);
 						using var call        = client.Read(request, callOptions);
 
 						await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken)

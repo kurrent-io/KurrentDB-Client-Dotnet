@@ -1,7 +1,7 @@
 using Grpc.Core;
 using static System.Threading.Timeout;
 
-namespace EventStore.Client;
+namespace KurrentDb.Client;
 
 static class KurrentCallOptions {
 	// deadline falls back to infinity

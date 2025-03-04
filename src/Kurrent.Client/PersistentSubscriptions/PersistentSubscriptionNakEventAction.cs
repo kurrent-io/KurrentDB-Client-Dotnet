@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// Actions to be taken by server in the case of a client NAK
 	/// </summary>

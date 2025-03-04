@@ -4,7 +4,7 @@ using Grpc.Net.Client;
 using EndPoint = System.Net.EndPoint;
 using TChannel = Grpc.Net.Client.GrpcChannel;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 
 	internal static class ChannelFactory {
 		private const int MaxReceiveMessageLength = 17 * 1024 * 1024;

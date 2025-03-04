@@ -1,6 +1,6 @@
 using Kurrent.Client.Core.Serialization;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// A structure representing a single event or a resolved link event.
 	/// </summary>

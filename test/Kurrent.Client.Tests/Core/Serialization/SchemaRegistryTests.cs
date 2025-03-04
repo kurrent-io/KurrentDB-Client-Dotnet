@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using EventStore.Client;
 using Kurrent.Client.Core.Serialization;
+using KurrentDb.Client;
 
 namespace Kurrent.Client.Tests.Core.Serialization;
 

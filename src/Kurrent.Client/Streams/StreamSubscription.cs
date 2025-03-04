@@ -1,7 +1,7 @@
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// A class representing a <see cref="StreamSubscription"/>.
 	/// </summary>

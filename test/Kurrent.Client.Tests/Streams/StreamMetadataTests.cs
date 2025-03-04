@@ -1,5 +1,5 @@
 using System.Text.Json;
-using EventStore.Client;
+using KurrentDb.Client;
 using Grpc.Core;
 
 namespace Kurrent.Client.Tests.Streams;

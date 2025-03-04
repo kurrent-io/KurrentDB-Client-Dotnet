@@ -1,9 +1,7 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+using EventStore.Client;
 using EventStore.Client.Projections;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	public partial class KurrentProjectionManagementClient {
 		/// <summary>
 		/// Updates a projection.
@@ -29,7 +27,7 @@ namespace EventStore.Client {
 			}
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Projections.Projections.ProjectionsClient(
+			using var call = new Projections.ProjectionsClient(
 				channelInfo.CallInvoker).UpdateAsync(new UpdateReq {
 				Options = options
 			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));

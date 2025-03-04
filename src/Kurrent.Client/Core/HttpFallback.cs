@@ -6,7 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal class HttpFallback : IDisposable {
 		private readonly HttpClient _httpClient;
 		private readonly JsonSerializerOptions _jsonSettings;

@@ -1,5 +1,5 @@
 using System.Security.Cryptography.X509Certificates;
-using EventStore.Client;
+using KurrentDb.Client;
 
 namespace Kurrent.Client.Tests;
 

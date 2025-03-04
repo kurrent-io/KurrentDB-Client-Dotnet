@@ -1,7 +1,7 @@
 using System;
 using System.Net;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// The exception that is thrown when an operation requiring a leader node is made on a follower node.
 	/// </summary>

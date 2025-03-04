@@ -7,7 +7,7 @@ using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	// Thread safe
 	internal class GossipChannelSelector : IChannelSelector {
 		private readonly KurrentClientSettings _settings;

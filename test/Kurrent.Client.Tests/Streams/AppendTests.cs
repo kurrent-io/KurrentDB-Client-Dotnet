@@ -1,4 +1,4 @@
-using EventStore.Client;
+using KurrentDb.Client;
 using Grpc.Core;
 using Humanizer;
 

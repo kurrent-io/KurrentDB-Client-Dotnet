@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using TChannel = Grpc.Net.Client.GrpcChannel;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	// Maintains Channels keyed by DnsEndPoint so the channels can be reused.
 	// Deals with the disposal difference between grpc.net and grpc.core
 	// Thread safe.

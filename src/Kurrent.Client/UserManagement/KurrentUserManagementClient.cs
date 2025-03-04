@@ -4,7 +4,7 @@ using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// The client used for operations on internal users.
 	/// </summary>
@@ -46,7 +46,7 @@ namespace EventStore.Client {
 			if (password == string.Empty) throw new ArgumentOutOfRangeException(nameof(password));
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Users.Users.UsersClient(
+			using var call = new Users.UsersClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					LoginName = loginName,
@@ -79,7 +79,7 @@ namespace EventStore.Client {
 			}
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Users.Users.UsersClient(
+			using var call = new Users.UsersClient(
 				channelInfo.CallInvoker).Details(new DetailsReq {
 				Options = new DetailsReq.Types.Options {
 					LoginName = loginName
@@ -116,7 +116,7 @@ namespace EventStore.Client {
 			}
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			var call = new Users.Users.UsersClient(
+			var call = new Users.UsersClient(
 				channelInfo.CallInvoker).DeleteAsync(new DeleteReq {
 				Options = new DeleteReq.Types.Options {
 					LoginName = loginName
@@ -146,7 +146,7 @@ namespace EventStore.Client {
 			}
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Users.Users.UsersClient(
+			using var call = new Users.UsersClient(
 				channelInfo.CallInvoker).EnableAsync(new EnableReq {
 				Options = new EnableReq.Types.Options {
 					LoginName = loginName
@@ -169,7 +169,7 @@ namespace EventStore.Client {
 			if (loginName == string.Empty) throw new ArgumentOutOfRangeException(nameof(loginName));
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			var call = new Users.Users.UsersClient(
+			var call = new Users.UsersClient(
 				channelInfo.CallInvoker).DisableAsync(new DisableReq {
 				Options = new DisableReq.Types.Options {
 					LoginName = loginName
@@ -189,7 +189,7 @@ namespace EventStore.Client {
 			UserCredentials? userCredentials = null,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Users.Users.UsersClient(
+			using var call = new Users.UsersClient(
 				channelInfo.CallInvoker).Details(new DetailsReq(),
 				KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
@@ -225,7 +225,7 @@ namespace EventStore.Client {
 			if (newPassword == string.Empty) throw new ArgumentOutOfRangeException(nameof(newPassword));
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Users.Users.UsersClient(
+			using var call = new Users.UsersClient(
 				channelInfo.CallInvoker).ChangePasswordAsync(
 				new ChangePasswordReq {
 					Options = new ChangePasswordReq.Types.Options {
@@ -258,7 +258,7 @@ namespace EventStore.Client {
 			if (newPassword == string.Empty) throw new ArgumentOutOfRangeException(nameof(newPassword));
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			var call = new Users.Users.UsersClient(
+			var call = new Users.UsersClient(
 				channelInfo.CallInvoker).ResetPasswordAsync(
 				new ResetPasswordReq {
 					Options = new ResetPasswordReq.Types.Options {

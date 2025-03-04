@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace EventStore.Client.Diagnostics;
+namespace KurrentDb.Client.Diagnostics;
 
 public static class KurrentClientDiagnostics {
 	public const           string         InstrumentationName = "kurrent";

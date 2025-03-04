@@ -1,7 +1,7 @@
 using System;
 using System.Net.Http.Headers;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// Represents an event to be written.
 	/// </summary>

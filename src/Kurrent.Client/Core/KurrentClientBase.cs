@@ -1,9 +1,9 @@
-using EventStore.Client.Interceptors;
+using KurrentDb.Client.Interceptors;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Enum = System.Enum;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// The base class used by clients used to communicate with the KurrentDB.
 	/// </summary>

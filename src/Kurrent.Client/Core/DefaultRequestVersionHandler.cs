@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal class DefaultRequestVersionHandler : DelegatingHandler {
 		public DefaultRequestVersionHandler(HttpMessageHandler innerHandler) : base(innerHandler) { }
 		protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) {

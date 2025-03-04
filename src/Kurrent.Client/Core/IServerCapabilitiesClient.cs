@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Grpc.Core;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal interface IServerCapabilitiesClient {
 		public Task<ServerCapabilities> GetAsync(CallInvoker callInvoker, CancellationToken cancellationToken);
 	}

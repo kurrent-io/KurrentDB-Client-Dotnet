@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Timeout_ = System.Threading.Timeout;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	public partial class KurrentClientSettings {
 		/// <summary>
 		/// Creates client settings from a connection string
@@ -172,10 +172,10 @@ namespace EventStore.Client {
 
 				if (typedOptions.TryGetValue(NodePreference, out object? nodePreference)) {
 					settings.ConnectivitySettings.NodePreference = ((string)nodePreference).ToLowerInvariant() switch {
-						"leader"          => EventStore.Client.NodePreference.Leader,
-						"follower"        => EventStore.Client.NodePreference.Follower,
-						"random"          => EventStore.Client.NodePreference.Random,
-						"readonlyreplica" => EventStore.Client.NodePreference.ReadOnlyReplica,
+						"leader"          => KurrentDb.Client.NodePreference.Leader,
+						"follower"        => KurrentDb.Client.NodePreference.Follower,
+						"random"          => KurrentDb.Client.NodePreference.Random,
+						"readonlyreplica" => KurrentDb.Client.NodePreference.ReadOnlyReplica,
 						_                 => throw new InvalidSettingException($"Invalid NodePreference: {nodePreference}")
 					};
 				}

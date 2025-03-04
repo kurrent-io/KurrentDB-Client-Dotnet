@@ -1,5 +1,5 @@
-using EventStore.Client;
 using Grpc.Core;
+using KurrentDb.Client;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using static System.TimeSpan;

@@ -1,11 +1,8 @@
-using System;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using EventStore.Client.Streams;
 using Microsoft.Extensions.Logging;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	public partial class KurrentClient {
 		/// <summary>
 		/// Asynchronously reads the metadata for a stream

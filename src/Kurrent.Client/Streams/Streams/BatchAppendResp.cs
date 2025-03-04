@@ -1,5 +1,5 @@
 using Grpc.Core;
-using EventStore.Client;
+using KurrentDb.Client;
 using static EventStore.Client.WrongExpectedVersion.CurrentStreamRevisionOptionOneofCase;
 using static EventStore.Client.WrongExpectedVersion.ExpectedStreamPositionOptionOneofCase;
 

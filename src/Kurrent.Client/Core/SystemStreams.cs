@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// A collection of constants and methods to identify streams.
 	/// </summary>

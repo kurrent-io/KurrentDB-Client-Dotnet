@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// A class representing the options to use when filtering read operations.
 	/// </summary>

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// The exception that is thrown when a user is not authenticated.
 	/// </summary>

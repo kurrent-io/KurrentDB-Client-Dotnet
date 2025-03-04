@@ -1,13 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
+using EventStore.Client;
 using EventStore.Client.Projections;
 using Grpc.Core;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	public partial class KurrentProjectionManagementClient {
 		/// <summary>
 		/// List the <see cref="ProjectionDetails"/> of all one-time projections.
@@ -76,7 +72,7 @@ namespace EventStore.Client {
 			CallOptions callOptions,
 			[EnumeratorCancellation] CancellationToken cancellationToken) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Projections.Projections.ProjectionsClient(
+			using var call = new Projections.ProjectionsClient(
 				channelInfo.CallInvoker).Statistics(new StatisticsReq {
 				Options = options
 			}, callOptions);

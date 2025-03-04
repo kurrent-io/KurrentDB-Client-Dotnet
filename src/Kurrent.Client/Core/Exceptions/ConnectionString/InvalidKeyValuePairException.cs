@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// The exception that is thrown when an invalid key value pair is found in an KurrentDB connection string.
 	/// </summary>

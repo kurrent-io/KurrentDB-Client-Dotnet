@@ -1,6 +1,6 @@
 using System;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// A structure referring to an <see cref="EventRecord"/>'s position within a stream.
 	/// </summary>

@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal static class WriteResultExtensions {
 		public static IWriteResult OptionallyThrowWrongExpectedVersionException(this IWriteResult writeResult,
 			KurrentClientOperationOptions options) =>

@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using AutoFixture;
-using EventStore.Client;
+using KurrentDb.Client;
 
 namespace Kurrent.Client.Tests;
 

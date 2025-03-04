@@ -1,4 +1,4 @@
-﻿namespace EventStore.Client {
+﻿namespace KurrentDb.Client {
 	/// <summary>
 	/// Indicates the preferred KurrentDB node type to connect to.
 	/// </summary>

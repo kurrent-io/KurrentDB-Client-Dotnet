@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal static class EndPointExtensions {
 		public static string GetHost(this EndPoint endpoint) =>
 			endpoint switch {

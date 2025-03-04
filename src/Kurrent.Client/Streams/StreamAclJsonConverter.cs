@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal class StreamAclJsonConverter : JsonConverter<StreamAcl> {
 		public static readonly StreamAclJsonConverter Instance = new StreamAclJsonConverter();
 

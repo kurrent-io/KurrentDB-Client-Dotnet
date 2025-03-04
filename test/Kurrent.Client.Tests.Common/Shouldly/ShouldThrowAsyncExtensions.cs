@@ -1,7 +1,7 @@
 // ReSharper disable CheckNamespace
 
 using System.Diagnostics;
-using EventStore.Client;
+using KurrentDb.Client;
 
 namespace Shouldly;
 

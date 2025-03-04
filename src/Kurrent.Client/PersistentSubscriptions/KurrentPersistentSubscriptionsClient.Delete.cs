@@ -1,9 +1,7 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	partial class KurrentPersistentSubscriptionsClient {
 		/// <summary>
 		/// Deletes a persistent subscription.
@@ -36,7 +34,7 @@ namespace EventStore.Client {
 			}
 
 			using var call =
-				new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(
+				new PersistentSubscriptions.PersistentSubscriptionsClient(
 						channelInfo.CallInvoker)
 					.DeleteAsync(new DeleteReq {Options = deleteOptions},
 						KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials,

@@ -1,6 +1,6 @@
 using System;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// The base exception that is thrown when an KurrentDB connection string could not be parsed.
 	/// </summary>

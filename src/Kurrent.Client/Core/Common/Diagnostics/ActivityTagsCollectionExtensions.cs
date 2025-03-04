@@ -1,9 +1,10 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using KurrentDb.Client;
 using Kurrent.Diagnostics;
 using Kurrent.Diagnostics.Telemetry;
 
-namespace EventStore.Client.Diagnostics;
+namespace KurrentDb.Client.Diagnostics;
 
 static class ActivityTagsCollectionExtensions {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

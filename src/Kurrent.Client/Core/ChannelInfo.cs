@@ -1,6 +1,6 @@
 ﻿using Grpc.Core;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 #pragma warning disable 1591
 	public record ChannelInfo(
 		ChannelBase Channel,

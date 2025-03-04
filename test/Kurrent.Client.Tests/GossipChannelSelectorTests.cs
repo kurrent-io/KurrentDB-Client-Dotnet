@@ -1,6 +1,6 @@
 using System.Net;
-using EventStore.Client;
 using Grpc.Core;
+using KurrentDb.Client;
 
 namespace Kurrent.Client.Tests;
 

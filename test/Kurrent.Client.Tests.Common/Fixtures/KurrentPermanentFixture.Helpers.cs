@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
-using EventStore.Client;
+using KurrentDb.Client;
 using Kurrent.Client.Core.Serialization;
 
 namespace Kurrent.Client.Tests;

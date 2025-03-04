@@ -1,9 +1,8 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
+using EventStore.Client;
+using EventStore.Client.PersistentSubscriptions;
 
 #nullable enable
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	partial class KurrentPersistentSubscriptionsClient {
 		/// <summary>
 		/// Restarts the persistent subscriptions subsystem.
@@ -13,7 +12,7 @@ namespace EventStore.Client {
 			
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsRestartSubsystem) {
-				await new PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient(channelInfo.CallInvoker)
+				await new PersistentSubscriptions.PersistentSubscriptionsClient(channelInfo.CallInvoker)
 					.RestartSubsystemAsync(new Empty(), KurrentCallOptions
 						.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken))
 					.ConfigureAwait(false);

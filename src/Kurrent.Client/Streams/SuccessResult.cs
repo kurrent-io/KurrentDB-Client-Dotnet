@@ -1,6 +1,6 @@
 using System;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// An <see cref="IWriteResult"/> that indicates a successful append to a stream.
 	/// </summary>

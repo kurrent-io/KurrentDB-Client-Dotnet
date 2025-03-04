@@ -1,4 +1,4 @@
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// An interface that represents a search filter, used for read operations.
 	/// </summary>

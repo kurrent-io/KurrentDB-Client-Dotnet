@@ -4,7 +4,7 @@ using System.Linq;
 using EventStore.Client.PersistentSubscriptions;
 using Google.Protobuf.Collections;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	/// <summary>
 	/// Provides the details for a persistent subscription.
 	/// </summary>

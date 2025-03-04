@@ -1,10 +1,9 @@
-using System.Linq;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
+using EventStore.Client;
+using EventStore.Client.Gossip;
 using Grpc.Core;
 
-namespace EventStore.Client {
+namespace KurrentDb.Client {
 	internal class GrpcGossipClient : IGossipClient {
 		private readonly KurrentClientSettings _settings;
 
@@ -13,7 +12,7 @@ namespace EventStore.Client {
 		}
 
 		public async ValueTask<ClusterMessages.ClusterInfo> GetAsync(ChannelBase channel, CancellationToken ct) {
-			var client = new Gossip.Gossip.GossipClient(channel);
+			var client = new Gossip.GossipClient(channel);
 			using var call = client.ReadAsync(
 				new Empty(),
 				KurrentCallOptions.CreateNonStreaming(_settings, ct));
