@@ -19,15 +19,15 @@ namespace KurrentDb.Client {
 		/// The name of the connection.
 		public string ConnectionName { get; }
 
-		/// The <see cref="KurrentDbClientSettings"/>.
-		protected KurrentDbClientSettings Settings { get; }
+		/// The <see cref="KurrentDBClientSettings"/>.
+		protected KurrentDBClientSettings Settings { get; }
 
 		/// Constructs a new <see cref="KurrentDbClientBase"/>.
 		protected KurrentDbClientBase(
-			KurrentDbClientSettings? settings,
+			KurrentDBClientSettings? settings,
 			Dictionary<string, Func<RpcException, Exception>> exceptionMap
 		) {
-			Settings      = settings ?? new KurrentDbClientSettings();
+			Settings      = settings ?? new KurrentDBClientSettings();
 			_exceptionMap = exceptionMap;
 			_cts          = new CancellationTokenSource();
 			_channelCache = new(Settings);

@@ -50,8 +50,8 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddKurrentDbClient(this IServiceCollection services,
-			Action<KurrentDbClientSettings>? configureSettings = null) =>
-			services.AddKurrentDbClient(new KurrentDbClientSettings(), configureSettings);
+			Action<KurrentDBClientSettings>? configureSettings = null) =>
+			services.AddKurrentDbClient(new KurrentDBClientSettings(), configureSettings);
 
 		/// <summary>
 		/// Adds an <see cref="KurrentDBClient"/> to the <see cref="IServiceCollection"/>.
@@ -61,8 +61,8 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddKurrentDbClient(this IServiceCollection services,
-			Func<IServiceProvider, Action<KurrentDbClientSettings>> configureSettings) =>
-			services.AddKurrentDbClient(new KurrentDbClientSettings(),
+			Func<IServiceProvider, Action<KurrentDBClientSettings>> configureSettings) =>
+			services.AddKurrentDbClient(new KurrentDBClientSettings(),
 				configureSettings);
 
 		/// <summary>
@@ -74,12 +74,12 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddKurrentDbClient(this IServiceCollection services,
-			string connectionString, Action<KurrentDbClientSettings>? configureSettings = null) {
+			string connectionString, Action<KurrentDBClientSettings>? configureSettings = null) {
 			if (services == null) {
 				throw new ArgumentNullException(nameof(services));
 			}
 
-			return services.AddKurrentDbClient(KurrentDbClientSettings.Create(connectionString), configureSettings);
+			return services.AddKurrentDbClient(KurrentDBClientSettings.Create(connectionString), configureSettings);
 		}
 
 		/// <summary>
@@ -92,17 +92,17 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddKurrentDbClient(this IServiceCollection services,
 			Func<IServiceProvider, string> connectionStringFactory,
-			Action<KurrentDbClientSettings>? configureSettings = null) {
+			Action<KurrentDBClientSettings>? configureSettings = null) {
 			if (services == null) {
 				throw new ArgumentNullException(nameof(services));
 			}
 
-			return services.AddKurrentDbClient(provider => KurrentDbClientSettings.Create(connectionStringFactory(provider)), configureSettings);
+			return services.AddKurrentDbClient(provider => KurrentDBClientSettings.Create(connectionStringFactory(provider)), configureSettings);
 		}
 
 		private static IServiceCollection AddKurrentDbClient(this IServiceCollection services,
-			KurrentDbClientSettings settings,
-			Action<KurrentDbClientSettings>? configureSettings) {
+			KurrentDBClientSettings settings,
+			Action<KurrentDBClientSettings>? configureSettings) {
 			configureSettings?.Invoke(settings);
 
 			services.TryAddSingleton(provider => {
@@ -116,8 +116,8 @@ namespace Microsoft.Extensions.DependencyInjection {
 		}
 
 		private static IServiceCollection AddKurrentDbClient(this IServiceCollection services,
-			Func<IServiceProvider, KurrentDbClientSettings> settingsFactory,
-			Action<KurrentDbClientSettings>? configureSettings = null) {
+			Func<IServiceProvider, KurrentDBClientSettings> settingsFactory,
+			Action<KurrentDBClientSettings>? configureSettings = null) {
 
 			services.TryAddSingleton(provider => {
 				var settings = settingsFactory(provider);
@@ -133,8 +133,8 @@ namespace Microsoft.Extensions.DependencyInjection {
 		}
 
 		private static IServiceCollection AddKurrentDbClient(this IServiceCollection services,
-			KurrentDbClientSettings settings,
-			Func<IServiceProvider, Action<KurrentDbClientSettings>> configureSettingsFactory) {
+			KurrentDBClientSettings settings,
+			Func<IServiceProvider, Action<KurrentDBClientSettings>> configureSettingsFactory) {
 
 			services.TryAddSingleton(provider => {
 				configureSettingsFactory(provider).Invoke(settings);

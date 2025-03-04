@@ -438,7 +438,7 @@ namespace KurrentDb.Client {
 				string groupName,
 				Func<CancellationToken, Task<ChannelInfo>> selectChannelInfo,
 				ReadReq request,
-				KurrentDbClientSettings settings,
+				KurrentDBClientSettings settings,
 				UserCredentials? userCredentials,
 				IMessageSerializer messageSerializer,
 				CancellationToken cancellationToken

@@ -3,7 +3,7 @@ using KurrentDb.Client;
 namespace KurrentDb.Client.Tests;
 
 public record KurrentFixtureOptions(
-	KurrentDbClientSettings DbClientSettings,
+	KurrentDBClientSettings DbClientSettings,
 	IDictionary<string, string?> Environment
 ) {
 	public KurrentFixtureOptions RunInMemory(bool runInMemory = true) =>

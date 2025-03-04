@@ -15,7 +15,7 @@ namespace KurrentDb.Client {
 		/// Constructs a new <see cref="KurrentDBUserManagementClient"/>.
 		/// </summary>
 		/// <param name="settings"></param>
-		public KurrentDBUserManagementClient(KurrentDbClientSettings? settings = null) :
+		public KurrentDBUserManagementClient(KurrentDBClientSettings? settings = null) :
 			base(settings, ExceptionMap) {
 			_log = Settings.LoggerFactory?.CreateLogger<KurrentDBUserManagementClient>() ??
 			       new NullLogger<KurrentDBUserManagementClient>();

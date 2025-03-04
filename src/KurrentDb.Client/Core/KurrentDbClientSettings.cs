@@ -10,7 +10,7 @@ namespace KurrentDb.Client {
 	/// <summary>
 	/// A class that represents the settings to use for operations made from an implementation of <see cref="KurrentDbClientBase"/>.
 	/// </summary>
-	public partial class KurrentDbClientSettings {
+	public partial class KurrentDBClientSettings {
 		/// <summary>
 		/// An optional list of <see cref="Interceptor"/>s to use.
 		/// </summary>

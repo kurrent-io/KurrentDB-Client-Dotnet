@@ -60,7 +60,7 @@ public class KurrentPermanentTestNode(KurrentFixtureOptions? options = null) : T
 
 		var port = NetworkPortProvider.NextAvailablePort;
 
-		var defaultSettings = KurrentDbClientSettings
+		var defaultSettings = KurrentDBClientSettings
 			.Create(connString.Replace("{port}", $"{port}"))
 			.With(x => x.LoggerFactory = new SerilogLoggerFactory(Log.Logger))
 			.With(x => x.DefaultDeadline = Application.DebuggerIsAttached ? new TimeSpan?() : FromSeconds(30))

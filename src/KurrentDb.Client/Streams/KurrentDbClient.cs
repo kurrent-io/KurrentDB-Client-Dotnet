@@ -62,13 +62,13 @@ namespace KurrentDb.Client {
 		/// Constructs a new <see cref="KurrentDBClient"/>. This is not intended to be called directly from your code.
 		/// </summary>
 		/// <param name="options"></param>
-		public KurrentDBClient(IOptions<KurrentDbClientSettings> options) : this(options.Value) { }
+		public KurrentDBClient(IOptions<KurrentDBClientSettings> options) : this(options.Value) { }
 
 		/// <summary>
 		/// Constructs a new <see cref="KurrentDBClient"/>.
 		/// </summary>
 		/// <param name="settings"></param>
-		public KurrentDBClient(KurrentDbClientSettings? settings = null) : base(settings, ExceptionMap) {
+		public KurrentDBClient(KurrentDBClientSettings? settings = null) : base(settings, ExceptionMap) {
 			_log = Settings.LoggerFactory?.CreateLogger<KurrentDBClient>() ?? new NullLogger<KurrentDBClient>();
 			_disposedTokenSource = new CancellationTokenSource();
 			_batchAppenderLazy = new Lazy<StreamAppender>(CreateStreamAppender);

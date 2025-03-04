@@ -2,6 +2,7 @@
 
 using System.Text.Json;
 using Grpc.Core;
+using KurrentDb.Client;
 
 //// This sample demonstrate the projection management features.
 //// It will create data in the target database.
@@ -64,20 +65,20 @@ await GetResult(managementClient);
 
 return;
 
-static KurrentDbProjectionManagementClient ManagementClient(string connection) {
+static KurrentDBProjectionManagementClient ManagementClient(string connection) {
 	#region createClient
 
-	var settings = KurrentDbClientSettings.Create(connection);
+	var settings = KurrentDBClientSettings.Create(connection);
 	settings.ConnectionName     = "Projection management client";
 	settings.DefaultCredentials = new UserCredentials("admin", "changeit");
-	var managementClient = new KurrentDbProjectionManagementClient(settings);
+	var managementClient = new KurrentDBProjectionManagementClient(settings);
 
 	#endregion createClient
 
 	return managementClient;
 }
 
-static async Task RestartSubSystem(KurrentDbProjectionManagementClient managementClient) {
+static async Task RestartSubSystem(KurrentDBProjectionManagementClient managementClient) {
 	#region RestartSubSystem
 
 	await managementClient.RestartSubsystemAsync();
@@ -85,7 +86,7 @@ static async Task RestartSubSystem(KurrentDbProjectionManagementClient managemen
 	#endregion RestartSubSystem
 }
 
-static async Task Disable(KurrentDbProjectionManagementClient managementClient) {
+static async Task Disable(KurrentDBProjectionManagementClient managementClient) {
 	#region Disable
 
 	await managementClient.DisableAsync("$by_category");
@@ -93,7 +94,7 @@ static async Task Disable(KurrentDbProjectionManagementClient managementClient) 
 	#endregion Disable
 }
 
-static async Task DisableNotFound(KurrentDbProjectionManagementClient managementClient) {
+static async Task DisableNotFound(KurrentDBProjectionManagementClient managementClient) {
 	#region DisableNotFound
 
 	try {
@@ -109,7 +110,7 @@ static async Task DisableNotFound(KurrentDbProjectionManagementClient management
 	#endregion DisableNotFound
 }
 
-static async Task Enable(KurrentDbProjectionManagementClient managementClient) {
+static async Task Enable(KurrentDBProjectionManagementClient managementClient) {
 	#region Enable
 
 	await managementClient.EnableAsync("$by_category");
@@ -117,7 +118,7 @@ static async Task Enable(KurrentDbProjectionManagementClient managementClient) {
 	#endregion Enable
 }
 
-static async Task EnableNotFound(KurrentDbProjectionManagementClient managementClient) {
+static async Task EnableNotFound(KurrentDBProjectionManagementClient managementClient) {
 	#region EnableNotFound
 
 	try {
@@ -133,7 +134,7 @@ static async Task EnableNotFound(KurrentDbProjectionManagementClient managementC
 	#endregion EnableNotFound
 }
 
-static Task Delete(KurrentDbProjectionManagementClient managementClient) {
+static Task Delete(KurrentDBProjectionManagementClient managementClient) {
 	#region Delete
 
 	// this is not yet available in the .net grpc client
@@ -143,7 +144,7 @@ static Task Delete(KurrentDbProjectionManagementClient managementClient) {
 	return Task.CompletedTask;
 }
 
-static async Task Abort(KurrentDbProjectionManagementClient managementClient) {
+static async Task Abort(KurrentDBProjectionManagementClient managementClient) {
 	try {
 		var js =
 			"fromAll() .when({$init:function(){return {count:0};},$any:function(s, e){s.count += 1;}}).outputState();";
@@ -165,7 +166,7 @@ static async Task Abort(KurrentDbProjectionManagementClient managementClient) {
 	#endregion Abort
 }
 
-static async Task Abort_NotFound(KurrentDbProjectionManagementClient managementClient) {
+static async Task Abort_NotFound(KurrentDBProjectionManagementClient managementClient) {
 	#region Abort_NotFound
 
 	try {
@@ -181,7 +182,7 @@ static async Task Abort_NotFound(KurrentDbProjectionManagementClient managementC
 	#endregion Abort_NotFound
 }
 
-static async Task Reset(KurrentDbProjectionManagementClient managementClient) {
+static async Task Reset(KurrentDBProjectionManagementClient managementClient) {
 	try {
 		var js =
 			"fromAll() .when({$init:function(){return {count:0};},$any:function(s, e){s.count += 1;}}).outputState();";
@@ -203,7 +204,7 @@ static async Task Reset(KurrentDbProjectionManagementClient managementClient) {
 	#endregion Reset
 }
 
-static async Task Reset_NotFound(KurrentDbProjectionManagementClient managementClient) {
+static async Task Reset_NotFound(KurrentDBProjectionManagementClient managementClient) {
 	#region Reset_NotFound
 
 	try {
@@ -219,14 +220,14 @@ static async Task Reset_NotFound(KurrentDbProjectionManagementClient managementC
 	#endregion Reset_NotFound
 }
 
-static async Task CreateOneTime(KurrentDbProjectionManagementClient managementClient) {
+static async Task CreateOneTime(KurrentDBProjectionManagementClient managementClient) {
 	const string js =
 		"fromAll() .when({$init:function(){return {count:0};},$any:function(s, e){s.count += 1;}}).outputState();";
 
 	await managementClient.CreateOneTimeAsync(js);
 }
 
-static async Task CreateContinuous(KurrentDbProjectionManagementClient managementClient) {
+static async Task CreateContinuous(KurrentDBProjectionManagementClient managementClient) {
 	#region CreateContinuous
 
 	const string js = @"fromAll()
@@ -248,7 +249,7 @@ static async Task CreateContinuous(KurrentDbProjectionManagementClient managemen
 	#endregion CreateContinuous
 }
 
-static async Task CreateContinuous_Conflict(KurrentDbProjectionManagementClient managementClient) {
+static async Task CreateContinuous_Conflict(KurrentDBProjectionManagementClient managementClient) {
 	const string js = @"fromAll()
 							    .when({
 							        $init: function() {
@@ -281,7 +282,7 @@ static async Task CreateContinuous_Conflict(KurrentDbProjectionManagementClient 
 	#endregion CreateContinuous_Conflict
 }
 
-static async Task Update(KurrentDbProjectionManagementClient managementClient) {
+static async Task Update(KurrentDBProjectionManagementClient managementClient) {
 	#region Update
 
 	const string js = @"fromAll()
@@ -305,7 +306,7 @@ static async Task Update(KurrentDbProjectionManagementClient managementClient) {
 	#endregion Update
 }
 
-static async Task Update_NotFound(KurrentDbProjectionManagementClient managementClient) {
+static async Task Update_NotFound(KurrentDBProjectionManagementClient managementClient) {
 	#region Update_NotFound
 
 	try {
@@ -321,7 +322,7 @@ static async Task Update_NotFound(KurrentDbProjectionManagementClient management
 	#endregion Update_NotFound
 }
 
-static async Task ListAll(KurrentDbProjectionManagementClient managementClient) {
+static async Task ListAll(KurrentDBProjectionManagementClient managementClient) {
 	#region ListAll
 
 	var details = managementClient.ListAllAsync();
@@ -333,7 +334,7 @@ static async Task ListAll(KurrentDbProjectionManagementClient managementClient) 
 	#endregion ListAll
 }
 
-static async Task ListContinuous(KurrentDbProjectionManagementClient managementClient) {
+static async Task ListContinuous(KurrentDBProjectionManagementClient managementClient) {
 	#region ListContinuous
 
 	var details = managementClient.ListContinuousAsync();
@@ -345,7 +346,7 @@ static async Task ListContinuous(KurrentDbProjectionManagementClient managementC
 	#endregion ListContinuous
 }
 
-static async Task GetStatus(KurrentDbProjectionManagementClient managementClient) {
+static async Task GetStatus(KurrentDBProjectionManagementClient managementClient) {
 	const string js =
 		"fromAll().when({$init:function(){return {count:0};},$any:function(s, e){s.count += 1;}}).outputState();";
 
@@ -362,7 +363,7 @@ static async Task GetStatus(KurrentDbProjectionManagementClient managementClient
 	#endregion GetStatus
 }
 
-static async Task GetState(KurrentDbProjectionManagementClient managementClient) {
+static async Task GetState(KurrentDBProjectionManagementClient managementClient) {
 	// will have to wait for the client to be fixed before we import in the doc 
 
 	#region GetState
@@ -393,7 +394,7 @@ static async Task GetState(KurrentDbProjectionManagementClient managementClient)
 	#endregion GetState
 }
 
-static async Task GetResult(KurrentDbProjectionManagementClient managementClient) {
+static async Task GetResult(KurrentDBProjectionManagementClient managementClient) {
 	#region GetResult
 
 	const string js = @"fromAll()
@@ -433,9 +434,9 @@ static async Task GetResult(KurrentDbProjectionManagementClient managementClient
 }
 
 static async Task Populate(string connection, int numberOfEvents) {
-	var settings = KurrentDbClientSettings.Create(connection);
+	var settings = KurrentDBClientSettings.Create(connection);
 	settings.DefaultCredentials = new UserCredentials("admin", "changeit");
-	var client = new KurrentDbClient(settings);
+	var client = new KurrentDBClient(settings);
 	var messages = Enumerable.Range(0, numberOfEvents).Select(
 		number =>
 			new EventData(

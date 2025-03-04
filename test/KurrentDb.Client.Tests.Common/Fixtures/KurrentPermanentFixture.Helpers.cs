@@ -10,7 +10,7 @@ public partial class KurrentPermanentFixture {
 	public const string AnotherTestEventTypePrefix = "another";
 	public const string AnotherTestEventType       = $"{AnotherTestEventTypePrefix}-test-event-type";
 
-	public T NewClient<T>(Action<KurrentDbClientSettings> configure) where T : KurrentDbClientBase, new() =>
+	public T NewClient<T>(Action<KurrentDBClientSettings> configure) where T : KurrentDbClientBase, new() =>
 		(T)Activator.CreateInstance(typeof(T), [DbClientSettings.With(configure)])!;
 
 	public string GetStreamName([CallerMemberName] string? testMethod = null) =>

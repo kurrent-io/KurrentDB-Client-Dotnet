@@ -14,7 +14,7 @@ public class GossipChannelSelectorTests {
 		var firstSelection  = new DnsEndPoint(firstId.ToString(), 2113);
 		var secondSelection = new DnsEndPoint(secondId.ToString(), 2113);
 
-		var settings = new KurrentDbClientSettings {
+		var settings = new KurrentDBClientSettings {
 			ConnectivitySettings = {
 				DnsGossipSeeds = new[] {
 					firstSelection,
@@ -57,7 +57,7 @@ public class GossipChannelSelectorTests {
 
 	[RetryFact]
 	public async Task ThrowsWhenDiscoveryFails() {
-		var settings = new KurrentDbClientSettings {
+		var settings = new KurrentDBClientSettings {
 			ConnectivitySettings = {
 				IpGossipSeeds = new[] {
 					new IPEndPoint(IPAddress.Loopback, 2113)

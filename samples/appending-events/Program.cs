@@ -1,10 +1,12 @@
-﻿#pragma warning disable CS8321 // Local function is declared but never used
+﻿using KurrentDb.Client;
 
-var settings = KurrentDbClientSettings.Create("esdb://localhost:2113?tls=false");
+#pragma warning disable CS8321 // Local function is declared but never used
+
+var settings = KurrentDBClientSettings.Create("esdb://localhost:2113?tls=false");
 
 settings.OperationOptions.ThrowOnAppendFailure = false;
 
-await using var client = new KurrentDbClient(settings);
+await using var client = new KurrentDBClient(settings);
 
 await AppendToStream(client);
 await AppendWithConcurrencyCheck(client);
@@ -13,7 +15,7 @@ await AppendWithSameId(client);
 
 return;
 
-static async Task AppendToStream(KurrentDbClient client) {
+static async Task AppendToStream(KurrentDBClient client) {
 	#region append-to-stream
 
 	var eventData = new EventData(
@@ -33,7 +35,7 @@ static async Task AppendToStream(KurrentDbClient client) {
 	#endregion append-to-stream
 }
 
-static async Task AppendWithSameId(KurrentDbClient client) {
+static async Task AppendWithSameId(KurrentDBClient client) {
 	#region append-duplicate-event
 
 	var eventData = new EventData(
@@ -62,7 +64,7 @@ static async Task AppendWithSameId(KurrentDbClient client) {
 	#endregion append-duplicate-event
 }
 
-static async Task AppendWithNoStream(KurrentDbClient client) {
+static async Task AppendWithNoStream(KurrentDBClient client) {
 	#region append-with-no-stream
 
 	var eventDataOne = new EventData(
@@ -97,7 +99,7 @@ static async Task AppendWithNoStream(KurrentDbClient client) {
 	#endregion append-with-no-stream
 }
 
-static async Task AppendWithConcurrencyCheck(KurrentDbClient client) {
+static async Task AppendWithConcurrencyCheck(KurrentDBClient client) {
 	await client.AppendToStreamAsync(
 		"concurrency-stream",
 		StreamRevision.None,
@@ -148,7 +150,7 @@ static async Task AppendWithConcurrencyCheck(KurrentDbClient client) {
 	#endregion append-with-concurrency-check
 }
 
-static async Task AppendOverridingUserCredentials(KurrentDbClient client, CancellationToken cancellationToken) {
+static async Task AppendOverridingUserCredentials(KurrentDBClient client, CancellationToken cancellationToken) {
 	var eventData = new EventData(
 		Uuid.NewUuid(),
 		"TestEvent",

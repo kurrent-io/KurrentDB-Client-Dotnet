@@ -13,7 +13,7 @@ namespace KurrentDb.Client {
 		private readonly UserCredentials? _defaultCredentials;
 		private readonly string _addressScheme;
 
-		internal HttpFallback(KurrentDbClientSettings settings) {
+		internal HttpFallback(KurrentDBClientSettings settings) {
 			_addressScheme      = settings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme;
 			_defaultCredentials = settings.DefaultCredentials;
 

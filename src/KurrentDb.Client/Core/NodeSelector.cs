@@ -26,7 +26,7 @@ namespace KurrentDb.Client {
 		private readonly Random _random;
 		private readonly IComparer<ClusterMessages.VNodeState>? _nodeStateComparer;
 
-		public NodeSelector(KurrentDbClientSettings settings) {
+		public NodeSelector(KurrentDBClientSettings settings) {
 			_random = new Random(0);
 			_nodeStateComparer = settings.ConnectivitySettings.NodePreference switch {
 				NodePreference.Leader => NodePreferenceComparers.Leader,

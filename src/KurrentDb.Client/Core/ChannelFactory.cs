@@ -9,7 +9,7 @@ namespace KurrentDb.Client {
 	internal static class ChannelFactory {
 		private const int MaxReceiveMessageLength = 17 * 1024 * 1024;
 
-		public static TChannel CreateChannel(KurrentDbClientSettings settings, EndPoint endPoint) {
+		public static TChannel CreateChannel(KurrentDBClientSettings settings, EndPoint endPoint) {
 			var address = endPoint.ToUri(!settings.ConnectivitySettings.Insecure);
 
 			if (settings.ConnectivitySettings.Insecure) {
@@ -37,7 +37,7 @@ namespace KurrentDb.Client {
 
 
 #if NET48
-		static HttpMessageHandler CreateHandler(KurrentDbClientSettings settings) {
+		static HttpMessageHandler CreateHandler(KurrentDBClientSettings settings) {
 			if (settings.CreateHttpMessageHandler is not null)
 				return settings.CreateHttpMessageHandler.Invoke();
 
@@ -67,7 +67,7 @@ namespace KurrentDb.Client {
 			return handler;
 		}
 #else
-		static HttpMessageHandler CreateHandler(KurrentDbClientSettings settings) {
+		static HttpMessageHandler CreateHandler(KurrentDBClientSettings settings) {
 			if (settings.CreateHttpMessageHandler is not null)
 				return settings.CreateHttpMessageHandler.Invoke();
 

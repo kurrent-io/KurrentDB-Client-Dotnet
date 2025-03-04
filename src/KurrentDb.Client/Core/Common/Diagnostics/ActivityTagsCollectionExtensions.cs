@@ -20,7 +20,7 @@ static class ActivityTagsCollectionExtensions {
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ActivityTagsCollection WithClientSettingsServerTags(this ActivityTagsCollection source, KurrentDbClientSettings settings) {
+    public static ActivityTagsCollection WithClientSettingsServerTags(this ActivityTagsCollection source, KurrentDBClientSettings settings) {
         if (settings.ConnectivitySettings.DnsGossipSeeds?.Length != 1)
             return source;
         

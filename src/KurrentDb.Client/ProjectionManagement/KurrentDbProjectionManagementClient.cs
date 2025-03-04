@@ -16,14 +16,14 @@ namespace KurrentDb.Client {
 		/// Constructs a new <see cref="KurrentDBProjectionManagementClient"/>. This method is not intended to be called directly from your code.
 		/// </summary>
 		/// <param name="options"></param>
-		public KurrentDBProjectionManagementClient(IOptions<KurrentDbClientSettings> options) : this(options.Value) {
+		public KurrentDBProjectionManagementClient(IOptions<KurrentDBClientSettings> options) : this(options.Value) {
 		}
 
 		/// <summary>
 		/// Constructs a new <see cref="KurrentDBProjectionManagementClient"/>.
 		/// </summary>
 		/// <param name="settings"></param>
-		public KurrentDBProjectionManagementClient(KurrentDbClientSettings? settings) : base(settings,
+		public KurrentDBProjectionManagementClient(KurrentDBClientSettings? settings) : base(settings,
 			new Dictionary<string, Func<RpcException, Exception>>()) {
 			_log = settings?.LoggerFactory?.CreateLogger<KurrentDBProjectionManagementClient>() ??
 			       new NullLogger<KurrentDBProjectionManagementClient>();

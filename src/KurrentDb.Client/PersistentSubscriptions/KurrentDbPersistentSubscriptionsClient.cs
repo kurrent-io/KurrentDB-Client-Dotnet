@@ -22,7 +22,7 @@ namespace KurrentDb.Client {
 		/// <summary>
 		/// Constructs a new <see cref="KurrentDBPersistentSubscriptionsClient"/>.
 		/// </summary>
-		public KurrentDBPersistentSubscriptionsClient(KurrentDbClientSettings? settings) : base(settings,
+		public KurrentDBPersistentSubscriptionsClient(KurrentDBClientSettings? settings) : base(settings,
 			new Dictionary<string, Func<RpcException, Exception>> {
 				[Constants.Exceptions.PersistentSubscriptionDoesNotExist] = ex => new
 					PersistentSubscriptionNotFoundException(

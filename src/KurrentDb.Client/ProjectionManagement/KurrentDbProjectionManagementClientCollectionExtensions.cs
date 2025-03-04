@@ -35,8 +35,8 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddKurrentProjectionManagementClient(this IServiceCollection services,
-			Action<KurrentDbClientSettings>? configureSettings = null) =>
-			services.AddKurrentProjectionManagementClient(new KurrentDbClientSettings(), configureSettings);
+			Action<KurrentDBClientSettings>? configureSettings = null) =>
+			services.AddKurrentProjectionManagementClient(new KurrentDBClientSettings(), configureSettings);
 
 		/// <summary>
 		/// Adds an <see cref="KurrentDBProjectionManagementClient"/> to the <see cref="IServiceCollection"/>.
@@ -47,12 +47,12 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddKurrentProjectionManagementClient(this IServiceCollection services,
-			string connectionString, Action<KurrentDbClientSettings>? configureSettings = null) =>
-			services.AddKurrentProjectionManagementClient(KurrentDbClientSettings.Create(connectionString),
+			string connectionString, Action<KurrentDBClientSettings>? configureSettings = null) =>
+			services.AddKurrentProjectionManagementClient(KurrentDBClientSettings.Create(connectionString),
 				configureSettings);
 
 		private static IServiceCollection AddKurrentProjectionManagementClient(this IServiceCollection services,
-			KurrentDbClientSettings settings, Action<KurrentDbClientSettings>? configureSettings) {
+			KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings) {
 			if (services == null) {
 				throw new ArgumentNullException(nameof(services));
 			}

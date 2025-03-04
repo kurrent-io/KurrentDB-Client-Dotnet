@@ -35,8 +35,8 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddKurrentUserManagementClient(this IServiceCollection services,
-			string connectionString, Action<KurrentDbClientSettings>? configureSettings = null)
-			=> services.AddKurrentUserManagementClient(KurrentDbClientSettings.Create(connectionString),
+			string connectionString, Action<KurrentDBClientSettings>? configureSettings = null)
+			=> services.AddKurrentUserManagementClient(KurrentDBClientSettings.Create(connectionString),
 				configureSettings);
 
 
@@ -48,11 +48,11 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddKurrentUserManagementClient(this IServiceCollection services,
-			Action<KurrentDbClientSettings>? configureSettings = null) =>
-			services.AddKurrentUserManagementClient(new KurrentDbClientSettings(), configureSettings);
+			Action<KurrentDBClientSettings>? configureSettings = null) =>
+			services.AddKurrentUserManagementClient(new KurrentDBClientSettings(), configureSettings);
 
 		private static IServiceCollection AddKurrentUserManagementClient(this IServiceCollection services,
-			KurrentDbClientSettings settings, Action<KurrentDbClientSettings>? configureSettings = null) {
+			KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings = null) {
 			configureSettings?.Invoke(settings);
 			if (services == null) {
 				throw new ArgumentNullException(nameof(services));

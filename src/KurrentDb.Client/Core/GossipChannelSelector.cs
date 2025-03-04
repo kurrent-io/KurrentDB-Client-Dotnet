@@ -10,14 +10,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace KurrentDb.Client {
 	// Thread safe
 	internal class GossipChannelSelector : IChannelSelector {
-		private readonly KurrentDbClientSettings _settings;
+		private readonly KurrentDBClientSettings _settings;
 		private readonly ChannelCache _channels;
 		private readonly IGossipClient _gossipClient;
 		private readonly ILogger<GossipChannelSelector> _log;
 		private readonly NodeSelector _nodeSelector;
 
 		public GossipChannelSelector(
-			KurrentDbClientSettings settings,
+			KurrentDBClientSettings settings,
 			ChannelCache channelCache,
 			IGossipClient gossipClient) {
 

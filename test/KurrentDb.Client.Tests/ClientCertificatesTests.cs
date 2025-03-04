@@ -17,7 +17,7 @@ public class ClientCertificateTests(ITestOutputHelper output, KurrentTemporaryFi
 
 		var connectionString = $"esdb://localhost:{port}/?tls=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
 
-		var settings = KurrentDbClientSettings.Create(connectionString);
+		var settings = KurrentDBClientSettings.Create(connectionString);
 		settings.ConnectivitySettings.TlsVerifyCert.ShouldBeTrue();
 
 		await using var client = new KurrentDBClient(settings);
@@ -33,7 +33,7 @@ public class ClientCertificateTests(ITestOutputHelper output, KurrentTemporaryFi
 
 		var connectionString = $"esdb://localhost:{port}/?userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
 
-		var settings = KurrentDbClientSettings.Create(connectionString);
+		var settings = KurrentDBClientSettings.Create(connectionString);
 		settings.ConnectivitySettings.TlsVerifyCert.ShouldBeTrue();
 
 		await using var client = new KurrentDBClient(settings);
@@ -50,7 +50,7 @@ public class ClientCertificateTests(ITestOutputHelper output, KurrentTemporaryFi
 
 		var connectionString = $"esdb://admin:changeit@localhost:{port}/?userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
 
-		var settings = KurrentDbClientSettings.Create(connectionString);
+		var settings = KurrentDBClientSettings.Create(connectionString);
 		settings.ConnectivitySettings.TlsVerifyCert.ShouldBeTrue();
 
 		await using var client = new KurrentDBClient(settings);

@@ -16,7 +16,7 @@ using static EventStore.Client.Streams.Streams;
 namespace KurrentDb.Client {
 	public partial class KurrentDBClient {
 		/// <summary>
-		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDb.Client.KurrentDbClientSettings"/>
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDBClientSettings"/>
 		/// </summary>
 		/// <param name="streamName">The name of the stream to append events to.</param>
 		/// <param name="messages">Messages to append to the stream.</param>
@@ -287,7 +287,7 @@ namespace KurrentDb.Client {
 		}
 
 		class StreamAppender : IDisposable {
-			readonly KurrentDbClientSettings                                          _settings;
+			readonly KurrentDBClientSettings                                          _settings;
 			readonly CancellationToken                                              _cancellationToken;
 			readonly Action<Exception>                                              _onException;
 			readonly Channel<BatchAppendReq>                                        _channel;
@@ -298,7 +298,7 @@ namespace KurrentDb.Client {
 			AsyncDuplexStreamingCall<BatchAppendReq, BatchAppendResp>? _call;
 
 			public StreamAppender(
-				KurrentDbClientSettings settings,
+				KurrentDBClientSettings settings,
 				ValueTask<ChannelInfo> channelInfoTask,
 				CancellationToken cancellationToken,
 				Action<Exception> onException
@@ -493,7 +493,7 @@ namespace KurrentDb.Client {
 
 	public static class KurrentDbClientAppendToStreamExtensions {
 		/// <summary>
-		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDb.Client.KurrentDbClientSettings"/>
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDBClientSettings"/>
 		/// </summary>
 		/// <param name="dbClient"></param>
 		/// <param name="streamName">The name of the stream to append events to.</param>
@@ -514,7 +514,7 @@ namespace KurrentDb.Client {
 			);
 
 		/// <summary>
-		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDb.Client.KurrentDbClientSettings"/>
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDBClientSettings"/>
 		/// </summary>
 		/// <param name="dbClient"></param>
 		/// <param name="streamName">The name of the stream to append events to.</param>
@@ -536,7 +536,7 @@ namespace KurrentDb.Client {
 		
 		
 		/// <summary>
-		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDb.Client.KurrentDbClientSettings"/>
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDBClientSettings"/>
 		/// </summary>
 		/// <param name="dbClient"></param>
 		/// <param name="streamName">The name of the stream to append events to.</param>
@@ -561,7 +561,7 @@ namespace KurrentDb.Client {
 			);
 
 		/// <summary>
-		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDb.Client.KurrentDbClientSettings"/>
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDBClientSettings"/>
 		/// </summary>
 		/// <param name="dbClient"></param>
 		/// <param name="streamName">The name of the stream to append events to.</param>
@@ -584,7 +584,7 @@ namespace KurrentDb.Client {
 			);
 
 		/// <summary>
-		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDb.Client.KurrentDbClientSettings"/>
+		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDBClientSettings"/>
 		/// </summary>
 		/// <param name="dbClient"></param>
 		/// <param name="streamName">The name of the stream to append events to.</param>

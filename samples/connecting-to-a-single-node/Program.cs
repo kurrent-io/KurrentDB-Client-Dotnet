@@ -1,12 +1,13 @@
 ﻿using connecting_to_a_single_node;
 using EventStore.Client;
+using KurrentDb.Client;
 
 #pragma warning disable CS8321 // Local function is declared but never used
 
 static void SimpleConnection() {
 	#region creating-simple-connection
 
-	using var client = new KurrentDbClient(KurrentDbClientSettings.Create("esdb://localhost:2113"));
+	using var client = new KurrentDBClient(KurrentDBClientSettings.Create("esdb://localhost:2113"));
 
 	#endregion creating-simple-connection
 }
@@ -14,7 +15,7 @@ static void SimpleConnection() {
 static void ProvidingDefaultCredentials() {
 	#region providing-default-credentials
 
-	using var client = new KurrentDbClient(KurrentDbClientSettings.Create("esdb://admin:changeit@localhost:2113"));
+	using var client = new KurrentDBClient(KurrentDBClientSettings.Create("esdb://admin:changeit@localhost:2113"));
 
 	#endregion providing-default-credentials
 }
@@ -22,8 +23,8 @@ static void ProvidingDefaultCredentials() {
 static void SpecifyingAConnectionName() {
 	#region setting-the-connection-name
 
-	using var client = new KurrentDbClient(
-		KurrentDbClientSettings.Create("esdb://admin:changeit@localhost:2113?ConnectionName=SomeConnection")
+	using var client = new KurrentDBClient(
+		KurrentDBClientSettings.Create("esdb://admin:changeit@localhost:2113?ConnectionName=SomeConnection")
 	);
 
 	#endregion setting-the-connection-name
@@ -32,8 +33,8 @@ static void SpecifyingAConnectionName() {
 static void OverridingTheTimeout() {
 	#region overriding-timeout
 
-	using var client = new KurrentDbClient(
-		KurrentDbClientSettings.Create($"esdb://admin:changeit@localhost:2113?OperationTimeout=30000")
+	using var client = new KurrentDBClient(
+		KurrentDBClientSettings.Create($"esdb://admin:changeit@localhost:2113?OperationTimeout=30000")
 	);
 
 	#endregion overriding-timeout
@@ -42,8 +43,8 @@ static void OverridingTheTimeout() {
 static void CombiningSettings() {
 	#region overriding-timeout
 
-	using var client = new KurrentDbClient(
-		KurrentDbClientSettings.Create(
+	using var client = new KurrentDBClient(
+		KurrentDBClientSettings.Create(
 			$"esdb://admin:changeit@localhost:2113?ConnectionName=SomeConnection&OperationTimeout=30000"
 		)
 	);
@@ -54,7 +55,7 @@ static void CombiningSettings() {
 static void CreatingAnInterceptor() {
 	#region adding-an-interceptor
 
-	var settings = new KurrentDbClientSettings {
+	var settings = new KurrentDBClientSettings {
 		Interceptors = new[] { new DemoInterceptor() },
 		ConnectivitySettings = {
 			Address = new Uri("https://localhost:2113")
@@ -63,13 +64,13 @@ static void CreatingAnInterceptor() {
 
 	#endregion adding-an-interceptor
 
-	var client = new KurrentDbClient(settings);
+	var client = new KurrentDBClient(settings);
 }
 
 static void CustomHttpMessageHandler() {
 	#region adding-an-custom-http-message-handler
 
-	var settings = new KurrentDbClientSettings {
+	var settings = new KurrentDBClientSettings {
 		CreateHttpMessageHandler = () =>
 			new HttpClientHandler {
 				ServerCertificateCustomValidationCallback =
@@ -82,5 +83,5 @@ static void CustomHttpMessageHandler() {
 
 	#endregion adding-an-custom-http-message-handler
 
-	var client = new KurrentDbClient(settings);
+	var client = new KurrentDBClient(settings);
 }

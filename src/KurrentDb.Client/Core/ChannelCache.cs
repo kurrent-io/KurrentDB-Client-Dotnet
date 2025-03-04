@@ -8,13 +8,13 @@ namespace KurrentDb.Client {
 	internal class ChannelCache :
 		IAsyncDisposable {
 
-		private readonly KurrentDbClientSettings _settings;
+		private readonly KurrentDBClientSettings _settings;
 		private readonly Random _random;
 		private readonly Dictionary<DnsEndPoint, TChannel> _channels;
 		private readonly object _lock = new();
 		private bool _disposed;
 
-		public ChannelCache(KurrentDbClientSettings settings) {
+		public ChannelCache(KurrentDBClientSettings settings) {
 			_settings = settings;
 			_random = new Random(0);
 			_channels = new Dictionary<DnsEndPoint, TChannel>(

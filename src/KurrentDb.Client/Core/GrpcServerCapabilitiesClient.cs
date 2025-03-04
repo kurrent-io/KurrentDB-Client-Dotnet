@@ -3,9 +3,9 @@ using Grpc.Core;
 
 namespace KurrentDb.Client {
 	internal class GrpcServerCapabilitiesClient : IServerCapabilitiesClient {
-		private readonly KurrentDbClientSettings _settings;
+		private readonly KurrentDBClientSettings _settings;
 
-		public GrpcServerCapabilitiesClient(KurrentDbClientSettings settings) {
+		public GrpcServerCapabilitiesClient(KurrentDBClientSettings settings) {
 			_settings = settings;
 		}
 

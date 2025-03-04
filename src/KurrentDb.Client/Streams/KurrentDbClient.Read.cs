@@ -173,7 +173,7 @@ namespace KurrentDb.Client {
 			internal ReadAllStreamResult(
 				Func<CancellationToken, Task<CallInvoker>> selectCallInvoker,
 				ReadReq request,
-				KurrentDbClientSettings settings,
+				KurrentDBClientSettings settings,
 				ReadAllOptions options,
 				IMessageSerializer messageSerializer,
 				CancellationToken cancellationToken
@@ -414,7 +414,7 @@ namespace KurrentDb.Client {
 			internal ReadStreamResult(
 				Func<CancellationToken, Task<CallInvoker>> selectCallInvoker,
 				ReadReq request,
-				KurrentDbClientSettings settings,
+				KurrentDBClientSettings settings,
 				TimeSpan? deadline,
 				UserCredentials? userCredentials,
 				IMessageSerializer messageSerializer,

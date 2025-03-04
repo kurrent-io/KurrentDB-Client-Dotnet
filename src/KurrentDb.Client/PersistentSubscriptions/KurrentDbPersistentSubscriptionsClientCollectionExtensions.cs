@@ -27,8 +27,8 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddKurrentPersistentSubscriptionsClient(this IServiceCollection services,
-			Action<KurrentDbClientSettings>? configureSettings = null) =>
-			services.AddKurrentPersistentSubscriptionsClient(new KurrentDbClientSettings(),
+			Action<KurrentDBClientSettings>? configureSettings = null) =>
+			services.AddKurrentPersistentSubscriptionsClient(new KurrentDBClientSettings(),
 				configureSettings);
 
 		/// <summary>
@@ -36,12 +36,12 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddKurrentPersistentSubscriptionsClient(this IServiceCollection services,
-			string connectionString, Action<KurrentDbClientSettings>? configureSettings = null) =>
-			services.AddKurrentPersistentSubscriptionsClient(KurrentDbClientSettings.Create(connectionString),
+			string connectionString, Action<KurrentDBClientSettings>? configureSettings = null) =>
+			services.AddKurrentPersistentSubscriptionsClient(KurrentDBClientSettings.Create(connectionString),
 				configureSettings);
 
 		private static IServiceCollection AddKurrentPersistentSubscriptionsClient(this IServiceCollection services,
-			KurrentDbClientSettings settings, Action<KurrentDbClientSettings>? configureSettings) {
+			KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings) {
 			if (services == null) {
 				throw new ArgumentNullException(nameof(services));
 			}

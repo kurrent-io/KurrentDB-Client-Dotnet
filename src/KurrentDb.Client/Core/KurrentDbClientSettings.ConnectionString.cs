@@ -5,13 +5,13 @@ using System.Security.Cryptography.X509Certificates;
 using Timeout_ = System.Threading.Timeout;
 
 namespace KurrentDb.Client {
-	public partial class KurrentDbClientSettings {
+	public partial class KurrentDBClientSettings {
 		/// <summary>
 		/// Creates client settings from a connection string
 		/// </summary>
 		/// <param name="connectionString"></param>
 		/// <returns></returns>
-		public static KurrentDbClientSettings Create(string connectionString) =>
+		public static KurrentDBClientSettings Create(string connectionString) =>
 			ConnectionStringParser.Parse(connectionString);
 
 		/// <summary>
@@ -20,7 +20,7 @@ namespace KurrentDb.Client {
 		/// <param name="connectionString"></param>
 		/// <param name="configure">allows you to make additional customization of client settings</param>
 		/// <returns></returns>
-		public static KurrentDbClientSettings Create(string connectionString, Action<KurrentDbClientSettings> configure) {
+		public static KurrentDBClientSettings Create(string connectionString, Action<KurrentDBClientSettings> configure) {
 			var settings = ConnectionStringParser.Parse(connectionString);
 
 			configure(settings);
@@ -85,7 +85,7 @@ namespace KurrentDb.Client {
 					{ UserKeyFile, typeof(string) },
 				};
 
-			public static KurrentDbClientSettings Parse(string connectionString) {
+			public static KurrentDBClientSettings Parse(string connectionString) {
 				var currentIndex = 0;
 				var schemeIndex  = connectionString.IndexOf(SchemeSeparator, currentIndex, StringComparison.Ordinal);
 				if (schemeIndex == -1)
@@ -134,11 +134,11 @@ namespace KurrentDb.Client {
 				return CreateSettings(scheme, userInfo, hosts, options);
 			}
 
-			static KurrentDbClientSettings CreateSettings(
+			static KurrentDBClientSettings CreateSettings(
 				string scheme, (string user, string pass)? userInfo,
 				EndPoint[] hosts, Dictionary<string, string> options
 			) {
-				var settings = new KurrentDbClientSettings {
+				var settings = new KurrentDBClientSettings {
 					ConnectivitySettings = KurrentDbClientConnectivitySettings.Default,
 					OperationOptions     = KurrentDbClientOperationOptions.Default
 				};
@@ -320,7 +320,7 @@ namespace KurrentDb.Client {
 #endif
 			}
 
-			static void ConfigureClientCertificate(KurrentDbClientSettings settings, IReadOnlyDictionary<string, object> options) {
+			static void ConfigureClientCertificate(KurrentDBClientSettings settings, IReadOnlyDictionary<string, object> options) {
 				var certPemFilePath = GetOptionValueAsString(UserCertFile);
 				var keyPemFilePath  = GetOptionValueAsString(UserKeyFile);
 

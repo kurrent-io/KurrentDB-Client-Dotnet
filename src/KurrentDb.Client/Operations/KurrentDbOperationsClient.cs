@@ -22,12 +22,12 @@ public sealed partial class KurrentDbOperationsClient : KurrentDbClientBase {
 	/// Constructs a new <see cref="KurrentDbOperationsClient"/>. This method is not intended to be called directly in your code.
 	/// </summary>
 	/// <param name="options"></param>
-	public KurrentDbOperationsClient(IOptions<KurrentDbClientSettings> options) : this(options.Value) { }
+	public KurrentDbOperationsClient(IOptions<KurrentDBClientSettings> options) : this(options.Value) { }
 
 	/// <summary>
 	/// Constructs a new <see cref="KurrentDbOperationsClient"/>.
 	/// </summary>
 	/// <param name="settings"></param>
-	public KurrentDbOperationsClient(KurrentDbClientSettings? settings = null) : base(settings, ExceptionMap) =>
+	public KurrentDbOperationsClient(KurrentDBClientSettings? settings = null) : base(settings, ExceptionMap) =>
 		_log = Settings.LoggerFactory?.CreateLogger<KurrentDbOperationsClient>() ?? new NullLogger<KurrentDbOperationsClient>();
 }

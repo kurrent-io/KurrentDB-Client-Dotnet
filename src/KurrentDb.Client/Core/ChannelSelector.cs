@@ -8,7 +8,7 @@ namespace KurrentDb.Client {
 		private readonly IChannelSelector _inner;
 
 		public ChannelSelector(
-			KurrentDbClientSettings settings,
+			KurrentDBClientSettings settings,
 			ChannelCache channelCache) {
 			_inner = settings.ConnectivitySettings.IsSingleNode
 				? new SingleNodeChannelSelector(settings, channelCache)

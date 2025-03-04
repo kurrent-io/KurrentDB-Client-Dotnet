@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 
 namespace KurrentDb.Client {
 	internal class SingleNodeHttpHandler : DelegatingHandler {
-		private readonly KurrentDbClientSettings _settings;
+		private readonly KurrentDBClientSettings _settings;
 
-		public SingleNodeHttpHandler(KurrentDbClientSettings settings) {
+		public SingleNodeHttpHandler(KurrentDBClientSettings settings) {
 			_settings = settings;
 		}
 

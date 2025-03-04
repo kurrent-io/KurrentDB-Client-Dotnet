@@ -27,7 +27,7 @@ public class ConnectionStringTests {
 		return Enumerable.Range(0, 3).SelectMany(GetTestCases);
 
 		IEnumerable<object?[]> GetTestCases(int _) {
-			var settings = new KurrentDbClientSettings {
+			var settings = new KurrentDBClientSettings {
 				ConnectionName       = fixture.Create<string>(),
 				ConnectivitySettings = fixture.Create<KurrentDbClientConnectivitySettings>(),
 				OperationOptions     = fixture.Create<KurrentDbClientOperationOptions>()
@@ -48,7 +48,7 @@ public class ConnectionStringTests {
 				settings
 			};
 
-			var ipGossipSettings = new KurrentDbClientSettings {
+			var ipGossipSettings = new KurrentDBClientSettings {
 				ConnectionName       = fixture.Create<string>(),
 				ConnectivitySettings = fixture.Create<KurrentDbClientConnectivitySettings>(),
 				OperationOptions     = fixture.Create<KurrentDbClientOperationOptions>()
@@ -71,7 +71,7 @@ public class ConnectionStringTests {
 				ipGossipSettings
 			};
 
-			var singleNodeSettings = new KurrentDbClientSettings {
+			var singleNodeSettings = new KurrentDBClientSettings {
 				ConnectionName       = fixture.Create<string>(),
 				ConnectivitySettings = fixture.Create<KurrentDbClientConnectivitySettings>(),
 				OperationOptions     = fixture.Create<KurrentDbClientOperationOptions>()
@@ -99,16 +99,16 @@ public class ConnectionStringTests {
 
 	[Theory]
 	[MemberData(nameof(ValidCases))]
-	public void valid_connection_string(string connectionString, KurrentDbClientSettings expected) {
-		var result = KurrentDbClientSettings.Create(connectionString);
+	public void valid_connection_string(string connectionString, KurrentDBClientSettings expected) {
+		var result = KurrentDBClientSettings.Create(connectionString);
 
 		Assert.Equal(expected, result, KurrentDbClientSettingsEqualityComparer.Instance);
 	}
 
 	[Theory]
 	[MemberData(nameof(ValidCases))]
-	public void valid_connection_string_with_empty_path(string connectionString, KurrentDbClientSettings expected) {
-		var result = KurrentDbClientSettings.Create(connectionString.Replace("?", "/?"));
+	public void valid_connection_string_with_empty_path(string connectionString, KurrentDBClientSettings expected) {
+		var result = KurrentDBClientSettings.Create(connectionString.Replace("?", "/?"));
 
 		Assert.Equal(expected, result, KurrentDbClientSettingsEqualityComparer.Instance);
 	}
@@ -119,7 +119,7 @@ public class ConnectionStringTests {
 	[InlineData(true)]
 	public void tls_verify_cert(bool tlsVerifyCert) {
 		var       connectionString = $"esdb://localhost:2113/?tlsVerifyCert={tlsVerifyCert}";
-		var       result           = KurrentDbClientSettings.Create(connectionString);
+		var       result           = KurrentDBClientSettings.Create(connectionString);
 		using var handler          = result.CreateHttpMessageHandler?.Invoke();
 #if NET
 		var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
@@ -159,7 +159,7 @@ public class ConnectionStringTests {
 	[MemberData(nameof(InvalidTlsCertificates))]
 	public void connection_string_with_invalid_tls_certificate_should_throw(string clientCertificatePath) {
 		Assert.Throws<InvalidClientCertificateException>(
-			() => KurrentDbClientSettings.Create($"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&tlsCAFile={clientCertificatePath}")
+			() => KurrentDBClientSettings.Create($"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&tlsCAFile={clientCertificatePath}")
 		);
 	}
 
@@ -174,7 +174,7 @@ public class ConnectionStringTests {
 	[MemberData(nameof(InvalidClientCertificates))]
 	public void connection_string_with_invalid_client_certificate_should_throw(string userCertFile, string userKeyFile) {
 		Assert.Throws<InvalidClientCertificateException>(
-			() => KurrentDbClientSettings.Create(
+			() => KurrentDBClientSettings.Create(
 				$"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}"
 			)
 		);
@@ -182,7 +182,7 @@ public class ConnectionStringTests {
 
 	[RetryFact]
 	public void infinite_grpc_timeouts() {
-		var result = KurrentDbClientSettings.Create("esdb://localhost:2113?keepAliveInterval=-1&keepAliveTimeout=-1");
+		var result = KurrentDBClientSettings.Create("esdb://localhost:2113?keepAliveInterval=-1&keepAliveTimeout=-1");
 
 		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveInterval);
 		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveTimeout);
@@ -201,21 +201,21 @@ public class ConnectionStringTests {
 	}
 
 	[RetryFact]
-	public void connection_string_with_no_schema() => Assert.Throws<NoSchemeException>(() => KurrentDbClientSettings.Create(":so/mething/random"));
+	public void connection_string_with_no_schema() => Assert.Throws<NoSchemeException>(() => KurrentDBClientSettings.Create(":so/mething/random"));
 
 	[Theory]
 	[InlineData("esdbwrong://")]
 	[InlineData("wrong://")]
 	[InlineData("badesdb://")]
 	public void connection_string_with_invalid_scheme_should_throw(string connectionString) =>
-		Assert.Throws<InvalidSchemeException>(() => KurrentDbClientSettings.Create(connectionString));
+		Assert.Throws<InvalidSchemeException>(() => KurrentDBClientSettings.Create(connectionString));
 
 	[Theory]
 	[InlineData("esdb://userpass@127.0.0.1/")]
 	[InlineData("esdb://user:pa:ss@127.0.0.1/")]
 	[InlineData("esdb://us:er:pa:ss@127.0.0.1/")]
 	public void connection_string_with_invalid_userinfo_should_throw(string connectionString) =>
-		Assert.Throws<InvalidUserCredentialsException>(() => KurrentDbClientSettings.Create(connectionString));
+		Assert.Throws<InvalidUserCredentialsException>(() => KurrentDBClientSettings.Create(connectionString));
 
 	[Theory]
 	[InlineData("esdb://user:pass@127.0.0.1:abc")]
@@ -229,14 +229,14 @@ public class ConnectionStringTests {
 	[InlineData("esdb://user:pass@localhost:1234,,127.0.0.3:4321")]
 	[InlineData("esdb://user:pass@localhost:1234,,127.0.0.3:4321/")]
 	public void connection_string_with_invalid_host_should_throw(string connectionString) =>
-		Assert.Throws<InvalidHostException>(() => KurrentDbClientSettings.Create(connectionString));
+		Assert.Throws<InvalidHostException>(() => KurrentDBClientSettings.Create(connectionString));
 
 	[Theory]
 	[InlineData("esdb://user:pass@127.0.0.1/test")]
 	[InlineData("esdb://user:pass@127.0.0.1/maxDiscoverAttempts=10")]
 	[InlineData("esdb://user:pass@127.0.0.1/hello?maxDiscoverAttempts=10")]
 	public void connection_string_with_non_empty_path_should_throw(string connectionString) =>
-		Assert.Throws<ConnectionStringParseException>(() => KurrentDbClientSettings.Create(connectionString));
+		Assert.Throws<ConnectionStringParseException>(() => KurrentDBClientSettings.Create(connectionString));
 
 	[Theory]
 	[InlineData("esdb://user:pass@127.0.0.1")]
@@ -244,19 +244,19 @@ public class ConnectionStringTests {
 	[InlineData("esdb+discover://user:pass@127.0.0.1")]
 	[InlineData("esdb+discover://user:pass@127.0.0.1/")]
 	public void connection_string_with_no_key_value_pairs_specified_should_not_throw(string connectionString) =>
-		KurrentDbClientSettings.Create(connectionString);
+		KurrentDBClientSettings.Create(connectionString);
 
 	[Theory]
 	[InlineData("esdb://user:pass@127.0.0.1/?maxDiscoverAttempts=12=34")]
 	[InlineData("esdb://user:pass@127.0.0.1/?maxDiscoverAttempts1234")]
 	public void connection_string_with_invalid_key_value_pair_should_throw(string connectionString) =>
-		Assert.Throws<InvalidKeyValuePairException>(() => KurrentDbClientSettings.Create(connectionString));
+		Assert.Throws<InvalidKeyValuePairException>(() => KurrentDBClientSettings.Create(connectionString));
 
 	[Theory]
 	[InlineData("esdb://user:pass@127.0.0.1/?maxDiscoverAttempts=1234&MaxDiscoverAttempts=10")]
 	[InlineData("esdb://user:pass@127.0.0.1/?gossipTimeout=10&gossipTimeout=30")]
 	public void connection_string_with_duplicate_key_should_throw(string connectionString) =>
-		Assert.Throws<DuplicateKeyException>(() => KurrentDbClientSettings.Create(connectionString));
+		Assert.Throws<DuplicateKeyException>(() => KurrentDBClientSettings.Create(connectionString));
 
 	[Theory]
 	[InlineData("esdb://user:pass@127.0.0.1/?unknown=1234")]
@@ -269,11 +269,11 @@ public class ConnectionStringTests {
 	[InlineData("esdb://user:pass@127.0.0.1/?keepAliveInterval=-2")]
 	[InlineData("esdb://user:pass@127.0.0.1/?keepAliveTimeout=-2")]
 	public void connection_string_with_invalid_settings_should_throw(string connectionString) =>
-		Assert.Throws<InvalidSettingException>(() => KurrentDbClientSettings.Create(connectionString));
+		Assert.Throws<InvalidSettingException>(() => KurrentDBClientSettings.Create(connectionString));
 
 	[RetryFact]
 	public void with_default_settings() {
-		var settings = KurrentDbClientSettings.Create("esdb://hostname:4321/");
+		var settings = KurrentDBClientSettings.Create("esdb://hostname:4321/");
 
 		Assert.Null(settings.ConnectionName);
 		Assert.Equal(
@@ -334,7 +334,7 @@ public class ConnectionStringTests {
 	[InlineData("esdb://localhost1,localhost2,localhost3/?tls=false", false)]
 	[InlineData("esdb://localhost1,localhost2,localhost3/?tls=true", true)]
 	public void use_tls(string connectionString, bool expectedUseTls) {
-		var result         = KurrentDbClientSettings.Create(connectionString);
+		var result         = KurrentDBClientSettings.Create(connectionString);
 		var expectedScheme = expectedUseTls ? "https" : "http";
 		Assert.NotEqual(expectedUseTls, result.ConnectivitySettings.Insecure);
 		Assert.Equal(expectedScheme, result.ConnectivitySettings.ResolvedAddressOrDefault.Scheme);
@@ -360,7 +360,7 @@ public class ConnectionStringTests {
 	[InlineData("esdb://localhost1,localhost2,localhost3/?tls=false", true, false)]
 	[InlineData("esdb://localhost1,localhost2,localhost3/?tls=false", false, false)]
 	public void allow_tls_override_for_single_node(string connectionString, bool? insecureOverride, bool expectedUseTls) {
-		var result   = KurrentDbClientSettings.Create(connectionString);
+		var result   = KurrentDBClientSettings.Create(connectionString);
 		var settings = result.ConnectivitySettings;
 
 		if (insecureOverride.HasValue)
@@ -379,7 +379,7 @@ public class ConnectionStringTests {
 	[InlineData("esdb+discover://localhost:1234", null, null)]
 	[InlineData("esdb+discover://localhost:1234,localhost:4567", null, null)]
 	public void connection_string_with_custom_ports(string connectionString, string? expectedHost, int? expectedPort) {
-		var result               = KurrentDbClientSettings.Create(connectionString);
+		var result               = KurrentDBClientSettings.Create(connectionString);
 		var connectivitySettings = result.ConnectivitySettings;
 
 		Assert.Equal(expectedHost, connectivitySettings.Address?.Host);
@@ -387,17 +387,17 @@ public class ConnectionStringTests {
 	}
 
 	static string GetConnectionString(
-		KurrentDbClientSettings settings,
+		KurrentDBClientSettings settings,
 		Func<string, string>? getKey = default
 	) =>
 		$"{GetScheme(settings)}{GetAuthority(settings)}?{GetKeyValuePairs(settings, getKey)}";
 
-	static string GetScheme(KurrentDbClientSettings settings) =>
+	static string GetScheme(KurrentDBClientSettings settings) =>
 		settings.ConnectivitySettings.IsSingleNode
 			? "esdb://"
 			: "esdb+discover://";
 
-	static string GetAuthority(KurrentDbClientSettings settings) =>
+	static string GetAuthority(KurrentDBClientSettings settings) =>
 		settings.ConnectivitySettings.IsSingleNode
 			? $"{settings.ConnectivitySettings.ResolvedAddressOrDefault.Host}:{settings.ConnectivitySettings.ResolvedAddressOrDefault.Port}"
 			: string.Join(
@@ -406,7 +406,7 @@ public class ConnectionStringTests {
 			);
 
 	static string GetKeyValuePairs(
-		KurrentDbClientSettings settings,
+		KurrentDBClientSettings settings,
 		Func<string, string>? getKey = default
 	) {
 		var pairs = new Dictionary<string, string?> {
@@ -444,10 +444,10 @@ public class ConnectionStringTests {
 		return string.Join("&", pairs.Select(pair => $"{getKey?.Invoke(pair.Key) ?? pair.Key}={pair.Value}"));
 	}
 
-	class KurrentDbClientSettingsEqualityComparer : IEqualityComparer<KurrentDbClientSettings> {
+	class KurrentDbClientSettingsEqualityComparer : IEqualityComparer<KurrentDBClientSettings> {
 		public static readonly KurrentDbClientSettingsEqualityComparer Instance = new();
 
-		public bool Equals(KurrentDbClientSettings? x, KurrentDbClientSettings? y) {
+		public bool Equals(KurrentDBClientSettings? x, KurrentDBClientSettings? y) {
 			if (ReferenceEquals(x, y))
 				return true;
 
@@ -472,7 +472,7 @@ public class ConnectionStringTests {
 			       Equals(x.DefaultCredentials?.ToString(), y.DefaultCredentials?.ToString());
 		}
 
-		public int GetHashCode(KurrentDbClientSettings obj) =>
+		public int GetHashCode(KurrentDBClientSettings obj) =>
 			HashCode.Hash
 				.Combine(obj.ConnectionName)
 				.Combine(KurrentDbClientConnectivitySettingsEqualityComparer.Instance.GetHashCode(obj.ConnectivitySettings))

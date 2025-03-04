@@ -31,7 +31,7 @@ static class ActivitySourceExtensions {
 		string? subscriptionId,
 		ResolvedEvent resolvedEvent,
 		ChannelInfo channelInfo,
-		KurrentDbClientSettings settings,
+		KurrentDBClientSettings settings,
 		UserCredentials? userCredentials
 	) {
 		if (source.HasNoActiveListeners() || resolvedEvent.Event is null)

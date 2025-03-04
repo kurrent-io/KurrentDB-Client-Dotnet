@@ -12,7 +12,7 @@ namespace KurrentDb.Client {
 		private readonly DnsEndPoint _endPoint;
 
 		public SingleNodeChannelSelector(
-			KurrentDbClientSettings settings,
+			KurrentDBClientSettings settings,
 			ChannelCache channelCache) {
 
 			_log = settings.LoggerFactory?.CreateLogger<SingleNodeChannelSelector>() ??

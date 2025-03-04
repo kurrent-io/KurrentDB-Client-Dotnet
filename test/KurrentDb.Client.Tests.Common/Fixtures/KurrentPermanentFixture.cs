@@ -59,7 +59,7 @@ public partial class KurrentPermanentFixture : IAsyncLifetime, IAsyncDisposable 
 	/// <summary>
 	/// must test this
 	/// </summary>
-	public KurrentDbClientSettings DbClientSettings =>
+	public KurrentDBClientSettings DbClientSettings =>
 		new() {
 			Interceptors             = Options.DbClientSettings.Interceptors,
 			ConnectionName           = Options.DbClientSettings.ConnectionName,

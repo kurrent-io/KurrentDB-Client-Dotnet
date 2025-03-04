@@ -28,7 +28,7 @@ public class NodeSelectorTests {
 			var notAllowedNodeId = Uuid.NewUuid();
 			var notAllowedNode   = new DnsEndPoint(notAllowedNodeId.ToString(), 2114);
 
-			var settings = new KurrentDbClientSettings {
+			var settings = new KurrentDBClientSettings {
 				ConnectivitySettings = {
 					DnsGossipSeeds = new[] { allowedNode, notAllowedNode },
 					Insecure       = true
@@ -52,7 +52,7 @@ public class NodeSelectorTests {
 	[MemberData(nameof(InvalidStatesCases))]
 	internal void InvalidStatesAreNotConsidered(
 		ClusterMessages.ClusterInfo clusterInfo,
-		KurrentDbClientSettings settings,
+		KurrentDBClientSettings settings,
 		DnsEndPoint allowedNode
 	) {
 		var sut          = new NodeSelector(settings);
@@ -70,7 +70,7 @@ public class NodeSelectorTests {
 		var notAllowedNodeId = Uuid.NewUuid();
 		var notAllowedNode   = new DnsEndPoint(notAllowedNodeId.ToString(), 2114);
 
-		var settings = new KurrentDbClientSettings {
+		var settings = new KurrentDBClientSettings {
 			ConnectivitySettings = {
 				DnsGossipSeeds = new[] { allowedNode, notAllowedNode },
 				Insecure       = true
@@ -98,7 +98,7 @@ public class NodeSelectorTests {
 	[InlineData(NodePreference.ReadOnlyReplica, "readOnlyReplica")]
 	[InlineData(NodePreference.Random, "any")]
 	public void CanPrefer(NodePreference nodePreference, string expectedHost) {
-		var settings = new KurrentDbClientSettings {
+		var settings = new KurrentDBClientSettings {
 			ConnectivitySettings = {
 				NodePreference = nodePreference
 			}

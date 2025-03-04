@@ -341,7 +341,7 @@ namespace KurrentDb.Client {
 			private readonly Channel<StreamMessage>              _channel;
 			private readonly CancellationTokenSource             _cts;
 			private readonly CallOptions                         _callOptions;
-			private readonly KurrentDbClientSettings               _settings;
+			private readonly KurrentDBClientSettings               _settings;
 			private          AsyncServerStreamingCall<ReadResp>? _call;
 
 			private int _messagesEnumerated;
@@ -383,7 +383,7 @@ namespace KurrentDb.Client {
 			internal StreamSubscriptionResult(
 				Func<CancellationToken, Task<ChannelInfo>> selectChannelInfo,
 				ReadReq request,
-				KurrentDbClientSettings settings,
+				KurrentDBClientSettings settings,
 				UserCredentials? userCredentials,
 				IMessageSerializer messageSerializer,
 				CancellationToken cancellationToken
