@@ -3,6 +3,6 @@
         <OutputType>Exe</OutputType>
     </PropertyGroup>
     <ItemGroup>
-      <ProjectReference Include="..\..\src\KurrentDb.Client\KurrentDb.Client.csproj" />
+      <ProjectReference Include="..\..\src\KurrentDB.Client\KurrentDB.Client.csproj" />
     </ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
 ﻿using Grpc.Core;
-using KurrentDb.Client;
+using KurrentDB.Client;
 
 // take the address from environment variable (when run with Docker) or use localhost by default 
 var connectionString = Environment.GetEnvironmentVariable("ESDB__CONNECTION__STRING") 

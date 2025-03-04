@@ -1,4 +1,4 @@
-﻿using KurrentDb.Client;
+﻿using KurrentDB.Client;
 using Microsoft.AspNetCore.Mvc;
 
 namespace setting_up_dependency_injection.Controllers {
@@ -8,8 +8,8 @@ namespace setting_up_dependency_injection.Controllers {
 		#region using-dependency
 		private readonly KurrentDBClient _KurrentClient;
 
-		public EventStoreController(KurrentDBClient KurrentDbClient) {
-			_KurrentClient = KurrentDbClient;
+		public EventStoreController(KurrentDBClient KurrentDBClient) {
+			_KurrentClient = KurrentDBClient;
 		}
 
 		[HttpGet]

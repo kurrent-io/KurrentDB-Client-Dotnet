@@ -31,7 +31,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "diagnostics", "diagnostics\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "user-certificates", "user-certificates\user-certificates.csproj", "{28112410-D02D-427A-9D36-3FE3A6DC6B0D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDb.Client", "..\src\KurrentDb.Client\KurrentDb.Client.csproj", "{16F61817-6E46-4F52-879F-E4B92A6A90C6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Client", "..\src\KurrentDB.Client\KurrentDB.Client.csproj", "{16F61817-6E46-4F52-879F-E4B92A6A90C6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

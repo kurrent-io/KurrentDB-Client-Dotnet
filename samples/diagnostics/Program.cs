@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using EventStore.Client;
 using EventStore.Client.Extensions.OpenTelemetry;
-using KurrentDb.Client;
+using KurrentDB.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry.Exporter;
@@ -78,7 +78,7 @@ static async Task TraceAppendToStream(KurrentDBClient client) {
 		#region register-instrumentation
 
 		tracerProviderBuilder
-			.AddKurrentDbClientInstrumentation();
+			.AddKurrentDBClientInstrumentation();
 
 		#endregion register-instrumentation
 

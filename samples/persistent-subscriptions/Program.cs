@@ -1,4 +1,4 @@
-﻿using KurrentDb.Client;
+﻿using KurrentDB.Client;
 
 await using var client = new KurrentDBPersistentSubscriptionsClient(
 	KurrentDBClientSettings.Create("esdb://localhost:2113?tls=false&tlsVerifyCert=false")

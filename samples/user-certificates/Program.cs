@@ -1,4 +1,4 @@
-﻿using KurrentDb.Client;
+﻿using KurrentDB.Client;
 
 await ClientWithUserCertificates();
 

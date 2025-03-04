@@ -1,7 +1,7 @@
 ﻿#pragma warning disable CS8321 // Local function is declared but never used
 
-using KurrentDb.Client;
-using EventTypeFilter = KurrentDb.Client.EventTypeFilter;
+using KurrentDB.Client;
+using EventTypeFilter = KurrentDB.Client.EventTypeFilter;
 
 const int eventCount = 100;
 

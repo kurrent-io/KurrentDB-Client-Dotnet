@@ -2,7 +2,7 @@
 
 using System.Text.Json;
 using Grpc.Core;
-using KurrentDb.Client;
+using KurrentDB.Client;
 
 //// This sample demonstrate the projection management features.
 //// It will create data in the target database.

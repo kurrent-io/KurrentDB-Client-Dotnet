@@ -1,5 +1,5 @@
 ﻿using System.Text.Json;
-using KurrentDb.Client;
+using KurrentDB.Client;
 
 var tokenSource       = new CancellationTokenSource();
 var cancellationToken = tokenSource.Token;

@@ -1,6 +1,6 @@
 ﻿using connecting_to_a_single_node;
 using EventStore.Client;
-using KurrentDb.Client;
+using KurrentDB.Client;
 
 #pragma warning disable CS8321 // Local function is declared but never used
 

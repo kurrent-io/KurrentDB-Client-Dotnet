@@ -31,8 +31,8 @@ jobs:
         shell: bash
         run: |
           dotnet nuget list source
-          dotnet restore ./src/KurrentDb.Client/KurrentDb.Client.csproj
-          dotnet restore ./test/KurrentDb.Client.Tests/KurrentDb.Client.Tests.csproj
+          dotnet restore ./src/KurrentDB.Client/KurrentDB.Client.csproj
+          dotnet restore ./test/KurrentDB.Client.Tests/KurrentDB.Client.Tests.csproj
           dotnet list package --vulnerable --include-transitive --framework ${{ matrix.framework }} | tee vulnerabilities.txt
           ! cat vulnerabilities.txt | grep -q "has the following vulnerable packages"
 
@@ -132,7 +132,7 @@ jobs:
       - name: Compile
         shell: bash
         run: |
-          dotnet build --configuration ${{ matrix.configuration }} --framework ${{ matrix.framework }} src/KurrentDb.Client
+          dotnet build --configuration ${{ matrix.configuration }} --framework ${{ matrix.framework }} src/KurrentDB.Client
       - name: Download certificates
         uses: actions/download-artifact@v4
         with:
@@ -149,7 +149,7 @@ jobs:
             --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
             --framework ${{ matrix.framework }} \
             --filter "Category=Target:${{ matrix.test }}" \
-            test/KurrentDb.Client.Tests
+            test/KurrentDB.Client.Tests
       - name: Run Tests (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -161,7 +161,7 @@ jobs:
             --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" `
             --framework ${{ matrix.framework }} `
             --filter "Category=Target:${{ matrix.test }}" `
-            test/KurrentDb.Client.Tests
+            test/KurrentDB.Client.Tests
 
   publish:
     timeout-minutes: 5

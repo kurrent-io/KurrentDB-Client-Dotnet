@@ -10,7 +10,7 @@ public class Startup {
 
 		#region setting-up-dependency
 
-		services.AddKurrentDbClient("esdb://admin:changeit@localhost:2113?tls=false");
+		services.AddKurrentDBClient("esdb://admin:changeit@localhost:2113?tls=false");
 
 		#endregion setting-up-dependency
 	}
