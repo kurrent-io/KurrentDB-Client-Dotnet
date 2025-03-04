@@ -8,11 +8,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Extensions.DependencyInjection {
 	/// <summary>
-	/// A set of extension methods for <see cref="IServiceCollection"/> which provide support for an <see cref="KurrentDbDbClient"/>.
+	/// A set of extension methods for <see cref="IServiceCollection"/> which provide support for an <see cref="KurrentDbClient"/>.
 	/// </summary>
 	public static class KurrentDbClientServiceCollectionExtensions {
 		/// <summary>
-		/// Adds an <see cref="KurrentDbDbClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDbClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
 		/// <param name="address"></param>
@@ -27,7 +27,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 			});
 
 		/// <summary>
-		/// Adds an <see cref="KurrentDbDbClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDbClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
 		/// <param name="addressFactory"></param>
@@ -43,7 +43,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 			});
 
 		/// <summary>
-		/// Adds an <see cref="KurrentDbDbClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDbClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
 		/// <param name="configureSettings"></param>
@@ -54,7 +54,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 			services.AddKurrentDbClient(new KurrentDbClientSettings(), configureSettings);
 
 		/// <summary>
-		/// Adds an <see cref="KurrentDbDbClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDbClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
 		/// <param name="configureSettings"></param>
@@ -66,7 +66,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 				configureSettings);
 
 		/// <summary>
-		/// Adds an <see cref="KurrentDbDbClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDbClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
 		/// <param name="connectionString"></param>
@@ -83,7 +83,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 		}
 
 		/// <summary>
-		/// Adds an <see cref="KurrentDbDbClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDbClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
 		/// <param name="connectionStringFactory"></param>
@@ -109,7 +109,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 				settings.LoggerFactory ??= provider.GetService<ILoggerFactory>();
 				settings.Interceptors ??= provider.GetServices<Interceptor>();
 
-				return new KurrentDbDbClient(settings);
+				return new KurrentDbClient(settings);
 			});
 
 			return services;
@@ -126,7 +126,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 				settings.LoggerFactory ??= provider.GetService<ILoggerFactory>();
 				settings.Interceptors ??= provider.GetServices<Interceptor>();
 
-				return new KurrentDbDbClient(settings);
+				return new KurrentDbClient(settings);
 			});
 
 			return services;
@@ -142,7 +142,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 				settings.LoggerFactory ??= provider.GetService<ILoggerFactory>();
 				settings.Interceptors ??= provider.GetServices<Interceptor>();
 
-				return new KurrentDbDbClient(settings);
+				return new KurrentDbClient(settings);
 			});
 
 			return services;

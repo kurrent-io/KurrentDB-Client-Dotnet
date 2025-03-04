@@ -107,7 +107,7 @@ namespace KurrentDb.Client {
 			};
 	}
 
-	public partial class KurrentDbDbClient {
+	public partial class KurrentDbClient {
 		/// <summary>
 		/// Subscribes to all events.
 		/// </summary>
@@ -525,30 +525,30 @@ namespace KurrentDb.Client {
 		/// <summary>
 		/// Subscribes to all events.
 		/// </summary>
-		/// <param name="kurrentDbDbClient"></param>
+		/// <param name="kurrentDbClient"></param>
 		/// <param name="listener">Listener configured to receive notifications about new events and subscription state change.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<StreamSubscription> SubscribeToAllAsync(
-			this KurrentDbDbClient kurrentDbDbClient,
+			this KurrentDbClient kurrentDbClient,
 			SubscriptionListener listener,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentDbDbClient.SubscribeToAllAsync(listener, new SubscribeToAllOptions(), cancellationToken);
+			kurrentDbClient.SubscribeToAllAsync(listener, new SubscribeToAllOptions(), cancellationToken);
 
 		/// <summary>
 		/// Subscribes to all events.
 		/// </summary>
-		/// <param name="kurrentDbDbClient"></param>
+		/// <param name="kurrentDbClient"></param>
 		/// <param name="eventAppeared"></param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<StreamSubscription> SubscribeToAllAsync(
-			this KurrentDbDbClient kurrentDbDbClient,
+			this KurrentDbClient kurrentDbClient,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentDbDbClient.SubscribeToAllAsync(
+			kurrentDbClient.SubscribeToAllAsync(
 				eventAppeared,
 				new SubscribeToAllOptions(),
 				cancellationToken
@@ -557,18 +557,18 @@ namespace KurrentDb.Client {
 		/// <summary>
 		/// Subscribes to all events.
 		/// </summary>
-		/// <param name="kurrentDbDbClient"></param>
+		/// <param name="kurrentDbClient"></param>
 		/// <param name="eventAppeared">Handler invoked when a new event is received over the subscription.</param>
 		/// <param name="options">Optional settings like: Position <see cref="FromAll"/> from which to read, <see cref="SubscriptionFilterOptions"/> to apply, etc.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<StreamSubscription> SubscribeToAllAsync(
-			this KurrentDbDbClient kurrentDbDbClient,
+			this KurrentDbClient kurrentDbClient,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			SubscribeToAllOptions options,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentDbDbClient.SubscribeToAllAsync(
+			kurrentDbClient.SubscribeToAllAsync(
 				SubscriptionListener.Handle(eventAppeared),
 				options,
 				cancellationToken
@@ -577,32 +577,32 @@ namespace KurrentDb.Client {
 		/// <summary>
 		/// Subscribes to all events.
 		/// </summary>
-		/// <param name="kurrentDbDbClient"></param>
+		/// <param name="kurrentDbClient"></param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static KurrentDbDbClient.StreamSubscriptionResult SubscribeToAll(
-			this KurrentDbDbClient kurrentDbDbClient,
+		public static KurrentDbClient.StreamSubscriptionResult SubscribeToAll(
+			this KurrentDbClient kurrentDbClient,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentDbDbClient.SubscribeToAll(new SubscribeToAllOptions(), cancellationToken);
+			kurrentDbClient.SubscribeToAll(new SubscribeToAllOptions(), cancellationToken);
 	}
 
 	public static class KurrentDbClientSubscribeToStreamExtensions {
 		/// <summary>
 		/// Subscribes to messages from a specific stream
 		/// </summary>
-		/// <param name="kurrentDbDbClient"></param>
+		/// <param name="kurrentDbClient"></param>
 		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
 		/// <param name="listener">Listener configured to receive notifications about new events and subscription state change.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<StreamSubscription> SubscribeToStreamAsync(
-			this KurrentDbDbClient kurrentDbDbClient,
+			this KurrentDbClient kurrentDbClient,
 			string streamName,
 			SubscriptionListener listener,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentDbDbClient.SubscribeToStreamAsync(
+			kurrentDbClient.SubscribeToStreamAsync(
 				streamName,
 				listener,
 				new SubscribeToStreamOptions(),
@@ -612,18 +612,18 @@ namespace KurrentDb.Client {
 		/// <summary>
 		/// Subscribes to messages from a specific stream
 		/// </summary>
-		/// <param name="kurrentDbDbClient"></param>
+		/// <param name="kurrentDbClient"></param>
 		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
 		/// <param name="eventAppeared"></param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<StreamSubscription> SubscribeToStreamAsync(
-			this KurrentDbDbClient kurrentDbDbClient,
+			this KurrentDbClient kurrentDbClient,
 			string streamName,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentDbDbClient.SubscribeToStreamAsync(
+			kurrentDbClient.SubscribeToStreamAsync(
 				streamName,
 				eventAppeared,
 				new SubscribeToStreamOptions(),
@@ -633,20 +633,20 @@ namespace KurrentDb.Client {
 		/// <summary>
 		/// Subscribes to messages from a specific stream
 		/// </summary>
-		/// <param name="kurrentDbDbClient"></param>
+		/// <param name="kurrentDbClient"></param>
 		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
 		/// <param name="eventAppeared">Handler invoked when a new event is received over the subscription.</param>
 		/// <param name="options">Optional settings like: Position <see cref="FromAll"/> from which to read, <see cref="SubscriptionFilterOptions"/> to apply, etc.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<StreamSubscription> SubscribeToStreamAsync(
-			this KurrentDbDbClient kurrentDbDbClient,
+			this KurrentDbClient kurrentDbClient,
 			string streamName,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			SubscribeToStreamOptions options,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentDbDbClient.SubscribeToStreamAsync(
+			kurrentDbClient.SubscribeToStreamAsync(
 				streamName,
 				SubscriptionListener.Handle(eventAppeared),
 				options,
@@ -656,15 +656,15 @@ namespace KurrentDb.Client {
 		/// <summary>
 		/// Subscribes to messages from a specific stream
 		/// </summary>
-		/// <param name="kurrentDbDbClient"></param>
+		/// <param name="kurrentDbClient"></param>
 		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static KurrentDbDbClient.StreamSubscriptionResult SubscribeToStream(
-			this KurrentDbDbClient kurrentDbDbClient,
+		public static KurrentDbClient.StreamSubscriptionResult SubscribeToStream(
+			this KurrentDbClient kurrentDbClient,
 			string streamName,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentDbDbClient.SubscribeToStream(streamName, new SubscribeToStreamOptions(), cancellationToken);
+			kurrentDbClient.SubscribeToStream(streamName, new SubscribeToStreamOptions(), cancellationToken);
 	}
 }

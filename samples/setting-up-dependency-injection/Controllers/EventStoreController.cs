@@ -5,10 +5,10 @@ namespace setting_up_dependency_injection.Controllers {
 	[Route("[controller]")]
 	public class EventStoreController : ControllerBase {
 		#region using-dependency
-		private readonly KurrentClient _KurrentClient;
+		private readonly KurrentDbClient _KurrentClient;
 
-		public EventStoreController(KurrentClient KurrentClient) {
-			_KurrentClient = KurrentClient;
+		public EventStoreController(KurrentDbClient KurrentDbClient) {
+			_KurrentClient = KurrentDbClient;
 		}
 
 		[HttpGet]

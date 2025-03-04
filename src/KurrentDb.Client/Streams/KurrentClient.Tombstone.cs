@@ -2,7 +2,7 @@ using EventStore.Client.Streams;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDb.Client {
-	public partial class KurrentDbDbClient {
+	public partial class KurrentDbClient {
 		/// <summary>
 		/// Tombstones a stream asynchronously. Note: Tombstoned streams can never be recreated.
 		/// </summary>

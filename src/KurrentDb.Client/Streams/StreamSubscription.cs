@@ -6,7 +6,7 @@ namespace KurrentDb.Client {
 	/// A class representing a <see cref="StreamSubscription"/>.
 	/// </summary>
 	public class StreamSubscription : IDisposable {
-		private readonly KurrentDbDbClient.StreamSubscriptionResult                          _subscription;
+		private readonly KurrentDbClient.StreamSubscriptionResult                          _subscription;
 		private readonly IAsyncEnumerator<StreamMessage>                                    _messages;
 		private readonly Func<StreamSubscription, ResolvedEvent, CancellationToken, Task>   _eventAppeared;
 		private readonly Func<StreamSubscription, Position, CancellationToken, Task>        _checkpointReached;
@@ -21,7 +21,7 @@ namespace KurrentDb.Client {
 		public string SubscriptionId { get; }
 
 		internal static async Task<StreamSubscription> Confirm(
-			KurrentDbDbClient.StreamSubscriptionResult subscription,
+			KurrentDbClient.StreamSubscriptionResult subscription,
 			SubscriptionListener subscriptionListener,
 			ILogger log,
 			CancellationToken cancellationToken = default
@@ -45,7 +45,7 @@ namespace KurrentDb.Client {
 		}
 
 		private StreamSubscription(
-			KurrentDbDbClient.StreamSubscriptionResult subscription,
+			KurrentDbClient.StreamSubscriptionResult subscription,
 			IAsyncEnumerator<StreamMessage> messages, 
 			string subscriptionId,
 			SubscriptionListener subscriptionListener,

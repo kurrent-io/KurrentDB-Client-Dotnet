@@ -24,17 +24,17 @@ dotnet add package OpenTelemetry.Extensions.Hosting
 # endregion import-required-packages
 **/
 
-var settings = KurrentClientSettings.Create("esdb://localhost:2113?tls=false");
+var settings = KurrentDbClientSettings.Create("esdb://localhost:2113?tls=false");
 
 settings.OperationOptions.ThrowOnAppendFailure = false;
 
-await using var client = new KurrentClient(settings);
+await using var client = new KurrentDbClient(settings);
 
 await TraceAppendToStream(client);
 
 return;
 
-static async Task TraceAppendToStream(KurrentClient client) {
+static async Task TraceAppendToStream(KurrentDbClient client) {
 	const string serviceName = "sample";
 
 	var host = Host.CreateDefaultBuilder()
@@ -77,7 +77,7 @@ static async Task TraceAppendToStream(KurrentClient client) {
 		#region register-instrumentation
 
 		tracerProviderBuilder
-			.AddKurrentClientInstrumentation();
+			.AddKurrentDbClientInstrumentation();
 
 		#endregion register-instrumentation
 

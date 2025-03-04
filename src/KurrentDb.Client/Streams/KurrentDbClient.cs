@@ -12,7 +12,7 @@ namespace KurrentDb.Client {
 	/// <summary>
 	/// The client used for operations on streams.
 	/// </summary>
-	public sealed partial class KurrentDbDbClient : KurrentDbClientBase {
+	public sealed partial class KurrentDbClient : KurrentDbClientBase {
 		static readonly JsonSerializerOptions StreamMetadataJsonSerializerOptions = new() {
 			Converters = {
 				StreamMetadataJsonConverter.Instance
@@ -25,7 +25,7 @@ namespace KurrentDb.Client {
 			AllowSynchronousContinuations = true
 		};
 
-		readonly ILogger<KurrentDbDbClient>  _log;
+		readonly ILogger<KurrentDbClient>  _log;
 		Lazy<StreamAppender>             _batchAppenderLazy;
 		StreamAppender                   BatchAppender => _batchAppenderLazy.Value;
 		readonly CancellationTokenSource _disposedTokenSource;
@@ -59,17 +59,17 @@ namespace KurrentDb.Client {
 		};
 
 		/// <summary>
-		/// Constructs a new <see cref="KurrentDbDbClient"/>. This is not intended to be called directly from your code.
+		/// Constructs a new <see cref="KurrentDbClient"/>. This is not intended to be called directly from your code.
 		/// </summary>
 		/// <param name="options"></param>
-		public KurrentDbDbClient(IOptions<KurrentDbClientSettings> options) : this(options.Value) { }
+		public KurrentDbClient(IOptions<KurrentDbClientSettings> options) : this(options.Value) { }
 
 		/// <summary>
-		/// Constructs a new <see cref="KurrentDbDbClient"/>.
+		/// Constructs a new <see cref="KurrentDbClient"/>.
 		/// </summary>
 		/// <param name="settings"></param>
-		public KurrentDbDbClient(KurrentDbClientSettings? settings = null) : base(settings, ExceptionMap) {
-			_log = Settings.LoggerFactory?.CreateLogger<KurrentDbDbClient>() ?? new NullLogger<KurrentDbDbClient>();
+		public KurrentDbClient(KurrentDbClientSettings? settings = null) : base(settings, ExceptionMap) {
+			_log = Settings.LoggerFactory?.CreateLogger<KurrentDbClient>() ?? new NullLogger<KurrentDbClient>();
 			_disposedTokenSource = new CancellationTokenSource();
 			_batchAppenderLazy = new Lazy<StreamAppender>(CreateStreamAppender);
 			

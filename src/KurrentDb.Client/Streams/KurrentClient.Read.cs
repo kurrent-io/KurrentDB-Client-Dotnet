@@ -6,7 +6,7 @@ using static EventStore.Client.Streams.ReadResp;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
 
 namespace KurrentDb.Client {
-	public partial class KurrentDbDbClient {
+	public partial class KurrentDbClient {
 		/// <summary>
 		/// Asynchronously reads all events. By default, it reads all of them from the start. The options parameter allows you to fine-tune it to your needs.
 		/// </summary>
@@ -639,31 +639,31 @@ namespace KurrentDb.Client {
 		/// <summary>
 		/// Asynchronously reads all events. By default, it reads all of them from the start. The options parameter allows you to fine-tune it to your needs.
 		/// </summary>
-		/// <param name="dbDbClient"></param>
+		/// <param name="dbClient"></param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static KurrentDbDbClient.ReadAllStreamResult ReadAllAsync(
-			this KurrentDbDbClient dbDbClient,
+		public static KurrentDbClient.ReadAllStreamResult ReadAllAsync(
+			this KurrentDbClient dbClient,
 			CancellationToken cancellationToken = default
 		) =>
-			dbDbClient.ReadAllAsync(new ReadAllOptions(), cancellationToken);
+			dbClient.ReadAllAsync(new ReadAllOptions(), cancellationToken);
 
 		/// <summary>
 		/// Asynchronously reads all the events from a stream.
 		/// 
 		/// The result could also be inspected as a means to avoid handling exceptions as the <see cref="ReadState"/> would indicate whether or not the stream is readable./>
 		/// </summary>
-		/// <param name="dbDbClient"></param>
+		/// <param name="dbClient"></param>
 		/// <param name="streamName">The name of the stream to read.</param>
 		/// <param name="options">Optional settings like: max count, <see cref="Direction"/> in which to read, the <see cref="Position"/> to start reading from, etc.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static KurrentDbDbClient.ReadStreamResult ReadStreamAsync(
-			this KurrentDbDbClient dbDbClient,
+		public static KurrentDbClient.ReadStreamResult ReadStreamAsync(
+			this KurrentDbClient dbClient,
 			string streamName,
 			CancellationToken cancellationToken = default
 		) =>
-			dbDbClient.ReadStreamAsync(
+			dbClient.ReadStreamAsync(
 				streamName,
 				new ReadStreamOptions(),
 				cancellationToken

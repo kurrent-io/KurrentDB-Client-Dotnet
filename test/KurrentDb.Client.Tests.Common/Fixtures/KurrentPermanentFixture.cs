@@ -45,7 +45,7 @@ public partial class KurrentPermanentFixture : IAsyncLifetime, IAsyncDisposable 
 	public Version EventStoreVersion               { get; private set; } = null!;
 	public bool    EventStoreHasLastStreamPosition { get; private set; }
 
-	public KurrentDbDbClient                      Streams       { get; private set; } = null!;
+	public KurrentDbClient                      Streams       { get; private set; } = null!;
 	public KurrentDbUserManagementClient          DbUsers       { get; private set; } = null!;
 	public KurrentDbProjectionManagementClient    DbProjections { get; private set; } = null!;
 	public KurrentDbPersistentSubscriptionsClient Subscriptions { get; private set; } = null!;
@@ -96,7 +96,7 @@ public partial class KurrentPermanentFixture : IAsyncLifetime, IAsyncDisposable 
 
 				await Task.WhenAll(
 					InitClient<KurrentDbUserManagementClient>(async x => DbUsers = await Task.FromResult(x)),
-					InitClient<KurrentDbDbClient>(async x => Streams = await Task.FromResult(x)),
+					InitClient<KurrentDbClient>(async x => Streams = await Task.FromResult(x)),
 					InitClient<KurrentDbProjectionManagementClient>(
 						async x => DbProjections = await Task.FromResult(x),
 						Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None"

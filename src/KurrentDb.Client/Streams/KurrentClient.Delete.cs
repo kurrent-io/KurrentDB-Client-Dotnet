@@ -2,7 +2,7 @@ using EventStore.Client.Streams;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDb.Client {
-	public partial class KurrentDbDbClient {
+	public partial class KurrentDbClient {
 		/// <summary>
 		/// Deletes a stream asynchronously.
 		/// </summary>

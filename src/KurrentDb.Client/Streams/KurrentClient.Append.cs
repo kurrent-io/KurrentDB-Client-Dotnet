@@ -14,7 +14,7 @@ using static EventStore.Client.Streams.AppendResp.Types.WrongExpectedVersion;
 using static EventStore.Client.Streams.Streams;
 
 namespace KurrentDb.Client {
-	public partial class KurrentDbDbClient {
+	public partial class KurrentDbClient {
 		/// <summary>
 		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDb.Client.KurrentDbClientSettings"/>
 		/// </summary>
@@ -495,18 +495,18 @@ namespace KurrentDb.Client {
 		/// <summary>
 		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDb.Client.KurrentDbClientSettings"/>
 		/// </summary>
-		/// <param name="dbDbClient"></param>
+		/// <param name="dbClient"></param>
 		/// <param name="streamName">The name of the stream to append events to.</param>
 		/// <param name="messages">Messages to append to the stream.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<IWriteResult> AppendToStreamAsync(
-			this KurrentDbDbClient dbDbClient,
+			this KurrentDbClient dbClient,
 			string streamName,
 			IEnumerable<Message> messages,
 			CancellationToken cancellationToken = default
 		)
-			=> dbDbClient.AppendToStreamAsync(
+			=> dbClient.AppendToStreamAsync(
 				streamName,
 				messages,
 				new AppendToStreamOptions(),
@@ -516,18 +516,18 @@ namespace KurrentDb.Client {
 		/// <summary>
 		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDb.Client.KurrentDbClientSettings"/>
 		/// </summary>
-		/// <param name="dbDbClient"></param>
+		/// <param name="dbClient"></param>
 		/// <param name="streamName">The name of the stream to append events to.</param>
 		/// <param name="messages">Messages to append to the stream.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<IWriteResult> AppendToStreamAsync(
-			this KurrentDbDbClient dbDbClient,
+			this KurrentDbClient dbClient,
 			string streamName,
 			IEnumerable<object> messages,
 			CancellationToken cancellationToken = default
 		)
-			=> dbDbClient.AppendToStreamAsync(
+			=> dbClient.AppendToStreamAsync(
 				streamName,
 				messages.Select(m => Message.From(m)),
 				new AppendToStreamOptions(),
@@ -538,20 +538,20 @@ namespace KurrentDb.Client {
 		/// <summary>
 		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDb.Client.KurrentDbClientSettings"/>
 		/// </summary>
-		/// <param name="dbDbClient"></param>
+		/// <param name="dbClient"></param>
 		/// <param name="streamName">The name of the stream to append events to.</param>
 		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream to append to.</param>
 		/// <param name="messages">Messages to append to the stream.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<IWriteResult> AppendToStreamAsync(
-			this KurrentDbDbClient dbDbClient,
+			this KurrentDbClient dbClient,
 			string streamName,
 			StreamRevision expectedRevision,
 			IEnumerable<Message> messages,
 			CancellationToken cancellationToken = default
 		)
-			=> dbDbClient.AppendToStreamAsync(
+			=> dbClient.AppendToStreamAsync(
 				streamName,
 				messages,
 				new AppendToStreamOptions {
@@ -563,20 +563,20 @@ namespace KurrentDb.Client {
 		/// <summary>
 		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDb.Client.KurrentDbClientSettings"/>
 		/// </summary>
-		/// <param name="dbDbClient"></param>
+		/// <param name="dbClient"></param>
 		/// <param name="streamName">The name of the stream to append events to.</param>
 		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream to append to.</param>
 		/// <param name="messages">Messages to append to the stream.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<IWriteResult> AppendToStreamAsync(
-			this KurrentDbDbClient dbDbClient,
+			this KurrentDbClient dbClient,
 			string streamName,
 			StreamRevision expectedRevision,
 			IEnumerable<object> messages,
 			CancellationToken cancellationToken = default
 		)
-			=> dbDbClient.AppendToStreamAsync(
+			=> dbClient.AppendToStreamAsync(
 				streamName,
 				messages.Select(m => Message.From(m)),
 				new AppendToStreamOptions{ ExpectedStreamRevision = expectedRevision},
@@ -586,20 +586,20 @@ namespace KurrentDb.Client {
 		/// <summary>
 		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDb.Client.KurrentDbClientSettings"/>
 		/// </summary>
-		/// <param name="dbDbClient"></param>
+		/// <param name="dbClient"></param>
 		/// <param name="streamName">The name of the stream to append events to.</param>
 		/// <param name="messages">Messages to append to the stream.</param>
 		/// <param name="options">Optional settings for the append operation, e.g. expected stream position for optimistic concurrency check</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<IWriteResult> AppendToStreamAsync(
-			this KurrentDbDbClient dbDbClient,
+			this KurrentDbClient dbClient,
 			string streamName,
 			IEnumerable<object> messages,
 			AppendToStreamOptions options,
 			CancellationToken cancellationToken = default
 		)
-			=> dbDbClient.AppendToStreamAsync(
+			=> dbClient.AppendToStreamAsync(
 				streamName,
 				messages.Select(m => Message.From(m)),
 				options,

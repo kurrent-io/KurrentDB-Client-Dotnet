@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Kurrent.Client\Kurrent.Client.csproj" />
+      <ProjectReference Include="..\..\src\KurrentDb.Client\KurrentDb.Client.csproj" />
     </ItemGroup>
 
 </Project>

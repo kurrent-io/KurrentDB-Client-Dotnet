@@ -6,7 +6,7 @@ var connectionString = Environment.GetEnvironmentVariable("ESDB__CONNECTION__STR
 
 Console.WriteLine($"Connecting to EventStoreDB at: {connectionString}");
 
-await using var client = new KurrentClient(KurrentClientSettings.Create(connectionString));
+await using var client = new KurrentDbClient(KurrentDbClientSettings.Create(connectionString));
 
 var eventData = new EventData(Uuid.NewUuid(), "some-event", "{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray());
 

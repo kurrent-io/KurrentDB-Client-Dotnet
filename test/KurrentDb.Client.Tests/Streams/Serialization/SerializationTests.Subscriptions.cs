@@ -323,7 +323,7 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentPe
 		);
 	}
 
-	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization(KurrentDbDbClient? kurrentDbClient = null) {
+	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization(KurrentDbClient? kurrentDbClient = null) {
 		var stream   = Fixture.GetStreamName();
 		var messages = GenerateMessages();
 
@@ -367,12 +367,12 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentPe
 				)
 			).ToList();
 
-	KurrentDbDbClient NewClientWith(Action<KurrentDbClientSerializationSettings> customizeSerialization) {
+	KurrentDbClient NewClientWith(Action<KurrentDbClientSerializationSettings> customizeSerialization) {
 		var settings = Fixture.DbClientSettings;
 		settings.Serialization = settings.Serialization.Clone();
 		customizeSerialization(settings.Serialization);
 
-		return new KurrentDbDbClient(settings);
+		return new KurrentDbClient(settings);
 	}
 
 	public record Address(string Street, int Number);

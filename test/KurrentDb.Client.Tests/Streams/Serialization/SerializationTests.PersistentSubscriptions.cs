@@ -375,7 +375,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		);
 	}
 
-	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization(KurrentDbDbClient? kurrentDbClient = null) {
+	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization(KurrentDbClient? kurrentDbClient = null) {
 		var stream   = Fixture.GetStreamName();
 		var messages = GenerateMessages();
 
@@ -419,12 +419,12 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 				)
 			).ToList();
 
-	KurrentDbDbClient NewClientWith(Action<KurrentDbClientSerializationSettings> customizeSerialization) {
+	KurrentDbClient NewClientWith(Action<KurrentDbClientSerializationSettings> customizeSerialization) {
 		var settings = Fixture.DbClientSettings;
 		settings.Serialization = settings.Serialization.Clone();
 		customizeSerialization(settings.Serialization);
 
-		return new KurrentDbDbClient(settings);
+		return new KurrentDbClient(settings);
 	}
 
 	KurrentDbPersistentSubscriptionsClient NewSubscriptionsClientWith(

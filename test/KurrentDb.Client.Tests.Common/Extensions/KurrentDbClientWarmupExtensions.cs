@@ -40,14 +40,14 @@ public static class KurrentDbClientWarmupExtensions {
 		return client;
 	}
 
-	public static Task<KurrentDbDbClient> WarmUp(this KurrentDbDbClient dbDbClient, CancellationToken cancellationToken = default) =>
+	public static Task<KurrentDbClient> WarmUp(this KurrentDbClient dbClient, CancellationToken cancellationToken = default) =>
 		TryWarmUp(
-			dbDbClient,
+			dbClient,
 			async ct => {
 				// if we can read from $dbUsers then we know that
 				// 1. the dbUsers exist
 				// 2. we are connected to leader if we require it
-				var users = await dbDbClient
+				var users = await dbClient
 					.ReadStreamAsync(
 						direction: Direction.Forwards,
 						streamName: "$dbUsers",
@@ -62,7 +62,7 @@ public static class KurrentDbClientWarmupExtensions {
 					throw new("System is not ready yet...");
 
 				// the read from leader above is not enough to guarantee the next write goes to leader
-				_ = await dbDbClient.AppendToStreamAsync(
+				_ = await dbClient.AppendToStreamAsync(
 					streamName: "warmup",
 					expectedState: StreamState.Any,
 					eventData: Enumerable.Empty<EventData>(),
