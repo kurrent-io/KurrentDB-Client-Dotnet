@@ -3,8 +3,8 @@
 
     <PropertyGroup>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <RootNamespace>Kurrent.Client</RootNamespace>
-        <PackageId>Kurrent.Client</PackageId>
+        <RootNamespace>KurrentDb.Client</RootNamespace>
+        <PackageId>KurrentDb.Client</PackageId>
     </PropertyGroup>
 
     <PropertyGroup>

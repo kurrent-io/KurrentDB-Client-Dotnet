@@ -65,4 +65,4 @@ jobs:
             --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
             --framework ${{ matrix.framework }} \
             --filter "Category=Target:${{ inputs.test }}" \
-            test/Kurrent.Client.Tests
+            test/KurrentDb.Client.Tests
