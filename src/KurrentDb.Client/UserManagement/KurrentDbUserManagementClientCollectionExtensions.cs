@@ -8,11 +8,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Extensions.DependencyInjection {
 	/// <summary>
-	/// A set of extension methods for <see cref="IServiceCollection"/> which provide support for an <see cref="KurrentDbUserManagementClient"/>.
+	/// A set of extension methods for <see cref="IServiceCollection"/> which provide support for an <see cref="KurrentDBUserManagementClient"/>.
 	/// </summary>
-	public static class KurrentDbUserManagementClientCollectionExtensions {
+	public static class KurrentDBUserManagementClientCollectionExtensions {
 		/// <summary>
-		/// Adds an <see cref="KurrentDbUserManagementClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDBUserManagementClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
 		/// <param name="address"></param>
@@ -27,7 +27,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 			});
 
 		/// <summary>
-		/// Adds an <see cref="KurrentDbUserManagementClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDBUserManagementClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
 		/// <param name="connectionString"></param>
@@ -41,7 +41,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 
 
 		/// <summary>
-		/// Adds an <see cref="KurrentDbUserManagementClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDBUserManagementClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
 		/// <param name="configureSettings"></param>
@@ -62,7 +62,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 				settings.LoggerFactory ??= provider.GetService<ILoggerFactory>();
 				settings.Interceptors ??= provider.GetServices<Interceptor>();
 
-				return new KurrentDbUserManagementClient(settings);
+				return new KurrentDBUserManagementClient(settings);
 			});
 
 			return services;

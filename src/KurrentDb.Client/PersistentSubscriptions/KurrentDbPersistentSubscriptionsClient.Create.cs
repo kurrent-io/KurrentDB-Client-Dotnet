@@ -2,7 +2,7 @@ using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 
 namespace KurrentDb.Client {
-	partial class KurrentDbPersistentSubscriptionsClient {
+	partial class KurrentDBPersistentSubscriptionsClient {
 		private static readonly IDictionary<string, CreateReq.Types.ConsumerStrategy> NamedConsumerStrategyToCreateProto
 			= new Dictionary<string, CreateReq.Types.ConsumerStrategy> {
 				[SystemConsumerStrategies.DispatchToSingle] = CreateReq.Types.ConsumerStrategy.DispatchToSingle,

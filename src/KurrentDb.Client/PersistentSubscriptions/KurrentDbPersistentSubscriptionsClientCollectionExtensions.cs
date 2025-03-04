@@ -8,11 +8,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Extensions.DependencyInjection {
 	/// <summary>
-	/// A set of extension methods for <see cref="IServiceCollection"/> which provide support for an <see cref="KurrentDbPersistentSubscriptionsClient"/>.
+	/// A set of extension methods for <see cref="IServiceCollection"/> which provide support for an <see cref="KurrentDBPersistentSubscriptionsClient"/>.
 	/// </summary>
-	public static class KurrentDbPersistentSubscriptionsClientCollectionExtensions {
+	public static class KurrentDBPersistentSubscriptionsClientCollectionExtensions {
 		/// <summary>
-		/// Adds an <see cref="KurrentDbPersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDBPersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddKurrentPersistentSubscriptionsClient(this IServiceCollection services,
@@ -23,7 +23,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 			});
 
 		/// <summary>
-		/// Adds an <see cref="KurrentDbPersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDBPersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddKurrentPersistentSubscriptionsClient(this IServiceCollection services,
@@ -32,7 +32,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 				configureSettings);
 
 		/// <summary>
-		/// Adds an <see cref="KurrentDbPersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDBPersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static IServiceCollection AddKurrentPersistentSubscriptionsClient(this IServiceCollection services,
@@ -51,7 +51,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 				settings.LoggerFactory ??= provider.GetService<ILoggerFactory>();
 				settings.Interceptors ??= provider.GetServices<Interceptor>();
 
-				return new KurrentDbPersistentSubscriptionsClient(settings);
+				return new KurrentDBPersistentSubscriptionsClient(settings);
 			});
 			return services;
 		}

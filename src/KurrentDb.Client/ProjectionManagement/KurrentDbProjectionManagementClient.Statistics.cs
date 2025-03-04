@@ -4,7 +4,7 @@ using EventStore.Client.Projections;
 using Grpc.Core;
 
 namespace KurrentDb.Client {
-	public partial class KurrentDbProjectionManagementClient {
+	public partial class KurrentDBProjectionManagementClient {
 		/// <summary>
 		/// List the <see cref="ProjectionDetails"/> of all one-time projections.
 		/// </summary>

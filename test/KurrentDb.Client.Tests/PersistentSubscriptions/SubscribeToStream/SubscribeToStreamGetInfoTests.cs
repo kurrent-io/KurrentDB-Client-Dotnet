@@ -152,7 +152,7 @@ public class SubscribeToStreamGetInfoTests(SubscribeToStreamGetInfoTests.CustomF
 		public string Group  { get; set; }
 		public string Stream { get; set; }
 
-		KurrentDbPersistentSubscriptionsClient.PersistentSubscriptionResult? Subscription;
+		KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult? Subscription;
 		IAsyncEnumerator<PersistentSubscriptionMessage>?                   Enumerator;
 
 		public CustomFixture() : base(x => x.WithoutDefaultCredentials()) {

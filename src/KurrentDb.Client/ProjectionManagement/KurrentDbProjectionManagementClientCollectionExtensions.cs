@@ -8,11 +8,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Microsoft.Extensions.DependencyInjection {
 	/// <summary>
-	/// A set of extension methods for <see cref="IServiceCollection"/> which provide support for an <see cref="KurrentDbProjectionManagementClient"/>.
+	/// A set of extension methods for <see cref="IServiceCollection"/> which provide support for an <see cref="KurrentDBProjectionManagementClient"/>.
 	/// </summary>
-	public static class KurrentDbProjectionManagementClientCollectionExtensions {
+	public static class KurrentDBProjectionManagementClientCollectionExtensions {
 		/// <summary>
-		/// Adds an <see cref="KurrentDbProjectionManagementClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDBProjectionManagementClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
 		/// <param name="address"></param>
@@ -28,7 +28,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 			});
 
 		/// <summary>
-		/// Adds an <see cref="KurrentDbProjectionManagementClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDBProjectionManagementClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
 		/// <param name="configureSettings"></param>
@@ -39,7 +39,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 			services.AddKurrentProjectionManagementClient(new KurrentDbClientSettings(), configureSettings);
 
 		/// <summary>
-		/// Adds an <see cref="KurrentDbProjectionManagementClient"/> to the <see cref="IServiceCollection"/>.
+		/// Adds an <see cref="KurrentDBProjectionManagementClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <param name="services"></param>
 		/// <param name="connectionString"></param>
@@ -63,7 +63,7 @@ namespace Microsoft.Extensions.DependencyInjection {
 				settings.LoggerFactory ??= provider.GetService<ILoggerFactory>();
 				settings.Interceptors ??= provider.GetServices<Interceptor>();
 
-				return new KurrentDbProjectionManagementClient(settings);
+				return new KurrentDBProjectionManagementClient(settings);
 			});
 
 			return services;

@@ -4,7 +4,7 @@ using Grpc.Core;
 
 #nullable enable
 namespace KurrentDb.Client {
-	partial class KurrentDbPersistentSubscriptionsClient {
+	partial class KurrentDBPersistentSubscriptionsClient {
 		/// <summary>
 		/// Gets the status of a persistent subscription to $all
 		/// </summary>

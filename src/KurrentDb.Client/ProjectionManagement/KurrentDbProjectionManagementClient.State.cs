@@ -8,7 +8,7 @@ using Google.Protobuf.WellKnownTypes;
 using Type = System.Type;
 
 namespace KurrentDb.Client {
-	public partial class KurrentDbProjectionManagementClient {
+	public partial class KurrentDBProjectionManagementClient {
         static readonly JsonSerializerOptions DefaultJsonSerializerOptions = new JsonSerializerOptions();
         
 		/// <summary>

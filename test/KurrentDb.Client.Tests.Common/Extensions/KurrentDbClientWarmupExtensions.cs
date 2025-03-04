@@ -40,7 +40,7 @@ public static class KurrentDbClientWarmupExtensions {
 		return client;
 	}
 
-	public static Task<KurrentDbClient> WarmUp(this KurrentDbClient dbClient, CancellationToken cancellationToken = default) =>
+	public static Task<KurrentDBClient> WarmUp(this KurrentDBClient dbClient, CancellationToken cancellationToken = default) =>
 		TryWarmUp(
 			dbClient,
 			async ct => {
@@ -85,8 +85,8 @@ public static class KurrentDbClientWarmupExtensions {
 			cancellationToken
 		);
 
-	public static Task<KurrentDbPersistentSubscriptionsClient> WarmUp(
-		this KurrentDbPersistentSubscriptionsClient client, CancellationToken cancellationToken = default
+	public static Task<KurrentDBPersistentSubscriptionsClient> WarmUp(
+		this KurrentDBPersistentSubscriptionsClient client, CancellationToken cancellationToken = default
 	) =>
 		TryWarmUp(
 			client,
@@ -103,8 +103,8 @@ public static class KurrentDbClientWarmupExtensions {
 			cancellationToken
 		);
 
-	public static Task<KurrentDbProjectionManagementClient> WarmUp(
-		this KurrentDbProjectionManagementClient client, CancellationToken cancellationToken = default
+	public static Task<KurrentDBProjectionManagementClient> WarmUp(
+		this KurrentDBProjectionManagementClient client, CancellationToken cancellationToken = default
 	) =>
 		TryWarmUp(
 			client,
@@ -119,7 +119,7 @@ public static class KurrentDbClientWarmupExtensions {
 			cancellationToken
 		);
 
-	public static Task<KurrentDbUserManagementClient> WarmUp(this KurrentDbUserManagementClient client, CancellationToken cancellationToken = default) =>
+	public static Task<KurrentDBUserManagementClient> WarmUp(this KurrentDBUserManagementClient client, CancellationToken cancellationToken = default) =>
 		TryWarmUp(
 			client,
 			async ct => {

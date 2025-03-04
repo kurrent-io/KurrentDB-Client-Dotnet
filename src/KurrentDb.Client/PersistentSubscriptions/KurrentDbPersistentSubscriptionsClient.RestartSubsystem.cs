@@ -3,7 +3,7 @@ using EventStore.Client.PersistentSubscriptions;
 
 #nullable enable
 namespace KurrentDb.Client {
-	partial class KurrentDbPersistentSubscriptionsClient {
+	partial class KurrentDBPersistentSubscriptionsClient {
 		/// <summary>
 		/// Restarts the persistent subscriptions subsystem.
 		/// </summary>

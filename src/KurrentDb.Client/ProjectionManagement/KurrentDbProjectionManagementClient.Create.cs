@@ -2,7 +2,7 @@ using EventStore.Client;
 using EventStore.Client.Projections;
 
 namespace KurrentDb.Client {
-	public partial class KurrentDbProjectionManagementClient {
+	public partial class KurrentDBProjectionManagementClient {
 		/// <summary>
 		/// Creates a one-time projection.
 		/// </summary>

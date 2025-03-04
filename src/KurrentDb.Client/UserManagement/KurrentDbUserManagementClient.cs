@@ -8,17 +8,17 @@ namespace KurrentDb.Client {
 	/// <summary>
 	/// The client used for operations on internal users.
 	/// </summary>
-	public sealed class KurrentDbUserManagementClient : KurrentDbClientBase {
+	public sealed class KurrentDBUserManagementClient : KurrentDbClientBase {
 		private readonly ILogger _log;
 
 		/// <summary>
-		/// Constructs a new <see cref="KurrentDbUserManagementClient"/>.
+		/// Constructs a new <see cref="KurrentDBUserManagementClient"/>.
 		/// </summary>
 		/// <param name="settings"></param>
-		public KurrentDbUserManagementClient(KurrentDbClientSettings? settings = null) :
+		public KurrentDBUserManagementClient(KurrentDbClientSettings? settings = null) :
 			base(settings, ExceptionMap) {
-			_log = Settings.LoggerFactory?.CreateLogger<KurrentDbUserManagementClient>() ??
-			       new NullLogger<KurrentDbUserManagementClient>();
+			_log = Settings.LoggerFactory?.CreateLogger<KurrentDBUserManagementClient>() ??
+			       new NullLogger<KurrentDBUserManagementClient>();
 		}
 
 		/// <summary>

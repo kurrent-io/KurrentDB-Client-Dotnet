@@ -62,7 +62,7 @@ namespace KurrentDb.Client {
 			};
 	}
 
-	partial class KurrentDbPersistentSubscriptionsClient {
+	partial class KurrentDBPersistentSubscriptionsClient {
 		/// <summary>
 		/// Subscribes to a persistent subscription.
 		/// </summary>
@@ -712,7 +712,7 @@ namespace KurrentDb.Client {
 		/// <exception cref="ArgumentException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
 		public static Task<PersistentSubscription> SubscribeToStreamAsync(
-			this KurrentDbPersistentSubscriptionsClient kurrentDbClient,
+			this KurrentDBPersistentSubscriptionsClient kurrentDbClient,
 			string streamName,
 			string groupName,
 			PersistentSubscriptionListener listener,
@@ -734,8 +734,8 @@ namespace KurrentDb.Client {
 		/// <param name="groupName">The name of the persistent subscription group.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static KurrentDbPersistentSubscriptionsClient.PersistentSubscriptionResult SubscribeToStream(
-			this KurrentDbPersistentSubscriptionsClient kurrentDbClient,
+		public static KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult SubscribeToStream(
+			this KurrentDBPersistentSubscriptionsClient kurrentDbClient,
 			string streamName,
 			string groupName,
 			CancellationToken cancellationToken = default
@@ -751,7 +751,7 @@ namespace KurrentDb.Client {
 		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged
 		/// </summary>
 		public static Task<PersistentSubscription> SubscribeToAllAsync(
-			this KurrentDbPersistentSubscriptionsClient kurrentDbClient,
+			this KurrentDBPersistentSubscriptionsClient kurrentDbClient,
 			string groupName,
 			PersistentSubscriptionListener listener,
 			CancellationToken cancellationToken = default
@@ -770,8 +770,8 @@ namespace KurrentDb.Client {
 		/// <param name="groupName">The name of the persistent subscription group.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static KurrentDbPersistentSubscriptionsClient.PersistentSubscriptionResult SubscribeToAll(
-			this KurrentDbPersistentSubscriptionsClient kurrentDbClient,
+		public static KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult SubscribeToAll(
+			this KurrentDBPersistentSubscriptionsClient kurrentDbClient,
 			string groupName,
 			CancellationToken cancellationToken = default
 		) =>

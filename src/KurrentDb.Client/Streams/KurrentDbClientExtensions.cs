@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace KurrentDb.Client {
 	/// <summary>
-	///  A set of extension methods for an <see cref="KurrentDbClient"/>.
+	///  A set of extension methods for an <see cref="KurrentDBClient"/>.
 	/// </summary>
-	public static class KurrentDbClientExtensions {
+	public static class KurrentDBClientExtensions {
 		private static readonly JsonSerializerOptions SystemSettingsJsonSerializerOptions = new JsonSerializerOptions {
 			Converters = {
 				SystemSettingsJsonConverter.Instance
@@ -26,7 +26,7 @@ namespace KurrentDb.Client {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static Task SetSystemSettingsAsync(
-			this KurrentDbClient dbClient,
+			this KurrentDBClient dbClient,
 			SystemSettings settings,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
@@ -51,7 +51,7 @@ namespace KurrentDb.Client {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static async Task<ConditionalWriteResult> ConditionalAppendToStreamAsync(
-			this KurrentDbClient dbClient,
+			this KurrentDBClient dbClient,
 			string streamName,
 			StreamRevision expectedRevision,
 			IEnumerable<EventData> eventData,
@@ -84,7 +84,7 @@ namespace KurrentDb.Client {
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
 		public static async Task<ConditionalWriteResult> ConditionalAppendToStreamAsync(
-			this KurrentDbClient dbClient,
+			this KurrentDBClient dbClient,
 			string streamName,
 			StreamState expectedState,
 			IEnumerable<EventData> eventData,

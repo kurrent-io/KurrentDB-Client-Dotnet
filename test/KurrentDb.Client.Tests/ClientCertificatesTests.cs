@@ -20,7 +20,7 @@ public class ClientCertificateTests(ITestOutputHelper output, KurrentTemporaryFi
 		var settings = KurrentDbClientSettings.Create(connectionString);
 		settings.ConnectivitySettings.TlsVerifyCert.ShouldBeTrue();
 
-		await using var client = new KurrentDbClient(settings);
+		await using var client = new KurrentDBClient(settings);
 
 		await client.AppendToStreamAsync(stream, StreamState.NoStream, seedEvents).ShouldThrowAsync<NotAuthenticatedException>();
 	}
@@ -36,7 +36,7 @@ public class ClientCertificateTests(ITestOutputHelper output, KurrentTemporaryFi
 		var settings = KurrentDbClientSettings.Create(connectionString);
 		settings.ConnectivitySettings.TlsVerifyCert.ShouldBeTrue();
 
-		await using var client = new KurrentDbClient(settings);
+		await using var client = new KurrentDBClient(settings);
 
 		var result = await client.AppendToStreamAsync(stream, StreamState.NoStream, seedEvents);
 		result.ShouldNotBeNull();
@@ -53,7 +53,7 @@ public class ClientCertificateTests(ITestOutputHelper output, KurrentTemporaryFi
 		var settings = KurrentDbClientSettings.Create(connectionString);
 		settings.ConnectivitySettings.TlsVerifyCert.ShouldBeTrue();
 
-		await using var client = new KurrentDbClient(settings);
+		await using var client = new KurrentDBClient(settings);
 
 		var result = await client.AppendToStreamAsync(stream, StreamState.NoStream, seedEvents);
 		result.ShouldNotBeNull();

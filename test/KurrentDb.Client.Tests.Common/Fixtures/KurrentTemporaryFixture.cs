@@ -46,10 +46,10 @@ public partial class KurrentTemporaryFixture : IAsyncLifetime, IAsyncDisposable 
 	public Version EventStoreVersion               { get; private set; } = null!;
 	public bool    EventStoreHasLastStreamPosition { get; private set; }
 
-	public KurrentDbClient                        Streams       { get; private set; } = null!;
-	public KurrentDbUserManagementClient          DbUsers         { get; private set; } = null!;
-	public KurrentDbProjectionManagementClient    DbProjections   { get; private set; } = null!;
-	public KurrentDbPersistentSubscriptionsClient Subscriptions { get; private set; } = null!;
+	public KurrentDBClient                        Streams       { get; private set; } = null!;
+	public KurrentDBUserManagementClient          DbUsers         { get; private set; } = null!;
+	public KurrentDBProjectionManagementClient    DbProjections   { get; private set; } = null!;
+	public KurrentDBPersistentSubscriptionsClient Subscriptions { get; private set; } = null!;
 	public KurrentDbOperationsClient              DbOperations    { get; private set; } = null!;
 
 	public bool SkipPsWarmUp { get; set; }
@@ -95,13 +95,13 @@ public partial class KurrentTemporaryFixture : IAsyncLifetime, IAsyncDisposable 
 				Logger.Warning("*** Warmup started ***");
 
 				await Task.WhenAll(
-					InitClient<KurrentDbUserManagementClient>(async x => DbUsers = await Task.FromResult(x)),
-					InitClient<KurrentDbClient>(async x => Streams = await Task.FromResult(x)),
-					InitClient<KurrentDbProjectionManagementClient>(
+					InitClient<KurrentDBUserManagementClient>(async x => DbUsers = await Task.FromResult(x)),
+					InitClient<KurrentDBClient>(async x => Streams = await Task.FromResult(x)),
+					InitClient<KurrentDBProjectionManagementClient>(
 						async x => DbProjections = await Task.FromResult(x),
 						Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None"
 					),
-					InitClient<KurrentDbPersistentSubscriptionsClient>(async x => Subscriptions = SkipPsWarmUp ? x : await Task.FromResult(x)),
+					InitClient<KurrentDBPersistentSubscriptionsClient>(async x => Subscriptions = SkipPsWarmUp ? x : await Task.FromResult(x)),
 					InitClient<KurrentDbOperationsClient>(async x => DbOperations = await Task.FromResult(x))
 				);
 

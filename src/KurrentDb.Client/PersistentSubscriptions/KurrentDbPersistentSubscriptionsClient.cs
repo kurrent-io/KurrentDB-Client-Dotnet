@@ -9,7 +9,7 @@ namespace KurrentDb.Client {
 	/// <summary>
 	/// The client used to manage persistent subscriptions in the KurrentDB.
 	/// </summary>
-	public sealed partial class KurrentDbPersistentSubscriptionsClient : KurrentDbClientBase {
+	public sealed partial class KurrentDBPersistentSubscriptionsClient : KurrentDbClientBase {
 		static BoundedChannelOptions ReadBoundedChannelOptions = new (1) {
 			SingleReader = true,
 			SingleWriter = true,
@@ -20,9 +20,9 @@ namespace KurrentDb.Client {
 		readonly IMessageSerializer _messageSerializer;
 
 		/// <summary>
-		/// Constructs a new <see cref="KurrentDbPersistentSubscriptionsClient"/>.
+		/// Constructs a new <see cref="KurrentDBPersistentSubscriptionsClient"/>.
 		/// </summary>
-		public KurrentDbPersistentSubscriptionsClient(KurrentDbClientSettings? settings) : base(settings,
+		public KurrentDBPersistentSubscriptionsClient(KurrentDbClientSettings? settings) : base(settings,
 			new Dictionary<string, Func<RpcException, Exception>> {
 				[Constants.Exceptions.PersistentSubscriptionDoesNotExist] = ex => new
 					PersistentSubscriptionNotFoundException(
@@ -37,8 +37,8 @@ namespace KurrentDb.Client {
 						ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
 						ex.Trailers.First(x => x.Key == Constants.Exceptions.GroupName).Value, ex)
 			}) {
-			_log = Settings.LoggerFactory?.CreateLogger<KurrentDbPersistentSubscriptionsClient>()
-			       ?? new NullLogger<KurrentDbPersistentSubscriptionsClient>();
+			_log = Settings.LoggerFactory?.CreateLogger<KurrentDBPersistentSubscriptionsClient>()
+			       ?? new NullLogger<KurrentDBPersistentSubscriptionsClient>();
 
 			_messageSerializer = MessageSerializer.From(settings?.Serialization);
 		}

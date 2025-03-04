@@ -107,7 +107,7 @@ namespace KurrentDb.Client {
 			};
 	}
 
-	public partial class KurrentDbClient {
+	public partial class KurrentDBClient {
 		/// <summary>
 		/// Subscribes to all events.
 		/// </summary>
@@ -530,7 +530,7 @@ namespace KurrentDb.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<StreamSubscription> SubscribeToAllAsync(
-			this KurrentDbClient kurrentDbClient,
+			this KurrentDBClient kurrentDbClient,
 			SubscriptionListener listener,
 			CancellationToken cancellationToken = default
 		) =>
@@ -544,7 +544,7 @@ namespace KurrentDb.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<StreamSubscription> SubscribeToAllAsync(
-			this KurrentDbClient kurrentDbClient,
+			this KurrentDBClient kurrentDbClient,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			CancellationToken cancellationToken = default
 		) =>
@@ -563,7 +563,7 @@ namespace KurrentDb.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<StreamSubscription> SubscribeToAllAsync(
-			this KurrentDbClient kurrentDbClient,
+			this KurrentDBClient kurrentDbClient,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			SubscribeToAllOptions options,
 			CancellationToken cancellationToken = default
@@ -580,8 +580,8 @@ namespace KurrentDb.Client {
 		/// <param name="kurrentDbClient"></param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static KurrentDbClient.StreamSubscriptionResult SubscribeToAll(
-			this KurrentDbClient kurrentDbClient,
+		public static KurrentDBClient.StreamSubscriptionResult SubscribeToAll(
+			this KurrentDBClient kurrentDbClient,
 			CancellationToken cancellationToken = default
 		) =>
 			kurrentDbClient.SubscribeToAll(new SubscribeToAllOptions(), cancellationToken);
@@ -597,7 +597,7 @@ namespace KurrentDb.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<StreamSubscription> SubscribeToStreamAsync(
-			this KurrentDbClient kurrentDbClient,
+			this KurrentDBClient kurrentDbClient,
 			string streamName,
 			SubscriptionListener listener,
 			CancellationToken cancellationToken = default
@@ -618,7 +618,7 @@ namespace KurrentDb.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<StreamSubscription> SubscribeToStreamAsync(
-			this KurrentDbClient kurrentDbClient,
+			this KurrentDBClient kurrentDbClient,
 			string streamName,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			CancellationToken cancellationToken = default
@@ -640,7 +640,7 @@ namespace KurrentDb.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<StreamSubscription> SubscribeToStreamAsync(
-			this KurrentDbClient kurrentDbClient,
+			this KurrentDBClient kurrentDbClient,
 			string streamName,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 			SubscribeToStreamOptions options,
@@ -660,8 +660,8 @@ namespace KurrentDb.Client {
 		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static KurrentDbClient.StreamSubscriptionResult SubscribeToStream(
-			this KurrentDbClient kurrentDbClient,
+		public static KurrentDBClient.StreamSubscriptionResult SubscribeToStream(
+			this KurrentDBClient kurrentDbClient,
 			string streamName,
 			CancellationToken cancellationToken = default
 		) =>

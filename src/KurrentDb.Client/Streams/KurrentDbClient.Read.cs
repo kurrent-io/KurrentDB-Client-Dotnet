@@ -6,7 +6,7 @@ using static EventStore.Client.Streams.ReadResp;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
 
 namespace KurrentDb.Client {
-	public partial class KurrentDbClient {
+	public partial class KurrentDBClient {
 		/// <summary>
 		/// Asynchronously reads all events. By default, it reads all of them from the start. The options parameter allows you to fine-tune it to your needs.
 		/// </summary>
@@ -642,8 +642,8 @@ namespace KurrentDb.Client {
 		/// <param name="dbClient"></param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static KurrentDbClient.ReadAllStreamResult ReadAllAsync(
-			this KurrentDbClient dbClient,
+		public static KurrentDBClient.ReadAllStreamResult ReadAllAsync(
+			this KurrentDBClient dbClient,
 			CancellationToken cancellationToken = default
 		) =>
 			dbClient.ReadAllAsync(new ReadAllOptions(), cancellationToken);
@@ -658,8 +658,8 @@ namespace KurrentDb.Client {
 		/// <param name="options">Optional settings like: max count, <see cref="Direction"/> in which to read, the <see cref="Position"/> to start reading from, etc.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static KurrentDbClient.ReadStreamResult ReadStreamAsync(
-			this KurrentDbClient dbClient,
+		public static KurrentDBClient.ReadStreamResult ReadStreamAsync(
+			this KurrentDBClient dbClient,
 			string streamName,
 			CancellationToken cancellationToken = default
 		) =>

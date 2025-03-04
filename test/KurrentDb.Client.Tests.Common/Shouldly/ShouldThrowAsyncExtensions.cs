@@ -7,6 +7,6 @@ namespace Shouldly;
 
 [DebuggerStepThrough]
 public static class ShouldThrowAsyncExtensions {
-	public static Task<TException> ShouldThrowAsync<TException>(this KurrentDbClient.ReadStreamResult source) where TException : Exception =>
+	public static Task<TException> ShouldThrowAsync<TException>(this KurrentDBClient.ReadStreamResult source) where TException : Exception =>
 		source.ToArrayAsync().AsTask().ShouldThrowAsync<TException>();
 }

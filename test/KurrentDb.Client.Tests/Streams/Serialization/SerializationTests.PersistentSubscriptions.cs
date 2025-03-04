@@ -375,7 +375,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		);
 	}
 
-	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization(KurrentDbClient? kurrentDbClient = null) {
+	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization(KurrentDBClient? kurrentDbClient = null) {
 		var stream   = Fixture.GetStreamName();
 		var messages = GenerateMessages();
 
@@ -419,25 +419,25 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 				)
 			).ToList();
 
-	KurrentDbClient NewClientWith(Action<KurrentDbClientSerializationSettings> customizeSerialization) {
+	KurrentDBClient NewClientWith(Action<KurrentDbClientSerializationSettings> customizeSerialization) {
 		var settings = Fixture.DbClientSettings;
 		settings.Serialization = settings.Serialization.Clone();
 		customizeSerialization(settings.Serialization);
 
-		return new KurrentDbClient(settings);
+		return new KurrentDBClient(settings);
 	}
 
-	KurrentDbPersistentSubscriptionsClient NewSubscriptionsClientWith(
+	KurrentDBPersistentSubscriptionsClient NewSubscriptionsClientWith(
 		Action<KurrentDbClientSerializationSettings> customizeSerialization
 	) {
 		var settings = Fixture.DbClientSettings;
 		settings.Serialization = settings.Serialization.Clone();
 		customizeSerialization(settings.Serialization);
 
-		return new KurrentDbPersistentSubscriptionsClient(settings);
+		return new KurrentDBPersistentSubscriptionsClient(settings);
 	}
 
-	async Task<string> CreateToStreamSubscription(string stream, KurrentDbPersistentSubscriptionsClient? client = null) {
+	async Task<string> CreateToStreamSubscription(string stream, KurrentDBPersistentSubscriptionsClient? client = null) {
 		string group = Fixture.GetGroupName();
 
 		await (client ?? Fixture.Subscriptions).CreateToStreamAsync(
@@ -450,7 +450,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		return group;
 	}
 
-	async Task<string> CreateToAllSubscription(string stream, KurrentDbPersistentSubscriptionsClient? client = null) {
+	async Task<string> CreateToAllSubscription(string stream, KurrentDBPersistentSubscriptionsClient? client = null) {
 		string group = Fixture.GetGroupName();
 
 		await (client ?? Fixture.Subscriptions).CreateToAllAsync(

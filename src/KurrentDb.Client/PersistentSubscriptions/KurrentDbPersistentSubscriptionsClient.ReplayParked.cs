@@ -5,7 +5,7 @@ using NotSupportedException = System.NotSupportedException;
 
 #nullable enable
 namespace KurrentDb.Client {
-	partial class KurrentDbPersistentSubscriptionsClient {
+	partial class KurrentDBPersistentSubscriptionsClient {
 		/// <summary>
 		/// Retry the parked messages of the persistent subscription
 		/// </summary>

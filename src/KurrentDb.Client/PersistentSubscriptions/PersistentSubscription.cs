@@ -7,7 +7,7 @@ namespace KurrentDb.Client {
 	/// Represents a persistent subscription connection.
 	/// </summary>
 	public class PersistentSubscription : IDisposable {
-		private readonly KurrentDbPersistentSubscriptionsClient.PersistentSubscriptionResult
+		private readonly KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult
 			_persistentSubscriptionResult;
 
 		private readonly IAsyncEnumerator<PersistentSubscriptionMessage> _enumerator;
@@ -24,7 +24,7 @@ namespace KurrentDb.Client {
 		public string SubscriptionId { get; }
 
 		internal static async Task<PersistentSubscription> Confirm(
-			KurrentDbPersistentSubscriptionsClient.PersistentSubscriptionResult persistentSubscriptionResult,
+			KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult persistentSubscriptionResult,
 			PersistentSubscriptionListener listener,
 			ILogger log,
 			CancellationToken cancellationToken = default
@@ -56,7 +56,7 @@ namespace KurrentDb.Client {
 
 		// PersistentSubscription takes responsibility for disposing the call and the disposable
 		private PersistentSubscription(
-			KurrentDbPersistentSubscriptionsClient.PersistentSubscriptionResult persistentSubscriptionResult,
+			KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult persistentSubscriptionResult,
 			IAsyncEnumerator<PersistentSubscriptionMessage> enumerator,
 			string subscriptionId,
 			PersistentSubscriptionListener listener,

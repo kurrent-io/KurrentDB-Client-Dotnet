@@ -14,7 +14,7 @@ using static EventStore.Client.Streams.AppendResp.Types.WrongExpectedVersion;
 using static EventStore.Client.Streams.Streams;
 
 namespace KurrentDb.Client {
-	public partial class KurrentDbClient {
+	public partial class KurrentDBClient {
 		/// <summary>
 		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDb.Client.KurrentDbClientSettings"/>
 		/// </summary>
@@ -501,7 +501,7 @@ namespace KurrentDb.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<IWriteResult> AppendToStreamAsync(
-			this KurrentDbClient dbClient,
+			this KurrentDBClient dbClient,
 			string streamName,
 			IEnumerable<Message> messages,
 			CancellationToken cancellationToken = default
@@ -522,7 +522,7 @@ namespace KurrentDb.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<IWriteResult> AppendToStreamAsync(
-			this KurrentDbClient dbClient,
+			this KurrentDBClient dbClient,
 			string streamName,
 			IEnumerable<object> messages,
 			CancellationToken cancellationToken = default
@@ -545,7 +545,7 @@ namespace KurrentDb.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<IWriteResult> AppendToStreamAsync(
-			this KurrentDbClient dbClient,
+			this KurrentDBClient dbClient,
 			string streamName,
 			StreamRevision expectedRevision,
 			IEnumerable<Message> messages,
@@ -570,7 +570,7 @@ namespace KurrentDb.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<IWriteResult> AppendToStreamAsync(
-			this KurrentDbClient dbClient,
+			this KurrentDBClient dbClient,
 			string streamName,
 			StreamRevision expectedRevision,
 			IEnumerable<object> messages,
@@ -593,7 +593,7 @@ namespace KurrentDb.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static Task<IWriteResult> AppendToStreamAsync(
-			this KurrentDbClient dbClient,
+			this KurrentDBClient dbClient,
 			string streamName,
 			IEnumerable<object> messages,
 			AppendToStreamOptions options,

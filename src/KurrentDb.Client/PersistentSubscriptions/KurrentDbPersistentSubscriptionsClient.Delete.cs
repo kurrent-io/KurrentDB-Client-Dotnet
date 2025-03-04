@@ -2,7 +2,7 @@ using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 
 namespace KurrentDb.Client {
-	partial class KurrentDbPersistentSubscriptionsClient {
+	partial class KurrentDBPersistentSubscriptionsClient {
 		/// <summary>
 		/// Deletes a persistent subscription.
 		/// </summary>
