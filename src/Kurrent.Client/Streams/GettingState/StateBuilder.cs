@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using EventStore.Client;
 using Kurrent.Client.Core.Serialization;
 
@@ -172,6 +173,34 @@ public static class KurrentClientGettingStateClientExtensions {
 
 		return new StateAtPointInTime<TState>(state, lastEvent?.Event.EventNumber, lastEvent?.Event.Position);
 	}
+
+	public static async IAsyncEnumerable<StateAtPointInTime<TState>> ProjectState<TState>(
+		this IAsyncEnumerable<ResolvedEvent> messages,
+		TState initialState,
+		Func<TState, ResolvedEvent, TState> evolve,
+		[EnumeratorCancellation] CancellationToken ct
+	) where TState : notnull {
+		var state = initialState;
+
+		if (messages is KurrentClient.ReadStreamResult readStreamResult) {
+			if (await readStreamResult.ReadState.ConfigureAwait(false) == ReadState.StreamNotFound) {
+				yield return new StateAtPointInTime<TState>(state);
+
+				yield break;
+			}
+		}
+
+		await foreach (var resolvedEvent in messages.WithCancellation(ct)) {
+			state = evolve(state, resolvedEvent);
+
+			yield return new StateAtPointInTime<TState>(
+				state,
+				resolvedEvent.Event.EventNumber,
+				resolvedEvent.Event.Position
+			);
+		}
+	}
+
 	public static async Task<StateAtPointInTime<TState>> GetStateAsync<TState>(
 		this KurrentClient eventStore,
 		string streamName,
