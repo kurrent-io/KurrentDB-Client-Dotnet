@@ -65,5 +65,5 @@ public class DeleteUserTests(ITestOutputHelper output, DeleteUserTests.CustomFix
 		ex.LoginName.ShouldBe(user.LoginName);
 	}
 
-	public class CustomFixture() : KurrentPermanentFixture(x => x.WithoutDefaultCredentials());
+	public class CustomFixture() : KurrentDBPermanentFixture(x => x.WithoutDefaultCredentials());
 }

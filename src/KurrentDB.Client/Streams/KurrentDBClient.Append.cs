@@ -177,7 +177,7 @@ namespace KurrentDB.Client {
 			async ValueTask<IWriteResult> Operation() {
 				using var call = new StreamsClient(channelInfo.CallInvoker)
 					.Append(
-						KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken)
+						KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken)
 					);
 
 				await call.RequestStream
@@ -381,7 +381,7 @@ namespace KurrentDB.Client {
 					}
 
 					_call = new StreamsClient(_channelInfo.CallInvoker).BatchAppend(
-						KurrentCallOptions.CreateStreaming(
+						KurrentDBCallOptions.CreateStreaming(
 							_settings,
 							userCredentials: _settings.DefaultCredentials,
 							cancellationToken: _cancellationToken

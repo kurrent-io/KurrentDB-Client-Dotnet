@@ -145,10 +145,10 @@ public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFi
 	[Fact]
 	public async Task filter_events_by_type() {
 		var result = await Fixture.Streams
-			.ReadAllAsync(Direction.Forwards, Position.Start, EventTypeFilter.Prefix(KurrentTemporaryFixture.AnotherTestEventTypePrefix))
+			.ReadAllAsync(Direction.Forwards, Position.Start, EventTypeFilter.Prefix(KurrentDBTemporaryFixture.AnotherTestEventTypePrefix))
 			.ToListAsync();
 
-		result.ForEach(x => x.Event.EventType.ShouldStartWith(KurrentTemporaryFixture.AnotherTestEventTypePrefix));
+		result.ForEach(x => x.Event.EventType.ShouldStartWith(KurrentDBTemporaryFixture.AnotherTestEventTypePrefix));
 	}
 
 	[Fact(Skip = "Not Implemented")]

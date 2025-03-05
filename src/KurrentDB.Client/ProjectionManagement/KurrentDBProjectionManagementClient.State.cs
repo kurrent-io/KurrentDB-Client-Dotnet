@@ -80,7 +80,7 @@ namespace KurrentDB.Client {
 					Name = name,
 					Partition = partition ?? string.Empty
 				}
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
 			var response = await call.ResponseAsync.ConfigureAwait(false);
 			return response.Result;
@@ -155,7 +155,7 @@ namespace KurrentDB.Client {
 					Name = name,
 					Partition = partition ?? string.Empty
 				}
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
 			var response = await call.ResponseAsync.ConfigureAwait(false);
 			return response.State;

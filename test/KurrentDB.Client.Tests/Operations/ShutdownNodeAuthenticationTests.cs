@@ -10,5 +10,5 @@ public class ShutdownNodeAuthenticationTests(ITestOutputHelper output, ShutdownN
 	public async Task shutdown_without_credentials_throws() =>
 		await Fixture.DbOperations.ShutdownAsync().ShouldThrowAsync<AccessDeniedException>();
 
-	public class CustomFixture() : KurrentTemporaryFixture(x => x.WithoutDefaultCredentials());
+	public class CustomFixture() : KurrentDBTemporaryFixture(x => x.WithoutDefaultCredentials());
 }

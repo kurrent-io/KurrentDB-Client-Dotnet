@@ -6,7 +6,7 @@ namespace KurrentDB.Client.Tests.Streams;
 
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Append")]
-public class AppendTests(ITestOutputHelper output, KurrentPermanentFixture fixture) : KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
+public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[Theory, ExpectedVersionCreateStreamTestCases]
 	public async Task appending_zero_events(StreamState expectedStreamState) {
 		var stream = $"{Fixture.GetStreamName()}_{expectedStreamState}";

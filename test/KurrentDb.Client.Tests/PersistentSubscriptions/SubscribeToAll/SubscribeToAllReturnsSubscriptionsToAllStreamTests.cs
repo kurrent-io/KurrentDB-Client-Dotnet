@@ -4,8 +4,8 @@ using KurrentDB.Client.Tests;
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
-public class SubscribeToAllReturnsSubscriptionsToAllStreamTests(ITestOutputHelper output, KurrentTemporaryFixture fixture)
-	: KurrentTemporaryTests<KurrentTemporaryFixture>(output, fixture) {
+public class SubscribeToAllReturnsSubscriptionsToAllStreamTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)
+	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	[RetryFact]
 	public async Task returns_subscriptions_to_all_stream() {
 		var group  = Fixture.GetGroupName();

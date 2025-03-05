@@ -89,5 +89,5 @@ public class CreateUserTests(ITestOutputHelper output, CreateUserTests.CustomFix
 		}
 	}
 
-	public class CustomFixture() : KurrentPermanentFixture(x => x.WithoutDefaultCredentials());
+	public class CustomFixture() : KurrentDBPermanentFixture(x => x.WithoutDefaultCredentials());
 }

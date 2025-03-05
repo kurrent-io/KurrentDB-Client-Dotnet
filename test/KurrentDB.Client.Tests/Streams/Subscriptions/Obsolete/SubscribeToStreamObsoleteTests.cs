@@ -270,7 +270,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, SubscribeT
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
 
 		using var subscription = await Fixture.Streams
-			.SubscribeToStreamAsync($"$et-{KurrentTemporaryFixture.TestEventType}", FromStream.Start, OnReceived, true, OnDropped)
+			.SubscribeToStreamAsync($"$et-{KurrentDBTemporaryFixture.TestEventType}", FromStream.Start, OnReceived, true, OnDropped)
 			.WithTimeout();
 
 		await receivedAllEvents.Task.WithTimeout();
@@ -287,7 +287,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, SubscribeT
 		return;
 
 		Task OnReceived(StreamSubscription sub, ResolvedEvent re, CancellationToken ct) {
-			var hasResolvedLink = re.OriginalEvent.EventStreamId.StartsWith($"$et-{KurrentTemporaryFixture.TestEventType}");
+			var hasResolvedLink = re.OriginalEvent.EventStreamId.StartsWith($"$et-{KurrentDBTemporaryFixture.TestEventType}");
 			if (availableEvents.RemoveWhere(x => x == re.Event.EventId && hasResolvedLink) == 0) {
 				Fixture.Log.Debug("Received unexpected event {EventId} from stream {StreamId}", re.Event.EventId, re.OriginalEvent.EventStreamId);
 				return Task.CompletedTask;
@@ -305,7 +305,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, SubscribeT
 			subscriptionDropped.SetResult(new(reason, ex));
 	}
 
-	public class CustomFixture : KurrentTemporaryFixture {
+	public class CustomFixture : KurrentDBTemporaryFixture {
 		public CustomFixture() : base(x => x.RunProjections()) {
 			OnSetup = async () => {
 				await Streams.SetStreamMetadataAsync(

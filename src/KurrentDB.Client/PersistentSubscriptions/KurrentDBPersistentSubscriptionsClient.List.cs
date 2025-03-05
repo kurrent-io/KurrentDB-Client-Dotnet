@@ -86,7 +86,7 @@ namespace KurrentDB.Client {
 			UserCredentials? userCredentials, CallInvoker callInvoker, CancellationToken cancellationToken) {
 			
 			using var call = new PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
-				.ListAsync(req, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+				.ListAsync(req, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
 			ListResp? response = await call.ResponseAsync.ConfigureAwait(false);
 

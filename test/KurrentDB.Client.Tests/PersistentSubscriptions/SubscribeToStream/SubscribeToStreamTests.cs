@@ -5,8 +5,8 @@ using Grpc.Core;
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
-public class SubscribeToStreamTests(ITestOutputHelper output, KurrentPermanentFixture fixture)
-	: KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
+public class SubscribeToStreamTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
+	: KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[RetryFact]
 	public async Task can_create_duplicate_name_on_different_streams() {
 		var stream = Fixture.GetStreamName();

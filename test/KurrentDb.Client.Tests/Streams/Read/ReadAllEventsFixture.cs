@@ -7,7 +7,7 @@ namespace KurrentDB.Client.Tests;
 [Trait("Category", "Target:All")]
 [Trait("Category", "Operation:Read")]
 [Trait("Category", "Database:Dedicated")]
-public class ReadAllEventsFixture : KurrentTemporaryFixture {
+public class ReadAllEventsFixture : KurrentDBTemporaryFixture {
 	public ReadAllEventsFixture() {
 		OnSetup = async () => {
 			_ = await Streams.SetStreamMetadataAsync(

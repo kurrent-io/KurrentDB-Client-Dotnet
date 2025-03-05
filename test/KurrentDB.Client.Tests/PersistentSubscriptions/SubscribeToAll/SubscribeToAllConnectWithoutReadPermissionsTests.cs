@@ -4,8 +4,8 @@ using KurrentDB.Client.Tests.TestNode;
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
-public class SubscribeToAllConnectWithoutReadPermissionsTests(ITestOutputHelper output, KurrentTemporaryFixture fixture)
-	: KurrentTemporaryTests<KurrentTemporaryFixture>(output, fixture) {
+public class SubscribeToAllConnectWithoutReadPermissionsTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)
+	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	[RetryFact]
 	public async Task connect_to_existing_without_read_all_permissions() {
 		var group = Fixture.GetGroupName();

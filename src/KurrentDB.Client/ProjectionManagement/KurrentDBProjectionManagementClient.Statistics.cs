@@ -17,7 +17,7 @@ namespace KurrentDB.Client {
 			ListInternalAsync(new StatisticsReq.Types.Options {
 					OneTime = new Empty()
 				},
-				KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken),
+				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken),
 				cancellationToken);
 
 		/// <summary>
@@ -33,7 +33,7 @@ namespace KurrentDB.Client {
 			ListInternalAsync(new StatisticsReq.Types.Options {
 					Continuous = new Empty()
 				},
-				KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken),
+				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken),
 				cancellationToken);
 
 		/// <summary>
@@ -49,7 +49,7 @@ namespace KurrentDB.Client {
 			CancellationToken cancellationToken = default) => ListInternalAsync(new StatisticsReq.Types.Options {
 					Name = name
 				},
-				KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken),
+				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken),
 				cancellationToken)
 			.FirstOrDefaultAsync(cancellationToken).AsTask();
 
@@ -65,7 +65,7 @@ namespace KurrentDB.Client {
 			ListInternalAsync(new StatisticsReq.Types.Options {
 					All = new Empty()
 				},
-				KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken),
+				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken),
 				cancellationToken);
 
 		private async IAsyncEnumerable<ProjectionDetails> ListInternalAsync(StatisticsReq.Types.Options options,

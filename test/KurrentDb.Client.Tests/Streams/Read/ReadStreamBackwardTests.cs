@@ -8,8 +8,8 @@ namespace KurrentDB.Client.Tests;
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Read")]
 [Trait("Category", "Operation:Read:Backwards")]
-public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentTemporaryFixture fixture)
-	: KurrentTemporaryTests<KurrentTemporaryFixture>(output, fixture) {
+public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)
+	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	[Theory]
 	[InlineData(0)]
 	public async Task count_le_equal_zero_throws(long maxCount) {
@@ -169,7 +169,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentTemporaryF
 
 	[Fact]
 	public async Task populates_log_position_of_event() {
-		if (KurrentTemporaryTestNode.Version.Major < 22)
+		if (KurrentDBTemporaryTestNode.Version.Major < 22)
 			return;
 
 		var stream = Fixture.GetStreamName();

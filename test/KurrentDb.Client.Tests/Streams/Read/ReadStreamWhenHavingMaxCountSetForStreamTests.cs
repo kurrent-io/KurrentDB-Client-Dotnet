@@ -7,8 +7,8 @@ namespace KurrentDB.Client.Tests;
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Read")]
-public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper output, KurrentTemporaryFixture fixture)
-	: KurrentTemporaryTests<KurrentTemporaryFixture>(output, fixture) {
+public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)
+	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	[Fact]
 	public async Task read_stream_forwards_respects_max_count() {
 		var stream = Fixture.GetStreamName();

@@ -44,5 +44,5 @@ public class SubscribeToStreamListTests(ITestOutputHelper output, SubscribeToStr
 		);
 	}
 
-	public class CustomFixture() : KurrentTemporaryFixture(x => x.WithoutDefaultCredentials());
+	public class CustomFixture() : KurrentDBTemporaryFixture(x => x.WithoutDefaultCredentials());
 }

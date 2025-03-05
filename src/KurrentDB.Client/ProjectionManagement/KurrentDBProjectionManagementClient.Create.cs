@@ -20,7 +20,7 @@ namespace KurrentDB.Client {
 					OneTime = new Empty(),
 					Query = query
 				}
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -47,7 +47,7 @@ namespace KurrentDB.Client {
 					},
 					Query = query
 				}
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -71,7 +71,7 @@ namespace KurrentDB.Client {
 					},
 					Query = query
 				}
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 	}

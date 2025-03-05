@@ -7,8 +7,8 @@ namespace KurrentDB.Client.Tests.Bugs.Obsolete;
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Bug")]
 [Obsolete("Tests will be removed in future release when older subscriptions APIs are removed from the client")]
-public class Issue2544 : IClassFixture<KurrentPermanentFixture> {
-	public Issue2544(ITestOutputHelper output, KurrentPermanentFixture fixture) {
+public class Issue2544 : IClassFixture<KurrentDBPermanentFixture> {
+	public Issue2544(ITestOutputHelper output, KurrentDBPermanentFixture fixture) {
 		Fixture = fixture.With(x => x.CaptureTestRun(output));
 
 		Seen = Enumerable.Range(0, 1 + Batches * BatchSize)
@@ -18,7 +18,7 @@ public class Issue2544 : IClassFixture<KurrentPermanentFixture> {
 		Completed = new();
 	}
 
-	KurrentPermanentFixture Fixture { get; }
+	KurrentDBPermanentFixture Fixture { get; }
 
 	const int BatchSize = 18;
 	const int Batches   = 4;

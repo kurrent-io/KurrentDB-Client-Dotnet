@@ -37,7 +37,7 @@ namespace KurrentDB.Client {
 				new PersistentSubscriptions.PersistentSubscriptionsClient(
 						channelInfo.CallInvoker)
 					.DeleteAsync(new DeleteReq {Options = deleteOptions},
-						KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials,
+						KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials,
 							cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}

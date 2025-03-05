@@ -1,17 +1,15 @@
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Tests;
 
-public record KurrentFixtureOptions(
+public record KurrentDBFixtureOptions(
 	KurrentDBClientSettings DbClientSettings,
 	IDictionary<string, string?> Environment
 ) {
-	public KurrentFixtureOptions RunInMemory(bool runInMemory = true) =>
+	public KurrentDBFixtureOptions RunInMemory(bool runInMemory = true) =>
 		this with { Environment = Environment.With(x => x["EVENTSTORE_MEM_DB"] = runInMemory.ToString()) };
 
-	public KurrentFixtureOptions WithoutDefaultCredentials() => this with { DbClientSettings = DbClientSettings.With(x => x.DefaultCredentials = null) };
+	public KurrentDBFixtureOptions WithoutDefaultCredentials() => this with { DbClientSettings = DbClientSettings.With(x => x.DefaultCredentials = null) };
 
-	public KurrentFixtureOptions RunProjections(bool runProjections = true) =>
+	public KurrentDBFixtureOptions RunProjections(bool runProjections = true) =>
 		this with {
 			Environment = Environment.With(
 				x => {
@@ -22,4 +20,4 @@ public record KurrentFixtureOptions(
 		};
 }
 
-public delegate KurrentFixtureOptions ConfigureFixture(KurrentFixtureOptions options);
+public delegate KurrentDBFixtureOptions ConfigureFixture(KurrentDBFixtureOptions options);

@@ -60,7 +60,7 @@ public class SubscribeToAllGetInfoTests(SubscribeToAllGetInfoTests.CustomFixture
 		Assert.Equal("$all", result.EventSource);
 	}
 
-	public class CustomFixture : KurrentTemporaryFixture {
+	public class CustomFixture : KurrentDBTemporaryFixture {
 		public string Group { get; }
 
 		public CustomFixture() : base(x => x.WithoutDefaultCredentials()) {

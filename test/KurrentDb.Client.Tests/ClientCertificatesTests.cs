@@ -7,8 +7,8 @@ namespace KurrentDB.Client.Tests;
 [Trait("Category", "Target:Misc")]
 [Trait("Category", "Target:Plugins")]
 [Trait("Category", "Type:UserCertificate")]
-public class ClientCertificateTests(ITestOutputHelper output, KurrentTemporaryFixture fixture)
-	: KurrentTemporaryTests<KurrentTemporaryFixture>(output, fixture) {
+public class ClientCertificateTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)
+	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	[SupportsPlugins.Theory(EventStoreRepository.Commercial, "This server version does not support plugins"), BadClientCertificatesTestCases]
 	async Task bad_certificates_combinations_should_return_authentication_error(string userCertFile, string userKeyFile, string tlsCaFile) {
 		var stream     = Fixture.GetStreamName();

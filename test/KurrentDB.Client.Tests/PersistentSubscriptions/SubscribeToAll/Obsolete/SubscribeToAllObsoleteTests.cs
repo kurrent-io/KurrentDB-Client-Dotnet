@@ -3,8 +3,8 @@ using KurrentDB.Client;
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
-public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentPermanentFixture fixture)
-	: KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
+public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
+	: KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[RetryFact]
 	public async Task connect_to_existing_with_max_one_client() {
 		// Arrange

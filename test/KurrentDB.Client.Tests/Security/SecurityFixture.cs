@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 
-public class SecurityFixture : KurrentTemporaryFixture {
+public class SecurityFixture : KurrentDBTemporaryFixture {
 	public const string NoAclStream       = nameof(NoAclStream);
 	public const string ReadStream        = nameof(ReadStream);
 	public const string WriteStream       = nameof(WriteStream);

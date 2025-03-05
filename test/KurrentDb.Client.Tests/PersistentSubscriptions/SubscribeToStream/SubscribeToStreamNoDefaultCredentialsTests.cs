@@ -76,5 +76,5 @@ public class SubscribeToStreamNoDefaultCredentialsTests(ITestOutputHelper output
 		);
 	}
 
-	public class CustomFixture() : KurrentPermanentFixture(x => x.WithoutDefaultCredentials());
+	public class CustomFixture() : KurrentDBPermanentFixture(x => x.WithoutDefaultCredentials());
 }

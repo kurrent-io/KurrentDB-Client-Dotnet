@@ -4,8 +4,8 @@ using KurrentDB.Client;
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
-public class SubscribeToAllConnectToExistingWithStartFromNotSetObsoleteTests(ITestOutputHelper output, KurrentTemporaryFixture fixture)
-	: KurrentTemporaryTests<KurrentTemporaryFixture>(output, fixture) {
+public class SubscribeToAllConnectToExistingWithStartFromNotSetObsoleteTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)
+	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	[RetryFact]
 	public async Task connect_to_existing_with_start_from_not_set() {
 		var group  = Fixture.GetGroupName();

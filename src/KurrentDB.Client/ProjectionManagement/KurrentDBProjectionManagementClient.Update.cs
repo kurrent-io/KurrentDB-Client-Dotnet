@@ -30,7 +30,7 @@ namespace KurrentDB.Client {
 			using var call = new Projections.ProjectionsClient(
 				channelInfo.CallInvoker).UpdateAsync(new UpdateReq {
 				Options = options
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
 			await call.ResponseAsync.ConfigureAwait(false);
 		}

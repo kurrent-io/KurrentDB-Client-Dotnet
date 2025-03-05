@@ -34,7 +34,7 @@ public class SubscribeToAllReturnsAllSubscriptionsObsoleteTests(ITestOutputHelpe
 		Assert.Equal(totalSubscriptionCount, result.Count);
 	}
 
-	public class CustomFixture : KurrentTemporaryFixture {
+	public class CustomFixture : KurrentDBTemporaryFixture {
 		public CustomFixture() {
 			SkipPsWarmUp = true;
 		}

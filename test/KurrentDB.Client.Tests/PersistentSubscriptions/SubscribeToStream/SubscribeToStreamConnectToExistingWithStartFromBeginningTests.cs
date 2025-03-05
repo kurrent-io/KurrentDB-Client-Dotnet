@@ -4,8 +4,8 @@ using KurrentDB.Client.Tests.TestNode;
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
-public class SubscribeToStreamConnectToExistingWithStartFromBeginningTests(ITestOutputHelper output, KurrentTemporaryFixture fixture)
-	: KurrentTemporaryTests<KurrentTemporaryFixture>(output, fixture) {
+public class SubscribeToStreamConnectToExistingWithStartFromBeginningTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)
+	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	[RetryFact]
 	public async Task connect_to_existing_with_start_from_beginning_and_no_streamconnect_to_existing_with_start_from_not_set_and_events_in_it() {
 		var stream = Fixture.GetStreamName();

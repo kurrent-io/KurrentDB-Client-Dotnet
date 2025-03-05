@@ -6,7 +6,7 @@ namespace KurrentDB.Client.Tests.Streams;
 
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Metadata")]
-public class StreamMetadataTests(ITestOutputHelper output, KurrentPermanentFixture fixture) : KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
+public class StreamMetadataTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[Fact]
 	public async Task getting_for_an_existing_stream_and_no_metadata_exists() {
 		var stream = Fixture.GetStreamName();

@@ -3,7 +3,7 @@ using static System.Threading.Timeout;
 
 namespace KurrentDB.Client;
 
-static class KurrentCallOptions {
+static class KurrentDBCallOptions {
 	// deadline falls back to infinity
 	public static CallOptions CreateStreaming(
 		KurrentDBClientSettings settings,

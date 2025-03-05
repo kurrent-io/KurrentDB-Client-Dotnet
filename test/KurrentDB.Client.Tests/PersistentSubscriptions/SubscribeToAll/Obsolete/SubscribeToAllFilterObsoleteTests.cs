@@ -4,8 +4,8 @@ using KurrentDB.Client;
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
-public class SubscribeToAllFilterObsoleteTests(ITestOutputHelper output, KurrentTemporaryFixture fixture)
-	: KurrentTemporaryTests<KurrentTemporaryFixture>(output, fixture) {
+public class SubscribeToAllFilterObsoleteTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)
+	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	[RetryTheory]
 	[MemberData(nameof(FilterCases))]
 	public async Task happy_case_filtered_reads_all_existing_filtered_events(string filterName) {

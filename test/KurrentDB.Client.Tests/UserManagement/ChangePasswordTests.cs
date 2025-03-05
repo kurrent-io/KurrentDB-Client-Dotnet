@@ -3,8 +3,8 @@ using KurrentDB.Client;
 namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:UserManagement")]
-public class ChangePasswordTests(ITestOutputHelper output, KurrentPermanentFixture fixture)
-	: KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
+public class ChangePasswordTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
+	: KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[Theory, ChangePasswordNullInputCases]
 	public async Task changing_user_password_with_null_input_throws(string loginName, string currentPassword, string newPassword, string paramName) {
 		var ex = await Fixture.DbUsers

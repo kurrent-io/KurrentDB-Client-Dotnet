@@ -5,7 +5,7 @@ namespace KurrentDB.Client.Tests.Streams;
 
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Delete")]
-public class DeleteTests(ITestOutputHelper output, KurrentPermanentFixture fixture) : KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
+public class DeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[Theory, ExpectedStreamStateCases]
 	public async Task hard_deleting_a_stream_that_does_not_exist_with_expected_version_does_not_throw(StreamState expectedVersion, string name) {
 		var stream = $"{Fixture.GetStreamName()}_{name}";

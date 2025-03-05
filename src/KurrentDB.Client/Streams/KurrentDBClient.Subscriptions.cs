@@ -391,7 +391,7 @@ namespace KurrentDB.Client {
 				_request  = request;
 				_settings = settings;
 
-				_callOptions = KurrentCallOptions.CreateStreaming(
+				_callOptions = KurrentDBCallOptions.CreateStreaming(
 					settings,
 					userCredentials: userCredentials,
 					cancellationToken: cancellationToken

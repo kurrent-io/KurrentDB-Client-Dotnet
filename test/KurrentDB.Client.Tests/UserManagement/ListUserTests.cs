@@ -1,7 +1,7 @@
 namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:UserManagement")]
-public class ListUserTests(ITestOutputHelper output, KurrentPermanentFixture fixture) : KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
+public class ListUserTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[Fact]
 	public async Task returns_all_created_users() {
 		var seed = await Fixture.CreateTestUsers();

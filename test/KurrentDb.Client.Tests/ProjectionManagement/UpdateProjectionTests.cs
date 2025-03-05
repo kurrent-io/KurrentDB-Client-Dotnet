@@ -25,7 +25,7 @@ public class UpdateProjectionTests(ITestOutputHelper output, UpdateProjectionTes
 		);
 	}
 
-	public class CustomFixture : KurrentTemporaryFixture {
+	public class CustomFixture : KurrentDBTemporaryFixture {
 		public CustomFixture() : base(x => x.RunProjections()) { }
 	}
 }

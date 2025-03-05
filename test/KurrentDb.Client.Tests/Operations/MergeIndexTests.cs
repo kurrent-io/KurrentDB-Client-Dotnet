@@ -17,5 +17,5 @@ public class MergeIndexTests(ITestOutputHelper output, MergeIndexTests.CustomFix
 			.MergeIndexesAsync()
 			.ShouldThrowAsync<AccessDeniedException>();
 
-	public class CustomFixture() : KurrentPermanentFixture(x => x.WithoutDefaultCredentials());
+	public class CustomFixture() : KurrentDBPermanentFixture(x => x.WithoutDefaultCredentials());
 }

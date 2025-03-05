@@ -35,7 +35,7 @@ namespace KurrentDB.Client {
 						StartFromChunk = startFromChunk
 					}
 				},
-				KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			var result = await call.ResponseAsync.ConfigureAwait(false);
 
 			return result.ScavengeResult switch {
@@ -65,7 +65,7 @@ namespace KurrentDB.Client {
 				Options = new StopScavengeReq.Types.Options {
 					ScavengeId = scavengeId
 				}
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken))
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken))
 				.ResponseAsync.ConfigureAwait(false);
 
 			return result.ScavengeResult switch {

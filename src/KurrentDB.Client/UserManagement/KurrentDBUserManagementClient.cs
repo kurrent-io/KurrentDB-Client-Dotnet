@@ -54,7 +54,7 @@ namespace KurrentDB.Client {
 					Password = password,
 					Groups = {groups}
 				}
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -84,7 +84,7 @@ namespace KurrentDB.Client {
 				Options = new DetailsReq.Types.Options {
 					LoginName = loginName
 				}
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
 			await call.ResponseStream.MoveNext().ConfigureAwait(false);
 			var userDetails = call.ResponseStream.Current.UserDetails;
@@ -121,7 +121,7 @@ namespace KurrentDB.Client {
 				Options = new DeleteReq.Types.Options {
 					LoginName = loginName
 				}
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -151,7 +151,7 @@ namespace KurrentDB.Client {
 				Options = new EnableReq.Types.Options {
 					LoginName = loginName
 				}
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -174,7 +174,7 @@ namespace KurrentDB.Client {
 				Options = new DisableReq.Types.Options {
 					LoginName = loginName
 				}
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -191,7 +191,7 @@ namespace KurrentDB.Client {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Users.UsersClient(
 				channelInfo.CallInvoker).Details(new DetailsReq(),
-				KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
 			await foreach (var userDetail in call.ResponseStream
 				.ReadAllAsync(cancellationToken)
@@ -234,7 +234,7 @@ namespace KurrentDB.Client {
 						LoginName = loginName
 					}
 				},
-				KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -266,7 +266,7 @@ namespace KurrentDB.Client {
 						LoginName = loginName
 					}
 				},
-				KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 

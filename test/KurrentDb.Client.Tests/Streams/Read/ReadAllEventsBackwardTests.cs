@@ -79,10 +79,10 @@ public class ReadAllEventsBackwardTests(ITestOutputHelper output, ReadAllEventsF
 	[Fact]
 	public async Task filter_events_by_type() {
 		var result = await Fixture.Streams
-			.ReadAllAsync(Direction.Backwards, Position.End, EventTypeFilter.Prefix(KurrentTemporaryFixture.AnotherTestEventTypePrefix))
+			.ReadAllAsync(Direction.Backwards, Position.End, EventTypeFilter.Prefix(KurrentDBTemporaryFixture.AnotherTestEventTypePrefix))
 			.ToListAsync();
 
-		result.ForEach(x => x.Event.EventType.ShouldStartWith(KurrentTemporaryFixture.AnotherTestEventTypePrefix));
+		result.ForEach(x => x.Event.EventType.ShouldStartWith(KurrentDBTemporaryFixture.AnotherTestEventTypePrefix));
 	}
 
 	[Fact(Skip = "Not Implemented")]

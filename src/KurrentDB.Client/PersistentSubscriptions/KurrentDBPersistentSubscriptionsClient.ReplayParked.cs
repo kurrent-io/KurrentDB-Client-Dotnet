@@ -73,7 +73,7 @@ namespace KurrentDB.Client {
 			}
 
 			await new PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
-				.ReplayParkedAsync(req, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken))
+				.ReplayParkedAsync(req, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken))
 				.ConfigureAwait(false);
 		}
 		

@@ -4,14 +4,14 @@
 // using Ductus.FluentDocker.Model.Builders;
 // using KurrentDB.Client.Tests.FluentDocker;
 //
-// namespace KurrentDB.Client.Tests.TestNode;
+// namespace KurrentDB.Client.Tests;
 //
-// public class EventStoreTemporaryTestNode(EventStoreFixtureOptions? options = null) : BaseTestNode(options) {
+// public class EventStorePermanentTestNode(EventStoreFixtureOptions? options = null) : BaseTestNode(options) {
 // 	protected override ContainerBuilder ConfigureContainer(ContainerBuilder builder) {
 // 		var port      = Options.DbClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 // 		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
 //
-// 		var containerName = $"es-client-dotnet-test-{port}-{Guid.NewGuid().ToString()[30..]}";
+// 		var containerName = "es-client-dotnet-test";
 //
 // 		return builder
 // 			.UseImage(Options.Environment["ES_DOCKER_IMAGE"])
@@ -19,6 +19,7 @@
 // 			.WithPublicEndpointResolver()
 // 			.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
 // 			.ExposePort(port, 2113)
+// 			.KeepContainer().KeepRunning().ReuseIfExists()
 // 			.WaitUntilReadyWithConstantBackoff(
 // 				1_000,
 // 				60,
@@ -45,18 +46,16 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using static System.TimeSpan;
 
-namespace KurrentDB.Client.Tests.TestNode;
-
-public class KurrentTemporaryTestNode(KurrentFixtureOptions? options = null) : TestContainerService {
+public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null) : TestContainerService {
 	static readonly NetworkPortProvider NetworkPortProvider = new(NetworkPortProvider.DefaultEsdbPort);
 
-	KurrentFixtureOptions Options { get; } = options ?? DefaultOptions();
+	KurrentDBFixtureOptions Options { get; } = options ?? DefaultOptions();
 
 	static Version? _version;
 
 	public static Version Version => _version ??= GetVersion();
 
-	public static KurrentFixtureOptions DefaultOptions() {
+	public static KurrentDBFixtureOptions DefaultOptions() {
 		const string connString = "esdb://admin:changeit@localhost:{port}/?tlsVerifyCert=false";
 
 		var port = NetworkPortProvider.NextAvailablePort;
@@ -77,6 +76,8 @@ public class KurrentTemporaryTestNode(KurrentFixtureOptions? options = null) : T
 			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]        = "true",
 			["EVENTSTORE_LOG_LEVEL"]                        = "Default", // required to use serilog settings
 			["EVENTSTORE_DISABLE_LOG_FILE"]                 = "true",
+			["EVENTSTORE_START_STANDARD_PROJECTIONS"]       = "true",
+			["EVENTSTORE_RUN_PROJECTIONS"]                  = "All",
 			["EVENTSTORE_CHUNK_SIZE"]                       = (1024 * 1024 * 1024).ToString(),
 			["EVENTSTORE_MAX_APPEND_SIZE"]                  = 100.Kilobytes().Bytes.ToString(CultureInfo.InvariantCulture),
 			["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}"
@@ -130,11 +131,13 @@ public class KurrentTemporaryTestNode(KurrentFixtureOptions? options = null) : T
 		var port      = Options.DbClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
 
-		var containerName = $"es-client-dotnet-test-{port}-{Guid.NewGuid().ToString()[30..]}";
+		var containerName = port == 2113
+			? "es-client-dotnet-test"
+			: $"es-client-dotnet-test-{port}-{Guid.NewGuid().ToString()[30..]}";
 
 		CertificatesManager.VerifyCertificatesExist(certsPath);
 
-		var builder = new Builder()
+		return new Builder()
 			.UseContainer()
 			.UseImage(Options.Environment["ES_DOCKER_IMAGE"])
 			.WithName(containerName)
@@ -142,6 +145,7 @@ public class KurrentTemporaryTestNode(KurrentFixtureOptions? options = null) : T
 			.WithEnvironment(env)
 			.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
 			.ExposePort(port, 2113)
+			.KeepContainer().KeepRunning().ReuseIfExists()
 			.WaitUntilReadyWithConstantBackoff(
 				1_000,
 				60,
@@ -151,8 +155,6 @@ public class KurrentTemporaryTestNode(KurrentFixtureOptions? options = null) : T
 						throw new Exception(output.Error);
 				}
 			);
-
-		return builder;
 	}
 }
 
@@ -166,6 +168,10 @@ class NetworkPortProvider(int port = 2114) {
 	static readonly SemaphoreSlim Semaphore = new(1, 1);
 
 	async Task<int> GetNextAvailablePort(TimeSpan delay = default) {
+		// TODO SS: find a way to enable parallel tests on CI
+		if (port == DefaultEsdbPort)
+			return port;
+
 		await Semaphore.WaitAsync();
 
 		try {

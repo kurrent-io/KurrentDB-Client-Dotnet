@@ -57,5 +57,5 @@ public class EnableUserTests(ITestOutputHelper output, EnableUserTests.CustomFix
 			.ShouldNotThrowAsync();
 	}
 
-	public class CustomFixture() : KurrentPermanentFixture(x => x.WithoutDefaultCredentials());
+	public class CustomFixture() : KurrentDBPermanentFixture(x => x.WithoutDefaultCredentials());
 }

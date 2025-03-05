@@ -7,6 +7,17 @@ on:
       - master
     tags:
       - v*
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Git reference (branch, tag, or commit SHA)'
+        required: true
+        default: 'master'
+      publish_to_nuget:
+        description: 'Publish to NuGet.org'
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   vulnerability-scan:
@@ -21,6 +32,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
       - name: Install dotnet SDKs
         uses: actions/setup-dotnet@v3
         with:
@@ -58,6 +71,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
       - name: Install dotnet SDKs
         uses: actions/setup-dotnet@v3
         with:
@@ -78,6 +93,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
       - name: Generate certificates
         run: |
           mkdir -p certs
@@ -110,6 +127,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
       - name: Login to Cloudsmith
         uses: docker/login-action@v3
         with:
@@ -171,17 +190,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+          fetch-depth: 0
       - name: Get Version
         id: get_version
         run: |
-          echo "branch=${GITHUB_REF:10}" >> $GITHUB_OUTPUT
+          echo "branch=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
           dotnet nuget list source
           dotnet tool restore
           version=$(dotnet tool run minver -- --tag-prefix=v)
           echo "version=${version}" >> $GITHUB_OUTPUT
-      - shell: bash
-        run: |
-          git fetch --prune --unshallow
       - name: Install dotnet SDKs
         uses: actions/setup-dotnet@v3
         with:
@@ -204,13 +223,13 @@ jobs:
           name: nuget-packages
       - name: Dotnet Push to Github Packages
         shell: bash
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           dotnet tool restore
           find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.github_token }} --source https://nuget.pkg.github.com/EventStore/index.json --skip-duplicate
       - name: Dotnet Push to Nuget.org
         shell: bash
-        if: contains(steps.get_version.outputs.branch, 'v')
+        if: (contains(steps.get_version.outputs.branch, 'v') && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_to_nuget == 'true')
         run: |
           dotnet nuget list source
           dotnet tool restore

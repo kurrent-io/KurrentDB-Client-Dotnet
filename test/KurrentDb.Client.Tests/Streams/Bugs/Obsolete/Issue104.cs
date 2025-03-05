@@ -5,7 +5,7 @@ namespace KurrentDB.Client.Tests.Bugs.Obsolete;
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Bug")]
 [Obsolete("Tests will be removed in future release when older subscriptions APIs are removed from the client")]
-public class Issue104(ITestOutputHelper output, KurrentPermanentFixture fixture) : KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
+public class Issue104(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[Fact]
 	public async Task subscription_does_not_send_checkpoint_reached_after_disposal() {
 		var streamName                   = Fixture.GetStreamName();

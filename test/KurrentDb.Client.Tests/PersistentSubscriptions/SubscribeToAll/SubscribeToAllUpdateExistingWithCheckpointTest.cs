@@ -5,8 +5,8 @@ using KurrentDB.Client.Tests;
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
-public class SubscribeToAllUpdateExistingWithCheckpointTest(ITestOutputHelper output, KurrentTemporaryFixture fixture)
-	: KurrentTemporaryTests<KurrentTemporaryFixture>(output, fixture) {
+public class SubscribeToAllUpdateExistingWithCheckpointTest(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)
+	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	[RetryFact]
 	public async Task update_existing_with_check_point_should_resumes_from_check_point() {
 		var stream = Fixture.GetStreamName();

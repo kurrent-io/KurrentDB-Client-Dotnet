@@ -3,7 +3,7 @@ using System.Text;
 
 namespace KurrentDB.Client.Tests.TestNode;
 
-public partial class KurrentTemporaryFixture {
+public partial class KurrentDBTemporaryFixture {
 	public const string TestEventType              = "test-event-type";
 	public const string AnotherTestEventTypePrefix = "another";
 	public const string AnotherTestEventType       = $"{AnotherTestEventTypePrefix}-test-event-type";

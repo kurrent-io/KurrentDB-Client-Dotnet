@@ -17,7 +17,7 @@
 // public abstract class BaseTestNode(EventStoreFixtureOptions? options = null) : TestContainerService {
 // 	static readonly NetworkPortProvider NetworkPortProvider = new(NetworkPortProvider.DefaultEsdbPort);
 //
-// 	public KurrentFixtureOptions Options { get; } = options ?? DefaultOptions();
+// 	public KurrentDBFixtureOptions Options { get; } = options ?? DefaultOptions();
 //
 // 	static Version? _version;
 //

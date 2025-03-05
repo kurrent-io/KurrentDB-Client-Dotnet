@@ -10,5 +10,5 @@ public class ShutdownNodeTests(ITestOutputHelper output, ShutdownNodeTests.NoDef
 	public async Task shutdown_does_not_throw() =>
 		await Fixture.DbOperations.ShutdownAsync(userCredentials: TestCredentials.Root).ShouldNotThrowAsync();
 
-	public class NoDefaultCredentialsFixture() : KurrentTemporaryFixture(x => x.WithoutDefaultCredentials());
+	public class NoDefaultCredentialsFixture() : KurrentDBTemporaryFixture(x => x.WithoutDefaultCredentials());
 }

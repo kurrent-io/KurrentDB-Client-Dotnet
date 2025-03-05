@@ -39,7 +39,7 @@ public abstract class ReadStreamEventsLinkedToDeletedStreamTests(ReadEventsLinke
 	}
 }
 
-public abstract class ReadEventsLinkedToDeletedStreamFixture : KurrentTemporaryFixture {
+public abstract class ReadEventsLinkedToDeletedStreamFixture : KurrentDBTemporaryFixture {
 	const string DeletedStream = nameof(DeletedStream);
 	const string LinkedStream  = nameof(LinkedStream);
 

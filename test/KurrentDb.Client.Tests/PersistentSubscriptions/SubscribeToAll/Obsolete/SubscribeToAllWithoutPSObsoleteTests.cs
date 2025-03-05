@@ -5,8 +5,8 @@ using KurrentDB.Client.Tests;
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
-public class SubscribeToAllWithoutPSObsoleteTests(ITestOutputHelper output, KurrentTemporaryFixture fixture)
-	: KurrentTemporaryTests<KurrentTemporaryFixture>(output, fixture) {
+public class SubscribeToAllWithoutPSObsoleteTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)
+	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	[RetryFact]
 	public async Task list_without_persistent_subscriptions() {
 		await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(

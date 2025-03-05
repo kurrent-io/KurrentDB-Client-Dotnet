@@ -14,7 +14,7 @@ public class RestartSubsystemTests(ITestOutputHelper output, RestartSubsystemTes
 	public async Task restart_subsystem_throws_when_given_no_credentials() =>
 		await Assert.ThrowsAsync<NotAuthenticatedException>(() => Fixture.DbProjections.RestartSubsystemAsync(userCredentials: TestCredentials.TestUser1));
 
-	public class CustomFixture : KurrentTemporaryFixture {
+	public class CustomFixture : KurrentDBTemporaryFixture {
 		public CustomFixture() : base(x => x.RunProjections()) { }
 	}
 }

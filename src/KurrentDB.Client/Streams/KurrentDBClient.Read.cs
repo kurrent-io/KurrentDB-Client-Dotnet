@@ -178,7 +178,7 @@ namespace KurrentDB.Client {
 				IMessageSerializer messageSerializer,
 				CancellationToken cancellationToken
 			) {
-				var callOptions = KurrentCallOptions.CreateStreaming(
+				var callOptions = KurrentDBCallOptions.CreateStreaming(
 					settings,
 					options.Deadline,
 					options.UserCredentials,
@@ -420,7 +420,7 @@ namespace KurrentDB.Client {
 				IMessageSerializer messageSerializer,
 				CancellationToken cancellationToken
 			) {
-				var callOptions = KurrentCallOptions.CreateStreaming(
+				var callOptions = KurrentDBCallOptions.CreateStreaming(
 					settings,
 					deadline,
 					userCredentials,

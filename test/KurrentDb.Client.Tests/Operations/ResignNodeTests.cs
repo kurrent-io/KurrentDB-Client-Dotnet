@@ -18,5 +18,5 @@ public class ResignNodeTests(ITestOutputHelper output, ResignNodeTests.CustomFix
 			.ResignNodeAsync()
 			.ShouldThrowAsync<AccessDeniedException>();
 
-	public class CustomFixture() : KurrentTemporaryFixture(x => x.WithoutDefaultCredentials());
+	public class CustomFixture() : KurrentDBTemporaryFixture(x => x.WithoutDefaultCredentials());
 }

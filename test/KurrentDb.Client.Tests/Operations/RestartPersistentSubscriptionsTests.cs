@@ -18,5 +18,5 @@ public class RestartPersistentSubscriptionsTests(ITestOutputHelper output, Resta
 			.RestartPersistentSubscriptions()
 			.ShouldThrowAsync<AccessDeniedException>();
 
-	public class CustomFixture() : KurrentTemporaryFixture(x => x.WithoutDefaultCredentials());
+	public class CustomFixture() : KurrentDBTemporaryFixture(x => x.WithoutDefaultCredentials());
 }

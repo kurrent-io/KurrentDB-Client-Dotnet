@@ -184,7 +184,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, SubscribeToAl
 		return;
 
 		Task OnReceived(StreamSubscription sub, ResolvedEvent re, CancellationToken ct) {
-			var hasResolvedLink = re.OriginalEvent.EventStreamId.StartsWith($"$et-{KurrentTemporaryFixture.TestEventType}");
+			var hasResolvedLink = re.OriginalEvent.EventStreamId.StartsWith($"$et-{KurrentDBTemporaryFixture.TestEventType}");
 			if (availableEvents.RemoveWhere(x => x == re.Event.EventId && hasResolvedLink) == 0) {
 				Fixture.Log.Debug("Received unexpected event {EventId} from stream {StreamId}", re.Event.EventId, re.OriginalEvent.EventStreamId);
 				return Task.CompletedTask;
@@ -517,7 +517,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, SubscribeToAl
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
 
-		var options = new SubscriptionFilterOptions(StreamFilter.Prefix($"$et-{KurrentTemporaryFixture.TestEventType}"));
+		var options = new SubscriptionFilterOptions(StreamFilter.Prefix($"$et-{KurrentDBTemporaryFixture.TestEventType}"));
 
 		using var subscription = await Fixture.Streams
 			.SubscribeToAllAsync(FromAll.Start, OnReceived, true, OnDropped, options)
@@ -537,7 +537,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, SubscribeToAl
 		return;
 
 		Task OnReceived(StreamSubscription sub, ResolvedEvent re, CancellationToken ct) {
-			var hasResolvedLink = re.OriginalEvent.EventStreamId.StartsWith($"$et-{KurrentTemporaryFixture.TestEventType}");
+			var hasResolvedLink = re.OriginalEvent.EventStreamId.StartsWith($"$et-{KurrentDBTemporaryFixture.TestEventType}");
 			if (availableEvents.RemoveWhere(x => x == re.Event.EventId && hasResolvedLink) == 0) {
 				Fixture.Log.Debug("Received unexpected event {EventId} from stream {StreamId}", re.Event.EventId, re.OriginalEvent.EventStreamId);
 				return Task.CompletedTask;
@@ -599,7 +599,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, SubscribeToAl
 		result.ShouldBe(expectedResult);
 	}
 
-	public class CustomFixture : KurrentTemporaryFixture {
+	public class CustomFixture : KurrentDBTemporaryFixture {
 		public CustomFixture() : base(x => x.RunProjections()) {
 			OnSetup = async () => {
 				await Streams.SetStreamMetadataAsync(

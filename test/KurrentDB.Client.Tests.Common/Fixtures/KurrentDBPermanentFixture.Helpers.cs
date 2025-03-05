@@ -1,9 +1,10 @@
 using System.Runtime.CompilerServices;
 using System.Text;
+using KurrentDB.Client.Core.Serialization;
 
-namespace KurrentDB.Client.Tests.TestNode;
+namespace KurrentDB.Client.Tests;
 
-public partial class KurrentTemporaryFixture {
+public partial class KurrentDBPermanentFixture {
 	public const string TestEventType              = "test-event-type";
 	public const string AnotherTestEventTypePrefix = "another";
 	public const string AnotherTestEventType       = $"{AnotherTestEventTypePrefix}-test-event-type";
@@ -18,8 +19,7 @@ public partial class KurrentTemporaryFixture {
 		$"group-{testMethod}-{Guid.NewGuid():N}";
 
 	public UserCredentials GetUserCredentials([CallerMemberName] string? testMethod = null) => new UserCredentials(
-		$"user-{testMethod}-{Guid.NewGuid():N}",
-		"pa$$word"
+		$"user-{testMethod}-{Guid.NewGuid():N}", "pa$$word"
 	);
 
 	public string GetProjectionName([CallerMemberName] string? testMethod = null) =>
@@ -48,6 +48,11 @@ public partial class KurrentTemporaryFixture {
 		Enumerable.Range(0, count)
 			.Select(index => CreateTestEvent(index, type ?? TestEventType, metadata, contentType));
 
+
+	public IEnumerable<Message> CreateTestMessages(int count = 1, object? metadata = null) =>
+		Enumerable.Range(0, count)
+			.Select(index => CreateTestMessage(index, metadata));
+
 	public EventData CreateTestEvent(
 		string? type = null, ReadOnlyMemory<byte>? metadata = null, string? contentType = null
 	) =>
@@ -63,6 +68,13 @@ public partial class KurrentTemporaryFixture {
 
 	protected static EventData CreateTestEvent(int index) => CreateTestEvent(index, TestEventType);
 
+	protected static Message CreateTestMessage(int index, object? metadata = null) =>
+		Message.From(
+			new DummyEvent(index),
+			metadata,
+			Uuid.NewUuid()
+		);
+	
 	protected static EventData CreateTestEvent(
 		int index, string type, ReadOnlyMemory<byte>? metadata = null, string? contentType = null
 	) =>
@@ -104,4 +116,6 @@ public partial class KurrentTemporaryFixture {
 		await Streams.WarmUp();
 		Log.Information("Service restarted.");
 	}
+
+	public record DummyEvent(int X);
 }

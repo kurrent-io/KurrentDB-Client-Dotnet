@@ -449,7 +449,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
 
-		var filterOptions = new SubscriptionFilterOptions(StreamFilter.Prefix($"$et-{KurrentPermanentFixture.TestEventType}"));
+		var filterOptions = new SubscriptionFilterOptions(StreamFilter.Prefix($"$et-{KurrentDBPermanentFixture.TestEventType}"));
 
 		await using var subscription =
 			Fixture.Streams.SubscribeToAll(FromAll.Start, true, filterOptions: filterOptions);
@@ -467,7 +467,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		async Task Subscribe() {
 			while (await enumerator.MoveNextAsync()) {
 				if (enumerator.Current is not StreamMessage.Event(var resolvedEvent) ||
-				    !resolvedEvent.OriginalEvent.EventStreamId.StartsWith($"$et-{KurrentPermanentFixture.TestEventType}")) {
+				    !resolvedEvent.OriginalEvent.EventStreamId.StartsWith($"$et-{KurrentDBPermanentFixture.TestEventType}")) {
 					continue;
 				}
 
@@ -480,7 +480,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		}
 	}
 
-	public class CustomFixture : KurrentTemporaryFixture {
+	public class CustomFixture : KurrentDBTemporaryFixture {
 		public CustomFixture() : base(x => x.RunProjections()) {
 			OnSetup = async () => {
 				await Streams.SetStreamMetadataAsync(

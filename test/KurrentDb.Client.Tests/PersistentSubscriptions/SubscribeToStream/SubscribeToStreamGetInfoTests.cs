@@ -148,7 +148,7 @@ public class SubscribeToStreamGetInfoTests(SubscribeToStreamGetInfoTests.CustomF
 		Assert.NotNull(result);
 	}
 
-	public class CustomFixture : KurrentTemporaryFixture {
+	public class CustomFixture : KurrentDBTemporaryFixture {
 		public string Group  { get; set; }
 		public string Stream { get; set; }
 

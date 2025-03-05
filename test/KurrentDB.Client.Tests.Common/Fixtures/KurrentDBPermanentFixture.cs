@@ -5,19 +5,18 @@ using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Services.Extensions;
 using KurrentDB.Client.Tests.FluentDocker;
-using KurrentDB.Client;
 using Serilog;
 using static System.TimeSpan;
 
 namespace KurrentDB.Client.Tests;
 
 [PublicAPI]
-public partial class KurrentPermanentFixture : IAsyncLifetime, IAsyncDisposable {
+public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposable {
 	static readonly ILogger Logger;
 
-	static KurrentPermanentFixture() {
+	static KurrentDBPermanentFixture() {
 		Logging.Initialize();
-		Logger = Serilog.Log.ForContext<KurrentPermanentFixture>();
+		Logger = Serilog.Log.ForContext<KurrentDBPermanentFixture>();
 
 #if NET9_0_OR_GREATER
 		var httpClientHandler = new HttpClientHandler();
@@ -27,11 +26,11 @@ public partial class KurrentPermanentFixture : IAsyncLifetime, IAsyncDisposable 
 #endif
 	}
 
-	public KurrentPermanentFixture() : this(options => options) { }
+	public KurrentDBPermanentFixture() : this(options => options) { }
 
-	protected KurrentPermanentFixture(ConfigureFixture configure) {
-		Options = configure(KurrentPermanentTestNode.DefaultOptions());
-		Service = new KurrentPermanentTestNode(Options);
+	protected KurrentDBPermanentFixture(ConfigureFixture configure) {
+		Options = configure(KurrentDBPermanentTestNode.DefaultOptions());
+		Service = new KurrentDBPermanentTestNode(Options);
 	}
 
 	List<Guid> TestRuns { get; } = new();
@@ -39,7 +38,7 @@ public partial class KurrentPermanentFixture : IAsyncLifetime, IAsyncDisposable 
 	public ILogger Log => Logger;
 
 	public ITestService          Service { get; }
-	public KurrentFixtureOptions Options { get; }
+	public KurrentDBFixtureOptions Options { get; }
 	public Faker                 Faker   { get; } = new Faker();
 
 	public Version EventStoreVersion               { get; private set; } = null!;
@@ -176,7 +175,7 @@ public partial class KurrentPermanentFixture : IAsyncLifetime, IAsyncDisposable 
 	async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
 }
 
-public abstract class KurrentPermanentTests<TFixture> : IClassFixture<TFixture> where TFixture : KurrentPermanentFixture {
+public abstract class KurrentPermanentTests<TFixture> : IClassFixture<TFixture> where TFixture : KurrentDBPermanentFixture {
 	protected KurrentPermanentTests(ITestOutputHelper output, TFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
 
 	protected TFixture Fixture { get; }

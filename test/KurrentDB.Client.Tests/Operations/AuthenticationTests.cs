@@ -65,5 +65,5 @@ public class AuthenticationTests(ITestOutputHelper output, AuthenticationTests.C
 			};
 	}
 
-	public class CustomFixture() : KurrentPermanentFixture(x => x.WithoutDefaultCredentials());
+	public class CustomFixture() : KurrentDBPermanentFixture(x => x.WithoutDefaultCredentials());
 }

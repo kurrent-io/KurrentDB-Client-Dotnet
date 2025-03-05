@@ -13,7 +13,7 @@ namespace KurrentDB.Client {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsRestartSubsystem) {
 				await new PersistentSubscriptions.PersistentSubscriptionsClient(channelInfo.CallInvoker)
-					.RestartSubsystemAsync(new Empty(), KurrentCallOptions
+					.RestartSubsystemAsync(new Empty(), KurrentDBCallOptions
 						.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken))
 					.ConfigureAwait(false);
 				return;

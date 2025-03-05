@@ -67,5 +67,5 @@ public class SubscribeToStreamReplayParkedTests(ITestOutputHelper output, Subscr
 		);
 	}
 
-	public class CustomFixture() : KurrentPermanentFixture(x => x.WithoutDefaultCredentials());
+	public class CustomFixture() : KurrentDBPermanentFixture(x => x.WithoutDefaultCredentials());
 }

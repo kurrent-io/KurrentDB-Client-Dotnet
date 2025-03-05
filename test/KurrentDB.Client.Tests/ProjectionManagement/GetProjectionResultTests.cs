@@ -45,7 +45,7 @@ public class GetProjectionResultTests(ITestOutputHelper output, GetProjectionRes
 		public int Count { get; set; }
 	}
 
-	public class CustomFixture : KurrentTemporaryFixture {
+	public class CustomFixture : KurrentDBTemporaryFixture {
 		public CustomFixture() : base(x => x.RunProjections()) { }
 	}
 }

@@ -16,7 +16,7 @@ namespace KurrentDB.Client {
 			var client = new ServerFeatures.ServerFeaturesClient(callInvoker);
 			using var call = client.GetSupportedMethodsAsync(
 				new(),
-				KurrentCallOptions.CreateNonStreaming(
+				KurrentDBCallOptions.CreateNonStreaming(
 					_settings,
 					_settings.ConnectivitySettings.GossipTimeout,
 					null,

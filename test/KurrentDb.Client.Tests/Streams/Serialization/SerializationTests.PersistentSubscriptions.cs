@@ -9,8 +9,8 @@ namespace KurrentDB.Client.Tests.Streams.Serialization;
 
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Append")]
-public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output, KurrentPermanentFixture fixture)
-	: KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
+public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
+	: KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[RetryFact]
 	public async Task plain_clr_objects_are_serialized_and_deserialized_using_auto_serialization() {
 		// Given

@@ -77,5 +77,5 @@ public class ResettingUserPasswordTests(ITestOutputHelper output, ResettingUserP
 			.ShouldThrowAsync<AccessDeniedException>();
 	}
 
-	public class CustomFixture() : KurrentPermanentFixture(x => x.WithoutDefaultCredentials());
+	public class CustomFixture() : KurrentDBPermanentFixture(x => x.WithoutDefaultCredentials());
 }

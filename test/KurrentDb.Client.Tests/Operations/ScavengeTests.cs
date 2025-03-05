@@ -71,5 +71,5 @@ public class ScavengeTests(ITestOutputHelper output, ScavengeTests.CustomFixture
 			.StopScavengeAsync(Guid.NewGuid().ToString())
 			.ShouldThrowAsync<AccessDeniedException>();
 
-	public class CustomFixture() : KurrentTemporaryFixture(x => x.WithoutDefaultCredentials());
+	public class CustomFixture() : KurrentDBTemporaryFixture(x => x.WithoutDefaultCredentials());
 }

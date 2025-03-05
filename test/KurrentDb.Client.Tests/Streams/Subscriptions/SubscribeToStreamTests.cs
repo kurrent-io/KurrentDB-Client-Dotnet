@@ -195,7 +195,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 		ex.ShouldBeOfType<StreamDeletedException>().Stream.ShouldBe(streamName);
 	}
 
-	public class CustomFixture : KurrentPermanentFixture {
+	public class CustomFixture : KurrentDBPermanentFixture {
 		public CustomFixture() {
 			OnSetup = async () => {
 				await Streams.SetStreamMetadataAsync(

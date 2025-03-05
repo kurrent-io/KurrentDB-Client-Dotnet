@@ -32,5 +32,5 @@ public class SubscribeToStreamConnectToExistingWithoutPermissionObsoleteTests(
 		).WithTimeout();
 	}
 
-	public class CustomFixture() : KurrentTemporaryFixture(x => x.WithoutDefaultCredentials());
+	public class CustomFixture() : KurrentDBTemporaryFixture(x => x.WithoutDefaultCredentials());
 }

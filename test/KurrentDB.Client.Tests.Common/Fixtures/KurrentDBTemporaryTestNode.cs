@@ -47,16 +47,16 @@ using static System.TimeSpan;
 
 namespace KurrentDB.Client.Tests.TestNode;
 
-public class KurrentTemporaryTestNode(KurrentFixtureOptions? options = null) : TestContainerService {
+public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null) : TestContainerService {
 	static readonly NetworkPortProvider NetworkPortProvider = new(NetworkPortProvider.DefaultEsdbPort);
 
-	KurrentFixtureOptions Options { get; } = options ?? DefaultOptions();
+	KurrentDBFixtureOptions Options { get; } = options ?? DefaultOptions();
 
 	static Version? _version;
 
 	public static Version Version => _version ??= GetVersion();
 
-	public static KurrentFixtureOptions DefaultOptions() {
+	public static KurrentDBFixtureOptions DefaultOptions() {
 		const string connString = "esdb://admin:changeit@localhost:{port}/?tlsVerifyCert=false";
 
 		var port = NetworkPortProvider.NextAvailablePort;

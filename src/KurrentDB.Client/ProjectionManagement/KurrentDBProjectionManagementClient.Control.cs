@@ -19,7 +19,7 @@ namespace KurrentDB.Client {
 				Options = new EnableReq.Types.Options {
 					Name = name
 				}
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -40,7 +40,7 @@ namespace KurrentDB.Client {
 					Name = name,
 					WriteCheckpoint = true
 				}
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 
@@ -80,7 +80,7 @@ namespace KurrentDB.Client {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new Projections.ProjectionsClient(
 				channelInfo.CallInvoker).RestartSubsystemAsync(new Empty(),
-				KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 		
@@ -93,7 +93,7 @@ namespace KurrentDB.Client {
 					Name = name,
 					WriteCheckpoint = writeCheckpoint
 				}
-			}, KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
 	}

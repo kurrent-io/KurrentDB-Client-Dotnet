@@ -53,7 +53,7 @@ namespace KurrentDB.Client {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new EventStore.Client.Streams.Streams.StreamsClient(
 				channelInfo.CallInvoker).DeleteAsync(request,
-				KurrentCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
+				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			var result = await call.ResponseAsync.ConfigureAwait(false);
 
 			return new DeleteResult(new Position(result.Position.CommitPosition, result.Position.PreparePosition));

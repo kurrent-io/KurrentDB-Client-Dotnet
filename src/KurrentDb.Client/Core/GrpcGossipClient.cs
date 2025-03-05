@@ -15,7 +15,7 @@ namespace KurrentDB.Client {
 			var client = new Gossip.GossipClient(channel);
 			using var call = client.ReadAsync(
 				new Empty(),
-				KurrentCallOptions.CreateNonStreaming(_settings, ct));
+				KurrentDBCallOptions.CreateNonStreaming(_settings, ct));
 			var result = await call.ResponseAsync.ConfigureAwait(false);
 
 			return new(result.Members.Select(x =>

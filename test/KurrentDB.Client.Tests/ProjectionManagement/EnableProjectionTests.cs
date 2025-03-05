@@ -16,7 +16,7 @@ public class EnableProjectionTests(ITestOutputHelper output, EnableProjectionTes
 
 	static readonly string[] Names = ["$streams", "$stream_by_category", "$by_category", "$by_event_type", "$by_correlation_id"];
 
-	public class CustomFixture : KurrentTemporaryFixture {
+	public class CustomFixture : KurrentDBTemporaryFixture {
 		public CustomFixture() : base(x => x.RunProjections()) { }
 	}
 }

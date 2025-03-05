@@ -16,7 +16,7 @@ public class ListOneTimeProjectionsTests(ITestOutputHelper output, ListOneTimePr
 		Assert.Equal("OneTime", details.Mode);
 	}
 
-	public class CustomFixture : KurrentTemporaryFixture {
+	public class CustomFixture : KurrentDBTemporaryFixture {
 		public CustomFixture() : base(x => x.RunProjections()) { }
 	}
 }
