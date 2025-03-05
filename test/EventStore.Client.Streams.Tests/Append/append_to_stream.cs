@@ -25,7 +25,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 				Enumerable.Empty<EventData>()
 			);
 
-			writeResult.NextExpectedStreamRevision.ShouldBe(StreamRevision.None);
+			writeResult.NextExpectedStreamState.ShouldBe(StreamState.NoStream);
 		}
 
 		await Fixture.Streams
@@ -46,7 +46,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 				Enumerable.Empty<EventData>()
 			);
 
-			Assert.Equal(StreamRevision.None, writeResult.NextExpectedStreamRevision);
+			Assert.Equal(StreamState.NoStream, writeResult.NextExpectedStreamState);
 		}
 
 		await Fixture.Streams
@@ -65,7 +65,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 			Fixture.CreateTestEvents(1)
 		);
 
-		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(0), writeResult.NextExpectedStreamState);
 
 		var count = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 2)
 			.CountAsync();
@@ -79,10 +79,10 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 		var events = Fixture.CreateTestEvents(4).ToArray();
 
 		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, events);
-		Assert.Equal(new(3), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(3), writeResult.NextExpectedStreamState);
 
 		writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, events);
-		Assert.Equal(new(3), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(3), writeResult.NextExpectedStreamState);
 	}
 
 	[Fact]
@@ -94,7 +94,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, events);
 
-		Assert.Equal(new(5), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(5), writeResult.NextExpectedStreamState);
 	}
 
 	[Fact]
@@ -107,11 +107,11 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, events);
 
-		Assert.Equal(new(5), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(5), writeResult.NextExpectedStreamState);
 
 		writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, events);
 
-		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(0), writeResult.NextExpectedStreamState);
 	}
 
 	[Fact]
@@ -121,15 +121,15 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		var evnt           = Fixture.CreateTestEvents().First();
 		var events         = new[] { evnt, evnt, evnt, evnt, evnt, evnt };
-		var streamRevision = StreamRevision.FromInt64(events.Length - 1);
+		var streamRevision = StreamState.StreamRevision(events.Length - 1);
 
 		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-		Assert.Equal(streamRevision, writeResult.NextExpectedStreamRevision);
+		Assert.Equal(streamRevision, writeResult.NextExpectedStreamState);
 
 		writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-		Assert.Equal(streamRevision, writeResult.NextExpectedStreamRevision);
+		Assert.Equal(streamRevision, writeResult.NextExpectedStreamState);
 	}
 
 	[Fact]
@@ -174,7 +174,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 		await Fixture.Streams.TombstoneAsync(stream, StreamState.NoStream);
 
 		await Fixture.Streams
-			.AppendToStreamAsync(stream, new StreamRevision(5), Fixture.CreateTestEvents())
+			.AppendToStreamAsync(stream, StreamState.StreamRevision(5), Fixture.CreateTestEvents())
 			.ShouldThrowAsync<StreamDeletedException>();
 	}
 
@@ -190,11 +190,11 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
-			writeResult.NextExpectedStreamRevision,
+			writeResult.NextExpectedStreamState,
 			Fixture.CreateTestEvents()
 		);
 
-		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(1), writeResult.NextExpectedStreamState);
 	}
 
 	[Fact]
@@ -207,7 +207,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 			Fixture.CreateTestEvents(1)
 		);
 
-		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(0), writeResult.NextExpectedStreamState);
 
 		writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
@@ -215,7 +215,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 			Fixture.CreateTestEvents(1)
 		);
 
-		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(1), writeResult.NextExpectedStreamState);
 	}
 
 	[Fact]
@@ -225,11 +225,11 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents());
 
 		var ex = await Fixture.Streams
-			.AppendToStreamAsync(stream, new StreamRevision(999), Fixture.CreateTestEvents())
-			.ShouldThrowAsync<WrongExpectedVersionException>();
+			.AppendToStreamAsync(stream, StreamState.StreamRevision(999), Fixture.CreateTestEvents())
+			.ShouldThrowAsync<WrongExpectedStreamStateException>();
 
-		ex.ActualStreamRevision.ShouldBe(new(0));
-		ex.ExpectedStreamRevision.ShouldBe(new(999));
+		ex.ActualStreamState.ShouldBe(new(0));
+		ex.ExpectedStreamState.ShouldBe(new(999));
 	}
 
 	[Fact]
@@ -238,14 +238,14 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		var writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
-			new StreamRevision(1),
+			StreamState.StreamRevision(1),
 			Fixture.CreateTestEvents(),
 			options => { options.ThrowOnAppendFailure = false; }
 		);
 
 		var wrongExpectedVersionResult = (WrongExpectedVersionResult)writeResult;
 
-		Assert.Equal(new(1), wrongExpectedVersionResult.NextExpectedStreamRevision);
+		Assert.Equal(new(1), wrongExpectedVersionResult.NextExpectedStreamState);
 	}
 
 	[Fact]
@@ -299,9 +299,9 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		var ex = await Fixture.Streams
 			.AppendToStreamAsync(stream, StreamState.StreamExists, Fixture.CreateTestEvents())
-			.ShouldThrowAsync<WrongExpectedVersionException>();
+			.ShouldThrowAsync<WrongExpectedStreamStateException>();
 
-		ex.ActualStreamRevision.ShouldBe(StreamRevision.None);
+		ex.ActualStreamState.ShouldBe(StreamState.NoStream);
 	}
 
 	[Fact]
@@ -318,7 +318,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		var wrongExpectedVersionResult = Assert.IsType<WrongExpectedVersionResult>(writeResult);
 
-		Assert.Equal(StreamRevision.None, wrongExpectedVersionResult.NextExpectedStreamRevision);
+		Assert.Equal(StreamState.NoStream, wrongExpectedVersionResult.NextExpectedStreamState);
 	}
 
 	[Fact]
@@ -355,7 +355,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 			Fixture.CreateTestEvents(100)
 		);
 
-		Assert.Equal(new(99), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(99), writeResult.NextExpectedStreamState);
 	}
 
 	[Fact]
@@ -364,12 +364,12 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		var result = await Fixture.Streams.ConditionalAppendToStreamAsync(
 			stream,
-			new StreamRevision(7),
+			StreamState.StreamRevision(7),
 			Fixture.CreateTestEvents()
 		);
 
 		Assert.Equal(
-			ConditionalWriteResult.FromWrongExpectedVersion(new(stream, new StreamRevision(7), StreamRevision.None)),
+			ConditionalWriteResult.FromWrongExpectedVersion(new(stream, StreamState.StreamRevision(7), StreamState.NoStream)),
 			result
 		);
 	}
@@ -415,7 +415,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 			Fixture.CreateTestEvents()
 		);
 
-		Assert.Equal(new(0), result!.NextExpectedStreamRevision);
+		Assert.Equal(new(0), result!.NextExpectedStreamState);
 	}
 
 	[Fact]
@@ -451,7 +451,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 
 		var ex = await Fixture.Streams.AppendToStreamAsync(
 			stream,
-			new StreamRevision(0),
+			StreamState.StreamRevision(0),
 			Fixture.CreateTestEvents(10),
 			deadline: TimeSpan.Zero
 		).ShouldThrowAsync<RpcException>();
@@ -466,7 +466,7 @@ public class append_to_stream(ITestOutputHelper output, EventStoreFixture fixtur
 		await Fixture.Streams
 			.AppendToStreamAsync(
 				streamName,
-				StreamRevision.None,
+				StreamState.NoStream,
 				Fixture.CreateTestEventsThatThrowsException(),
 				userCredentials: new UserCredentials(TestCredentials.Root.Username!, TestCredentials.Root.Password!)
 			)

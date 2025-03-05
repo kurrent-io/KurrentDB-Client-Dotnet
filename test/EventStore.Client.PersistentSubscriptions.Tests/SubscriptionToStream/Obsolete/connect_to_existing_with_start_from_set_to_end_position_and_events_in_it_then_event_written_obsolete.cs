@@ -62,7 +62,7 @@ public class
 			);
 		}
 
-		protected override Task When() => StreamsClient.AppendToStreamAsync(Stream, new StreamRevision(9), Events.Skip(10));
+		protected override Task When() => StreamsClient.AppendToStreamAsync(Stream, StreamState.StreamRevision(9), Events.Skip(10));
 
 		public override Task DisposeAsync() {
 			_subscription?.Dispose();

@@ -43,39 +43,6 @@ namespace EventStore.Client {
 		/// </summary>
 		/// <param name="client"></param>
 		/// <param name="streamName"></param>
-		/// <param name="expectedRevision"></param>
-		/// <param name="eventData"></param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials"></param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
-		/// <exception cref="ArgumentNullException"></exception>
-		public static async Task<ConditionalWriteResult> ConditionalAppendToStreamAsync(
-			this EventStoreClient client,
-			string streamName,
-			StreamRevision expectedRevision,
-			IEnumerable<EventData> eventData,
-			TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
-			if (client == null) {
-				throw new ArgumentNullException(nameof(client));
-			}
-			try {
-				var result = await client.AppendToStreamAsync(streamName, expectedRevision, eventData,
-						options => options.ThrowOnAppendFailure = false, deadline, userCredentials, cancellationToken)
-					.ConfigureAwait(false);
-				return ConditionalWriteResult.FromWriteResult(result);
-			} catch (StreamDeletedException) {
-				return ConditionalWriteResult.StreamDeleted;
-			}
-		}
-
-		/// <summary>
-		/// Appends to a stream conditionally.
-		/// </summary>
-		/// <param name="client"></param>
-		/// <param name="streamName"></param>
 		/// <param name="expectedState"></param>
 		/// <param name="eventData"></param>
 		/// <param name="deadline"></param>
@@ -101,7 +68,7 @@ namespace EventStore.Client {
 				return ConditionalWriteResult.FromWriteResult(result);
 			} catch (StreamDeletedException) {
 				return ConditionalWriteResult.StreamDeleted;
-			} catch (WrongExpectedVersionException ex) {
+			} catch (WrongExpectedStreamStateException ex) {
 				return ConditionalWriteResult.FromWrongExpectedVersion(ex);
 			}
 		}

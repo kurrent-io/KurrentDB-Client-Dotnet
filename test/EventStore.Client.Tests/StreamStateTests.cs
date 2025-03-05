@@ -28,8 +28,8 @@ public class StreamStateTests : ValueObjectTests<StreamState> {
 
 	[Fact]
 	public void ImplicitConversionExpectedResult() {
-		const int expected = 1;
-		Assert.Equal(expected, new StreamState(expected));
+		const long expected = 1;
+		Assert.Equal(expected, StreamState.StreamRevision(expected));
 	}
 
 	public static IEnumerable<object?[]> ToStringTestCases() {

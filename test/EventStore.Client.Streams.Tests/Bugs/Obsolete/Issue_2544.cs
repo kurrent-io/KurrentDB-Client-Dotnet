@@ -97,27 +97,16 @@ public class Issue_2544 : IClassFixture<EventStoreFixture> {
 	async Task AppendEvents(string streamName) {
 		await Task.Delay(TimeSpan.FromMilliseconds(10));
 
-		var expectedRevision = StreamRevision.None;
+		var expectedRevision = StreamState.NoStream;
 
 		for (var i = 0; i < Batches; i++) {
-			if (expectedRevision == StreamRevision.None) {
-				var result = await Fixture.Streams.AppendToStreamAsync(
-					streamName,
-					StreamState.NoStream,
-					Fixture.CreateTestEvents(BatchSize)
-				);
+			var result = await Fixture.Streams.AppendToStreamAsync(
+				streamName,
+				expectedRevision,
+				Fixture.CreateTestEvents(BatchSize)
+			);
 
-				expectedRevision = result.NextExpectedStreamRevision;
-			}
-			else {
-				var result = await Fixture.Streams.AppendToStreamAsync(
-					streamName,
-					expectedRevision,
-					Fixture.CreateTestEvents(BatchSize)
-				);
-
-				expectedRevision = result.NextExpectedStreamRevision;
-			}
+			expectedRevision = result.NextExpectedStreamState;
 
 			await Task.Delay(TimeSpan.FromMilliseconds(10));
 		}

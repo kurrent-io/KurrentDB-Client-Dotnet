@@ -44,7 +44,7 @@ public class connect_to_existing_with_start_from_set_to_end_position_and_events_
 		}
 
 		protected override Task When() =>
-			StreamsClient.AppendToStreamAsync(Stream, new StreamRevision(9), Events.Skip(10));
+			StreamsClient.AppendToStreamAsync(Stream, StreamState.StreamRevision(9), Events.Skip(10));
 
 		public override async Task DisposeAsync() {
 			if (Subscription is not null) {

@@ -4,8 +4,8 @@ namespace EventStore.Client {
 			EventStoreClientOperationOptions options) =>
 			(options.ThrowOnAppendFailure, writeResult) switch {
 				(true, WrongExpectedVersionResult wrongExpectedVersionResult)
-					=> throw new WrongExpectedVersionException(wrongExpectedVersionResult.StreamName,
-						writeResult.NextExpectedStreamRevision, wrongExpectedVersionResult.ActualStreamRevision),
+					=> throw new WrongExpectedStreamStateException(wrongExpectedVersionResult.StreamName,
+						writeResult.NextExpectedStreamState, wrongExpectedVersionResult.ActualStreamState),
 				_ => writeResult
 			};
 	}

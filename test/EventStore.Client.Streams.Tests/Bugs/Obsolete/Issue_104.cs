@@ -11,7 +11,7 @@ public class Issue_104(ITestOutputHelper output, EventStoreFixture fixture) : Ev
 		var eventAppeared                = new TaskCompletionSource<bool>();
 		var checkpointReachAfterDisposed = new TaskCompletionSource<bool>();
 
-		await Fixture.Streams.AppendToStreamAsync(streamName, StreamRevision.None, Fixture.CreateTestEvents());
+		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, Fixture.CreateTestEvents());
 
 		var subscription = await Fixture.Streams.SubscribeToAllAsync(
 			FromAll.Start,
@@ -42,7 +42,7 @@ public class Issue_104(ITestOutputHelper output, EventStoreFixture fixture) : Ev
 
 		await Fixture.Streams.AppendToStreamAsync(
 			ignoredStreamName,
-			StreamRevision.None,
+			StreamState.NoStream,
 			Fixture.CreateTestEvents(50)
 		);
 

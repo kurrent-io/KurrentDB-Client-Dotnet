@@ -86,7 +86,7 @@ public class stream_metadata(ITestOutputHelper output, EventStoreFixture fixture
 	[Fact]
 	public async Task setting_with_wrong_expected_version_throws() {
 		var stream = Fixture.GetStreamName();
-		await Assert.ThrowsAsync<WrongExpectedVersionException>(
+		await Assert.ThrowsAsync<WrongExpectedStreamStateException>(
 			() =>
 				Fixture.Streams.SetStreamMetadataAsync(stream, new StreamRevision(2), new())
 		);

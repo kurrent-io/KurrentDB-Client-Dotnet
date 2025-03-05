@@ -8,7 +8,7 @@ namespace EventStore.Client {
 	/// </summary>
 	public class EventStoreClientOperationOptions {
 		/// <summary>
-		/// Whether or not to immediately throw a <see cref="WrongExpectedVersionException"/> when an append fails.
+		/// Whether or not to immediately throw a <see cref="WrongExpectedStreamStateException"/> when an append fails.
 		/// </summary>
 		public bool ThrowOnAppendFailure { get; set; }
 

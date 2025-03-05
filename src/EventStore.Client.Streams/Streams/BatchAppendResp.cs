@@ -9,8 +9,8 @@ namespace EventStore.Client.Streams {
 			ResultOneofCase.Success => new SuccessResult(
 				Success.CurrentRevisionOptionCase switch {
 					Types.Success.CurrentRevisionOptionOneofCase.CurrentRevision =>
-						new StreamRevision(Success.CurrentRevision),
-					_ => StreamRevision.None
+						StreamState.StreamRevision((long)Success.CurrentRevision),
+					_ => StreamState.NoStream
 				}, Success.PositionOptionCase switch {
 					Types.Success.PositionOptionOneofCase.Position => new Position(
 						Success.Position.CommitPosition,
@@ -39,11 +39,11 @@ namespace EventStore.Client.Streams {
 		private static WrongExpectedVersionResult FromWrongExpectedVersion(StreamIdentifier streamIdentifier,
 			WrongExpectedVersion wrongExpectedVersion) => new(streamIdentifier!,
 			wrongExpectedVersion.ExpectedStreamPositionOptionCase switch {
-				ExpectedStreamPosition => wrongExpectedVersion.ExpectedStreamPosition,
-				_ => StreamRevision.None
+				ExpectedStreamPosition => StreamState.StreamRevision((long)wrongExpectedVersion.ExpectedStreamPosition),
+				_ => StreamState.NoStream
 			}, wrongExpectedVersion.CurrentStreamRevisionOptionCase switch {
-				CurrentStreamRevision => wrongExpectedVersion.CurrentStreamRevision,
-				_ => StreamRevision.None
+				CurrentStreamRevision => StreamState.StreamRevision((long)wrongExpectedVersion.CurrentStreamRevision),
+				_ => StreamState.NoStream
 			});
 	}
 }

@@ -13,7 +13,7 @@ public class append_to_stream_retry(ITestOutputHelper output, StreamRetryFixture
 		// can definitely write without throwing
 		var result = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents());
 
-		result.NextExpectedStreamRevision.ShouldBe(new(0));
+		result.NextExpectedStreamState.ShouldBe(new(0));
 
 		await Fixture.Service.Restart();
 
@@ -24,11 +24,11 @@ public class append_to_stream_retry(ITestOutputHelper output, StreamRetryFixture
 				Backoff.LinearBackoff(TimeSpan.FromMilliseconds(250), 10),
 				(ex, ts) => Fixture.Log.Debug("Error writing events to stream. Retrying. Reason: {Message}.", ex.Message)
 			)
-			.ExecuteAsync(() => Fixture.Streams.AppendToStreamAsync(stream, result.NextExpectedStreamRevision, Fixture.CreateTestEvents()));
+			.ExecuteAsync(() => Fixture.Streams.AppendToStreamAsync(stream, result.NextExpectedStreamState, Fixture.CreateTestEvents()));
 
 		Fixture.Log.Information("Successfully wrote events to stream {Stream}.", stream);
 		
-		writeResult.NextExpectedStreamRevision.ShouldBe(new(1));
+		writeResult.NextExpectedStreamState.ShouldBe(StreamState.StreamRevision(1));
 	}
 }
 

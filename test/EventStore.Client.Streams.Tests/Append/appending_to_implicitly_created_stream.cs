@@ -40,7 +40,7 @@ public class appending_to_implicitly_created_stream(ITestOutputHelper output, Ev
 		var events = Fixture.CreateTestEvents(6).ToArray();
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
-		await Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(5), events.Take(1));
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(5), events.Take(1));
 
 		var count = await Fixture.Streams
 			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 2).CountAsync();
@@ -56,7 +56,7 @@ public class appending_to_implicitly_created_stream(ITestOutputHelper output, Ev
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-		await Assert.ThrowsAsync<WrongExpectedVersionException>(() => Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(6), events.Take(1)));
+		await Assert.ThrowsAsync<WrongExpectedStreamStateException>(() => Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(6), events.Take(1)));
 	}
 
 	[Fact]
@@ -69,7 +69,7 @@ public class appending_to_implicitly_created_stream(ITestOutputHelper output, Ev
 
 		var writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
-			new StreamRevision(6),
+			StreamState.StreamRevision(6),
 			events.Take(1),
 			options => options.ThrowOnAppendFailure = false
 		);
@@ -85,7 +85,7 @@ public class appending_to_implicitly_created_stream(ITestOutputHelper output, Ev
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-		await Assert.ThrowsAsync<WrongExpectedVersionException>(() => Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(4), events.Take(1)));
+		await Assert.ThrowsAsync<WrongExpectedStreamStateException>(() => Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(4), events.Take(1)));
 	}
 
 	[Fact]
@@ -98,7 +98,7 @@ public class appending_to_implicitly_created_stream(ITestOutputHelper output, Ev
 
 		var writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
-			new StreamRevision(4),
+			StreamState.StreamRevision(4),
 			events.Take(1),
 			options => options.ThrowOnAppendFailure = false
 		);
@@ -113,7 +113,7 @@ public class appending_to_implicitly_created_stream(ITestOutputHelper output, Ev
 		var events = Fixture.CreateTestEvents().ToArray();
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
-		await Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(0), events.Take(1));
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(0), events.Take(1));
 
 		var count = await Fixture.Streams
 			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 2).CountAsync();
@@ -206,7 +206,7 @@ public class appending_to_implicitly_created_stream(ITestOutputHelper output, Ev
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-		await Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(0), events.Skip(1));
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(0), events.Skip(1));
 
 		var count = await Fixture.Streams
 			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
@@ -237,7 +237,7 @@ public class appending_to_implicitly_created_stream(ITestOutputHelper output, Ev
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(2));
 
-		await Assert.ThrowsAsync<WrongExpectedVersionException>(
+		await Assert.ThrowsAsync<WrongExpectedStreamStateException>(
 			() => Fixture.Streams.AppendToStreamAsync(
 				stream,
 				StreamState.NoStream,

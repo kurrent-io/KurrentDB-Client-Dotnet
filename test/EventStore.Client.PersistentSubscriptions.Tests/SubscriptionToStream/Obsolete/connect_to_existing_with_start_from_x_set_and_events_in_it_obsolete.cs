@@ -55,7 +55,7 @@ public class connect_to_existing_with_start_from_x_set_and_events_in_it_obsolete
 			);
 		}
 
-		protected override Task When() => StreamsClient.AppendToStreamAsync(Stream, new StreamRevision(9), Events.Skip(10));
+		protected override Task When() => StreamsClient.AppendToStreamAsync(Stream, StreamState.StreamRevision(9), Events.Skip(10));
 
 		public override Task DisposeAsync() {
 			_subscription?.Dispose();

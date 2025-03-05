@@ -74,7 +74,7 @@ public class read_stream_backward(ITestOutputHelper output, EventStoreFixture fi
 
 		Assert.True(
 			EventDataComparer.Equal(
-				expected.Reverse().ToArray(),
+				System.Linq.Enumerable.Reverse(expected).ToArray(),
 				actual
 			)
 		);
@@ -186,7 +186,7 @@ public class read_stream_backward(ITestOutputHelper output, EventStoreFixture fi
 	public async Task with_timeout_fails_when_operation_expired() {
 		var stream = Fixture.GetStreamName();
 
-		await Fixture.Streams.AppendToStreamAsync(stream, StreamRevision.None, Fixture.CreateTestEvents());
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents());
 
 		var rpcException = await Assert.ThrowsAsync<RpcException>(
 			() => Fixture.Streams

@@ -18,51 +18,6 @@ namespace EventStore.Client {
 		/// Appends events asynchronously to a stream.
 		/// </summary>
 		/// <param name="streamName">The name of the stream to append events to.</param>
-		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream to append to.</param>
-		/// <param name="eventData">An <see cref="IEnumerable{EventData}"/> to append to the stream.</param>
-		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public async Task<IWriteResult> AppendToStreamAsync(
-			string streamName,
-			StreamRevision expectedRevision,
-			IEnumerable<EventData> eventData,
-			Action<EventStoreClientOperationOptions>? configureOperationOptions = null,
-			TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default
-		) {
-			var options = Settings.OperationOptions.Clone();
-			configureOperationOptions?.Invoke(options);
-
-			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedRevision);
-
-			var task = userCredentials is null && await BatchAppender.IsUsable().ConfigureAwait(false)
-				? BatchAppender.Append(streamName, expectedRevision, eventData, deadline, cancellationToken)
-				: AppendToStreamInternal(
-					await GetChannelInfo(cancellationToken).ConfigureAwait(false),
-					new AppendReq {
-						Options = new() {
-							StreamIdentifier = streamName,
-							Revision         = expectedRevision
-						}
-					},
-					eventData,
-					options,
-					deadline,
-					userCredentials,
-					cancellationToken
-				);
-
-			return (await task.ConfigureAwait(false)).OptionallyThrowWrongExpectedVersionException(options);
-		}
-
-		/// <summary>
-		/// Appends events asynchronously to a stream.
-		/// </summary>
-		/// <param name="streamName">The name of the stream to append events to.</param>
 		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream to append to.</param>
 		/// <param name="eventData">An <see cref="IEnumerable{EventData}"/> to append to the stream.</param>
 		/// <param name="configureOperationOptions">An <see cref="Action{EventStoreClientOperationOptions}"/> to configure the operation's options.</param>
@@ -161,8 +116,8 @@ namespace EventStore.Client {
 
 		IWriteResult HandleSuccessAppend(AppendResp response, AppendReq header) {
 			var currentRevision = response.Success.CurrentRevisionOptionCase == AppendResp.Types.Success.CurrentRevisionOptionOneofCase.NoStream
-				? StreamRevision.None
-				: new StreamRevision(response.Success.CurrentRevision);
+				? StreamState.NoStream
+				: StreamState.StreamRevision((long)response.Success.CurrentRevision);
 
 			var position = response.Success.PositionOptionCase == AppendResp.Types.Success.PositionOptionOneofCase.Position
 				? new Position(response.Success.Position.CommitPosition, response.Success.Position.PreparePosition)
@@ -182,8 +137,8 @@ namespace EventStore.Client {
 			AppendResp response, AppendReq header, EventStoreClientOperationOptions operationOptions
 		) {
 			var actualStreamRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase == CurrentRevisionOptionOneofCase.CurrentRevision
-				? new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
-				: StreamRevision.None;
+				? StreamState.StreamRevision((long)response.WrongExpectedVersion.CurrentRevision)
+				: StreamState.NoStream;
 
 			_log.LogDebug(
 				"Append to stream failed with Wrong Expected Version - {streamName}/{expectedRevision}/{currentRevision}",
@@ -194,9 +149,9 @@ namespace EventStore.Client {
 
 			if (operationOptions.ThrowOnAppendFailure) {
 				if (response.WrongExpectedVersion.ExpectedRevisionOptionCase == ExpectedRevisionOptionOneofCase.ExpectedRevision) {
-					throw new WrongExpectedVersionException(
+					throw new WrongExpectedStreamStateException(
 						header.Options.StreamIdentifier!,
-						new StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
+						StreamState.StreamRevision((long)response.WrongExpectedVersion.ExpectedRevision),
 						actualStreamRevision
 					);
 				}
@@ -208,7 +163,7 @@ namespace EventStore.Client {
 					_                                                    => StreamState.Any
 				};
 
-				throw new WrongExpectedVersionException(
+				throw new WrongExpectedStreamStateException(
 					header.Options.StreamIdentifier!,
 					expectedStreamState,
 					actualStreamRevision
@@ -216,8 +171,8 @@ namespace EventStore.Client {
 			}
 
 			var expectedRevision = response.WrongExpectedVersion.ExpectedRevisionOptionCase == ExpectedRevisionOptionOneofCase.ExpectedRevision
-				? new StreamRevision(response.WrongExpectedVersion.ExpectedRevision)
-				: StreamRevision.None;
+				? StreamState.StreamRevision((long)response.WrongExpectedVersion.ExpectedRevision)
+				: StreamState.NoStream;
 
 			return new WrongExpectedVersionResult(
 				header.Options.StreamIdentifier!,

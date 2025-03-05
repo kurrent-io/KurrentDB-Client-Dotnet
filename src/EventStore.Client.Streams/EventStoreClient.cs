@@ -34,10 +34,10 @@ namespace EventStore.Client {
 				ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value ?? "<unknown>",
 				ex
 			),
-			[Constants.Exceptions.WrongExpectedVersion] = ex => new WrongExpectedVersionException(
+			[Constants.Exceptions.WrongExpectedVersion] = ex => new WrongExpectedStreamStateException(
 				ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!,
-				ex.Trailers.GetStreamRevision(Constants.Exceptions.ExpectedVersion),
-				ex.Trailers.GetStreamRevision(Constants.Exceptions.ActualVersion),
+				ex.Trailers.GetStreamState(Constants.Exceptions.ExpectedVersion),
+				ex.Trailers.GetStreamState(Constants.Exceptions.ActualVersion),
 				ex,
 				ex.Message
 			),

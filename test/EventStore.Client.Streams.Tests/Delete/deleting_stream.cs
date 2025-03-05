@@ -21,7 +21,7 @@ public class deleting_stream(ITestOutputHelper output, EventStoreFixture fixture
 	public async Task soft_deleting_a_stream_that_exists() {
 		var stream = Fixture.GetStreamName();
 
-		await Fixture.Streams.AppendToStreamAsync(stream, StreamRevision.None, Fixture.CreateTestEvents());
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents());
 
 		await Fixture.Streams.DeleteAsync(stream, StreamState.StreamExists);
 	}
@@ -30,14 +30,14 @@ public class deleting_stream(ITestOutputHelper output, EventStoreFixture fixture
 	public async Task hard_deleting_a_stream_that_does_not_exist_with_wrong_expected_version_throws() {
 		var stream = Fixture.GetStreamName();
 
-		await Assert.ThrowsAsync<WrongExpectedVersionException>(() => Fixture.Streams.TombstoneAsync(stream, new StreamRevision(0)));
+		await Assert.ThrowsAsync<WrongExpectedStreamStateException>(() => Fixture.Streams.TombstoneAsync(stream, new StreamRevision(0)));
 	}
 
 	[Fact]
 	public async Task soft_deleting_a_stream_that_does_not_exist_with_wrong_expected_version_throws() {
 		var stream = Fixture.GetStreamName();
 
-		await Assert.ThrowsAsync<WrongExpectedVersionException>(() => Fixture.Streams.DeleteAsync(stream, new StreamRevision(0)));
+		await Assert.ThrowsAsync<WrongExpectedStreamStateException>(() => Fixture.Streams.DeleteAsync(stream, new StreamRevision(0)));
 	}
 
 	[Fact]
@@ -50,7 +50,7 @@ public class deleting_stream(ITestOutputHelper output, EventStoreFixture fixture
 			Fixture.CreateTestEvents()
 		);
 
-		var deleteResult = await Fixture.Streams.TombstoneAsync(stream, writeResult.NextExpectedStreamRevision);
+		var deleteResult = await Fixture.Streams.TombstoneAsync(stream, writeResult.NextExpectedStreamState);
 
 		Assert.True(deleteResult.LogPosition > writeResult.LogPosition);
 	}
@@ -65,7 +65,7 @@ public class deleting_stream(ITestOutputHelper output, EventStoreFixture fixture
 			Fixture.CreateTestEvents()
 		);
 
-		var deleteResult = await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+		var deleteResult = await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamState);
 
 		Assert.True(deleteResult.LogPosition > writeResult.LogPosition);
 	}

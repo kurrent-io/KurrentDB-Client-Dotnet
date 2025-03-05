@@ -46,7 +46,7 @@ public class connect_to_existing_with_start_from_not_set_and_events_in_it_then_e
 		}
 
 		protected override Task When() =>
-			StreamsClient.AppendToStreamAsync(Stream, new StreamRevision(9), Events.Skip(10));
+			StreamsClient.AppendToStreamAsync(Stream, StreamState.StreamRevision(9), Events.Skip(10));
 
 		public override async Task DisposeAsync() {
 			if (Subscription is not null) {
