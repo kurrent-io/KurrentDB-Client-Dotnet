@@ -3,7 +3,6 @@ using Kurrent.Client.Streams.GettingState;
 
 namespace Kurrent.Client.Tests.Streams.GettingState.StateBased;
 
-
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:GetState")]
 public class GettingStateTests(ITestOutputHelper output, KurrentPermanentFixture fixture)
@@ -11,20 +10,22 @@ public class GettingStateTests(ITestOutputHelper output, KurrentPermanentFixture
 	[RetryFact]
 	public async Task gets_state_for_istate_with_default_constructor() {
 		// Given
-		var shoppingCartId  = Guid.NewGuid();
-		var clientId        = Guid.NewGuid();
-		var shoesId         = Guid.NewGuid();
-		var tShirtId        = Guid.NewGuid();
+		var shoppingCartId = Guid.NewGuid();
+		var clientId       = Guid.NewGuid();
+		var shoesId        = Guid.NewGuid();
+		var tShirtId       = Guid.NewGuid();
 		var twoPairsOfShoes = new PricedProductItem {
 			ProductId = shoesId,
 			Quantity  = 2,
 			UnitPrice = 100
 		};
+
 		var pairOfShoes = new PricedProductItem {
 			ProductId = shoesId,
-			Quantity = 1,
+			Quantity  = 1,
 			UnitPrice = 100
 		};
+
 		var tShirt = new PricedProductItem {
 			ProductId = tShirtId,
 			Quantity  = 1,
@@ -45,7 +46,7 @@ public class GettingStateTests(ITestOutputHelper output, KurrentPermanentFixture
 		await Fixture.Streams.AppendToStreamAsync(streamName, events);
 
 		// When
-		var result = await Fixture.Streams.GetStateAsync<ShoppingCart, object>(streamName);
+		var result = await Fixture.Streams.GetStateAsync<ShoppingCart>(streamName);
 
 		var shoppingCart = result.State;
 
@@ -88,15 +89,14 @@ public record ShoppingCartCanceled(
 	DateTime CanceledAt
 );
 
-public class PricedProductItem
-{
+public class PricedProductItem {
 	public Guid    ProductId  { get; set; }
 	public decimal UnitPrice  { get; set; }
 	public int     Quantity   { get; set; }
 	public decimal TotalPrice => Quantity * UnitPrice;
 }
 
-public class ShoppingCart : IState<object> {
+public class ShoppingCart : IState {
 	public Guid                     Id           { get; private set; }
 	public ShoppingCartStatus       Status       { get; private set; }
 	public IList<PricedProductItem> ProductItems { get; } = new List<PricedProductItem>();
@@ -129,12 +129,9 @@ public class ShoppingCart : IState<object> {
 
 	public static ShoppingCart Initial() => new();
 
-	//just for default creation of empty object
-	public ShoppingCart() { }
-
 	void Apply(ShoppingCartOpened opened) {
-		Id       = opened.ShoppingCartId;
-		Status   = ShoppingCartStatus.Pending;
+		Id     = opened.ShoppingCartId;
+		Status = ShoppingCartStatus.Pending;
 	}
 
 	void Apply(ProductItemAddedToShoppingCart productItemAdded) {
@@ -164,11 +161,11 @@ public class ShoppingCart : IState<object> {
 	}
 
 	void Apply(ShoppingCartConfirmed confirmed) {
-		Status      = ShoppingCartStatus.Confirmed;
+		Status = ShoppingCartStatus.Confirmed;
 	}
 
 	void Apply(ShoppingCartCanceled canceled) {
-		Status     = ShoppingCartStatus.Canceled;
+		Status = ShoppingCartStatus.Canceled;
 	}
 }
 

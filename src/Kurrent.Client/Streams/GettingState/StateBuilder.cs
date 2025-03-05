@@ -53,7 +53,7 @@ public record StateBuilder<TState>(
 		GetStateOptions<TState> options,
 		CancellationToken ct
 	) =>
-		messages.GetState(
+		messages.GetStateAsync(
 			options.CurrentState is { } state ? state.State : GetInitialState(),
 			Evolve,
 			ct
@@ -142,8 +142,14 @@ public static class StateBuilder {
 			},
 			getInitialState
 		);
+}
 
-	public static async Task<StateAtPointInTime<TState>> GetState<TState>(
+public class GetStreamStateOptions<TState> : ReadStreamOptions where TState : notnull {
+	public GetSnapshot<TState>? GetSnapshot { get; set; }
+}
+
+public static class KurrentClientGettingStateClientExtensions {
+	public static async Task<StateAtPointInTime<TState>> GetStateAsync<TState>(
 		this IAsyncEnumerable<ResolvedEvent> messages,
 		TState initialState,
 		Func<TState, ResolvedEvent, TState> evolve,
@@ -166,13 +172,6 @@ public static class StateBuilder {
 
 		return new StateAtPointInTime<TState>(state, lastEvent?.Event.EventNumber, lastEvent?.Event.Position);
 	}
-}
-
-public class GetStreamStateOptions<TState> : ReadStreamOptions where TState : notnull {
-	public GetSnapshot<TState>? GetSnapshot { get; set; }
-}
-
-public static class KurrentClientGettingStateClientExtensions {
 	public static async Task<StateAtPointInTime<TState>> GetStateAsync<TState>(
 		this KurrentClient eventStore,
 		string streamName,
@@ -212,7 +211,7 @@ public static class KurrentClientGettingStateClientExtensions {
 		eventStore.GetStateAsync(
 			streamName,
 			StateBuilder.For<TState, TEvent>(),
-			new GetStreamStateOptions<TState>(),
+			options,
 			ct
 		);
 
@@ -222,6 +221,13 @@ public static class KurrentClientGettingStateClientExtensions {
 		CancellationToken ct = default
 	) where TState : IState<TEvent>, new() =>
 		eventStore.GetStateAsync<TState, TEvent>(streamName, new GetStreamStateOptions<TState>(), ct);
+
+	public static Task<StateAtPointInTime<TState>> GetStateAsync<TState>(
+		this KurrentClient eventStore,
+		string streamName,
+		CancellationToken ct = default
+	) where TState : IState<object>, new() =>
+		eventStore.GetStateAsync<TState, object>(streamName, new GetStreamStateOptions<TState>(), ct);
 }
 
 public static class KurrentClientGettingStateReadAndSubscribeExtensions {

@@ -1,4 +1,5 @@
 using EventStore.Client;
+using Kurrent.Client.Core.Serialization;
 using Kurrent.Client.Streams.GettingState;
 
 namespace Kurrent.Client.Streams.DecisionMaking;
@@ -14,70 +15,32 @@ public class StateStoreOptions<TState> where TState : notnull {
 public class StateStore<TState>(KurrentClient client, StateStoreOptions<TState> options) where TState : notnull {
 	public Task<StateAtPointInTime<TState>> Get(string streamName, CancellationToken ct = default) =>
 		client.GetStateAsync(streamName, options.StateBuilder, ct);
-	
-	public async Task<IWriteResult> Handle(
+
+	public Task<IWriteResult> Handle(
 		string streamName,
 		CommandHandler<TState> decide,
 		CancellationToken ct = default
-	) {
-		var (state, streamPosition, position) = await client.GetStateAsync(streamName, options.StateBuilder, ct);
-
-		var events = await decide(state, ct);
-
-		if (events.Length == 0) {
-			return new SuccessResult(
-				streamPosition.HasValue ? StreamRevision.FromStreamPosition(streamPosition.Value) : StreamRevision.None,
-				position ?? Position.Start
-			);
-		}
-
-		var appendToStreamOptions = streamPosition.HasValue
-			? new AppendToStreamOptions
-				{ ExpectedStreamRevision = StreamRevision.FromStreamPosition(streamPosition.Value) }
-			: new AppendToStreamOptions { ExpectedStreamState = StreamState.NoStream };
-
-		return await client.AppendToStreamAsync(
-			streamName,
-			events.Cast<object>(),
-			appendToStreamOptions,
-			cancellationToken: ct
-		);
-	}
+	) =>
+		client.DecideAsync(streamName, decide, options.StateBuilder, ct);
 }
 
-
-
-public class AggregateStore<TState, TEvent>(KurrentClient client, IStateBuilder<TState> stateBuilder) where TState: IAggregate<TEvent> {
+public class AggregateStore<TState, TEvent>(KurrentClient client, StateStoreOptions<TState> options)
+	where TState : IAggregate<TEvent> where TEvent : notnull {
 	public Task<StateAtPointInTime<TState>> Get(string streamName, CancellationToken ct = default) =>
-		client.GetStateAsync(streamName, stateBuilder, ct);
-	
-	public async Task<IWriteResult> Handle(
+		client.GetStateAsync(streamName, options.StateBuilder, ct);
+
+	public Task<IWriteResult> Handle(
 		string streamName,
 		Func<TState, CancellationToken, ValueTask> handle,
 		CancellationToken ct = default
-	) {
-		var (state, streamPosition, position) = await client.GetStateAsync(streamName, stateBuilder, ct);
-
-		await handle(state, ct);
-		var events = state.DequeueUncommittedEvents();
-
-		if (events.Length == 0) {
-			return new SuccessResult(
-				streamPosition.HasValue ? StreamRevision.FromStreamPosition(streamPosition.Value) : StreamRevision.None,
-				position ?? Position.Start
-			);
-		}
-
-		var appendToStreamOptions = streamPosition.HasValue
-			? new AppendToStreamOptions
-				{ ExpectedStreamRevision = StreamRevision.FromStreamPosition(streamPosition.Value) }
-			: new AppendToStreamOptions { ExpectedStreamState = StreamState.NoStream };
-
-		return await client.AppendToStreamAsync(
+	) =>
+		client.DecideAsync(
 			streamName,
-			events.Cast<object>(),
-			appendToStreamOptions,
-			cancellationToken: ct
+			async (state, token) => {
+				await handle(state, token);
+				return state.DequeueUncommittedEvents().Select(e => Message.From(e)).ToArray();
+			},
+			options.StateBuilder,
+			ct
 		);
-	}
 }

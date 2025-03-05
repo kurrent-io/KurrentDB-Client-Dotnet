@@ -3,6 +3,7 @@ using EventStore.Client;
 using Kurrent.Client.Streams.GettingState;
 
 namespace Kurrent.Client.Tests.Streams.GettingState.UnionTypes;
+
 using static ShoppingCart;
 using static ShoppingCart.Event;
 
@@ -34,11 +35,10 @@ public class GettingStateTests(ITestOutputHelper output, KurrentPermanentFixture
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, events);
 
+		var stateBuilder = StateBuilder.For<ShoppingCart, Event>(Evolve, () => new Initial());
+
 		// When
-		var result = await Fixture.Streams.GetStateAsync(
-			streamName,
-			StateBuilder.For<ShoppingCart, Event>(Evolve, () => new Initial())
-		);
+		var result = await Fixture.Streams.GetStateAsync(streamName, stateBuilder);
 
 		var shoppingCart = result.State;
 
@@ -95,8 +95,8 @@ public abstract record ShoppingCart {
 			DateTimeOffset CanceledAt
 		) : Event;
 
-		// This won't allow external inheritance
-		private Event() { }
+		// This won't allow external inheritance and mimic union type in C#
+		Event() { }
 	}
 
 	public record Initial : ShoppingCart;

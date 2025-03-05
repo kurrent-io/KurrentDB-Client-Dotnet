@@ -31,11 +31,10 @@ public class GettingStateTests(ITestOutputHelper output, KurrentPermanentFixture
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, events);
 
+		var stateBuilder = StateBuilder.For(ShoppingCart.Evolve, ShoppingCart.Default);
+
 		// When
-		var result = await Fixture.Streams.GetStateAsync(
-			streamName,
-			StateBuilder.For(ShoppingCart.Evolve, ShoppingCart.Default)
-		);
+		var result = await Fixture.Streams.GetStateAsync(streamName, stateBuilder);
 
 		var shoppingCart = result.State;
 
