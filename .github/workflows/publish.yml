@@ -6,7 +6,7 @@ on:
     branches:
       - master
     tags:
-      - v*
+      - kurrent@*
   workflow_dispatch:
     inputs:
       ref:
@@ -199,7 +199,7 @@ jobs:
           echo "branch=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
           dotnet nuget list source
           dotnet tool restore
-          version=$(dotnet tool run minver -- --tag-prefix=v)
+          version=$(dotnet tool run minver -- --tag-prefix='kurrent@')
           echo "version=${version}" >> $GITHUB_OUTPUT
       - name: Install dotnet SDKs
         uses: actions/setup-dotnet@v3
@@ -229,7 +229,7 @@ jobs:
           find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.github_token }} --source https://nuget.pkg.github.com/EventStore/index.json --skip-duplicate
       - name: Dotnet Push to Nuget.org
         shell: bash
-        if: (contains(steps.get_version.outputs.branch, 'v') && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_to_nuget == 'true')
+        if: (contains(steps.get_version.outputs.branch, 'kurrent@') && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_to_nuget == 'true')
         run: |
           dotnet nuget list source
           dotnet tool restore
