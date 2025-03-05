@@ -3,7 +3,7 @@ using Kurrent.Client.Streams.GettingState;
 
 namespace Kurrent.Client.Streams.DecisionMaking;
 
-public class StateStoreOptions<TState> {
+public class StateStoreOptions<TState> where TState : notnull {
 #if NET48
 	public IStateBuilder<TState> StateBuilder { get; set; } = null!;
 #else
@@ -11,7 +11,7 @@ public class StateStoreOptions<TState> {
 #endif
 }
 
-public class StateStore<TState>(KurrentClient client, StateStoreOptions<TState> options) {
+public class StateStore<TState>(KurrentClient client, StateStoreOptions<TState> options) where TState : notnull {
 	public Task<StateAtPointInTime<TState>> Get(string streamName, CancellationToken ct = default) =>
 		client.GetStateAsync(streamName, options.StateBuilder, ct);
 	

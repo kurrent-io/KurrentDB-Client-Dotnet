@@ -13,27 +13,24 @@ public interface ICommandHandler<in TState> {
 public record AsyncDecider<TState, TCommand>(
 	Func<TCommand, TState, CancellationToken, ValueTask<Message[]>> Decide,
 	Func<TState, ResolvedEvent, TState> Evolve,
-	Func<TState> GetInitialState,
-	GetSnapshot<TState>? GetSnapshot = null
+	Func<TState> GetInitialState
 ) : StateBuilder<TState>(
 	Evolve,
-	GetInitialState,
-	GetSnapshot
-);
+	GetInitialState
+) where TState : notnull;
 
 public record AsyncDecider<TState>(
 	Func<object, TState, CancellationToken, ValueTask<Message[]>> Decide,
 	Func<TState, ResolvedEvent, TState> Evolve,
-	Func<TState> GetInitialState,
-	GetSnapshot<TState>? GetSnapshot = null
-) : AsyncDecider<TState, object>(Decide, Evolve, GetInitialState, GetSnapshot);
+	Func<TState> GetInitialState
+) : AsyncDecider<TState, object>(Decide, Evolve, GetInitialState) where TState : notnull;
 
 public record Decider<TState, TCommand, TEvent>(
 	Func<TCommand, TState, TEvent[]> Decide,
 	Func<TState, TEvent, TState> Evolve,
 	Func<TState> GetInitialState
-) where TEvent: notnull {
-	public AsyncDecider<TState, TCommand> ToAsyncDecider(GetSnapshot<TState>? getSnapshot = null) =>
+) where TEvent: notnull where TState : notnull {
+	public AsyncDecider<TState, TCommand> ToAsyncDecider() =>
 		new AsyncDecider<TState, TCommand>(
 			(command, state, _) =>
 				new ValueTask<Message[]>(Decide(command, state).Select(m => Message.From(m)).ToArray()),
@@ -41,8 +38,7 @@ public record Decider<TState, TCommand, TEvent>(
 				resolvedEvent.DeserializedData is TEvent @event
 					? Evolve(state, @event)
 					: state,
-			GetInitialState,
-			getSnapshot
+			GetInitialState
 		);
 }
 
@@ -50,7 +46,7 @@ public record Decider<TState, TCommand>(
 	Func<TCommand, TState, object[]> Decide,
 	Func<TState, object, TState> Evolve,
 	Func<TState> GetInitialState
-) : Decider<TState, TCommand, object>(Decide, Evolve, GetInitialState);
+) : Decider<TState, TCommand, object>(Decide, Evolve, GetInitialState) where TState : notnull;
 
 public static class KurrentClientDecisionMakingClientExtensions {
 	public static Task<IWriteResult> Decide<TState, TCommand>(
@@ -59,7 +55,7 @@ public static class KurrentClientDecisionMakingClientExtensions {
 		TCommand command,
 		Decider<TState, TCommand> decider,
 		CancellationToken ct
-	) =>
+	) where TState : notnull =>
 		eventStore.Decide(
 			streamName,
 			command,
@@ -73,7 +69,7 @@ public static class KurrentClientDecisionMakingClientExtensions {
 		TCommand command,
 		AsyncDecider<TState, TCommand> asyncDecider,
 		CancellationToken ct
-	) =>
+	) where TState : notnull =>
 		eventStore.Decide(
 			streamName,
 			(state, token) => asyncDecider.Decide(command, state, token),
@@ -87,7 +83,7 @@ public static class KurrentClientDecisionMakingClientExtensions {
 		CommandHandler<TState> decide,
 		IStateBuilder<TState> stateBuilder,
 		CancellationToken ct = default
-	) {
+	) where TState : notnull {
 		var (state, streamPosition, position) = await eventStore.GetStateAsync(streamName, stateBuilder, ct);
 
 		var events = await decide(state, ct);
@@ -118,7 +114,7 @@ public static class KurrentClientDecisionMakingClientExtensions {
 		CommandHandler<TState> decide,
 		StateBuilder<TState> stateBuilder,
 		CancellationToken ct = default
-	) {
+	) where TState : notnull {
 		var (state, streamPosition, position) = await eventStore.GetStateAsync(streamName, stateBuilder, ct);
 
 		var events = await decide(state, ct);
