@@ -21,15 +21,22 @@ public record AsyncDecider<TState, TCommand>(
 	GetSnapshot
 );
 
+public record AsyncDecider<TState>(
+	Func<object, TState, CancellationToken, ValueTask<Message[]>> Decide,
+	Func<TState, ResolvedEvent, TState> Evolve,
+	Func<TState> GetInitialState,
+	GetSnapshot<TState>? GetSnapshot = null
+) : AsyncDecider<TState, object>(Decide, Evolve, GetInitialState, GetSnapshot);
+
 public record Decider<TState, TCommand, TEvent>(
 	Func<TCommand, TState, TEvent[]> Decide,
 	Func<TState, TEvent, TState> Evolve,
 	Func<TState> GetInitialState
-) {
+) where TEvent: notnull {
 	public AsyncDecider<TState, TCommand> ToAsyncDecider(GetSnapshot<TState>? getSnapshot = null) =>
 		new AsyncDecider<TState, TCommand>(
 			(command, state, _) =>
-				new ValueTask<Message[]>(Decide(command, state).Select(m => Message.From(m!)).ToArray()),
+				new ValueTask<Message[]>(Decide(command, state).Select(m => Message.From(m)).ToArray()),
 			(state, resolvedEvent) =>
 				resolvedEvent.DeserializedData is TEvent @event
 					? Evolve(state, @event)
@@ -45,9 +52,8 @@ public record Decider<TState, TCommand>(
 	Func<TState> GetInitialState
 ) : Decider<TState, TCommand, object>(Decide, Evolve, GetInitialState);
 
-
 public static class KurrentClientDecisionMakingClientExtensions {
-	public static Task Decide<TState, TCommand>(
+	public static Task<IWriteResult> Decide<TState, TCommand>(
 		this KurrentClient eventStore,
 		string streamName,
 		TCommand command,
@@ -60,8 +66,8 @@ public static class KurrentClientDecisionMakingClientExtensions {
 			decider.ToAsyncDecider(),
 			ct
 		);
-	
-	public static Task Decide<TState, TCommand>(
+
+	public static Task<IWriteResult> Decide<TState, TCommand>(
 		this KurrentClient eventStore,
 		string streamName,
 		TCommand command,
@@ -75,23 +81,61 @@ public static class KurrentClientDecisionMakingClientExtensions {
 			ct
 		);
 
-	public static async Task Decide<TState>(
+	public static async Task<IWriteResult> Decide<TState>(
 		this KurrentClient eventStore,
 		string streamName,
 		CommandHandler<TState> decide,
 		IStateBuilder<TState> stateBuilder,
 		CancellationToken ct = default
 	) {
-		var (state, streamPosition, _) = await eventStore.GetStateAsync(streamName, stateBuilder, ct);
+		var (state, streamPosition, position) = await eventStore.GetStateAsync(streamName, stateBuilder, ct);
 
 		var events = await decide(state, ct);
+
+		if (events.Length == 0) {
+			return new SuccessResult(
+				streamPosition.HasValue ? StreamRevision.FromStreamPosition(streamPosition.Value) : StreamRevision.None,
+				position ?? Position.Start
+			);
+		}
 
 		var options = streamPosition.HasValue
 			? new AppendToStreamOptions
 				{ ExpectedStreamRevision = StreamRevision.FromStreamPosition(streamPosition.Value) }
 			: new AppendToStreamOptions { ExpectedStreamState = StreamState.NoStream };
 
-		await eventStore.AppendToStreamAsync(
+		return await eventStore.AppendToStreamAsync(
+			streamName,
+			events.Cast<object>(),
+			options,
+			cancellationToken: ct
+		);
+	}
+
+	public static async Task<IWriteResult> Decide<TState>(
+		this KurrentClient eventStore,
+		string streamName,
+		CommandHandler<TState> decide,
+		StateBuilder<TState> stateBuilder,
+		CancellationToken ct = default
+	) {
+		var (state, streamPosition, position) = await eventStore.GetStateAsync(streamName, stateBuilder, ct);
+
+		var events = await decide(state, ct);
+
+		if (events.Length == 0) {
+			return new SuccessResult(
+				streamPosition.HasValue ? StreamRevision.FromStreamPosition(streamPosition.Value) : StreamRevision.None,
+				position ?? Position.Start
+			);
+		}
+
+		var options = streamPosition.HasValue
+			? new AppendToStreamOptions
+				{ ExpectedStreamRevision = StreamRevision.FromStreamPosition(streamPosition.Value) }
+			: new AppendToStreamOptions { ExpectedStreamState = StreamState.NoStream };
+
+		return await eventStore.AppendToStreamAsync(
 			streamName,
 			events.Cast<object>(),
 			options,

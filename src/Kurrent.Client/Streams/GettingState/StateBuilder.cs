@@ -219,6 +219,14 @@ public static class KurrentClientGettingStateClientExtensions {
 			.GetStateAsync(stateBuilder, ct);
 	}
 
+	public static Task<StateAtPointInTime<TState>> GetStateAsync<TState>(
+		this KurrentClient eventStore,
+		string streamName,
+		StateBuilder<TState> streamStateBuilder,
+		CancellationToken ct = default
+	) =>
+		eventStore.GetStateAsync(streamName, streamStateBuilder, new ReadStreamOptions(), ct);
+
 	public static async Task<StateAtPointInTime<TState>> GetStateAsync<TState>(
 		this KurrentClient eventStore,
 		StateBuilder<TState> streamStateBuilder,
