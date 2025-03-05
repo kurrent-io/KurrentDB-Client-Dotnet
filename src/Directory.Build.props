@@ -14,8 +14,8 @@
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>https://kurrent.io/blog/</PackageReleaseNotes>
         <PackageTags>kurrent client grpc</PackageTags>
-        <Authors>Kurrent Ltd</Authors>
-        <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Kurrent Ltd</Copyright>
+        <Authors>Kurrent Inc</Authors>
+        <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Kurrent Inc</Copyright>
     </PropertyGroup>
 
     <ItemGroup>
