@@ -200,7 +200,6 @@ jobs:
           dotnet nuget list source
           dotnet tool restore
           version=$(dotnet tool run minver -- --tag-prefix='kurrent@' --minimum-major-minor=1.0)
-          echo "version=${version}" >> $GITHUB_ENV
           echo "version=${version}" >> $GITHUB_OUTPUT
       - name: Install dotnet SDKs
         uses: actions/setup-dotnet@v3

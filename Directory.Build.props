@@ -6,7 +6,6 @@
         <NullableContextOptions>enable</NullableContextOptions>
         <ImplicitUsings>true</ImplicitUsings>
         <LangVersion>preview</LangVersion>
-				<Version>$(version)</Version>
 
         <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
         <DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
