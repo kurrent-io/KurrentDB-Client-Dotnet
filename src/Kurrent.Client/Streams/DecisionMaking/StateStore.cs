@@ -1,4 +1,5 @@
 using EventStore.Client;
+using Kurrent.Client.Core.Serialization;
 using Kurrent.Client.Streams.GettingState;
 
 namespace Kurrent.Client.Streams.DecisionMaking;
@@ -97,6 +98,33 @@ public static class StateStoreExtensions {
 			streamName,
 			handle,
 			null,
+			ct
+		);
+
+	public static Task<IWriteResult> Handle<TState, TEvent>(
+		this IStateStore<TState, TEvent> stateStore,
+		string streamName,
+		Func<TState, TEvent[]> handle,
+		CancellationToken ct = default
+	) where TState : notnull where TEvent : notnull =>
+		stateStore.Handle(
+			streamName,
+			(state, _) => new ValueTask<Message[]>(handle(state).Select(m => Message.From(m)).ToArray()),
+			null,
+			ct
+		);
+
+	public static Task<IWriteResult> Handle<TState, TEvent>(
+		this IStateStore<TState, TEvent> stateStore,
+		string streamName,
+		Func<TState, TEvent[]> handle,
+		DecideOptions<TState>? decideOptions,
+		CancellationToken ct = default
+	) where TState : notnull where TEvent : notnull =>
+		stateStore.Handle(
+			streamName,
+			(state, _) => new ValueTask<Message[]>(handle(state).Select(m => Message.From(m)).ToArray()),
+			decideOptions,
 			ct
 		);
 }
