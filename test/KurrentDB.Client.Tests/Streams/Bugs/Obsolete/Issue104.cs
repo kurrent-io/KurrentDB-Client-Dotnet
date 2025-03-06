@@ -14,7 +14,7 @@ public class Issue104(ITestOutputHelper output, KurrentDBPermanentFixture fixtur
 		var eventAppeared                = new TaskCompletionSource<bool>();
 		var checkpointReachAfterDisposed = new TaskCompletionSource<bool>();
 
-		await Fixture.Streams.AppendToStreamAsync(streamName, StreamRevision.None, Fixture.CreateTestEvents());
+		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.Any, Fixture.CreateTestEvents());
 
 		var subscription = await Fixture.Streams.SubscribeToAllAsync(
 			FromAll.Start,
@@ -45,7 +45,7 @@ public class Issue104(ITestOutputHelper output, KurrentDBPermanentFixture fixtur
 
 		await Fixture.Streams.AppendToStreamAsync(
 			ignoredStreamName,
-			StreamRevision.None,
+			StreamState.Any,
 			Fixture.CreateTestEvents(50)
 		);
 

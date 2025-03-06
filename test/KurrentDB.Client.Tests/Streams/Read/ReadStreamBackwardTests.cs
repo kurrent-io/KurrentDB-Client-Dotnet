@@ -190,7 +190,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 	public async Task with_timeout_fails_when_operation_expired() {
 		var stream = Fixture.GetStreamName();
 
-		await Fixture.Streams.AppendToStreamAsync(stream, StreamRevision.None, Fixture.CreateTestEvents());
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents());
 
 		var rpcException = await Assert.ThrowsAsync<RpcException>(
 			() => Fixture.Streams
