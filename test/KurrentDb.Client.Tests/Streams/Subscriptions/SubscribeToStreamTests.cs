@@ -58,7 +58,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 		var writeResult =
 			await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents.Take(pageSize));
 
-		var streamPosition = StreamPosition.FromStreamRevision(writeResult.NextExpectedStreamRevision);
+		var streamPosition = StreamPosition.FromInt64(writeResult.NextExpectedStreamState.ToInt64());
 		var checkpoint     = FromStream.After(streamPosition);
 
 		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, checkpoint);
@@ -70,7 +70,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 
 		await Fixture.Streams.AppendToStreamAsync(
 			streamName,
-			writeResult.NextExpectedStreamRevision,
+			writeResult.NextExpectedStreamState,
 			seedEvents.Skip(pageSize)
 		);
 

@@ -17,7 +17,7 @@ public class DeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 	public async Task soft_deleting_a_stream_that_exists() {
 		var stream = Fixture.GetStreamName();
 
-		await Fixture.Streams.AppendToStreamAsync(stream, StreamRevision.None, Fixture.CreateTestEvents());
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents());
 
 		await Fixture.Streams.DeleteAsync(stream, StreamState.StreamExists);
 	}
@@ -46,7 +46,7 @@ public class DeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			Fixture.CreateTestEvents()
 		);
 
-		var deleteResult = await Fixture.Streams.TombstoneAsync(stream, writeResult.NextExpectedStreamRevision);
+		var deleteResult = await Fixture.Streams.TombstoneAsync(stream, writeResult.NextExpectedStreamState);
 
 		Assert.True(deleteResult.LogPosition > writeResult.LogPosition);
 	}
@@ -61,7 +61,7 @@ public class DeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			Fixture.CreateTestEvents()
 		);
 
-		var deleteResult = await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+		var deleteResult = await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamState);
 
 		Assert.True(deleteResult.LogPosition > writeResult.LogPosition);
 	}

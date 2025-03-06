@@ -99,33 +99,23 @@ public class Issue2544 : IClassFixture<KurrentDBPermanentFixture> {
 	async Task AppendEvents(string streamName) {
 		await Task.Delay(TimeSpan.FromMilliseconds(10));
 
-		var expectedRevision = StreamRevision.None;
+		var expectedState = StreamState.NoStream;
 
 		for (var i = 0; i < Batches; i++) {
-			if (expectedRevision == StreamRevision.None) {
-				var result = await Fixture.Streams.AppendToStreamAsync(
-					streamName,
-					StreamState.NoStream,
-					Fixture.CreateTestEvents(BatchSize)
-				);
+			var result = await Fixture.Streams.AppendToStreamAsync(
+				streamName,
+				expectedState,
+				Fixture.CreateTestEvents(BatchSize)
+			);
 
-				expectedRevision = result.NextExpectedStreamRevision;
-			} else {
-				var result = await Fixture.Streams.AppendToStreamAsync(
-					streamName,
-					expectedRevision,
-					Fixture.CreateTestEvents(BatchSize)
-				);
-
-				expectedRevision = result.NextExpectedStreamRevision;
-			}
+			expectedState = result.NextExpectedStreamState;
 
 			await Task.Delay(TimeSpan.FromMilliseconds(10));
 		}
 
 		await Fixture.Streams.AppendToStreamAsync(
 			streamName,
-			expectedRevision,
+			expectedState,
 			new[] {
 				new EventData(Uuid.NewUuid(), "completed", Array.Empty<byte>(), contentType: "application/octet-stream")
 			}

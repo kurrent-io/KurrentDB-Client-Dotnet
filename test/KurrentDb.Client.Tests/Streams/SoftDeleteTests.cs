@@ -28,9 +28,9 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			Fixture.CreateTestEvents()
 		);
 
-		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(0), writeResult.NextExpectedStreamState);
 
-		await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+		await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamState);
 
 		await Assert.ThrowsAsync<StreamNotFoundException>(
 			() => Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
@@ -48,15 +48,15 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			Fixture.CreateTestEvents()
 		);
 
-		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(0), writeResult.NextExpectedStreamState);
 
-		await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+		await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamState);
 
 		var events = Fixture.CreateTestEvents(3).ToArray();
 
 		writeResult = await Fixture.Streams.AppendToStreamAsync(stream, expectedState, events);
 
-		Assert.Equal(new(3), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(3), writeResult.NextExpectedStreamState);
 
 		await Task.Delay(50); //TODO: This is a workaround until github issue #1744 is fixed
 
@@ -86,19 +86,19 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			Fixture.CreateTestEvents()
 		);
 
-		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(0), writeResult.NextExpectedStreamState);
 
-		await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+		await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamState);
 
 		var events = Fixture.CreateTestEvents(3).ToArray();
 
 		writeResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
-			writeResult.NextExpectedStreamRevision,
+			writeResult.NextExpectedStreamState,
 			events
 		);
 
-		Assert.Equal(new(3), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(3), writeResult.NextExpectedStreamState);
 
 		await Task.Delay(50); //TODO: This is a workaround until github issue #1744 is fixed
 
@@ -130,7 +130,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			Fixture.CreateTestEvents(count)
 		);
 
-		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(1), writeResult.NextExpectedStreamState);
 
 		var streamMetadata = new StreamMetadata(
 			acl: new(deleteRole: "some-role"),
@@ -145,11 +145,11 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			streamMetadata
 		);
 
-		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(0), writeResult.NextExpectedStreamState);
 
 		var events = Fixture.CreateTestEvents(3).ToArray();
 
-		await Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(1), events);
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(1), events);
 
 		await Task.Delay(500); //TODO: This is a workaround until github issue #1744 is fixed
 
@@ -189,7 +189,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 				Fixture.CreateTestEvents(2)
 			);
 
-		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(1), writeResult.NextExpectedStreamState);
 
 		await Fixture.Streams.DeleteAsync(stream, new StreamRevision(1));
 
@@ -222,7 +222,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			Fixture.CreateTestEvents(2)
 		);
 
-		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(1), writeResult.NextExpectedStreamState);
 
 		await Fixture.Streams.DeleteAsync(stream, new StreamRevision(1));
 
@@ -232,7 +232,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			Fixture.CreateTestEvents(3)
 		);
 
-		Assert.Equal(new(4), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(4), writeResult.NextExpectedStreamState);
 
 		await Assert.ThrowsAsync<WrongExpectedVersionException>(
 			() => Fixture.Streams.AppendToStreamAsync(
@@ -249,7 +249,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 
 		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents(2));
 
-		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(1), writeResult.NextExpectedStreamState);
 
 		await Fixture.Streams.DeleteAsync(stream, new StreamRevision(1));
 
@@ -259,7 +259,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			Fixture.CreateTestEvents(3)
 		);
 
-		Assert.Equal(new(4), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(4), writeResult.NextExpectedStreamState);
 
 		var wrongExpectedVersionResult = await Fixture.Streams.AppendToStreamAsync(
 			stream,
@@ -282,7 +282,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 				Fixture.CreateTestEvents(2)
 			);
 
-		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(1), writeResult.NextExpectedStreamState);
 
 		await Fixture.Streams.DeleteAsync(stream, new StreamRevision(1));
 
@@ -291,11 +291,11 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 
 		writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, firstEvents);
 
-		Assert.Equal(new(4), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(4), writeResult.NextExpectedStreamState);
 
 		writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, secondEvents);
 
-		Assert.Equal(new(6), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(6), writeResult.NextExpectedStreamState);
 
 		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
 			.Select(x => x.Event)
@@ -336,7 +336,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			// records but not transactionally
 			await Task.Delay(200);
 
-		Assert.Equal(new(0), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(0), writeResult.NextExpectedStreamState);
 
 		await Assert.ThrowsAsync<StreamNotFoundException>(
 			() => Fixture.Streams
@@ -376,9 +376,9 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			Fixture.CreateTestEvents(count)
 		);
 
-		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(1), writeResult.NextExpectedStreamState);
 
-		await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamRevision);
+		await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamState);
 
 		writeResult = await Fixture.Streams.SetStreamMetadataAsync(
 			stream,
@@ -386,7 +386,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			streamMetadata
 		);
 
-		Assert.Equal(new(1), writeResult.NextExpectedStreamRevision);
+		Assert.Equal(new(1), writeResult.NextExpectedStreamState);
 
 		if (GlobalEnvironment.UseCluster)
 			// without this delay this test fails sometimes when run against a cluster because

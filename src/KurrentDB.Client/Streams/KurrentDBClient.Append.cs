@@ -36,70 +36,15 @@ namespace KurrentDB.Client {
 
 			var eventsData = _messageSerializer.Serialize(messages, serializationContext);
 
-			return options.ExpectedStreamRevision.HasValue
-				? AppendToStreamAsync(
-					streamName,
-					options.ExpectedStreamRevision.Value,
-					eventsData,
-					options.ConfigureOperationOptions,
-					options.Deadline,
-					options.UserCredentials,
-					cancellationToken
-				)
-				: AppendToStreamAsync(
-					streamName,
-					options.ExpectedStreamState ?? StreamState.Any,
-					eventsData,
-					options.ConfigureOperationOptions,
-					options.Deadline,
-					options.UserCredentials,
-					cancellationToken
-				);
-		}
-
-		/// <summary>
-		/// Appends events asynchronously to a stream.
-		/// </summary>
-		/// <param name="streamName">The name of the stream to append events to.</param>
-		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream to append to.</param>
-		/// <param name="eventData">An <see cref="IEnumerable{EventData}"/> to append to the stream.</param>
-		/// <param name="configureOperationOptions">An <see cref="Action{KurrentDBClientOperationOptions}"/> to configure the operation's options.</param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public async Task<IWriteResult> AppendToStreamAsync(
-			string streamName,
-			StreamRevision expectedRevision,
-			IEnumerable<EventData> eventData,
-			Action<KurrentDBClientOperationOptions>? configureOperationOptions = null,
-			TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default
-		) {
-			var options = Settings.OperationOptions.Clone();
-			configureOperationOptions?.Invoke(options);
-
-			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedRevision);
-
-			var task = userCredentials is null && await BatchAppender.IsUsable().ConfigureAwait(false)
-				? BatchAppender.Append(streamName, expectedRevision, eventData, deadline, cancellationToken)
-				: AppendToStreamInternal(
-					await GetChannelInfo(cancellationToken).ConfigureAwait(false),
-					new AppendReq {
-						Options = new() {
-							StreamIdentifier = streamName,
-							Revision         = expectedRevision
-						}
-					},
-					eventData,
-					options,
-					deadline,
-					userCredentials,
-					cancellationToken
-				);
-
-			return (await task.ConfigureAwait(false)).OptionallyThrowWrongExpectedVersionException(options);
+			return AppendToStreamAsync(
+				streamName,
+				options.ExpectedStreamState ?? StreamState.Any,
+				eventsData,
+				options.ConfigureOperationOptions,
+				options.Deadline,
+				options.UserCredentials,
+				cancellationToken
+			);
 		}
 
 		/// <summary>
@@ -217,8 +162,8 @@ namespace KurrentDB.Client {
 		IWriteResult HandleSuccessAppend(AppendResp response, AppendReq header) {
 			var currentRevision = response.Success.CurrentRevisionOptionCase
 			                   == AppendResp.Types.Success.CurrentRevisionOptionOneofCase.NoStream
-				? StreamRevision.None
-				: new StreamRevision(response.Success.CurrentRevision);
+				? StreamState.NoStream
+				: StreamState.StreamRevision(response.Success.CurrentRevision);
 
 			var position = response.Success.PositionOptionCase
 			            == AppendResp.Types.Success.PositionOptionOneofCase.Position
@@ -240,8 +185,8 @@ namespace KurrentDB.Client {
 		) {
 			var actualStreamRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase
 			                        == CurrentRevisionOptionOneofCase.CurrentRevision
-				? new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
-				: StreamRevision.None;
+				? StreamState.StreamRevision(response.WrongExpectedVersion.CurrentRevision)
+				: StreamState.NoStream;
 
 			_log.LogDebug(
 				"Append to stream failed with Wrong Expected Version - {streamName}/{expectedRevision}/{currentRevision}",
@@ -255,7 +200,7 @@ namespace KurrentDB.Client {
 				 == ExpectedRevisionOptionOneofCase.ExpectedRevision) {
 					throw new WrongExpectedVersionException(
 						header.Options.StreamIdentifier!,
-						new StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
+						StreamState.StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
 						actualStreamRevision
 					);
 				}
@@ -276,8 +221,8 @@ namespace KurrentDB.Client {
 
 			var expectedRevision = response.WrongExpectedVersion.ExpectedRevisionOptionCase
 			                    == ExpectedRevisionOptionOneofCase.ExpectedRevision
-				? new StreamRevision(response.WrongExpectedVersion.ExpectedRevision)
-				: StreamRevision.None;
+				? StreamState.StreamRevision(response.WrongExpectedVersion.ExpectedRevision)
+				: StreamState.NoStream;
 
 			return new WrongExpectedVersionResult(
 				header.Options.StreamIdentifier!,
@@ -534,55 +479,6 @@ namespace KurrentDB.Client {
 				cancellationToken
 			);
 		
-		
-		/// <summary>
-		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDBClientSettings"/>
-		/// </summary>
-		/// <param name="dbClient"></param>
-		/// <param name="streamName">The name of the stream to append events to.</param>
-		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream to append to.</param>
-		/// <param name="messages">Messages to append to the stream.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public static Task<IWriteResult> AppendToStreamAsync(
-			this KurrentDBClient dbClient,
-			string streamName,
-			StreamRevision expectedRevision,
-			IEnumerable<Message> messages,
-			CancellationToken cancellationToken = default
-		)
-			=> dbClient.AppendToStreamAsync(
-				streamName,
-				messages,
-				new AppendToStreamOptions {
-					ExpectedStreamRevision = expectedRevision
-				},
-				cancellationToken
-			);
-
-		/// <summary>
-		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDBClientSettings"/>
-		/// </summary>
-		/// <param name="dbClient"></param>
-		/// <param name="streamName">The name of the stream to append events to.</param>
-		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream to append to.</param>
-		/// <param name="messages">Messages to append to the stream.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public static Task<IWriteResult> AppendToStreamAsync(
-			this KurrentDBClient dbClient,
-			string streamName,
-			StreamRevision expectedRevision,
-			IEnumerable<object> messages,
-			CancellationToken cancellationToken = default
-		)
-			=> dbClient.AppendToStreamAsync(
-				streamName,
-				messages.Select(m => Message.From(m)),
-				new AppendToStreamOptions{ ExpectedStreamRevision = expectedRevision},
-				cancellationToken
-			);
-
 		/// <summary>
 		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDBClientSettings"/>
 		/// </summary>
@@ -613,11 +509,6 @@ namespace KurrentDB.Client {
 		/// The expected <see cref="ExpectedStreamState"/> of the stream to append to.
 		/// </summary>
 		public StreamState? ExpectedStreamState { get; set; }
-
-		/// <summary>
-		/// The expected <see cref="ExpectedStreamRevision"/> of the stream to append to.
-		/// </summary>
-		public StreamRevision? ExpectedStreamRevision { get; set; }
 
 		/// <summary>
 		/// An <see cref="Action{KurrentDBClientOperationOptions}"/> to configure the operation's options.
