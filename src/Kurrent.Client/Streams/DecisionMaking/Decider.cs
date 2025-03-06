@@ -44,15 +44,15 @@ public record Decider<TState, TCommand>(
 	Func<TState> GetInitialState
 ) : Decider<TState, TCommand, object>(Decide, Evolve, GetInitialState) where TState : notnull;
 
-public static class KurrentClientDecisionMakingClientExtensions {
-	public class DecideOptions<TState> : GetStreamStateOptions<TState> where TState : notnull;
+public class DecideOptions<TState> : GetStreamStateOptions<TState> where TState : notnull;
 
+public static class KurrentClientDecisionMakingExtensions {
 	public static async Task<IWriteResult> DecideAsync<TState>(
 		this KurrentClient eventStore,
 		string streamName,
 		CommandHandler<TState> handle,
 		IStateBuilder<TState> stateBuilder,
-		DecideOptions<TState> options,
+		DecideOptions<TState>? options,
 		CancellationToken ct = default
 	) where TState : notnull {
 		var (state, streamPosition, position) =

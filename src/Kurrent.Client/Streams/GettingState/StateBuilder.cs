@@ -205,11 +205,13 @@ public static class KurrentClientGettingStateClientExtensions {
 		this KurrentClient eventStore,
 		string streamName,
 		IStateBuilder<TState> stateBuilder,
-		GetStreamStateOptions<TState> options,
+		GetStreamStateOptions<TState>? options,
 		CancellationToken ct = default
 	) where TState : notnull {
 		StateAtPointInTime<TState>? stateAtPointInTime = null;
 
+		options ??= new GetStreamStateOptions<TState> ();
+		
 		if (options.GetSnapshot != null) {
 			stateAtPointInTime = await options.GetSnapshot(
 				GetSnapshotOptions.ForStream(streamName),
