@@ -35,7 +35,7 @@ public interface IAggregateStore<TAggregate, TEvent>
 
 public static class AggregateStoreExtensions {
 	public static Task<IWriteResult> AddAsync<TAggregate, TEvent>(
-		IAggregateStore<TAggregate, TEvent> aggregateStore,
+		this IAggregateStore<TAggregate, TEvent> aggregateStore,
 		string streamName,
 		TAggregate aggregate,
 		CancellationToken ct = default
@@ -48,7 +48,7 @@ public static class AggregateStoreExtensions {
 		);
 
 	public static Task<IWriteResult> HandleAsync<TAggregate, TEvent>(
-		IAggregateStore<TAggregate, TEvent> aggregateStore,
+		this IAggregateStore<TAggregate, TEvent> aggregateStore,
 		string streamName,
 		Func<TAggregate, CancellationToken, ValueTask> handle,
 		CancellationToken ct = default
@@ -61,7 +61,7 @@ public static class AggregateStoreExtensions {
 		);
 
 	public static Task<IWriteResult> HandleAsync<TAggregate, TEvent>(
-		IAggregateStore<TAggregate, TEvent> aggregateStore,
+		this IAggregateStore<TAggregate, TEvent> aggregateStore,
 		string streamName,
 		Action<TAggregate> handle,
 		CancellationToken ct = default
@@ -77,7 +77,7 @@ public static class AggregateStoreExtensions {
 		);
 
 	public static Task<IWriteResult> HandleAsync<TAggregate, TEvent>(
-		IAggregateStore<TAggregate, TEvent> aggregateStore,
+		this IAggregateStore<TAggregate, TEvent> aggregateStore,
 		string streamName,
 		Action<TAggregate> handle,
 		DecideOptions<TAggregate>? decideOption,

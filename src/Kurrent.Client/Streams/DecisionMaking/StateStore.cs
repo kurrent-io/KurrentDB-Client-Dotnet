@@ -13,26 +13,113 @@ public class StateStoreOptions<TState> where TState : notnull {
 	public GetStreamStateOptions<TState>? GetStreamStateOptions { get; set; }
 }
 
-public class StateStore<TState, TEvent>(KurrentClient client, StateStoreOptions<TState> options)
+public interface IStateStore<TState, in TEvent>
 	where TState : notnull
 	where TEvent : notnull {
-	public Task<StateAtPointInTime<TState>> Get(string streamName, CancellationToken ct = default) =>
-		client.GetStateAsync(streamName, options.StateBuilder, options.GetStreamStateOptions, ct);
+	Task<StateAtPointInTime<TState>> Get(
+		string streamName,
+		CancellationToken ct = default
+	);
 
-	public Task<IWriteResult> AddAsync(string streamName, IEnumerable<TEvent> events, CancellationToken ct = default) =>
-		AddAsync(
+	Task<IWriteResult> AddAsync(
+		string streamName,
+		IEnumerable<TEvent> events,
+		AppendToStreamOptions? appendToStreamOptions,
+		CancellationToken ct = default
+	);
+
+	Task<IWriteResult> UpdateAsync(
+		string streamName,
+		IEnumerable<TEvent> events,
+		AppendToStreamOptions? appendToStreamOptions,
+		CancellationToken ct = default
+	);
+
+	Task<IWriteResult> Handle(
+		string streamName,
+		CommandHandler<TState> handle,
+		DecideOptions<TState>? decideOptions,
+		CancellationToken ct = default
+	);
+}
+
+public interface IStateStore<TState> : IStateStore<TState, object>
+	where TState : notnull;
+
+public static class StateStoreExtensions {
+	public static Task<IWriteResult> AddAsync<TState, TEvent>(
+		this IStateStore<TState, TEvent> stateStore,
+		string streamName,
+		IEnumerable<TEvent> events,
+		CancellationToken ct = default
+	) where TState : notnull where TEvent : notnull =>
+		stateStore.AddAsync(
 			streamName,
 			events,
 			new AppendToStreamOptions { ExpectedStreamState = StreamState.NoStream },
 			ct
 		);
 
+	public static Task<IWriteResult> UpdateAsync<TState, TEvent>(
+		this IStateStore<TState, TEvent> stateStore,
+		string streamName,
+		IEnumerable<TEvent> events,
+		CancellationToken ct = default
+	) where TState : notnull where TEvent : notnull =>
+		stateStore.UpdateAsync(
+			streamName,
+			events,
+			new AppendToStreamOptions { ExpectedStreamState = StreamState.StreamExists },
+			ct
+		);
+
+	public static Task<IWriteResult> UpdateAsync<TState, TEvent>(
+		this IStateStore<TState, TEvent> stateStore,
+		string streamName,
+		IEnumerable<TEvent> events,
+		StreamRevision expectedStreamRevision,
+		CancellationToken ct = default
+	) where TState : notnull where TEvent : notnull =>
+		stateStore.UpdateAsync(
+			streamName,
+			events,
+			new AppendToStreamOptions { ExpectedStreamRevision = expectedStreamRevision },
+			ct
+		);
+
+	public static Task<IWriteResult> Handle<TState, TEvent>(
+		this IStateStore<TState, TEvent> stateStore,
+		string streamName,
+		CommandHandler<TState> handle,
+		CancellationToken ct = default
+	) where TState : notnull where TEvent : notnull =>
+		stateStore.Handle(
+			streamName,
+			handle,
+			null,
+			ct
+		);
+}
+
+public class StateStore<TState>(KurrentClient client, StateStoreOptions<TState> options)
+	: StateStore<TState, object>(client, options), IStateStore<TState>
+	where TState : notnull;
+
+public class StateStore<TState, TEvent>(KurrentClient client, StateStoreOptions<TState> options)
+	: IStateStore<TState, TEvent>
+	where TState : notnull
+	where TEvent : notnull {
+	public Task<StateAtPointInTime<TState>> Get(string streamName, CancellationToken ct = default) =>
+		client.GetStateAsync(streamName, options.StateBuilder, options.GetStreamStateOptions, ct);
+
 	public Task<IWriteResult> AddAsync(
 		string streamName,
 		IEnumerable<TEvent> events,
-		AppendToStreamOptions appendToStreamOptions,
+		AppendToStreamOptions? appendToStreamOptions,
 		CancellationToken ct = default
 	) {
+		appendToStreamOptions ??= new AppendToStreamOptions();
+
 		if (appendToStreamOptions.ExpectedStreamState == null && appendToStreamOptions.ExpectedStreamRevision == null)
 			appendToStreamOptions.ExpectedStreamState = StreamState.NoStream;
 
@@ -42,52 +129,16 @@ public class StateStore<TState, TEvent>(KurrentClient client, StateStoreOptions<
 	public Task<IWriteResult> UpdateAsync(
 		string streamName,
 		IEnumerable<TEvent> events,
-		CancellationToken ct = default
-	) =>
-		UpdateAsync(
-			streamName,
-			events,
-			new AppendToStreamOptions { ExpectedStreamState = StreamState.StreamExists },
-			ct
-		);
-
-	public Task<IWriteResult> UpdateAsync(
-		string streamName,
-		IEnumerable<TEvent> events,
-		StreamRevision expectedStreamRevision,
-		CancellationToken ct = default
-	) =>
-		UpdateAsync(
-			streamName,
-			events,
-			new AppendToStreamOptions { ExpectedStreamRevision = expectedStreamRevision },
-			ct
-		);
-
-	public Task<IWriteResult> UpdateAsync(
-		string streamName,
-		IEnumerable<TEvent> events,
-		AppendToStreamOptions appendToStreamOptions,
+		AppendToStreamOptions? appendToStreamOptions,
 		CancellationToken ct = default
 	) {
+		appendToStreamOptions ??= new AppendToStreamOptions();
+
 		if (appendToStreamOptions.ExpectedStreamState == null && appendToStreamOptions.ExpectedStreamRevision == null)
 			appendToStreamOptions.ExpectedStreamState = StreamState.StreamExists;
 
 		return client.AppendToStreamAsync(streamName, events.Cast<object>(), appendToStreamOptions, ct);
 	}
-
-	public Task<IWriteResult> Handle(
-		string streamName,
-		CommandHandler<TState> handle,
-		CancellationToken ct = default
-	) =>
-		client.DecideAsync(
-			streamName,
-			handle,
-			options.StateBuilder,
-			new DecideOptions<TState>(),
-			ct
-		);
 
 	public Task<IWriteResult> Handle(
 		string streamName,
@@ -99,7 +150,7 @@ public class StateStore<TState, TEvent>(KurrentClient client, StateStoreOptions<
 			streamName,
 			handle,
 			options.StateBuilder,
-			new DecideOptions<TState>(),
+			decideOptions ?? new DecideOptions<TState>(),
 			ct
 		);
 }
