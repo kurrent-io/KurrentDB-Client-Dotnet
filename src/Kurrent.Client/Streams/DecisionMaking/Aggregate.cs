@@ -1,20 +1,20 @@
+using Kurrent.Client.Core.Serialization;
 using Kurrent.Client.Streams.GettingState;
 
 namespace Kurrent.Client.Streams.DecisionMaking;
 
 public interface IAggregate<TEvent>: IState<TEvent>{
-	TEvent[] DequeueUncommittedEvents();
+	Message[] DequeueUncommittedMessages();
 }
 
 public class Aggregate : Aggregate<object>;
 
-public abstract class Aggregate<TEvent>: IAggregate<TEvent>
-{
-	readonly Queue<TEvent> _uncommittedEvents = new();
+public abstract class Aggregate<TEvent>: IAggregate<TEvent> where TEvent : notnull {
+	readonly Queue<Message> _uncommittedEvents = new();
 
 	public virtual void Apply(TEvent @event) { }
 
-	TEvent[] IAggregate<TEvent>.DequeueUncommittedEvents()
+	Message[] IAggregate<TEvent>.DequeueUncommittedMessages()
 	{
 		var dequeuedEvents = _uncommittedEvents.ToArray();
 
@@ -25,6 +25,11 @@ public abstract class Aggregate<TEvent>: IAggregate<TEvent>
 
 	protected void Enqueue(TEvent @event) {
 		Apply(@event);
-		_uncommittedEvents.Enqueue(@event);
+		_uncommittedEvents.Enqueue(Message.From(@event));
+	}
+
+	protected void Enqueue(Message message) {
+		Apply((TEvent)message.Data);
+		_uncommittedEvents.Enqueue(message);
 	}
 }
