@@ -19,23 +19,23 @@
 		/// <summary>
 		/// The <see cref="StreamRevision"/> the stream is at.
 		/// </summary>
-		public StreamState ActualStreamState { get; }
+		public StreamRevision ActualStreamRevision { get; }
 
 		/// <inheritdoc />
 		public Position LogPosition { get; }
 
 		/// <inheritdoc />
-		public StreamState NextExpectedStreamState { get; }
+		public StreamRevision NextExpectedStreamRevision { get; }
 
 		/// <summary>
 		/// Construct a new <see cref="WrongExpectedVersionResult"/>.
 		/// </summary>
 		/// <param name="streamName"></param>
-		/// <param name="nextExpectedStreamState"></param>
-		public WrongExpectedVersionResult(string streamName, StreamState nextExpectedStreamState) {
+		/// <param name="nextExpectedStreamRevision"></param>
+		public WrongExpectedVersionResult(string streamName, StreamRevision nextExpectedStreamRevision) {
 			StreamName = streamName;
-			ActualVersion = NextExpectedVersion = nextExpectedStreamState.ToInt64();
-			ActualStreamState = NextExpectedStreamState = nextExpectedStreamState;
+			ActualVersion = NextExpectedVersion = nextExpectedStreamRevision.ToInt64();
+			ActualStreamRevision = NextExpectedStreamRevision = nextExpectedStreamRevision;
 			LogPosition = default;
 		}
 
@@ -43,15 +43,15 @@
 		/// Construct a new <see cref="WrongExpectedVersionResult"/>.
 		/// </summary>
 		/// <param name="streamName"></param>
-		/// <param name="nextExpectedStreamState"></param>
-		/// <param name="actualStreamState"></param>
-		public WrongExpectedVersionResult(string streamName, StreamState nextExpectedStreamState,
-			StreamState actualStreamState) {
+		/// <param name="nextExpectedStreamRevision"></param>
+		/// <param name="actualStreamRevision"></param>
+		public WrongExpectedVersionResult(string streamName, StreamRevision nextExpectedStreamRevision,
+			StreamRevision actualStreamRevision) {
 			StreamName = streamName;
-			ActualVersion = actualStreamState.ToInt64();
-			ActualStreamState = actualStreamState;
-			NextExpectedVersion = nextExpectedStreamState.ToInt64();
-			NextExpectedStreamState = nextExpectedStreamState;
+			ActualVersion = actualStreamRevision.ToInt64();
+			ActualStreamRevision = actualStreamRevision;
+			NextExpectedVersion = nextExpectedStreamRevision.ToInt64();
+			NextExpectedStreamRevision = nextExpectedStreamRevision;
 			LogPosition = default;
 		}
 	}

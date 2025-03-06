@@ -380,7 +380,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		var messages = GenerateMessages();
 
 		var writeResult = await (kurrentDbClient ?? Fixture.Streams).AppendToStreamAsync(stream, messages);
-		Assert.Equal((ulong)messages.Count - 1, writeResult.NextExpectedStreamState);
+		Assert.Equal(new((ulong)messages.Count - 1), writeResult.NextExpectedStreamRevision);
 
 		return (stream, messages);
 	}
@@ -404,8 +404,8 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 				)
 		);
 
-		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, eventData);
-		Assert.Equal((ulong)messages.Count - 1, writeResult.NextExpectedStreamState);
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamRevision.None, eventData);
+		Assert.Equal(new((ulong)messages.Count - 1), writeResult.NextExpectedStreamRevision);
 
 		return (stream, messages);
 	}

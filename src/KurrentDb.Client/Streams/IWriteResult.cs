@@ -18,6 +18,6 @@ namespace KurrentDB.Client {
 		/// <summary>
 		/// The <see cref="StreamRevision"/> the stream is currently at.
 		/// </summary>
-		StreamState NextExpectedStreamState { get; }
+		StreamRevision NextExpectedStreamRevision { get; }
 	}
 }

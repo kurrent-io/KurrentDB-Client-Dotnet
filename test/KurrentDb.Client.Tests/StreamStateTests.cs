@@ -22,9 +22,16 @@ public class StreamStateTests : ValueObjectTests<StreamState> {
 	}
 
 	[RetryFact]
+	public void ExplicitConversionExpectedResult() {
+		const int expected = 1;
+		var       actual   = (int)new StreamState(expected);
+		Assert.Equal(expected, actual);
+	}
+
+	[RetryFact]
 	public void ImplicitConversionExpectedResult() {
-		const ulong expected = 1;
-		Assert.Equal(expected, StreamState.StreamRevision(expected));
+		const int expected = 1;
+		Assert.Equal(expected, new StreamState(expected));
 	}
 
 	public static IEnumerable<object?[]> ToStringTestCases() {

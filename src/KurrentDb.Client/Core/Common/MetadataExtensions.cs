@@ -17,10 +17,10 @@ static class MetadataExtensions {
 		return false;
 	}
 
-	public static StreamState GetStreamState(this Metadata metadata, string key) =>
+	public static StreamRevision GetStreamRevision(this Metadata metadata, string key) =>
 		metadata.TryGetValue(key, out var s) && ulong.TryParse(s, out var value)
-			? StreamState.StreamRevision(value)
-			: StreamState.NoStream;
+			? new(value)
+			: StreamRevision.None;
 
 	public static int GetIntValueOrDefault(this Metadata metadata, string key) =>
 		metadata.TryGetValue(key, out var s) && int.TryParse(s, out var value)

@@ -20,17 +20,15 @@ namespace KurrentDB.Client {
 		/// </summary>
 		public static readonly StreamState StreamExists = new StreamState(Constants.StreamExists);
 
-		public static StreamState StreamRevision(ulong value) => new StreamState((long)value);
-
-		private readonly long _value;
+		private readonly int _value;
 
 		private static class Constants {
-			public const int NoStream = -1;
-			public const int Any = -2;
-			public const int StreamExists = -4;
+			public const int NoStream = 1;
+			public const int Any = 2;
+			public const int StreamExists = 4;
 		}
 
-		internal StreamState(long value) {
+		internal StreamState(int value) {
 			switch (value) {
 				case Constants.NoStream:
 				case Constants.Any:
@@ -38,11 +36,7 @@ namespace KurrentDB.Client {
 					_value = value;
 					return;
 				default:
-					if (_value < 0)
-						throw new ArgumentOutOfRangeException(nameof(value));
-
-					_value = value;
-					return;
+					throw new ArgumentOutOfRangeException(nameof(value));
 			}
 		}
 
@@ -75,15 +69,13 @@ namespace KurrentDB.Client {
 		/// Converts the <see cref="StreamState"/> to a <see cref="long"/>. It is not meant to be used directly from your code.
 		/// </summary>
 		/// <returns></returns>
-		public long ToInt64() => Convert.ToInt64(_value);
+		public long ToInt64() => -Convert.ToInt64(_value);
 
-		// /// <summary>
-		// /// Converts the <see cref="StreamState"/> to an <see cref="int"/>. It is not meant to be used directly from your code.
-		// /// </summary>
-		// /// <returns></returns>
-		// public static implicit operator ulong(StreamState streamRevision) => streamRevision._value;
-
-		public static implicit operator StreamState(ulong value) => new StreamState((long)value);
+		/// <summary>
+		/// Converts the <see cref="StreamState"/> to an <see cref="int"/>. It is not meant to be used directly from your code.
+		/// </summary>
+		/// <returns></returns>
+		public static implicit operator int(StreamState streamState) => streamState._value;
 
 		/// <inheritdoc />
 		public override string ToString() => _value switch {

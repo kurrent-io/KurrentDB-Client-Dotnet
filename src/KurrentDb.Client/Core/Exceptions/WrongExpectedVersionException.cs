@@ -24,26 +24,43 @@ namespace KurrentDB.Client {
 		/// <summary>
 		/// The current <see cref="StreamRevision" /> of the stream that the operation was attempted on.
 		/// </summary>
-		public StreamState ActualStreamState { get; }
+		public StreamRevision ActualStreamRevision { get; }
 
 		/// <summary>
 		/// If available, the expected version specified for the operation that failed.
 		/// </summary>
-		public StreamState ExpectedStreamState { get; }
+		public StreamRevision ExpectedStreamRevision { get; }
 
 		/// <summary>
 		/// Constructs a new instance of <see cref="WrongExpectedVersionException" /> with the expected and actual versions if available.
 		/// </summary>
-		public WrongExpectedVersionException(string streamName, StreamState expectedStreamState,
-			StreamState actualStreamState, Exception? exception = null, string? message = null) :
+		public WrongExpectedVersionException(string streamName, StreamRevision expectedStreamRevision,
+			StreamRevision actualStreamRevision, Exception? exception = null, string? message = null) :
 			base(
-				message ?? $"Append failed due to WrongExpectedVersion. Stream: {streamName}, Expected version: {expectedStreamState}, Actual version: {actualStreamState}",
+				message ?? $"Append failed due to WrongExpectedVersion. Stream: {streamName}, Expected version: {expectedStreamRevision}, Actual version: {actualStreamRevision}",
 				exception) {
 			StreamName = streamName;
-			ActualStreamState = actualStreamState;
-			ExpectedStreamState = expectedStreamState;
-			ExpectedVersion = expectedStreamState.ToInt64();
-			ActualVersion = actualStreamState.ToInt64();
+			ActualStreamRevision = actualStreamRevision;
+			ExpectedStreamRevision = expectedStreamRevision;
+			ExpectedVersion = expectedStreamRevision == StreamRevision.None ? new long?() : expectedStreamRevision.ToInt64();
+			ActualVersion = actualStreamRevision == StreamRevision.None ? new long?() : actualStreamRevision.ToInt64();
+		}
+
+		/// <summary>
+		/// Constructs a new instance of <see cref="WrongExpectedVersionException" /> with the expected and actual versions if available.
+		/// </summary>
+		/// <param name="streamName"></param>
+		/// <param name="expectedStreamState"></param>
+		/// <param name="actualStreamRevision"></param>
+		/// <param name="exception"></param>
+		public WrongExpectedVersionException(string streamName, StreamState expectedStreamState,
+			StreamRevision actualStreamRevision, Exception? exception = null) : base(
+			$"Append failed due to WrongExpectedVersion. Stream: {streamName}, Expected state: {expectedStreamState}, Actual version: {actualStreamRevision}",
+			exception) {
+			StreamName = streamName;
+			ActualStreamRevision = actualStreamRevision;
+			ActualVersion = actualStreamRevision == StreamRevision.None ? new long?() : actualStreamRevision.ToInt64();
+			ExpectedStreamRevision = StreamRevision.None;
 		}
 	}
 }
