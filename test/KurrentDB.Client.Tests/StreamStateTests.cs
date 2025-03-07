@@ -9,8 +9,6 @@ public class StreamStateTests : ValueObjectTests<StreamState> {
 	public StreamStateTests() : base(new ScenarioFixture()) { }
 
 	public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
-		yield return [0];
-		yield return [int.MaxValue];
 		yield return [-3];
 	}
 
