@@ -25,9 +25,9 @@ namespace KurrentDB.Client {
 		private readonly long _value;
 
 		private static class Constants {
-			public const int NoStream = 1;
-			public const int Any = 2;
-			public const int StreamExists = 4;
+			public const int NoStream = -1;
+			public const int Any = -2;
+			public const int StreamExists = -4;
 		}
 
 		internal StreamState(long value) {
@@ -75,7 +75,9 @@ namespace KurrentDB.Client {
 		/// Converts the <see cref="StreamState"/> to a <see cref="long"/>. It is not meant to be used directly from your code.
 		/// </summary>
 		/// <returns></returns>
-		public long ToInt64() => -Convert.ToInt64(_value);
+		public long ToInt64() => _value;
+
+		public bool HasPosition => _value >= 0;
 
 		public static implicit operator StreamState(ulong value) => new StreamState((long)value);
 

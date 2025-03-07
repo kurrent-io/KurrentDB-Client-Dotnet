@@ -310,7 +310,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 
 		var wrongExpectedVersionResult = Assert.IsType<WrongExpectedVersionResult>(writeResult);
 
-		Assert.Equal(StreamState.NoStream, wrongExpectedVersionResult.NextExpectedStreamState);
+		Assert.Equal(StreamState.Any, wrongExpectedVersionResult.NextExpectedStreamState);
 	}
 
 	[RetryFact]

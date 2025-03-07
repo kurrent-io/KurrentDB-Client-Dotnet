@@ -259,17 +259,6 @@ namespace KurrentDB.Client {
 			}
 
 			public ValueTask<IWriteResult> Append(
-				string streamName, StreamRevision expectedStreamPosition,
-				IEnumerable<EventData> events, TimeSpan? timeoutAfter,
-				CancellationToken cancellationToken = default
-			) =>
-				AppendInternal(
-					BatchAppendReq.Types.Options.Create(streamName, expectedStreamPosition, timeoutAfter),
-					events,
-					cancellationToken
-				);
-
-			public ValueTask<IWriteResult> Append(
 				string streamName, StreamState expectedStreamState,
 				IEnumerable<EventData> events, TimeSpan? timeoutAfter,
 				CancellationToken cancellationToken = default
