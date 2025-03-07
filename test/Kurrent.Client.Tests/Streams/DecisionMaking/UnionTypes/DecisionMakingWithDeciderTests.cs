@@ -1,18 +1,20 @@
 using System.Collections.Immutable;
 using EventStore.Client;
+using Kurrent.Client.Streams.DecisionMaking;
 using Kurrent.Client.Streams.GettingState;
 
 namespace Kurrent.Client.Tests.Streams.DecisionMaking.UnionTypes;
 
 using static ShoppingCart;
 using static ShoppingCart.Event;
+using static ShoppingCart.Command;
 
 [Trait("Category", "Target:Streams")]
-[Trait("Category", "Operation:GetState")]
-public class GettingStateTests(ITestOutputHelper output, KurrentPermanentFixture fixture)
+[Trait("Category", "Operation:Decide")]
+public class DecisionMakingWithDeciderTests(ITestOutputHelper output, KurrentPermanentFixture fixture)
 	: KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
 	[RetryFact]
-	public async Task gets_state_for_state_builder_with_evolve_function_and_typed_events() {
+	public async Task runs_business_logic_with_decider_and_typed_events() {
 		// Given
 		var shoppingCartId  = Guid.NewGuid();
 		var clientId        = Guid.NewGuid();
@@ -22,38 +24,56 @@ public class GettingStateTests(ITestOutputHelper output, KurrentPermanentFixture
 		var pairOfShoes     = new PricedProductItem(shoesId, 1, 100);
 		var tShirt          = new PricedProductItem(tShirtId, 1, 50);
 
-		var events = new Event[] {
-			new Opened(shoppingCartId, clientId, DateTime.UtcNow),
-			new ProductItemAdded(shoppingCartId, twoPairsOfShoes, DateTime.UtcNow),
-			new ProductItemAdded(shoppingCartId, tShirt, DateTime.UtcNow),
-			new ProductItemRemoved(shoppingCartId, pairOfShoes, DateTime.UtcNow),
-			new Confirmed(shoppingCartId, DateTime.UtcNow),
-			new Canceled(shoppingCartId, DateTime.UtcNow)
-		};
-
 		var streamName = $"shopping_cart-{shoppingCartId}";
 
-		await Fixture.Streams.AppendToStreamAsync(streamName, events);
+		var result = await Fixture.Streams.DecideAsync(
+			streamName,
+			new Open(clientId, DateTime.UtcNow),
+			Decider
+		);
 
-		var stateBuilder = StateBuilder.For<ShoppingCart, Event>(Evolve, () => new Initial());
+		Assert.IsType<SuccessResult>(result);
 
-		// When
-		var result = await Fixture.Streams.GetStateAsync(streamName, stateBuilder);
+		result = await Fixture.Streams.DecideAsync(
+			streamName,
+			new AddProductItem(twoPairsOfShoes, DateTime.UtcNow),
+			Decider
+		);
 
-		var shoppingCart = result.State;
+		Assert.IsType<SuccessResult>(result);
 
-		// Then
-		Assert.IsType<Closed>(shoppingCart);
-		// TODO: Add some time travelling
-		// Assert.Equal(2, shoppingCart.);
-		//
-		// Assert.Equal(shoesId, shoppingCart.ProductItems[0].ProductId);
-		// Assert.Equal(pairOfShoes.Quantity, shoppingCart.ProductItems[0].Quantity);
-		// Assert.Equal(pairOfShoes.UnitPrice, shoppingCart.ProductItems[0].UnitPrice);
-		//
-		// Assert.Equal(tShirtId, shoppingCart.ProductItems[1].ProductId);
-		// Assert.Equal(tShirt.Quantity, shoppingCart.ProductItems[1].Quantity);
-		// Assert.Equal(tShirt.UnitPrice, shoppingCart.ProductItems[1].UnitPrice);
+		result = await Fixture.Streams.DecideAsync(
+			streamName,
+			new AddProductItem(tShirt, DateTime.UtcNow),
+			Decider
+		);
+
+		Assert.IsType<SuccessResult>(result);
+
+		result = await Fixture.Streams.DecideAsync(
+			streamName,
+			new RemoveProductItem(pairOfShoes, DateTime.UtcNow),
+			Decider
+		);
+
+		Assert.IsType<SuccessResult>(result);
+
+		result = await Fixture.Streams.DecideAsync(
+			streamName,
+			new Confirm(DateTime.UtcNow),
+			Decider
+		);
+
+		Assert.IsType<SuccessResult>(result);
+
+		await Assert.ThrowsAsync<InvalidOperationException>(
+			() =>
+				Fixture.Streams.DecideAsync(
+					streamName,
+					new Cancel(DateTime.UtcNow),
+					Decider
+				)
+		);
 	}
 }
 
@@ -68,30 +88,25 @@ public record PricedProductItem(
 public abstract record ShoppingCart {
 	public abstract record Event {
 		public record Opened(
-			Guid ShoppingCartId,
 			Guid ClientId,
 			DateTimeOffset OpenedAt
 		) : Event;
 
 		public record ProductItemAdded(
-			Guid ShoppingCartId,
 			PricedProductItem ProductItem,
 			DateTimeOffset AddedAt
 		) : Event;
 
 		public record ProductItemRemoved(
-			Guid ShoppingCartId,
 			PricedProductItem ProductItem,
 			DateTimeOffset RemovedAt
 		) : Event;
 
 		public record Confirmed(
-			Guid ShoppingCartId,
 			DateTimeOffset ConfirmedAt
 		) : Event;
 
 		public record Canceled(
-			Guid ShoppingCartId,
 			DateTimeOffset CanceledAt
 		) : Event;
 
@@ -110,10 +125,10 @@ public abstract record ShoppingCart {
 			(Initial, Opened) =>
 				new Pending(ProductItems.Empty),
 
-			(Pending(var productItems), ProductItemAdded(_, var productItem, _)) =>
+			(Pending(var productItems), ProductItemAdded(var productItem, _)) =>
 				new Pending(productItems.Add(productItem)),
 
-			(Pending(var productItems), ProductItemRemoved(_, var productItem, _)) =>
+			(Pending(var productItems), ProductItemRemoved(var productItem, _)) =>
 				new Pending(productItems.Remove(productItem)),
 
 			(Pending, Confirmed) =>
@@ -124,6 +139,61 @@ public abstract record ShoppingCart {
 
 			_ => state
 		};
+
+	public abstract record Command {
+		public record Open(
+			Guid ClientId,
+			DateTimeOffset Now
+		) : Command;
+
+		public record AddProductItem(
+			PricedProductItem ProductItem,
+			DateTimeOffset Now
+		) : Command;
+
+		public record RemoveProductItem(
+			PricedProductItem ProductItem,
+			DateTimeOffset Now
+		) : Command;
+
+		public record Confirm(
+			DateTimeOffset Now
+		) : Command;
+
+		public record Cancel(
+			DateTimeOffset Now
+		) : Command;
+
+		Command() { }
+	}
+
+	public static Event[] Decide(Command command, ShoppingCart state) =>
+		(state, command) switch {
+			(Pending, Open) => [],
+
+			(Initial, Open(var clientId, var now)) => [new Opened(clientId, now)],
+
+			(Pending, AddProductItem(var productItem, var now)) => [new ProductItemAdded(productItem, now)],
+
+			(Pending(var productItems), RemoveProductItem(var productItem, var now)) =>
+				productItems.HasEnough(productItem)
+					? [new ProductItemRemoved(productItem, now)]
+					: throw new InvalidOperationException("Not enough product items to remove"),
+
+			(Pending, Confirm(var now)) => [new Confirmed(now)],
+
+			(Pending, Cancel(var now)) => [new Canceled(now)],
+
+			_ => throw new InvalidOperationException(
+				$"Cannot {command.GetType().Name} for {state.GetType().Name} shopping cart"
+			)
+		};
+
+	public static readonly Decider<ShoppingCart, Command, Event> Decider = new Decider<ShoppingCart, Command, Event>(
+		Decide,
+		Evolve,
+		() => new Initial()
+	);
 }
 
 public record ProductItems(ImmutableDictionary<string, int> Items) {
@@ -143,20 +213,4 @@ public record ProductItems(ImmutableDictionary<string, int> Items) {
 
 	ProductItems IncrementQuantity(string key, int quantity) =>
 		new(Items.SetItem(key, Items.TryGetValue(key, out var current) ? current + quantity : quantity));
-}
-
-public static class DictionaryExtensions {
-	public static ImmutableDictionary<TKey, TValue> Set<TKey, TValue>(
-		this ImmutableDictionary<TKey, TValue> dictionary,
-		TKey key,
-		Func<TValue?, TValue> set
-	) where TKey : notnull =>
-		dictionary.SetItem(key, set(dictionary.TryGetValue(key, out var current) ? current : default));
-
-	public static void Set<TKey, TValue>(
-		this Dictionary<TKey, TValue> dictionary,
-		TKey key,
-		Func<TValue?, TValue> set
-	) where TKey : notnull =>
-		dictionary[key] = set(dictionary.TryGetValue(key, out var current) ? current : default);
 }

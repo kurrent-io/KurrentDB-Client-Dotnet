@@ -24,9 +24,10 @@ public static class KurrentClientDecisionMakingExtensions {
 		DecideRetryPolicy(options).ExecuteAsync(
 			async ct => {
 				var (state, streamPosition, position) =
-					await eventStore.GetStateAsync(streamName, stateBuilder, options?.GetStateOptions, ct);
+					await eventStore.GetStateAsync(streamName, stateBuilder, options?.GetStateOptions, ct)
+						.ConfigureAwait(false);
 
-				var messages = await decide(state, ct);
+				var messages = await decide(state, ct).ConfigureAwait(false);
 
 				if (messages.Length == 0) {
 					return new SuccessResult(
@@ -50,9 +51,41 @@ public static class KurrentClientDecisionMakingExtensions {
 					messages,
 					appendToStreamOptions,
 					ct
-				);
+				).ConfigureAwait(false);
 			},
 			cancellationToken
+		);
+
+	public static Task<IWriteResult> DecideAsync<TState, TCommand, TEvent>(
+		this KurrentClient eventStore,
+		string streamName,
+		TCommand command,
+		Decider<TState, TCommand, TEvent> decider,
+		CancellationToken ct = default
+	) where TState : notnull
+	  where TEvent : notnull =>
+		eventStore.DecideAsync(
+			streamName,
+			command,
+			decider.ToAsyncDecider(),
+			ct
+		);
+
+	public static Task<IWriteResult> DecideAsync<TState, TCommand, TEvent>(
+		this KurrentClient eventStore,
+		string streamName,
+		TCommand command,
+		Decider<TState, TCommand, TEvent> decider,
+		DecideOptions<TState>? options,
+		CancellationToken ct = default
+	) where TState : notnull
+	  where TEvent : notnull =>
+		eventStore.DecideAsync(
+			streamName,
+			command,
+			decider.ToAsyncDecider(),
+			options,
+			ct
 		);
 
 	public static Task<IWriteResult> DecideAsync<TState, TCommand>(
@@ -60,7 +93,7 @@ public static class KurrentClientDecisionMakingExtensions {
 		string streamName,
 		TCommand command,
 		Decider<TState, TCommand> decider,
-		CancellationToken ct
+		CancellationToken ct = default
 	) where TState : notnull =>
 		eventStore.DecideAsync(
 			streamName,
@@ -75,7 +108,7 @@ public static class KurrentClientDecisionMakingExtensions {
 		TCommand command,
 		Decider<TState, TCommand> decider,
 		DecideOptions<TState>? options,
-		CancellationToken ct
+		CancellationToken ct = default
 	) where TState : notnull =>
 		eventStore.DecideAsync(
 			streamName,
@@ -90,7 +123,7 @@ public static class KurrentClientDecisionMakingExtensions {
 		string streamName,
 		TCommand command,
 		AsyncDecider<TState, TCommand> asyncDecider,
-		CancellationToken ct
+		CancellationToken ct = default
 	) where TState : notnull =>
 		eventStore.DecideAsync(
 			streamName,
@@ -105,7 +138,7 @@ public static class KurrentClientDecisionMakingExtensions {
 		TCommand command,
 		AsyncDecider<TState, TCommand> asyncDecider,
 		DecideOptions<TState>? options,
-		CancellationToken ct
+		CancellationToken ct = default
 	) where TState : notnull =>
 		eventStore.DecideAsync(
 			streamName,
