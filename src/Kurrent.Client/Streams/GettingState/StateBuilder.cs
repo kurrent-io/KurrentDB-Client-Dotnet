@@ -111,7 +111,7 @@ public static class StateBuilder {
 		);
 
 	public static StateBuilder<TState> For<TState>(Func<TState> getInitialState)
-		where TState : IState<object>, new() =>
+		where TState : IState<object> =>
 		new StateBuilder<TState>(
 			(state, resolvedEvent) => {
 				if (resolvedEvent.DeserializedData != null)

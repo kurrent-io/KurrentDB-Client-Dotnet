@@ -102,13 +102,65 @@ public static class KurrentClientGettingStateClientExtensions {
 		CancellationToken ct = default
 	) where TState : IState<TEvent>, new() =>
 		eventStore.GetStateAsync<TState, TEvent>(streamName, new GetStreamStateOptions<TState>(), ct);
-
+	
 	public static Task<StateAtPointInTime<TState>> GetStateAsync<TState>(
 		this KurrentClient eventStore,
 		string streamName,
 		CancellationToken ct = default
 	) where TState : IState<object>, new() =>
 		eventStore.GetStateAsync<TState, object>(streamName, new GetStreamStateOptions<TState>(), ct);
+	
+	public static Task<StateAtPointInTime<TState>> GetStateAsync<TState, TEvent>(
+		this KurrentClient eventStore,
+		string streamName,
+		Func<TState> getInitialState,
+		CancellationToken ct = default
+	) where TState : IState<TEvent> =>
+		eventStore.GetStateAsync(
+			streamName,
+			StateBuilder.For<TState, TEvent>(getInitialState),
+			ct
+		);
+	
+	public static Task<StateAtPointInTime<TState>> GetStateAsync<TState, TEvent>(
+		this KurrentClient eventStore,
+		string streamName,
+		Func<TState> getInitialState,
+		GetStreamStateOptions<TState> options,
+		CancellationToken ct = default
+	) where TState : IState<TEvent> =>
+		eventStore.GetStateAsync(
+			streamName,
+			StateBuilder.For<TState, TEvent>(getInitialState),
+			options,
+			ct
+		);
+	
+	public static Task<StateAtPointInTime<TState>> GetStateAsync<TState>(
+		this KurrentClient eventStore,
+		string streamName,
+		Func<TState> getInitialState,
+		CancellationToken ct = default
+	) where TState : IState<object> =>
+		eventStore.GetStateAsync(
+			streamName,
+			StateBuilder.For(getInitialState),
+			ct
+		);
+	
+	public static Task<StateAtPointInTime<TState>> GetStateAsync<TState>(
+		this KurrentClient eventStore,
+		string streamName,
+		Func<TState> getInitialState,
+		GetStreamStateOptions<TState> options,
+		CancellationToken ct = default
+	) where TState : IState<object> =>
+		eventStore.GetStateAsync(
+			streamName,
+			StateBuilder.For(getInitialState),
+			options,
+			ct
+		);
 }
 
 public static class KurrentClientGettingStateReadAndSubscribeExtensions {

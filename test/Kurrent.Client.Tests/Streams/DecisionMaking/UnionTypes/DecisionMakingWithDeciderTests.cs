@@ -14,7 +14,7 @@ using static ShoppingCart.Command;
 public class DecisionMakingWithDeciderTests(ITestOutputHelper output, KurrentPermanentFixture fixture)
 	: KurrentPermanentTests<KurrentPermanentFixture>(output, fixture) {
 	[RetryFact]
-	public async Task runs_business_logic_with_decider_and_typed_events() {
+	public async Task handles_business_logic_with_decider_and_typed_events() {
 		// Given
 		var shoppingCartId  = Guid.NewGuid();
 		var clientId        = Guid.NewGuid();
