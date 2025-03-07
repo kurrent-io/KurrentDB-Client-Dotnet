@@ -33,6 +33,9 @@ public interface IAggregateStore<TAggregate, TEvent>
 	);
 }
 
+public interface IAggregateStore<TAggregate> : IAggregateStore<TAggregate, object>
+	where TAggregate : IAggregate<object>;
+
 public static class AggregateStoreExtensions {
 	public static Task<IWriteResult> AddAsync<TAggregate, TEvent>(
 		this IAggregateStore<TAggregate, TEvent> aggregateStore,
@@ -93,9 +96,6 @@ public static class AggregateStoreExtensions {
 			ct
 		);
 }
-
-public interface IAggregateStore<TAggregate> : IAggregateStore<TAggregate, object>
-	where TAggregate : IAggregate<object>;
 
 public class AggregateStoreOptions<TState> where TState : notnull {
 #if NET48
