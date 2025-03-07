@@ -55,7 +55,7 @@ public static class StateStoreExtensions {
 			null,
 			ct
 		);
-	
+
 	public static Task<IWriteResult> AddAsync<TState>(
 		this IStateStore<TState> stateStore,
 		string streamName,
@@ -68,13 +68,14 @@ public static class StateStoreExtensions {
 			new AppendToStreamOptions { ExpectedStreamState = StreamState.NoStream },
 			ct
 		);
-	
+
 	public static Task<IWriteResult> AddAsync<TState, TEvent>(
 		this IStateStore<TState> stateStore,
 		string streamName,
 		IEnumerable<TEvent> events,
 		CancellationToken ct = default
-	) where TState : notnull where TEvent : notnull =>
+	) where TState : notnull
+	  where TEvent : notnull =>
 		stateStore.AddAsync(
 			streamName,
 			events.Select(e => Message.From(e)),
@@ -87,7 +88,8 @@ public static class StateStoreExtensions {
 		string streamName,
 		IEnumerable<TEvent> events,
 		CancellationToken ct = default
-	) where TState : notnull where TEvent : notnull =>
+	) where TState : notnull
+	  where TEvent : notnull =>
 		stateStore.UpdateAsync(
 			streamName,
 			events.Select(e => Message.From(e)),
@@ -114,7 +116,8 @@ public static class StateStoreExtensions {
 		IEnumerable<TEvent> events,
 		StreamRevision expectedStreamRevision,
 		CancellationToken ct = default
-	) where TState : notnull where TEvent : notnull =>
+	) where TState : notnull
+	  where TEvent : notnull =>
 		stateStore.UpdateAsync(
 			streamName,
 			events.Select(e => Message.From(e)),
@@ -154,7 +157,21 @@ public static class StateStoreExtensions {
 		string streamName,
 		Func<TState, TEvent[]> handle,
 		CancellationToken ct = default
-	) where TState : notnull where TEvent : notnull =>
+	) where TState : notnull
+	  where TEvent : notnull =>
+		stateStore.Handle(
+			streamName,
+			(state, _) => new ValueTask<Message[]>(handle(state).Select(m => Message.From(m)).ToArray()),
+			null,
+			ct
+		);
+
+	public static Task<IWriteResult> Handle<TState>(
+		this IStateStore<TState> stateStore,
+		string streamName,
+		Func<TState, object[]> handle,
+		CancellationToken ct = default
+	) where TState : notnull =>
 		stateStore.Handle(
 			streamName,
 			(state, _) => new ValueTask<Message[]>(handle(state).Select(m => Message.From(m)).ToArray()),
@@ -168,7 +185,22 @@ public static class StateStoreExtensions {
 		Func<TState, TEvent[]> handle,
 		DecideOptions<TState>? decideOptions,
 		CancellationToken ct = default
-	) where TState : notnull where TEvent : notnull =>
+	) where TState : notnull
+	  where TEvent : notnull =>
+		stateStore.Handle(
+			streamName,
+			(state, _) => new ValueTask<Message[]>(handle(state).Select(m => Message.From(m)).ToArray()),
+			decideOptions,
+			ct
+		);
+
+	public static Task<IWriteResult> Handle<TState>(
+		this IStateStore<TState> stateStore,
+		string streamName,
+		Func<TState, object[]> handle,
+		DecideOptions<TState>? decideOptions,
+		CancellationToken ct = default
+	) where TState : notnull =>
 		stateStore.Handle(
 			streamName,
 			(state, _) => new ValueTask<Message[]>(handle(state).Select(m => Message.From(m)).ToArray()),
@@ -179,7 +211,7 @@ public static class StateStoreExtensions {
 
 public class StateStore<TState>(KurrentClient client, StateStoreOptions<TState> options)
 	: IStateStore<TState>
-	where TState : notnull{
+	where TState : notnull {
 	public virtual Task<StateAtPointInTime<TState>> Get(string streamName, CancellationToken ct = default) =>
 		client.GetStateAsync(streamName, options.StateBuilder, options.GetStreamStateOptions, ct);
 

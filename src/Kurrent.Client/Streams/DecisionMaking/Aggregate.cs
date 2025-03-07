@@ -7,7 +7,7 @@ public interface IAggregate<in TEvent> : IState<TEvent> {
 	Message[] DequeueUncommittedMessages();
 }
 
-public interface IAggregate : IAggregate<object>;
+public interface IAggregate : IAggregate<object>, IState;
 
 public class Aggregate : Aggregate<object>, IAggregate;
 
@@ -24,9 +24,9 @@ public abstract class Aggregate<TEvent> : IAggregate<TEvent> where TEvent : notn
 		return dequeuedEvents;
 	}
 
-	protected void Enqueue(TEvent message) {
-		Apply(message);
-		_uncommittedEvents.Enqueue(Message.From(message));
+	protected void Enqueue(TEvent @event) {
+		Apply(@event);
+		_uncommittedEvents.Enqueue(Message.From(@event));
 	}
 
 	protected void Enqueue(Message message) {
