@@ -67,11 +67,8 @@ public class StreamPositionTests : ValueObjectTests<StreamPosition> {
 	}
 
 	[RetryFact]
-	public void FromStreamPositionEndThrows() => Assert.Throws<ArgumentOutOfRangeException>(() => StreamRevision.FromStreamPosition(StreamPosition.End));
-
-	[RetryFact]
 	public void FromStreamPositionReturnsExpectedResult() {
-		var result = StreamPosition.FromStreamRevision(new(0));
+		var result = StreamPosition.FromStreamRevision(0);
 
 		Assert.Equal(new(0), result);
 	}

@@ -30,9 +30,9 @@ namespace KurrentDB.Client {
 		/// </summary>
 		/// <param name="revision"></param>
 		/// <returns></returns>
-		public static StreamPosition FromStreamRevision(StreamRevision revision) => revision.ToUInt64() switch {
+		public static StreamPosition FromStreamRevision(ulong revision) => revision switch {
 			ulong.MaxValue => throw new ArgumentOutOfRangeException(nameof(revision)),
-			_ => new StreamPosition(revision.ToUInt64())
+			_ => new StreamPosition(revision)
 		};
 
 		/// <summary>

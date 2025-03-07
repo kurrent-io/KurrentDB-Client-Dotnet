@@ -191,7 +191,7 @@ namespace KurrentDB.Client {
 			_log.LogDebug(
 				"Append to stream failed with Wrong Expected Version - {streamName}/{expectedRevision}/{currentRevision}",
 				header.Options.StreamIdentifier,
-				new StreamRevision(header.Options.Revision),
+				StreamState.StreamRevision(header.Options.Revision),
 				actualStreamRevision
 			);
 
