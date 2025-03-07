@@ -94,14 +94,27 @@ public static class AggregateStoreExtensions {
 		);
 }
 
+public interface IAggregateStore<TAggregate> : IAggregateStore<TAggregate, object>
+	where TAggregate : IAggregate<object>;
+
+public class AggregateStoreOptions<TState> where TState : notnull {
+#if NET48
+	public IStateBuilder<TState> StateBuilder { get; set; } = null!;
+#else
+	public required IStateBuilder<TState> StateBuilder { get; set; }
+#endif
+
+	public DecideOptions<TState>? DecideOptions { get; set; }
+}
+
 public class AggregateStore<TAggregate, TEvent>(KurrentClient client, AggregateStoreOptions<TAggregate> options)
 	: IAggregateStore<TAggregate, TEvent>
 	where TAggregate : IAggregate<TEvent>
 	where TEvent : notnull {
-	public Task<StateAtPointInTime<TAggregate>> Get(string streamName, CancellationToken ct = default) =>
+	public virtual Task<StateAtPointInTime<TAggregate>> Get(string streamName, CancellationToken ct = default) =>
 		client.GetStateAsync(streamName, options.StateBuilder, ct);
 
-	public Task<IWriteResult> AddAsync(
+	public virtual Task<IWriteResult> AddAsync(
 		string streamName,
 		TAggregate aggregate,
 		AppendToStreamOptions? appendToStreamOptions,
@@ -112,10 +125,15 @@ public class AggregateStore<TAggregate, TEvent>(KurrentClient client, AggregateS
 		if (appendToStreamOptions.ExpectedStreamState == null && appendToStreamOptions.ExpectedStreamRevision == null)
 			appendToStreamOptions.ExpectedStreamState = StreamState.NoStream;
 
-		return client.AppendToStreamAsync(streamName, aggregate.DequeueUncommittedMessages(), appendToStreamOptions, ct);
+		return client.AppendToStreamAsync(
+			streamName,
+			aggregate.DequeueUncommittedMessages(),
+			appendToStreamOptions,
+			ct
+		);
 	}
 
-	public Task<IWriteResult> UpdateAsync(
+	public virtual Task<IWriteResult> UpdateAsync(
 		string streamName,
 		TAggregate aggregate,
 		AppendToStreamOptions? appendToStreamOptions,
@@ -126,10 +144,15 @@ public class AggregateStore<TAggregate, TEvent>(KurrentClient client, AggregateS
 		if (appendToStreamOptions.ExpectedStreamState == null && appendToStreamOptions.ExpectedStreamRevision == null)
 			appendToStreamOptions.ExpectedStreamState = StreamState.StreamExists;
 
-		return client.AppendToStreamAsync(streamName, aggregate.DequeueUncommittedMessages(), appendToStreamOptions, ct);
+		return client.AppendToStreamAsync(
+			streamName,
+			aggregate.DequeueUncommittedMessages(),
+			appendToStreamOptions,
+			ct
+		);
 	}
 
-	public Task<IWriteResult> HandleAsync(
+	public virtual Task<IWriteResult> HandleAsync(
 		string streamName,
 		Func<TAggregate, CancellationToken, ValueTask> handle,
 		DecideOptions<TAggregate>? decideOption,
@@ -146,3 +169,7 @@ public class AggregateStore<TAggregate, TEvent>(KurrentClient client, AggregateS
 			ct
 		);
 }
+
+public class AggregateStore<TAggregate>(KurrentClient client, AggregateStoreOptions<TAggregate> options)
+	: AggregateStore<TAggregate, object>(client, options), IAggregateStore<TAggregate>
+	where TAggregate : IAggregate<object>;
