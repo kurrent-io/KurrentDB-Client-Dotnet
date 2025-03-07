@@ -172,7 +172,7 @@ public static class KurrentClientGettingStateClientExtensions {
 		return await eventStore.ReadStreamAsync(streamName, options, ct)
 			.GetStateAsync(stateBuilder, ct);
 	}
-	
+
 	public static async Task<StateAtPointInTime<TState>> GetStateAsync<TState>(
 		this IAsyncEnumerable<ResolvedEvent> messages,
 		TState initialState,
@@ -196,53 +196,6 @@ public static class KurrentClientGettingStateClientExtensions {
 
 		return new StateAtPointInTime<TState>(state, lastEvent?.Event.EventNumber, lastEvent?.Event.Position);
 	}
-
-	public static async IAsyncEnumerable<StateAtPointInTime<TState>> ProjectState<TState>(
-		this IAsyncEnumerable<ResolvedEvent> messages,
-		TState initialState,
-		Func<TState, ResolvedEvent, TState> evolve,
-		Func<ResolvedEvent, string>? getProjectedId,
-		[EnumeratorCancellation] CancellationToken ct
-	) where TState : notnull {
-		if (messages is KurrentClient.ReadStreamResult readStreamResult) {
-			if (await readStreamResult.ReadState.ConfigureAwait(false) == ReadState.StreamNotFound) {
-				yield return new StateAtPointInTime<TState>(initialState);
-
-				yield break;
-			}
-		}
-
-		var states = new Dictionary<string, TState>();
-
-		getProjectedId ??= resolvedEvent => resolvedEvent.OriginalStreamId;
-
-		await foreach (var resolvedEvent in messages.WithCancellation(ct)) {
-			var projectedId = getProjectedId(resolvedEvent);
-			#if NET48
-			var state = states.TryGetValue(projectedId, out TState? value) ? value : initialState;
-			#else
-			var state = states.GetValueOrDefault(projectedId, initialState);
-			#endif
-			
-			state = evolve(state, resolvedEvent);
-
-			states[projectedId] = state;
-
-			yield return new StateAtPointInTime<TState>(
-				state,
-				resolvedEvent.Event.EventNumber,
-				resolvedEvent.Event.Position
-			);
-		}
-	}
-
-	public static IAsyncEnumerable<StateAtPointInTime<TState>> ProjectState<TState>(
-		this IAsyncEnumerable<ResolvedEvent> messages,
-		TState initialState,
-		Func<TState, ResolvedEvent, TState> evolve,
-		CancellationToken ct
-	) where TState : notnull =>
-		messages.ProjectState(initialState, evolve, null, ct);
 
 	public static Task<StateAtPointInTime<TState>> GetStateAsync<TState>(
 		this KurrentClient eventStore,
