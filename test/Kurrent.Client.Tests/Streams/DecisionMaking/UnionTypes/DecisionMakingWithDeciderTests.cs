@@ -189,11 +189,12 @@ public abstract record ShoppingCart {
 			)
 		};
 
-	public static readonly Decider<ShoppingCart, Command, Event> Decider = new Decider<ShoppingCart, Command, Event>(
-		Decide,
-		Evolve,
-		() => new Initial()
-	);
+	public static readonly Decider<ShoppingCart, Command, Event> Decider =
+		new Decider<ShoppingCart, Command, Event>(
+			Decide,
+			Evolve,
+			() => new Initial()
+		);
 }
 
 public record ProductItems(ImmutableDictionary<string, int> Items) {

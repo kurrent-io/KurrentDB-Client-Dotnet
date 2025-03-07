@@ -2,10 +2,6 @@ using EventStore.Client;
 
 namespace Kurrent.Client.Streams.GettingState;
 
-public record GetStateOptions<TState> where TState : notnull {
-	public StateAtPointInTime<TState>? CurrentState { get; set; }
-}
-
 public class GetStreamStateOptions<TState> : ReadStreamOptions where TState : notnull {
 	public GetSnapshot<TState>? GetSnapshot { get; set; }
 }
@@ -45,6 +41,7 @@ public static class KurrentClientGettingStateClientExtensions {
 				ct
 			);
 
+		// TODO: CHeck if I'm passing the actual snapshot state
 		options.StreamPosition = stateAtPointInTime?.LastStreamPosition ?? StreamPosition.Start;
 
 		return await eventStore.ReadStreamAsync(streamName, options, ct)

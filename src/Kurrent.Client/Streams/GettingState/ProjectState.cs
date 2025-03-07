@@ -46,9 +46,18 @@ public static class KurrentClientProjectStateExtensions {
 	public static IAsyncEnumerable<StateAtPointInTime<TState>> ProjectState<TState>(
 		this IAsyncEnumerable<ResolvedEvent> messages,
 		Func<TState, ResolvedEvent, TState> evolve,
+		Func<ResolvedEvent, CancellationToken, ValueTask<TState>> getInitialState,
+		CancellationToken ct = default
+	) where TState : notnull =>
+		messages.ProjectState(evolve, getInitialState, null, ct);
+
+
+	public static IAsyncEnumerable<StateAtPointInTime<TState>> ProjectState<TState>(
+		this IAsyncEnumerable<ResolvedEvent> messages,
+		Func<TState, ResolvedEvent, TState> evolve,
 		Func<ResolvedEvent, TState> getInitialState,
 		ProjectStateOptions<TState>? options,
-		CancellationToken ct
+		CancellationToken ct = default
 	) where TState : notnull =>
 		messages.ProjectState(
 			evolve,
@@ -61,7 +70,7 @@ public static class KurrentClientProjectStateExtensions {
 		this IAsyncEnumerable<ResolvedEvent> messages,
 		Func<TState, ResolvedEvent, TState> evolve,
 		Func<ResolvedEvent, TState> getInitialState,
-		CancellationToken ct
+		CancellationToken ct = default
 	) where TState : notnull =>
 		messages.ProjectState(
 			evolve,
@@ -69,14 +78,58 @@ public static class KurrentClientProjectStateExtensions {
 			null,
 			ct
 		);
+	
+	public static IAsyncEnumerable<StateAtPointInTime<TState>> ProjectState<TState>(
+		this IAsyncEnumerable<ResolvedEvent> messages,
+		Func<TState, ResolvedEvent, TState> evolve,
+		Func<TState> getInitialState,
+		ProjectStateOptions<TState>? options,
+		CancellationToken ct = default
+	) where TState : notnull =>
+		messages.ProjectState(
+			evolve,
+			(_, _) => new ValueTask<TState>(getInitialState()),
+			options,
+			ct
+		);
 
 	public static IAsyncEnumerable<StateAtPointInTime<TState>> ProjectState<TState>(
 		this IAsyncEnumerable<ResolvedEvent> messages,
 		Func<TState, ResolvedEvent, TState> evolve,
-		Func<ResolvedEvent, CancellationToken, ValueTask<TState>> getInitialState,
-		CancellationToken ct
+		Func<TState> getInitialState,
+		CancellationToken ct = default
 	) where TState : notnull =>
-		messages.ProjectState(evolve, getInitialState, null, ct);
+		messages.ProjectState(
+			evolve,
+			(_, _) => new ValueTask<TState>(getInitialState()),
+			null,
+			ct
+		);
+	
+	public static IAsyncEnumerable<StateAtPointInTime<TState>> ProjectState<TState>(
+		this IAsyncEnumerable<ResolvedEvent> messages,
+		StateBuilder<TState> stateBuilder,
+		ProjectStateOptions<TState>? options,
+		CancellationToken ct = default
+	) where TState : notnull =>
+		messages.ProjectState(
+			stateBuilder.Evolve,
+			(_, _) => new ValueTask<TState>(stateBuilder.GetInitialState()),
+			options,
+			ct
+		);
+
+	public static IAsyncEnumerable<StateAtPointInTime<TState>> ProjectState<TState>(
+		this IAsyncEnumerable<ResolvedEvent> messages,
+		StateBuilder<TState> stateBuilder,
+		CancellationToken ct = default
+	) where TState : notnull =>
+		messages.ProjectState(
+			stateBuilder.Evolve,
+			(_, _) => new ValueTask<TState>(stateBuilder.GetInitialState()),
+			null,
+			ct
+		);
 }
 
 public interface IStateCache<TState> {

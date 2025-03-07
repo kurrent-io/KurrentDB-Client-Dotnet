@@ -101,23 +101,7 @@ public static class KurrentClientDecisionMakingExtensions {
 			decider.ToAsyncDecider(),
 			ct
 		);
-
-	public static Task<IWriteResult> DecideAsync<TState, TCommand>(
-		this KurrentClient eventStore,
-		string streamName,
-		TCommand command,
-		Decider<TState, TCommand> decider,
-		DecideOptions<TState>? options,
-		CancellationToken ct = default
-	) where TState : notnull =>
-		eventStore.DecideAsync(
-			streamName,
-			command,
-			decider.ToAsyncDecider(),
-			options,
-			ct
-		);
-
+	
 	public static Task<IWriteResult> DecideAsync<TState, TCommand>(
 		this KurrentClient eventStore,
 		string streamName,

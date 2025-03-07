@@ -17,6 +17,10 @@ public interface IStateBuilder<TState> where TState : notnull {
 	);
 }
 
+public record GetStateOptions<TState> where TState : notnull {
+	public StateAtPointInTime<TState>? CurrentState { get; set; }
+}
+
 public interface IState : IState<object>;
 
 public interface IState<in TEvent> {
