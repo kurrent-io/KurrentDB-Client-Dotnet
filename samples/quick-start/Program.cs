@@ -45,7 +45,7 @@ await client.AppendToStreamAsync(
 	"some-stream",
 	StreamState.Any,
 	[eventData],
-	new OperationOptions{ UserCredentials = new UserCredentials("admin", "changeit") },
+	new AppendToStreamOptions { UserCredentials = new UserCredentials("admin", "changeit") },
 	cancellationToken
 );
 

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using EventStore.Client.Streams;
 using Grpc.Core;
@@ -624,6 +625,28 @@ namespace KurrentDB.Client {
 				},
 				cancellationToken
 			);
+		}
+	}
+
+	public static class ReadMessagesExtensions {
+		public static async IAsyncEnumerable<object> DeserializedData(
+			this IAsyncEnumerable<ResolvedEvent> resolvedEvents,
+			[EnumeratorCancellation] CancellationToken ct = default
+		) {
+			await foreach (var resolvedEvent in resolvedEvents.WithCancellation(ct)) {
+				if (resolvedEvent.DeserializedData != null)
+					yield return resolvedEvent.DeserializedData;
+			}
+		}
+
+		public static async IAsyncEnumerable<Message> DeserializedMessages(
+			this IAsyncEnumerable<ResolvedEvent> resolvedEvents,
+			[EnumeratorCancellation] CancellationToken ct = default
+		) {
+			await foreach (var resolvedEvent in resolvedEvents.WithCancellation(ct)) {
+				if (resolvedEvent.Message != null)
+					yield return resolvedEvent.Message;
+			}
 		}
 	}
 }

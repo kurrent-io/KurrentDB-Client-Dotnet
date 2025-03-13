@@ -131,7 +131,7 @@ static async Task AppendWithConcurrencyCheck(KurrentDBClient client) {
 }
 
 static async Task AppendOverridingUserCredentials(KurrentDBClient client, CancellationToken cancellationToken) {
-	var eventData =MessageData.From(
+	var eventData = MessageData.From(
 		"TestEvent",
 		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
@@ -142,7 +142,7 @@ static async Task AppendOverridingUserCredentials(KurrentDBClient client, Cancel
 		"some-stream",
 		StreamState.Any,
 		[eventData],
-		new OperationOptions { UserCredentials = new UserCredentials("admin", "changeit") },
+		new AppendToStreamOptions { UserCredentials = new UserCredentials("admin", "changeit") },
 		cancellationToken
 	);
 

@@ -444,7 +444,7 @@ namespace KurrentDB.Client {
 			=> dbClient.AppendToStreamAsync(
 				streamName,
 				expectedState,
-				messages.Select(m => Message.From(m)),
+				messages.Select(Message.From),
 				options,
 				cancellationToken
 			);

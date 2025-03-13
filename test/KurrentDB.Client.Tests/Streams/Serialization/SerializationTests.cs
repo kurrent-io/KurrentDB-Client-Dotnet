@@ -22,7 +22,32 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 
 		//Then
 		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(stream).ToListAsync();
-		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
+		AssertThatReadEvents(AreDeserialized, expected, resolvedEvents);
+	}
+
+	[RetryFact]
+	public async Task plain_clr_objects_are_serialized_and_deserialized_using_auto_serialization_and_extension() {
+		// Given
+		var                  stream         = Fixture.GetStreamName();
+		List<UserRegistered> domainMessages = GenerateMessages();
+		List<Message>        messages       = domainMessages.Select(Message.From).ToList();
+
+		//When
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, messages);
+
+		//Then
+		List<Message> deserializedMessages = await Fixture.Streams
+			.ReadStreamAsync(stream)
+			.DeserializedMessages()
+			.ToListAsync();
+		
+		List<object> deserializedDomainMessages = await Fixture.Streams
+			.ReadStreamAsync(stream)
+			.DeserializedData()
+			.ToListAsync();
+		
+		Assert.Equal(messages, deserializedMessages);
+		Assert.Equal(domainMessages, deserializedDomainMessages);
 	}
 
 	[RetryFact]
@@ -42,7 +67,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 
 		// Then
 		var resolvedEvents = await client.ReadStreamAsync(stream).ToListAsync();
-		var messages       = AssertThatMessages(AreDeserialized, expected, resolvedEvents);
+		var messages       = AssertThatReadEvents(AreDeserialized, expected, resolvedEvents);
 
 		Assert.Equal(messagesWithMetadata, messages);
 	}
@@ -61,7 +86,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 
 		// Then
 		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(stream).ToListAsync();
-		var messages       = AssertThatMessages(AreDeserialized, expected, resolvedEvents);
+		var messages       = AssertThatReadEvents(AreDeserialized, expected, resolvedEvents);
 
 		Assert.Equal(messagesWithMetadata.Select(m => m with { Metadata = new TracingMetadata() }), messages);
 	}
@@ -77,7 +102,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 			.ToListAsync();
 
 		// Then
-		AssertThatMessages(AreNotDeserialized, expected, resolvedEvents);
+		AssertThatReadEvents(AreNotDeserialized, expected, resolvedEvents);
 	}
 
 	[RetryFact]
@@ -91,7 +116,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 			.ToListAsync();
 
 		// Then
-		AssertThatMessages(AreNotDeserialized, expected, resolvedEvents);
+		AssertThatReadEvents(AreNotDeserialized, expected, resolvedEvents);
 	}
 
 	public static TheoryData<Action<KurrentDBClientSerializationSettings, string>> CustomTypeMappings() {
@@ -120,7 +145,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 		var resolvedEvents = await client.ReadStreamAsync(stream).ToListAsync();
 		Assert.All(resolvedEvents, resolvedEvent => Assert.Equal("user_registered", resolvedEvent.Event.EventType));
 
-		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
+		AssertThatReadEvents(AreDeserialized, expected, resolvedEvents);
 	}
 
 	[RetryTheory]
@@ -141,7 +166,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 
 		Assert.All(resolvedEvents, resolvedEvent => Assert.Equal("user_registered", resolvedEvent.Event.EventType));
 
-		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
+		AssertThatReadEvents(AreDeserialized, expected, resolvedEvents);
 	}
 
 	[RetryFact]
@@ -162,7 +187,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 
 		Assert.Equal(expected.Select(m => m.UserId), jsons.Select(j => j.GetProperty("user-id").GetGuid()));
 
-		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
+		AssertThatReadEvents(AreDeserialized, expected, resolvedEvents);
 	}
 
 	public class CustomMessageTypeNamingStrategy : IMessageTypeNamingStrategy {
@@ -171,7 +196,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 		}
 
 #if NET48
-	public bool TryResolveClrType(string messageTypeName, out Type? type) {
+		public bool TryResolveClrType(string messageTypeName, out Type? type) {
 #else
 		public bool TryResolveClrType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
 #endif
@@ -182,7 +207,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 		}
 
 #if NET48
-	public bool TryResolveClrMetadataType(string messageTypeName, out Type? type) {
+		public bool TryResolveClrMetadataType(string messageTypeName, out Type? type) {
 #else
 		public bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
 #endif
@@ -208,7 +233,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 			resolvedEvent => Assert.Equal($"custom-{typeof(UserRegistered).FullName}", resolvedEvent.Event.EventType)
 		);
 
-		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
+		AssertThatReadEvents(AreDeserialized, expected, resolvedEvents);
 	}
 
 	[RetryFact]
@@ -231,7 +256,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 			resolvedEvent => Assert.Equal($"custom-{typeof(UserRegistered).FullName}", resolvedEvent.Event.EventType)
 		);
 
-		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
+		AssertThatReadEvents(AreDeserialized, expected, resolvedEvents);
 	}
 
 	[RetryFact]
@@ -247,7 +272,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 			.ToListAsync();
 
 		// Then
-		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
+		AssertThatReadEvents(AreDeserialized, expected, resolvedEvents);
 	}
 
 	[RetryFact]
@@ -263,7 +288,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 			.ToListAsync();
 
 		// Then
-		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
+		AssertThatReadEvents(AreDeserialized, expected, resolvedEvents);
 	}
 
 	[RetryFact]
@@ -278,7 +303,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 			.ToListAsync();
 
 		// Then
-		AssertThatMessages(AreNotDeserialized, expected, resolvedEvents);
+		AssertThatReadEvents(AreNotDeserialized, expected, resolvedEvents);
 	}
 
 	[RetryFact]
@@ -292,10 +317,10 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 			.ToListAsync();
 
 		// Then
-		AssertThatMessages(AreNotDeserialized, expected, resolvedEvents);
+		AssertThatReadEvents(AreNotDeserialized, expected, resolvedEvents);
 	}
 
-	static List<Message> AssertThatMessages(
+	static List<Message> AssertThatReadEvents(
 		Action<UserRegistered, ResolvedEvent> assertMatches,
 		List<UserRegistered> expected,
 		List<ResolvedEvent> resolvedEvents
