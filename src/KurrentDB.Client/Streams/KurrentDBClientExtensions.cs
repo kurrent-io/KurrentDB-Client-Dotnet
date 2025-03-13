@@ -23,7 +23,7 @@ namespace KurrentDB.Client {
 		public static Task SetSystemSettingsAsync(
 			this KurrentDBClient dbClient,
 			SystemSettings settings,
-			OperationOptions? options = null,
+			SetSystemSettingsOptions? options = null,
 			CancellationToken cancellationToken = default
 		) {
 			if (dbClient == null) throw new ArgumentNullException(nameof(dbClient));
@@ -61,7 +61,7 @@ namespace KurrentDB.Client {
 		) =>
 			dbClient.SetSystemSettingsAsync(
 				settings,
-				new OperationOptions { Deadline = deadline, UserCredentials = userCredentials },
+				new SetSystemSettingsOptions { Deadline = deadline, UserCredentials = userCredentials },
 				cancellationToken: cancellationToken
 			);
 
@@ -81,7 +81,7 @@ namespace KurrentDB.Client {
 			string streamName,
 			StreamState expectedState,
 			IEnumerable<MessageData> messageData,
-			OperationOptions? options = null,
+			AppendToStreamOptions? options = null,
 			CancellationToken cancellationToken = default
 		) {
 			if (dbClient == null) {
@@ -133,7 +133,7 @@ namespace KurrentDB.Client {
 				streamName,
 				expectedState,
 				eventData.Select(e => (MessageData)e),
-				new OperationOptions {
+				new AppendToStreamOptions {
 					ThrowOnAppendFailure = false,
 					Deadline             = deadline,
 					UserCredentials      = userCredentials
@@ -141,4 +141,6 @@ namespace KurrentDB.Client {
 				cancellationToken
 			);
 	}
+
+	public class SetSystemSettingsOptions : AppendToStreamOptions;
 }

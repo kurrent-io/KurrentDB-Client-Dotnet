@@ -2,7 +2,7 @@ namespace KurrentDB.Client {
 	static class WriteResultExtensions {
 		public static IWriteResult OptionallyThrowWrongExpectedVersionException(
 			this IWriteResult writeResult,
-			OperationOptions options
+			AppendToStreamOptions options
 		) =>
 			(options.ThrowOnAppendFailure, writeResult) switch {
 				(true, WrongExpectedVersionResult wrongExpectedVersionResult)

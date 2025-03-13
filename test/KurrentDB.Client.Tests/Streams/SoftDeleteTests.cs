@@ -272,7 +272,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			stream,
 			StreamState.NoStream,
 			Fixture.CreateTestEvents(),
-			new OperationOptions { ThrowOnAppendFailure = false }
+			new AppendToStreamOptions { ThrowOnAppendFailure = false }
 		);
 
 		Assert.IsType<WrongExpectedVersionResult>(wrongExpectedVersionResult);

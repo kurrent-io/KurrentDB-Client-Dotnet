@@ -31,10 +31,8 @@ namespace KurrentDB.Client {
 			AppendToStreamOptions? options = null,
 			CancellationToken cancellationToken = default
 		) {
-			var serializationContext = new MessageSerializationContext(
-				streamName,
-				Settings.Serialization.DefaultContentType
-			);
+			var serializationContext 
+				= new MessageSerializationContext(streamName, Settings.Serialization.DefaultContentType);
 
 			var messageSerializer = _messageSerializer.With(Settings.Serialization, options?.SerializationSettings);
 
@@ -58,18 +56,17 @@ namespace KurrentDB.Client {
 			string streamName,
 			StreamState expectedState,
 			IEnumerable<MessageData> messageData,
-			OperationOptions? options = null,
+			AppendToStreamOptions? options = null,
 			CancellationToken cancellationToken = default
 		) {
-			var operationOptions = (options ?? new OperationOptions()).With(Settings.OperationOptions);
-			var userCredentials  = options?.UserCredentials;
-			var deadline         = options?.Deadline;
+			options ??= new AppendToStreamOptions();
+			options.With(Settings.OperationOptions);
 
 			_log.LogDebug("Append to stream - {streamName}@{expectedState}.", streamName, expectedState);
 
 			var task =
-				userCredentials == null && await BatchAppender.IsUsable().ConfigureAwait(false)
-					? BatchAppender.Append(streamName, expectedState, messageData, deadline, cancellationToken)
+				options.UserCredentials == null && await BatchAppender.IsUsable().ConfigureAwait(false)
+					? BatchAppender.Append(streamName, expectedState, messageData, options.Deadline, cancellationToken)
 					: AppendToStreamInternal(
 						await GetChannelInfo(cancellationToken).ConfigureAwait(false),
 						new AppendReq {
@@ -78,18 +75,18 @@ namespace KurrentDB.Client {
 							}
 						}.WithAnyStreamRevision(expectedState),
 						messageData,
-						operationOptions,
+						options,
 						cancellationToken
 					);
 
-			return (await task.ConfigureAwait(false)).OptionallyThrowWrongExpectedVersionException(operationOptions);
+			return (await task.ConfigureAwait(false)).OptionallyThrowWrongExpectedVersionException(options);
 		}
 
 		ValueTask<IWriteResult> AppendToStreamInternal(
 			ChannelInfo channelInfo,
 			AppendReq header,
 			IEnumerable<MessageData> messageData,
-			OperationOptions operationOptions,
+			AppendToStreamOptions operationOptions,
 			CancellationToken cancellationToken
 		) {
 			var userCredentials = operationOptions.UserCredentials;
@@ -175,7 +172,9 @@ namespace KurrentDB.Client {
 		}
 
 		IWriteResult HandleWrongExpectedRevision(
-			AppendResp response, AppendReq header, OperationOptions operationOptions
+			AppendResp response,
+			AppendReq header,
+			AppendToStreamOptions operationOptions
 		) {
 			var actualStreamRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase
 			                        == CurrentRevisionOptionOneofCase.CurrentRevision
@@ -471,12 +470,12 @@ namespace KurrentDB.Client {
 			string streamName,
 			StreamState expectedState,
 			IEnumerable<EventData> eventData,
-			Action<OperationOptions>? configureOperationOptions = null,
+			Action<AppendToStreamOptions>? configureOperationOptions = null,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) {
-			var operationOptions = new OperationOptions {
+			var operationOptions = new AppendToStreamOptions {
 				Deadline        = deadline,
 				UserCredentials = userCredentials,
 			};
@@ -493,7 +492,26 @@ namespace KurrentDB.Client {
 		}
 	}
 
-	public record AppendToStreamOptions : OperationOptions {
+	public class AppendToStreamOptions : OperationOptions {
+		/// <summary>
+		/// Whether or not to immediately throw a <see cref="WrongExpectedVersionException"/> when an append fails.
+		/// </summary>
+		public bool? ThrowOnAppendFailure { get; set; }
+
+		/// <summary>
+		/// The batch size, in bytes.
+		/// </summary>
+		public int? BatchAppendSize { get; set; }
+
+		/// <summary>
+		/// Clones a copy of the current <see cref="KurrentDBClientOperationOptions"/>.
+		/// </summary>
+		/// <returns></returns>
+		public void With(KurrentDBClientOperationOptions clientOperationOptions) {
+			ThrowOnAppendFailure = clientOperationOptions.ThrowOnAppendFailure;
+			BatchAppendSize      = clientOperationOptions.BatchAppendSize;
+		}
+		
 		/// <summary>
 		/// Allows to customize or disable the automatic deserialization
 		/// </summary>

@@ -8,29 +8,33 @@ namespace KurrentDB.Client {
 		/// Asynchronously reads the metadata for a stream
 		/// </summary>
 		/// <param name="streamName">The name of the stream to read the metadata for.</param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="operationOptions"></param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public async Task<StreamMetadataResult> GetStreamMetadataAsync(
-			string streamName, TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
+			string streamName,
+			OperationOptions? operationOptions = null,
+			CancellationToken cancellationToken = default
 		) {
 			_log.LogDebug("Read stream metadata for {streamName}.", streamName);
 
 			try {
 				var result = ReadStreamAsync(
-					Direction.Backwards,
 					SystemStreams.MetastreamOf(streamName),
-					StreamPosition.End,
-					1,
-					false,
-					deadline,
-					userCredentials,
+					new ReadStreamOptions {
+						Direction             = Direction.Backwards,
+						StreamPosition        = StreamPosition.End,
+						ResolveLinkTos        = false,
+						MaxCount              = 1,
+						Deadline              = operationOptions?.Deadline,
+						UserCredentials       = operationOptions?.UserCredentials,
+						SerializationSettings = OperationSerializationSettings.Disabled
+					},
 					cancellationToken
 				);
 
-				await foreach (var message in result.Messages.ConfigureAwait(false)) {
+				await foreach (var message in
+				               result.Messages.ConfigureAwait(false).WithCancellation(cancellationToken)) {
 					if (message is not StreamMessage.Event(var resolvedEvent)) {
 						continue;
 					}
@@ -56,23 +60,18 @@ namespace KurrentDB.Client {
 		/// <param name="streamName">The name of the stream to set metadata for.</param>
 		/// <param name="expectedState">The <see cref="StreamState"/> of the stream to append to.</param>
 		/// <param name="metadata">A <see cref="StreamMetadata"/> representing the new metadata.</param>
-		/// <param name="configureOperationOptions">An <see cref="Action{KurrentDBClientOperationOptions}"/> to configure the operation's options.</param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="operationOptions"></param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public Task<IWriteResult> SetStreamMetadataAsync(
-			string streamName, StreamState expectedState,
-			StreamMetadata metadata, Action<KurrentDBClientOperationOptions>? configureOperationOptions = null,
-			TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null,
+			string streamName,
+			StreamState expectedState,
+			StreamMetadata metadata,
+			SetStreamMetadata? operationOptions = null,
 			CancellationToken cancellationToken = default
 		) {
-			var options = Settings.OperationOptions.Clone();
-			configureOperationOptions?.Invoke(options);
-
-			var operationOptions =
-				new OperationOptions { Deadline = deadline, UserCredentials = userCredentials }.With(options);
+			operationOptions ??= new SetStreamMetadata();
+			operationOptions.With(Settings.OperationOptions);
 
 			return SetStreamMetadataInternal(
 				metadata,
@@ -89,7 +88,7 @@ namespace KurrentDB.Client {
 		async Task<IWriteResult> SetStreamMetadataInternal(
 			StreamMetadata metadata,
 			AppendReq appendReq,
-			OperationOptions operationOptions,
+			SetStreamMetadata operationOptions,
 			CancellationToken cancellationToken
 		) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
@@ -107,4 +106,65 @@ namespace KurrentDB.Client {
 			).ConfigureAwait(false);
 		}
 	}
+
+	public static class KurrentDBClientMetadataObsoleteExtensions {
+		/// <summary>
+		/// Asynchronously reads the metadata for a stream
+		/// </summary>
+		/// <param name="dbClient"></param>
+		/// <param name="streamName">The name of the stream to read the metadata for.</param>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static Task<StreamMetadataResult> GetStreamMetadataAsync(
+			this KurrentDBClient dbClient,
+			string streamName,
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default
+		) =>
+			dbClient.GetStreamMetadataAsync(
+				streamName,
+				new OperationOptions { Deadline = deadline, UserCredentials = userCredentials },
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Asynchronously sets the metadata for a stream.
+		/// </summary>
+		/// <param name="dbClient"></param>
+		/// <param name="streamName">The name of the stream to set metadata for.</param>
+		/// <param name="expectedState">The <see cref="StreamState"/> of the stream to append to.</param>
+		/// <param name="metadata">A <see cref="StreamMetadata"/> representing the new metadata.</param>
+		/// <param name="configureOperationOptions">An <see cref="Action{KurrentDBClientOperationOptions}"/> to configure the operation's options.</param>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static Task<IWriteResult> SetStreamMetadataAsync(
+			this KurrentDBClient dbClient,
+			string streamName,
+			StreamState expectedState,
+			StreamMetadata metadata,
+			Action<SetStreamMetadata>? configureOperationOptions = null,
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default
+		) {
+			var operationOptions =
+				new SetStreamMetadata { Deadline = deadline, UserCredentials = userCredentials };
+			configureOperationOptions?.Invoke(operationOptions);
+
+			return dbClient.SetStreamMetadataAsync(
+				streamName,
+				expectedState,
+				metadata,
+				operationOptions,
+				cancellationToken
+			);
+		}
+	}
+
+	public class SetStreamMetadata : AppendToStreamOptions;
 }

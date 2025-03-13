@@ -68,8 +68,8 @@ public static class KurrentDBClientWarmupExtensions {
 				_ = await dbClient.AppendToStreamAsync(
 					"warmup",
 					StreamState.Any,
-					[],
-					new OperationOptions { UserCredentials = TestCredentials.Root },
+					Enumerable.Empty<MessageData>(),
+					new AppendToStreamOptions { UserCredentials = TestCredentials.Root },
 					ct
 				);
 			},

@@ -180,7 +180,7 @@ public class SubscribeToStreamGetInfoTests(SubscribeToStreamGetInfoTests.CustomF
 						Stream,
 						StreamState.Any,
 						[new MessageData("test-event", ReadOnlyMemory<byte>.Empty)],
-						new OperationOptions { UserCredentials = TestCredentials.Root }
+						new AppendToStreamOptions { UserCredentials = TestCredentials.Root }
 					);
 				}
 

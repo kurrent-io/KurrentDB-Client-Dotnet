@@ -14,9 +14,11 @@ namespace KurrentDB.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public ReadAllStreamResult ReadAllAsync(
-			ReadAllOptions options,
+			ReadAllOptions? options = null,
 			CancellationToken cancellationToken = default
 		) {
+			options ??= new ReadAllOptions();
+
 			if (options.MaxCount <= 0)
 				throw new ArgumentOutOfRangeException(nameof(options.MaxCount));
 
@@ -50,80 +52,6 @@ namespace KurrentDB.Client {
 				Settings,
 				options,
 				_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
-				cancellationToken
-			);
-		}
-
-		/// <summary>
-		/// Asynchronously reads all events.
-		/// </summary>
-		/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
-		/// <param name="position">The <see cref="Position"/> to start reading from.</param>
-		/// <param name="maxCount">The maximum count to read.</param>
-		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public ReadAllStreamResult ReadAllAsync(
-			Direction direction,
-			Position position,
-			long maxCount = long.MaxValue,
-			bool resolveLinkTos = false,
-			TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default
-		) =>
-			ReadAllAsync(
-				new ReadAllOptions {
-					Direction             = direction,
-					Position              = position,
-					Filter           = null,
-					MaxCount              = maxCount,
-					ResolveLinkTos        = resolveLinkTos,
-					Deadline              = deadline,
-					UserCredentials       = userCredentials,
-					SerializationSettings = OperationSerializationSettings.Disabled
-				},
-				cancellationToken
-			);
-
-		/// <summary>
-		/// Asynchronously reads all events with filtering.
-		/// </summary>
-		/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
-		/// <param name="position">The <see cref="Position"/> to start reading from.</param>
-		/// <param name="eventFilter">The <see cref="IEventFilter"/> to apply.</param>
-		/// <param name="maxCount">The maximum count to read.</param>
-		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public ReadAllStreamResult ReadAllAsync(
-			Direction direction,
-			Position position,
-			IEventFilter? eventFilter,
-			long maxCount = long.MaxValue,
-			bool resolveLinkTos = false,
-			TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default
-		) {
-			if (maxCount <= 0)
-				throw new ArgumentOutOfRangeException(nameof(maxCount));
-
-			return ReadAllAsync(
-				new ReadAllOptions {
-					Direction             = direction,
-					Position              = position,
-					Filter           = eventFilter,
-					MaxCount              = maxCount,
-					ResolveLinkTos        = resolveLinkTos,
-					Deadline              = deadline,
-					UserCredentials       = userCredentials,
-					SerializationSettings = OperationSerializationSettings.Disabled
-				},
 				cancellationToken
 			);
 		}
@@ -266,9 +194,11 @@ namespace KurrentDB.Client {
 		/// <returns></returns>
 		public ReadStreamResult ReadStreamAsync(
 			string streamName,
-			ReadStreamOptions options,
+			ReadStreamOptions? options = null,
 			CancellationToken cancellationToken = default
 		) {
+			options ??= new ReadStreamOptions();
+
 			if (options.MaxCount <= 0)
 				throw new ArgumentOutOfRangeException(nameof(options.MaxCount));
 
@@ -299,48 +229,6 @@ namespace KurrentDB.Client {
 				options.Deadline,
 				options.UserCredentials,
 				_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
-				cancellationToken
-			);
-		}
-
-		/// <summary>
-		/// Asynchronously reads all the events from a stream.
-		/// 
-		/// The result could also be inspected as a means to avoid handling exceptions as the <see cref="ReadState"/> would indicate whether or not the stream is readable./>
-		/// </summary>
-		/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
-		/// <param name="streamName">The name of the stream to read.</param>
-		/// <param name="revision">The <see cref="StreamRevision"/> to start reading from.</param>
-		/// <param name="maxCount">The number of events to read from the stream.</param>
-		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public ReadStreamResult ReadStreamAsync(
-			Direction direction,
-			string streamName,
-			StreamPosition revision,
-			long maxCount = long.MaxValue,
-			bool resolveLinkTos = false,
-			TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default
-		) {
-			if (maxCount <= 0)
-				throw new ArgumentOutOfRangeException(nameof(maxCount));
-
-			return ReadStreamAsync(
-				streamName,
-				new ReadStreamOptions {
-					Direction             = direction,
-					StreamPosition        = revision,
-					MaxCount              = maxCount,
-					ResolveLinkTos        = resolveLinkTos,
-					Deadline              = deadline,
-					UserCredentials       = userCredentials,
-					SerializationSettings = OperationSerializationSettings.Disabled
-				},
 				cancellationToken
 			);
 		}
@@ -552,7 +440,7 @@ namespace KurrentDB.Client {
 	/// Optional settings to customize reading all messages, for instance: max count,
 	/// <see cref="Direction"/> in which to read, the <see cref="Position"/> to start reading from, etc.
 	/// </summary>
-	public class ReadAllOptions {
+	public class ReadAllOptions : OperationOptions {
 		/// <summary>
 		/// The <see cref="Direction"/> in which to read.
 		/// </summary>
@@ -579,16 +467,6 @@ namespace KurrentDB.Client {
 		public bool ResolveLinkTos { get; set; }
 
 		/// <summary>
-		/// Maximum time that the operation will be run
-		/// </summary>
-		public TimeSpan? Deadline { get; set; }
-
-		/// <summary>
-		/// The optional <see cref="UserCredentials"/> to perform operation with.
-		/// </summary>
-		public UserCredentials? UserCredentials { get; set; }
-
-		/// <summary>
 		/// Allows to customize or disable the automatic deserialization
 		/// </summary>
 		public OperationSerializationSettings? SerializationSettings { get; set; }
@@ -598,7 +476,7 @@ namespace KurrentDB.Client {
 	/// Optional settings to customize reading stream messages, for instance: max count,
 	/// <see cref="Direction"/> in which to read, the <see cref="StreamPosition"/> to start reading from, etc.
 	/// </summary>
-	public class ReadStreamOptions {
+	public class ReadStreamOptions : OperationOptions {
 		/// <summary>
 		/// The <see cref="Direction"/> in which to read.
 		/// </summary>
@@ -620,16 +498,6 @@ namespace KurrentDB.Client {
 		public bool ResolveLinkTos { get; set; }
 
 		/// <summary>
-		/// Maximum time that the operation will be run
-		/// </summary>
-		public TimeSpan? Deadline { get; set; }
-
-		/// <summary>
-		/// The optional <see cref="UserCredentials"/> to perform operation with.
-		/// </summary>
-		public UserCredentials? UserCredentials { get; set; }
-
-		/// <summary>
 		/// Allows to customize or disable the automatic deserialization
 		/// </summary>
 		public OperationSerializationSettings? SerializationSettings { get; set; }
@@ -637,16 +505,82 @@ namespace KurrentDB.Client {
 
 	public static class KurrentDBClientReadExtensions {
 		/// <summary>
-		/// Asynchronously reads all events. By default, it reads all of them from the start. The options parameter allows you to fine-tune it to your needs.
+		/// Asynchronously reads all events.
 		/// </summary>
 		/// <param name="dbClient"></param>
+		/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
+		/// <param name="position">The <see cref="Position"/> to start reading from.</param>
+		/// <param name="maxCount">The maximum count to read.</param>
+		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static KurrentDBClient.ReadAllStreamResult ReadAllAsync(
 			this KurrentDBClient dbClient,
+			Direction direction,
+			Position position,
+			long maxCount = long.MaxValue,
+			bool resolveLinkTos = false,
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) =>
-			dbClient.ReadAllAsync(new ReadAllOptions(), cancellationToken);
+			dbClient.ReadAllAsync(
+				new ReadAllOptions {
+					Direction             = direction,
+					Position              = position,
+					Filter                = null,
+					MaxCount              = maxCount,
+					ResolveLinkTos        = resolveLinkTos,
+					Deadline              = deadline,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Asynchronously reads all events with filtering.
+		/// </summary>
+		/// <param name="dbClient"></param>
+		/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
+		/// <param name="position">The <see cref="Position"/> to start reading from.</param>
+		/// <param name="eventFilter">The <see cref="IEventFilter"/> to apply.</param>
+		/// <param name="maxCount">The maximum count to read.</param>
+		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		public static KurrentDBClient.ReadAllStreamResult ReadAllAsync(
+			this KurrentDBClient dbClient,
+			Direction direction,
+			Position position,
+			IEventFilter? eventFilter,
+			long maxCount = long.MaxValue,
+			bool resolveLinkTos = false,
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default
+		) {
+			if (maxCount <= 0)
+				throw new ArgumentOutOfRangeException(nameof(maxCount));
+
+			return dbClient.ReadAllAsync(
+				new ReadAllOptions {
+					Direction             = direction,
+					Position              = position,
+					Filter                = eventFilter,
+					MaxCount              = maxCount,
+					ResolveLinkTos        = resolveLinkTos,
+					Deadline              = deadline,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
+				cancellationToken
+			);
+		}
 
 		/// <summary>
 		/// Asynchronously reads all the events from a stream.
@@ -654,19 +588,42 @@ namespace KurrentDB.Client {
 		/// The result could also be inspected as a means to avoid handling exceptions as the <see cref="ReadState"/> would indicate whether or not the stream is readable./>
 		/// </summary>
 		/// <param name="dbClient"></param>
+		/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
 		/// <param name="streamName">The name of the stream to read.</param>
-		/// <param name="options">Optional settings like: max count, <see cref="Direction"/> in which to read, the <see cref="Position"/> to start reading from, etc.</param>
+		/// <param name="revision">The <see cref="StreamRevision"/> to start reading from.</param>
+		/// <param name="maxCount">The number of events to read from the stream.</param>
+		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public static KurrentDBClient.ReadStreamResult ReadStreamAsync(
 			this KurrentDBClient dbClient,
+			Direction direction,
 			string streamName,
+			StreamPosition revision,
+			long maxCount = long.MaxValue,
+			bool resolveLinkTos = false,
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
-		) =>
-			dbClient.ReadStreamAsync(
+		) {
+			if (maxCount <= 0)
+				throw new ArgumentOutOfRangeException(nameof(maxCount));
+
+			return dbClient.ReadStreamAsync(
 				streamName,
-				new ReadStreamOptions(),
+				new ReadStreamOptions {
+					Direction             = direction,
+					StreamPosition        = revision,
+					MaxCount              = maxCount,
+					ResolveLinkTos        = resolveLinkTos,
+					Deadline              = deadline,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
 				cancellationToken
 			);
+		}
 	}
 }
