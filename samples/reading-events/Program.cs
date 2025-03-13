@@ -6,8 +6,7 @@ await using var client = new KurrentDBClient(KurrentDBClientSettings.Create("esd
 
 var events = Enumerable.Range(0, 20)
 	.Select(
-		r => new EventData(
-			Uuid.NewUuid(),
+		r => EventData.For(
 			"some-event",
 			Encoding.UTF8.GetBytes($"{{\"id\": \"{r}\" \"value\": \"some value\"}}")
 		)

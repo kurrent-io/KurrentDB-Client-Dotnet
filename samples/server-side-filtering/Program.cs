@@ -30,8 +30,7 @@ _ = Task.Run(async () => {
 await Task.Delay(2000);
 
 for (var i = 0; i < eventCount; i++) {
-	var eventData = new EventData(
-		Uuid.NewUuid(),
+	var eventData = EventData.For(
 		i % 2 == 0 ? "some-event" : "other-event",
 		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);

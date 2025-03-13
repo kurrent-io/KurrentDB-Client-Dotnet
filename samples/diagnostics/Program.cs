@@ -55,8 +55,7 @@ static async Task TraceAppendToStream(KurrentDBClient client) {
 
 		host.Start();
 
-		var eventData = new EventData(
-			Uuid.NewUuid(),
+		var eventData = EventData.For(
 			"some-event",
 			"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 		);

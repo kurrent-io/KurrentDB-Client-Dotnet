@@ -18,8 +18,7 @@ return;
 static async Task AppendToStream(KurrentDBClient client) {
 	#region append-to-stream
 
-	var eventData = new EventData(
-		Uuid.NewUuid(),
+	var eventData = EventData.For(
 		"some-event",
 		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
@@ -27,9 +26,7 @@ static async Task AppendToStream(KurrentDBClient client) {
 	await client.AppendToStreamAsync(
 		"some-stream",
 		StreamState.NoStream,
-		new List<EventData> {
-			eventData
-		}
+		[eventData]
 	);
 
 	#endregion append-to-stream
@@ -38,8 +35,7 @@ static async Task AppendToStream(KurrentDBClient client) {
 static async Task AppendWithSameId(KurrentDBClient client) {
 	#region append-duplicate-event
 
-	var eventData = new EventData(
-		Uuid.NewUuid(),
+	var eventData = EventData.For(
 		"some-event",
 		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
@@ -47,18 +43,14 @@ static async Task AppendWithSameId(KurrentDBClient client) {
 	await client.AppendToStreamAsync(
 		"same-event-stream",
 		StreamState.Any,
-		new List<EventData> {
-			eventData
-		}
+		[eventData]
 	);
 
 	// attempt to append the same event again
 	await client.AppendToStreamAsync(
 		"same-event-stream",
 		StreamState.Any,
-		new List<EventData> {
-			eventData
-		}
+		[eventData]
 	);
 
 	#endregion append-duplicate-event
@@ -67,14 +59,12 @@ static async Task AppendWithSameId(KurrentDBClient client) {
 static async Task AppendWithNoStream(KurrentDBClient client) {
 	#region append-with-no-stream
 
-	var eventDataOne = new EventData(
-		Uuid.NewUuid(),
+	var eventDataOne = EventData.For(
 		"some-event",
 		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
 
-	var eventDataTwo = new EventData(
-		Uuid.NewUuid(),
+	var eventDataTwo = EventData.For(
 		"some-event",
 		"{\"id\": \"2\" \"value\": \"some other value\"}"u8.ToArray()
 	);
@@ -82,18 +72,14 @@ static async Task AppendWithNoStream(KurrentDBClient client) {
 	await client.AppendToStreamAsync(
 		"no-stream-stream",
 		StreamState.NoStream,
-		new List<EventData> {
-			eventDataOne
-		}
+		[eventDataOne]
 	);
 
 	// attempt to append the same event again
 	await client.AppendToStreamAsync(
 		"no-stream-stream",
 		StreamState.NoStream,
-		new List<EventData> {
-			eventDataTwo
-		}
+		[eventDataTwo]
 	);
 
 	#endregion append-with-no-stream
@@ -103,7 +89,7 @@ static async Task AppendWithConcurrencyCheck(KurrentDBClient client) {
 	await client.AppendToStreamAsync(
 		"concurrency-stream",
 		StreamState.Any,
-		new[] { new EventData(Uuid.NewUuid(), "-", ReadOnlyMemory<byte>.Empty) }
+		[EventData.For("-", ReadOnlyMemory<byte>.Empty)]
 	);
 
 	#region append-with-concurrency-check
@@ -119,8 +105,7 @@ static async Task AppendWithConcurrencyCheck(KurrentDBClient client) {
 	var clientTwoRead     = client.ReadStreamAsync(Direction.Forwards, "concurrency-stream", StreamPosition.Start);
 	var clientTwoRevision = (await clientTwoRead.LastAsync()).Event.EventNumber.ToUInt64();
 
-	var clientOneData = new EventData(
-		Uuid.NewUuid(),
+	var clientOneData = EventData.For(
 		"some-event",
 		"{\"id\": \"1\" \"value\": \"clientOne\"}"u8.ToArray()
 	);
@@ -162,9 +147,9 @@ static async Task AppendOverridingUserCredentials(KurrentDBClient client, Cancel
 	await client.AppendToStreamAsync(
 		"some-stream",
 		StreamState.Any,
-		new[] { eventData },
-		userCredentials: new UserCredentials("admin", "changeit"),
-		cancellationToken: cancellationToken
+		[eventData],
+		new OperationOptions { UserCredentials = new UserCredentials("admin", "changeit") },
+		cancellationToken
 	);
 
 	#endregion overriding-user-credentials

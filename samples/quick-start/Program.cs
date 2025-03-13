@@ -21,8 +21,7 @@ var evt = new TestEvent {
 	ImportantData = "I wrote my first event!"
 };
 
-var eventData = new EventData(
-	Uuid.NewUuid(),
+var eventData = EventData.For(
 	"TestEvent",
 	JsonSerializer.SerializeToUtf8Bytes(evt)
 );
@@ -34,7 +33,7 @@ var eventData = new EventData(
 await client.AppendToStreamAsync(
 	"some-stream",
 	StreamState.Any,
-	new[] { eventData },
+	[eventData],
 	cancellationToken: cancellationToken
 );
 
@@ -45,9 +44,9 @@ await client.AppendToStreamAsync(
 await client.AppendToStreamAsync(
 	"some-stream",
 	StreamState.Any,
-	new[] { eventData },
-	userCredentials: new UserCredentials("admin", "changeit"),
-	cancellationToken: cancellationToken
+	[eventData],
+	new OperationOptions{ UserCredentials = new UserCredentials("admin", "changeit") },
+	cancellationToken
 );
 
 #endregion overriding-user-credentials

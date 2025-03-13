@@ -41,8 +41,10 @@ namespace KurrentDB.Client {
 		/// <param name="metadata">The raw bytes of the event metadata.</param>
 		/// <param name="contentType">The Content-Type of the <see cref="Data"/>. Valid values are 'application/json' and 'application/octet-stream'.</param>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
-		public EventData(Uuid eventId, string type, ReadOnlyMemory<byte> data, ReadOnlyMemory<byte>? metadata = null,
-			string contentType = Constants.Metadata.ContentTypes.ApplicationJson) {
+		public EventData(
+			Uuid eventId, string type, ReadOnlyMemory<byte> data, ReadOnlyMemory<byte>? metadata = null,
+			string contentType = Constants.Metadata.ContentTypes.ApplicationJson
+		) {
 			if (eventId == Uuid.Empty) {
 				throw new ArgumentOutOfRangeException(nameof(eventId));
 			}
@@ -51,15 +53,59 @@ namespace KurrentDB.Client {
 
 			if (contentType != Constants.Metadata.ContentTypes.ApplicationJson &&
 			    contentType != Constants.Metadata.ContentTypes.ApplicationOctetStream) {
-				throw new ArgumentOutOfRangeException(nameof(contentType), contentType,
-					$"Only {Constants.Metadata.ContentTypes.ApplicationJson} or {Constants.Metadata.ContentTypes.ApplicationOctetStream} are acceptable values.");
+				throw new ArgumentOutOfRangeException(
+					nameof(contentType),
+					contentType,
+					$"Only {Constants.Metadata.ContentTypes.ApplicationJson} or {Constants.Metadata.ContentTypes.ApplicationOctetStream} are acceptable values."
+				);
 			}
 
-			EventId = eventId;
-			Type = type;
-			Data = data;
-			Metadata = metadata ?? Array.Empty<byte>();
+			EventId     = eventId;
+			Type        = type;
+			Data        = data;
+			Metadata    = metadata ?? Array.Empty<byte>();
 			ContentType = contentType;
 		}
+		
+		/// <summary>
+		/// Creates a new <see cref="EventData"/> with the specified event type, id, binary data and metadata
+		/// </summary>
+		/// <param name="type">The name of the event type. It is strongly recommended that these use lowerCamelCase if projections are to be used.</param>
+		/// <param name="data">The raw bytes of the event data.</param>
+		/// <param name="metadata">Optional metadata providing additional context about the event, such as correlation IDs, timestamps, or user information.</param>
+		/// <param name="eventId">Unique identifier for this specific event instance. </param>
+		/// <param name="contentType">The Content-Type of the <see cref="Data"/>. Valid values are 'application/json' and 'application/octet-stream'.</param>
+		/// <returns>A new immutable EventData instance with the specified properties.</returns>
+		/// <exception cref="ArgumentOutOfRangeException">Thrown when eventId is explicitly set to Uuid.Empty, which is an invalid identifier.</exception>
+		/// <example>
+		/// <code>
+		/// // Create an event with data and metadata
+		/// var orderPlaced = new OrderPlaced { OrderId = "ORD-123", Amount = 99.99m };
+		/// 
+		/// var metadata = new EventMetadata { 
+		///     UserId = "user-456", 
+		///     Timestamp = DateTimeOffset.UtcNow,
+		///     CorrelationId = correlationId
+		/// };
+		/// 
+		/// var type = typeof(UserRegistered).FullName!;
+		/// var dataBytes = JsonSerializer.SerializeToUtf8Bytes(orderPlaced);
+		/// var metadataBytes = JsonSerializer.SerializeToUtf8Bytes(metadata);
+		/// 
+		/// // Let the system assign an ID automatically
+		/// var event = EventData.From(type, dataBytes, metadataBytes);
+		/// 
+		/// // Or specify a custom ID
+		/// var messageWithId = EventData.From(type, dataBytes, metadataBytes, Uuid.NewUuid());
+		/// </code>
+		/// </example>
+		public static EventData For(
+			string type, 
+			ReadOnlyMemory<byte> data, 
+			ReadOnlyMemory<byte>? metadata = null, 
+			Uuid? eventId = null,
+			string contentType = Constants.Metadata.ContentTypes.ApplicationJson
+		) =>
+			new(eventId ?? Uuid.NewUuid(), type, data, metadata, contentType);
 	}
 }

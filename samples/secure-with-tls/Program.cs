@@ -9,7 +9,7 @@ Console.WriteLine($"Connecting to EventStoreDB at: {connectionString}");
 
 await using var client = new KurrentDBClient(KurrentDBClientSettings.Create(connectionString));
 
-var eventData = new EventData(Uuid.NewUuid(), "some-event", "{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray());
+var eventData = EventData.For("some-event", "{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray());
 
 try {
 	var appendResult = await client.AppendToStreamAsync(

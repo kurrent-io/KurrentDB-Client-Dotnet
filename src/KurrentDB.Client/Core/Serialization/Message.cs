@@ -1,6 +1,4 @@
-using KurrentDB.Client;
-
-namespace KurrentDB.Client.Core.Serialization;
+namespace KurrentDB.Client;
 
 /// <summary>
 /// Represents a message wrapper in the KurrentDB system, containing both domain data and optional metadata.
@@ -20,9 +18,9 @@ public record Message(object Data, object? Metadata, Uuid? MessageId = null) {
 	/// <example>
 	/// <code>
 	/// // Create a message with a specific ID
-	/// var userCreated = new UserCreated { Id = "123", Name = "Alice" };
+	/// var UserRegistered = new UserRegistered { Id = "123", Name = "Alice" };
 	/// var messageId = Uuid.NewUuid();
-	/// var message = Message.From(userCreated, messageId);
+	/// var message = Message.From(UserRegistered, messageId);
 	/// </code>
 	/// </example>
 	public static Message From(object data, Uuid messageId) =>
