@@ -54,8 +54,10 @@ static class MessageSerializerExtensions {
 }
 
 class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializer {
-	readonly ISerializer _jsonSerializer =
-		schemaRegistry.GetSerializer(ContentType.Json);
+	readonly SystemTextJsonSerializer _metadataSerializer =
+		new SystemTextJsonSerializer(
+			new SystemTextJsonSerializationSettings { Options = KurrentDBClient.StreamMetadataJsonSerializerOptions }
+		);
 
 	readonly IMessageTypeNamingStrategy _messageTypeNamingStrategy =
 		schemaRegistry.MessageTypeNamingStrategy;
@@ -74,7 +76,7 @@ class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializer {
 			.Serialize(data);
 
 		var serializedMetadata = metadata != null
-			? _jsonSerializer.Serialize(metadata)
+			? _metadataSerializer.Serialize(metadata)
 			: ReadOnlyMemory<byte>.Empty;
 
 		return new EventData(
@@ -106,8 +108,8 @@ class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializer {
 		}
 
 		object? metadata = record.Metadata.Length > 0 && TryResolveClrMetadataType(record, out var clrMetadataType)
-				? _jsonSerializer.Deserialize(record.Metadata, clrMetadataType!)
-				: null;
+			? _metadataSerializer.Deserialize(record.Metadata, clrMetadataType!)
+			: null;
 
 		deserialized = Message.From(data, metadata, record.EventId);
 		return true;

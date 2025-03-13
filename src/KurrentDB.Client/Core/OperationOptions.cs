@@ -31,6 +31,8 @@ public record OperationOptions {
 	public OperationOptions With(KurrentDBClientOperationOptions clientOperationOptions) =>
 		new() {
 			ThrowOnAppendFailure = ThrowOnAppendFailure ?? clientOperationOptions.ThrowOnAppendFailure,
-			BatchAppendSize      = BatchAppendSize ?? clientOperationOptions.BatchAppendSize
+			BatchAppendSize      = BatchAppendSize ?? clientOperationOptions.BatchAppendSize,
+			Deadline             = Deadline,
+			UserCredentials      = UserCredentials,
 		};
 }

@@ -13,7 +13,7 @@ namespace KurrentDB.Client {
 	/// The client used for operations on streams.
 	/// </summary>
 	public sealed partial class KurrentDBClient : KurrentDBClientBase {
-		static readonly JsonSerializerOptions StreamMetadataJsonSerializerOptions = new() {
+		internal static readonly JsonSerializerOptions StreamMetadataJsonSerializerOptions = new() {
 			Converters = {
 				StreamMetadataJsonConverter.Instance
 			},
