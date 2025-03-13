@@ -38,9 +38,9 @@ namespace KurrentDB.Client {
 
 			var messageSerializer = _messageSerializer.With(Settings.Serialization, options?.SerializationSettings);
 
-			var eventsData = messageSerializer.Serialize(messages, serializationContext);
+			var messageData = messageSerializer.Serialize(messages, serializationContext);
 
-			return AppendToStreamAsync(streamName, expectedState, eventsData, options, cancellationToken);
+			return AppendToStreamAsync(streamName, expectedState, messageData, options, cancellationToken);
 		}
 
 		/// <summary>
@@ -50,14 +50,14 @@ namespace KurrentDB.Client {
 		/// </summary>
 		/// <param name="streamName">The name of the stream to append events to.</param>
 		/// <param name="expectedState">The expected <see cref="KurrentDB.Client.StreamState"/> of the stream to append to.</param>
-		/// <param name="eventsData">Raw message data to append to the stream.</param>
+		/// <param name="messageData">Raw message data to append to the stream.</param>
 		/// <param name="options">Optional settings for the append operation, e.g. deadline, user credentials etc.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public async Task<IWriteResult> AppendToStreamAsync(
 			string streamName,
 			StreamState expectedState,
-			IEnumerable<EventData> eventsData,
+			IEnumerable<MessageData> messageData,
 			OperationOptions? options = null,
 			CancellationToken cancellationToken = default
 		) {
@@ -69,7 +69,7 @@ namespace KurrentDB.Client {
 
 			var task =
 				userCredentials == null && await BatchAppender.IsUsable().ConfigureAwait(false)
-					? BatchAppender.Append(streamName, expectedState, eventsData, deadline, cancellationToken)
+					? BatchAppender.Append(streamName, expectedState, messageData, deadline, cancellationToken)
 					: AppendToStreamInternal(
 						await GetChannelInfo(cancellationToken).ConfigureAwait(false),
 						new AppendReq {
@@ -77,7 +77,7 @@ namespace KurrentDB.Client {
 								StreamIdentifier = streamName
 							}
 						}.WithAnyStreamRevision(expectedState),
-						eventsData,
+						messageData,
 						operationOptions,
 						cancellationToken
 					);
@@ -88,13 +88,13 @@ namespace KurrentDB.Client {
 		ValueTask<IWriteResult> AppendToStreamInternal(
 			ChannelInfo channelInfo,
 			AppendReq header,
-			IEnumerable<EventData> eventData,
+			IEnumerable<MessageData> messageData,
 			OperationOptions operationOptions,
 			CancellationToken cancellationToken
 		) {
 			var userCredentials = operationOptions.UserCredentials;
 			var deadline        = operationOptions.Deadline;
-			
+
 			var tags = new ActivityTagsCollection()
 				.WithRequiredTag(
 					TelemetryTags.Kurrent.Stream,
@@ -123,10 +123,10 @@ namespace KurrentDB.Client {
 					.WriteAsync(header)
 					.ConfigureAwait(false);
 
-				foreach (var e in eventData) {
+				foreach (var e in messageData) {
 					var appendReq = new AppendReq {
 						ProposedMessage = new() {
-							Id             = e.EventId.ToDto(),
+							Id             = e.MessageId.ToDto(),
 							Data           = ByteString.CopyFrom(e.Data.Span),
 							CustomMetadata = ByteString.CopyFrom(e.Metadata.InjectTracingContext(Activity.Current)),
 							Metadata = {
@@ -253,8 +253,10 @@ namespace KurrentDB.Client {
 			}
 
 			public ValueTask<IWriteResult> Append(
-				string streamName, StreamState expectedStreamState,
-				IEnumerable<EventData> events, TimeSpan? timeoutAfter,
+				string streamName,
+				StreamState expectedStreamState,
+				IEnumerable<MessageData> events,
+				TimeSpan? timeoutAfter,
 				CancellationToken cancellationToken = default
 			) =>
 				AppendInternal(
@@ -267,7 +269,7 @@ namespace KurrentDB.Client {
 
 			ValueTask<IWriteResult> AppendInternal(
 				BatchAppendReq.Types.Options options,
-				IEnumerable<EventData> events,
+				IEnumerable<MessageData> events,
 				CancellationToken cancellationToken
 			) {
 				var tags = new ActivityTagsCollection()
@@ -370,7 +372,9 @@ namespace KurrentDB.Client {
 			}
 
 			IEnumerable<BatchAppendReq> GetRequests(
-				IEnumerable<EventData> events, BatchAppendReq.Types.Options options, Uuid correlationId
+				IEnumerable<MessageData> events,
+				BatchAppendReq.Types.Options options,
+				Uuid correlationId
 			) {
 				var batchSize        = 0;
 				var first            = true;
@@ -381,7 +385,7 @@ namespace KurrentDB.Client {
 					var proposedMessage = new BatchAppendReq.Types.ProposedMessage {
 						Data           = ByteString.CopyFrom(eventData.Data.Span),
 						CustomMetadata = ByteString.CopyFrom(eventData.Metadata.InjectTracingContext(Activity.Current)),
-						Id             = eventData.EventId.ToDto(),
+						Id             = eventData.MessageId.ToDto(),
 						Metadata = {
 							{ Constants.Metadata.Type, eventData.Type },
 							{ Constants.Metadata.ContentType, eventData.ContentType }
@@ -459,7 +463,8 @@ namespace KurrentDB.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		[Obsolete(
-			"This method may be removed in future releases. Use the overload with Message for auto-serialization or method with options parameter for raw serialization"
+			"This method may be removed in future releases. Use the overload with Message for auto-serialization or method with options parameter for raw serialization",
+			false
 		)]
 		public static Task<IWriteResult> AppendToStreamAsync(
 			this KurrentDBClient dbClient,
@@ -472,15 +477,16 @@ namespace KurrentDB.Client {
 			CancellationToken cancellationToken = default
 		) {
 			var operationOptions = new OperationOptions {
-				Deadline                  = deadline,
-				UserCredentials           = userCredentials,
+				Deadline        = deadline,
+				UserCredentials = userCredentials,
 			};
+
 			configureOperationOptions?.Invoke(operationOptions);
-			
+
 			return dbClient.AppendToStreamAsync(
 				streamName,
 				expectedState,
-				eventData,
+				eventData.Select(e => (MessageData)e),
 				operationOptions,
 				cancellationToken
 			);

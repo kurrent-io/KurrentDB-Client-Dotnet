@@ -97,8 +97,7 @@ namespace KurrentDB.Client {
 				channelInfo,
 				appendReq,
 				[
-					new EventData(
-						Uuid.NewUuid(),
+					new MessageData(
 						SystemEventTypes.StreamMetadata,
 						JsonSerializer.SerializeToUtf8Bytes(metadata, StreamMetadataJsonSerializerOptions)
 					)

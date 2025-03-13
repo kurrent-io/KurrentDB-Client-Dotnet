@@ -190,7 +190,7 @@ public class SubscribeToStreamGetInfoObsoleteTests(SubscribeToStreamGetInfoObsol
 					await Streams.AppendToStreamAsync(
 						Stream,
 						StreamState.Any,
-						[new EventData(Uuid.NewUuid(), "test-event", ReadOnlyMemory<byte>.Empty)],
+						[new MessageData("test-event", ReadOnlyMemory<byte>.Empty)],
 						new AppendToStreamOptions { UserCredentials = TestCredentials.Root }
 					);
 				}

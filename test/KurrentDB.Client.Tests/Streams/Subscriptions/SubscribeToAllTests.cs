@@ -13,13 +13,13 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		var seedEvents = Fixture.CreateTestEvents(10).ToArray();
 		var pageSize   = seedEvents.Length / 2;
 
-		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
 		foreach (var evt in seedEvents.Take(pageSize))
 			await Fixture.Streams.AppendToStreamAsync(
-				$"stream-{evt.EventId.ToGuid():N}",
+				$"stream-{evt.MessageId.ToGuid():N}",
 				StreamState.NoStream,
-				new[] { evt }
+				[evt]
 			);
 
 		await using var subscription = Fixture.Streams.SubscribeToAll(FromAll.Start);
@@ -31,7 +31,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 
 		foreach (var evt in seedEvents.Skip(pageSize))
 			await Fixture.Streams.AppendToStreamAsync(
-				$"stream-{evt.EventId.ToGuid():N}",
+				$"stream-{evt.MessageId.ToGuid():N}",
 				StreamState.NoStream,
 				new[] { evt }
 			);
@@ -59,7 +59,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 	public async Task receives_all_events_from_end() {
 		var seedEvents = Fixture.CreateTestEvents(10).ToArray();
 
-		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
 		await using var subscription = Fixture.Streams.SubscribeToAll(FromAll.End);
 		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
@@ -71,7 +71,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		// add the events we want to receive after we start the subscription
 		foreach (var evt in seedEvents)
 			await Fixture.Streams.AppendToStreamAsync(
-				$"stream-{evt.EventId.ToGuid():N}",
+				$"stream-{evt.MessageId.ToGuid():N}",
 				StreamState.NoStream,
 				new[] { evt }
 			);
@@ -101,12 +101,12 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		var pageSize   = seedEvents.Length / 2;
 
 		// only the second half of the events will be received
-		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.MessageId));
 
 		IWriteResult writeResult = new SuccessResult();
 		foreach (var evt in seedEvents.Take(pageSize))
 			writeResult = await Fixture.Streams.AppendToStreamAsync(
-				$"stream-{evt.EventId.ToGuid():N}",
+				$"stream-{evt.MessageId.ToGuid():N}",
 				StreamState.NoStream,
 				new[] { evt }
 			);
@@ -122,7 +122,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 
 		foreach (var evt in seedEvents.Skip(pageSize))
 			await Fixture.Streams.AppendToStreamAsync(
-				$"stream-{evt.EventId.ToGuid():N}",
+				$"stream-{evt.MessageId.ToGuid():N}",
 				StreamState.NoStream,
 				new[] { evt }
 			);
@@ -151,7 +151,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		var streamName = Fixture.GetStreamName();
 
 		var seedEvents      = Fixture.CreateTestEvents(3).ToArray();
-		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
 
@@ -194,7 +194,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 
 		var pageSize = seedEvents.Length / 2;
 
-		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
 		// add noise
 		await Fixture.Streams.AppendToStreamAsync(
@@ -215,7 +215,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		// add some of the events we want to see before we start the subscription
 		foreach (var evt in seedEvents.Take(pageSize))
 			await Fixture.Streams.AppendToStreamAsync(
-				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
+				$"{streamPrefix}-{evt.MessageId.ToGuid():N}",
 				StreamState.NoStream,
 				new[] { evt }
 			);
@@ -232,7 +232,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		// add some of the events we want to see after we start the subscription
 		foreach (var evt in seedEvents.Skip(pageSize))
 			await Fixture.Streams.AppendToStreamAsync(
-				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
+				$"{streamPrefix}-{evt.MessageId.ToGuid():N}",
 				StreamState.NoStream,
 				new[] { evt }
 			);
@@ -281,7 +281,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		var pageSize = seedEvents.Length / 2;
 
 		// only the second half of the events will be received
-		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.MessageId));
 
 		// add noise
 		await Fixture.Streams.AppendToStreamAsync(
@@ -302,7 +302,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		// add some of the events we want to see before we start the subscription
 		foreach (var evt in seedEvents.Take(pageSize))
 			await Fixture.Streams.AppendToStreamAsync(
-				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
+				$"{streamPrefix}-{evt.MessageId.ToGuid():N}",
 				StreamState.NoStream,
 				new[] { evt }
 			);
@@ -319,7 +319,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		// add some of the events we want to see after we start the subscription
 		foreach (var evt in seedEvents.Skip(pageSize))
 			await Fixture.Streams.AppendToStreamAsync(
-				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
+				$"{streamPrefix}-{evt.MessageId.ToGuid():N}",
 				StreamState.NoStream,
 				new[] { evt }
 			);
@@ -368,7 +368,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		var pageSize = seedEvents.Length / 2;
 
 		// only the second half of the events will be received
-		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.MessageId));
 
 		// add noise
 		await Fixture.Streams.AppendToStreamAsync(
@@ -386,7 +386,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		IWriteResult writeResult = new SuccessResult();
 		foreach (var evt in seedEvents.Take(pageSize))
 			writeResult = await Fixture.Streams.AppendToStreamAsync(
-				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
+				$"{streamPrefix}-{evt.MessageId.ToGuid():N}",
 				StreamState.NoStream,
 				new[] { evt }
 			);
@@ -405,7 +405,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		// add the events we want to receive after we start the subscription
 		foreach (var evt in seedEvents.Skip(pageSize))
 			await Fixture.Streams.AppendToStreamAsync(
-				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
+				$"{streamPrefix}-{evt.MessageId.ToGuid():N}",
 				StreamState.NoStream,
 				new[] { evt }
 			);
@@ -445,7 +445,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		var streamName = Fixture.GetStreamName();
 
 		var seedEvents      = Fixture.CreateTestEvents(3).ToArray();
-		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
 

@@ -2,9 +2,9 @@ using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests;
 
-static class EventDataComparer {
-	public static bool Equal(EventData expected, EventRecord actual) {
-		if (expected.EventId != actual.EventId)
+static class MessageDataComparer {
+	public static bool Equal(MessageData expected, EventRecord actual) {
+		if (expected.MessageId != actual.EventId)
 			return false;
 
 		if (expected.Type != actual.EventType)
@@ -14,7 +14,7 @@ static class EventDataComparer {
 		    && expected.Metadata.ToArray().SequenceEqual(actual.Metadata.ToArray());
 	}
 
-	public static bool Equal(EventData[] expected, EventRecord[] actual) {
+	public static bool Equal(MessageData[] expected, EventRecord[] actual) {
 		if (expected.Length != actual.Length)
 			return false;
 

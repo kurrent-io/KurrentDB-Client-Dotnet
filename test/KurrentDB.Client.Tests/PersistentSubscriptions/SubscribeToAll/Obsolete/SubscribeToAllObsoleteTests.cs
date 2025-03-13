@@ -129,7 +129,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentDBPerm
 		await Fixture.Streams.AppendToStreamAsync(expectedStreamId, StreamState.NoStream, [expectedEvent]);
 
 		var resolvedEvent = await firstNonSystemEventSource.Task.WithTimeout();
-		Assert.Equal(expectedEvent!.EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(expectedEvent.MessageId, resolvedEvent.Event.EventId);
 		Assert.Equal(expectedStreamId, resolvedEvent.Event.EventStreamId);
 	}
 
@@ -172,7 +172,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentDBPerm
 		await Fixture.Streams.AppendToStreamAsync(expectedStreamId, StreamState.NoStream, [expectedEvent]);
 
 		var resolvedEvent = await firstNonSystemEventSource.Task.WithTimeout();
-		Assert.Equal(expectedEvent.EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(expectedEvent.MessageId, resolvedEvent.Event.EventId);
 		Assert.Equal(expectedStreamId, resolvedEvent.Event.EventStreamId);
 	}
 
@@ -524,7 +524,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentDBPerm
 
 		List<ResolvedEvent> appearedEvents = [];
 
-		EventData[] events = Fixture.CreateTestEvents(5).ToArray();
+		MessageData[] events = Fixture.CreateTestEvents(5).ToArray();
 
 		Position checkPoint = default;
 
@@ -690,7 +690,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentDBPerm
 		}
 
 		Assert.True(secondCheckPoint > firstCheckPoint);
-		Assert.Equal(events.Select(e => e.EventId), appearedEvents.Select(e => e.Event.EventId));
+		Assert.Equal(events.Select(e => e.MessageId), appearedEvents.Select(e => e.Event.EventId));
 
 		return;
 

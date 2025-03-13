@@ -1,12 +1,10 @@
-using System.Diagnostics.CodeAnalysis;
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Core.Serialization;
 
+using System.Diagnostics.CodeAnalysis;
 using static ContentTypeExtensions;
 
 interface IMessageSerializer {
-	public EventData Serialize(Message value, MessageSerializationContext context);
+	public MessageData Serialize(Message value, MessageSerializationContext context);
 
 #if NET48
 	public bool TryDeserialize(EventRecord record, out Message? deserialized);
@@ -24,7 +22,7 @@ record MessageSerializationContext(
 }
 
 static class MessageSerializerExtensions {
-	public static EventData[] Serialize(
+	public static MessageData[] Serialize(
 		this IMessageSerializer serializer,
 		IEnumerable<Message> messages,
 		MessageSerializationContext context
@@ -62,8 +60,8 @@ class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializer {
 	readonly IMessageTypeNamingStrategy _messageTypeNamingStrategy =
 		schemaRegistry.MessageTypeNamingStrategy;
 
-	public EventData Serialize(Message message, MessageSerializationContext serializationContext) {
-		var (data, metadata, eventId) = message;
+	public MessageData Serialize(Message message, MessageSerializationContext serializationContext) {
+		var (data, metadata, messageId) = message;
 
 		var eventType = _messageTypeNamingStrategy
 			.ResolveTypeName(
@@ -79,11 +77,11 @@ class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializer {
 			? _metadataSerializer.Serialize(metadata)
 			: ReadOnlyMemory<byte>.Empty;
 
-		return new EventData(
-			eventId ?? Uuid.NewUuid(),
+		return new MessageData(
 			eventType,
 			serializedData,
 			serializedMetadata,
+			messageId,
 			serializationContext.ContentType.ToMessageContentType()
 		);
 	}
@@ -135,7 +133,7 @@ class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializer {
 class NullMessageSerializer : IMessageSerializer {
 	public static readonly NullMessageSerializer Instance = new NullMessageSerializer();
 
-	public EventData Serialize(Message value, MessageSerializationContext context) {
+	public MessageData Serialize(Message value, MessageSerializationContext context) {
 		throw new InvalidOperationException("Cannot serialize, automatic deserialization is disabled");
 	}
 

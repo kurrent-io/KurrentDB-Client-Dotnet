@@ -17,7 +17,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			var writeResult = await Fixture.Streams.AppendToStreamAsync(
 				stream,
 				expectedStreamState,
-				Enumerable.Empty<EventData>()
+				Enumerable.Empty<MessageData>()
 			);
 
 			writeResult.NextExpectedStreamState.ShouldBe(StreamState.NoStream);
@@ -37,7 +37,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			var writeResult = await Fixture.Streams.AppendToStreamAsync(
 				stream,
 				expectedStreamState,
-				Enumerable.Empty<EventData>()
+				Enumerable.Empty<MessageData>()
 			);
 
 			Assert.Equal(StreamState.NoStream, writeResult.NextExpectedStreamState);

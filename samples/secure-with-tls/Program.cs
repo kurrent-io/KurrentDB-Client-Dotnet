@@ -9,11 +9,11 @@ Console.WriteLine($"Connecting to EventStoreDB at: {connectionString}");
 
 await using var client = new KurrentDBClient(KurrentDBClientSettings.Create(connectionString));
 
-var eventData = EventData.For("some-event", "{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray());
+var eventData = MessageData.From("some-event", "{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray());
 
 try {
 	var appendResult = await client.AppendToStreamAsync(
-		"some-stream", StreamState.Any, new List<EventData> { eventData }
+		"some-stream", StreamState.Any, [eventData]
 	);
 
 	Console.WriteLine($"SUCCESS! Append result: {appendResult.LogPosition}");

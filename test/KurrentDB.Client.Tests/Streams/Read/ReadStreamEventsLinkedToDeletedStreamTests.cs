@@ -50,15 +50,14 @@ public abstract class ReadEventsLinkedToDeletedStreamFixture : KurrentDBTemporar
 			await Streams.AppendToStreamAsync(
 				LinkedStream,
 				StreamState.Any,
-				new[] {
-					new EventData(
-						Uuid.NewUuid(),
+				[
+					new MessageData(
 						SystemEventTypes.LinkTo,
 						Encoding.UTF8.GetBytes($"0@{DeletedStream}"),
 						Array.Empty<byte>(),
-						Constants.Metadata.ContentTypes.ApplicationOctetStream
+						contentType: Constants.Metadata.ContentTypes.ApplicationOctetStream
 					)
-				}
+				]
 			);
 
 			await Streams.DeleteAsync(DeletedStream, StreamState.Any);

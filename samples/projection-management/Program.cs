@@ -439,7 +439,7 @@ static async Task Populate(string connection, int numberOfEvents) {
 	var client = new KurrentDBClient(settings);
 	var messages = Enumerable.Range(0, numberOfEvents).Select(
 		number =>
-			EventData.For(
+			MessageData.From(
 				"eventtype",
 				Encoding.UTF8.GetBytes($@"{{ ""Id"":{number} }}")
 			)

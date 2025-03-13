@@ -21,7 +21,7 @@ var evt = new TestEvent {
 	ImportantData = "I wrote my first event!"
 };
 
-var eventData = EventData.For(
+var eventData = MessageData.From(
 	"TestEvent",
 	JsonSerializer.SerializeToUtf8Bytes(evt)
 );

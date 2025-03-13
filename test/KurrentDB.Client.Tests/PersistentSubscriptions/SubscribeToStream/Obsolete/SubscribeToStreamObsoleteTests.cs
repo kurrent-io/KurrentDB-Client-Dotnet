@@ -101,7 +101,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var resolvedEvent = await firstEvent.WithTimeout(TimeSpan.FromSeconds(10));
 		Assert.Equal(StreamPosition.Start, resolvedEvent.Event.EventNumber);
-		Assert.Equal(events[0].EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(events[0].MessageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -113,7 +113,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var events = Fixture.CreateTestEvents().ToArray();
 
-		var eventId = events.Single().EventId;
+		var eventId = events.Single().MessageId;
 
 		await Fixture.Subscriptions.CreateToStreamAsync(
 			stream,
@@ -215,7 +215,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var resolvedEvent = await firstEvent.WithTimeout();
 		Assert.Equal(new(10), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Last().EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Last().MessageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -290,7 +290,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var resolvedEvent = await firstEvent.WithTimeout();
 		Assert.Equal(new(10), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Last().EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Last().MessageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -327,7 +327,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var firstEvent    = firstEventSource.Task;
 		var resolvedEvent = await firstEvent.WithTimeout(TimeSpan.FromSeconds(10));
-		var eventId       = events.Last().EventId;
+		var eventId       = events.Last().MessageId;
 
 		Assert.Equal(new(2), resolvedEvent.Event.EventNumber);
 		Assert.Equal(eventId, resolvedEvent.Event.EventId);
@@ -370,7 +370,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var resolvedEvent = await firstEvent.WithTimeout();
 		Assert.Equal(new(4), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Skip(4).First().EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Skip(4).First().MessageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -410,7 +410,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var resolvedEvent = await firstEvent.WithTimeout();
 		Assert.Equal(new(10), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Last().EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Last().MessageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -450,7 +450,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var resolvedEvent = await firstEvent.WithTimeout();
 		Assert.Equal(new(11), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Last().EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Last().MessageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -554,7 +554,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var resolvedEvent = await firstEvent.WithTimeout();
 		Assert.Equal(new(11), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Last().EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Last().MessageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -636,23 +636,23 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		const int bufferCount     = 10;
 		const int eventWriteCount = bufferCount * 2;
 
-		EventData[]                events;
+		MessageData[]                events;
 		TaskCompletionSource<bool> eventsReceived     = new();
 		int                        eventReceivedCount = 0;
 
 		events = Fixture.CreateTestEvents(eventWriteCount)
 			.Select(
-				(e, i) => new EventData(
-					e.EventId,
+				(e, i) => new MessageData(
 					SystemEventTypes.LinkTo,
 					Encoding.UTF8.GetBytes($"{i}@{stream}"),
+					messageId: e.MessageId,
 					contentType: Constants.Metadata.ContentTypes.ApplicationOctetStream
 				)
 			)
 			.ToArray();
 
 		foreach (var e in events)
-			await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, new[] { e });
+			await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, [e]);
 
 		await Fixture.Subscriptions.CreateToStreamAsync(
 			stream,
@@ -776,7 +776,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		TaskCompletionSource<ResolvedEvent>                           resumedSource  = new();
 		TaskCompletionSource<bool>                                    appeared       = new();
 		List<ResolvedEvent>                                           appearedEvents = [];
-		EventData[]                                                   events         = Fixture.CreateTestEvents(5).ToArray();
+		MessageData[]                                                 events         = Fixture.CreateTestEvents(5).ToArray();
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
 		await Fixture.Subscriptions.CreateToStreamAsync(
@@ -911,7 +911,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		int eventReceivedCount = 0;
 
-		EventData[] events = Fixture.CreateTestEvents(eventWriteCount)
+		MessageData[] events = Fixture.CreateTestEvents(eventWriteCount)
 			.ToArray();
 
 		TaskCompletionSource<bool> eventsReceived = new();

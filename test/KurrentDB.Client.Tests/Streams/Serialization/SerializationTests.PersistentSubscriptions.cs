@@ -395,8 +395,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		var messages = GenerateMessages();
 		var eventData = messages.Select(
 			message =>
-				new EventData(
-					Uuid.NewUuid(),
+				new MessageData(
 					getTypeName(message),
 					Encoding.UTF8.GetBytes(
 						JsonSerializer.Serialize(

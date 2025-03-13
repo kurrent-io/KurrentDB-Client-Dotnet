@@ -18,7 +18,7 @@ return;
 static async Task AppendToStream(KurrentDBClient client) {
 	#region append-to-stream
 
-	var eventData = EventData.For(
+	var eventData = MessageData.From(
 		"some-event",
 		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
@@ -35,7 +35,7 @@ static async Task AppendToStream(KurrentDBClient client) {
 static async Task AppendWithSameId(KurrentDBClient client) {
 	#region append-duplicate-event
 
-	var eventData = EventData.For(
+	var eventData = MessageData.From(
 		"some-event",
 		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
@@ -59,12 +59,12 @@ static async Task AppendWithSameId(KurrentDBClient client) {
 static async Task AppendWithNoStream(KurrentDBClient client) {
 	#region append-with-no-stream
 
-	var eventDataOne = EventData.For(
+	var eventDataOne = MessageData.From(
 		"some-event",
 		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
 
-	var eventDataTwo = EventData.For(
+	var eventDataTwo = MessageData.From(
 		"some-event",
 		"{\"id\": \"2\" \"value\": \"some other value\"}"u8.ToArray()
 	);
@@ -89,7 +89,7 @@ static async Task AppendWithConcurrencyCheck(KurrentDBClient client) {
 	await client.AppendToStreamAsync(
 		"concurrency-stream",
 		StreamState.Any,
-		[EventData.For("-", ReadOnlyMemory<byte>.Empty)]
+		[MessageData.From("-", ReadOnlyMemory<byte>.Empty)]
 	);
 
 	#region append-with-concurrency-check
@@ -105,7 +105,7 @@ static async Task AppendWithConcurrencyCheck(KurrentDBClient client) {
 	var clientTwoRead     = client.ReadStreamAsync(Direction.Forwards, "concurrency-stream", StreamPosition.Start);
 	var clientTwoRevision = (await clientTwoRead.LastAsync()).Event.EventNumber.ToUInt64();
 
-	var clientOneData = EventData.For(
+	var clientOneData = MessageData.From(
 		"some-event",
 		"{\"id\": \"1\" \"value\": \"clientOne\"}"u8.ToArray()
 	);
@@ -113,13 +113,10 @@ static async Task AppendWithConcurrencyCheck(KurrentDBClient client) {
 	await client.AppendToStreamAsync(
 		"no-stream-stream",
 		clientOneRevision,
-		new List<EventData> {
-			clientOneData
-		}
+		[clientOneData]
 	);
 
-	var clientTwoData = new EventData(
-		Uuid.NewUuid(),
+	var clientTwoData = MessageData.From(
 		"some-event",
 		"{\"id\": \"2\" \"value\": \"clientTwo\"}"u8.ToArray()
 	);
@@ -127,17 +124,14 @@ static async Task AppendWithConcurrencyCheck(KurrentDBClient client) {
 	await client.AppendToStreamAsync(
 		"no-stream-stream",
 		clientTwoRevision,
-		new List<EventData> {
-			clientTwoData
-		}
+		[clientTwoData]
 	);
 
 	#endregion append-with-concurrency-check
 }
 
 static async Task AppendOverridingUserCredentials(KurrentDBClient client, CancellationToken cancellationToken) {
-	var eventData = new EventData(
-		Uuid.NewUuid(),
+	var eventData =MessageData.From(
 		"TestEvent",
 		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);

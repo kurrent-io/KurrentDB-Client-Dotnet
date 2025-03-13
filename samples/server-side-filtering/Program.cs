@@ -30,7 +30,7 @@ _ = Task.Run(async () => {
 await Task.Delay(2000);
 
 for (var i = 0; i < eventCount; i++) {
-	var eventData = EventData.For(
+	var eventData = MessageData.From(
 		i % 2 == 0 ? "some-event" : "other-event",
 		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
@@ -38,7 +38,7 @@ for (var i = 0; i < eventCount; i++) {
 	await client.AppendToStreamAsync(
 		Guid.NewGuid().ToString("N"),
 		StreamState.Any,
-		new List<EventData> { eventData }
+		[eventData]
 	);
 }
 

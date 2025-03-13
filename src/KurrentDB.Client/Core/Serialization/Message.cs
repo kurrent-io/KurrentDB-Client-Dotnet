@@ -7,7 +7,7 @@ namespace KurrentDB.Client;
 /// <param name="Data">The message domain data.</param>
 /// <param name="Metadata">Optional metadata providing additional context about the message, such as correlation IDs, timestamps, or user information.</param>
 /// <param name="MessageId">Unique identifier for this specific message instance. When null, the system will auto-generate an ID.</param>
-public record Message(object Data, object? Metadata, Uuid? MessageId = null) {
+public sealed record Message(object Data, object? Metadata, Uuid? MessageId = null) {
 	/// <summary>
 	/// Creates a new Message with the specified domain data and message ID, but without metadata.
 	/// This factory method is a convenient shorthand when working with systems that don't require metadata.

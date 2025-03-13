@@ -24,7 +24,7 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 			.ToArrayAsync();
 
 		Assert.Equal(3, actual.Length);
-		Assert.True(EventDataComparer.Equal(expected.Skip(2).ToArray(), actual));
+		Assert.True(MessageDataComparer.Equal(expected.Skip(2).ToArray(), actual));
 	}
 
 	[Fact]
@@ -42,7 +42,7 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 			.ToArrayAsync();
 
 		Assert.Equal(3, actual.Length);
-		Assert.True(EventDataComparer.Equal(expected.Skip(2).Reverse().ToArray(), actual));
+		Assert.True(MessageDataComparer.Equal(expected.Skip(2).Reverse().ToArray(), actual));
 	}
 
 	[Fact]
@@ -62,7 +62,7 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 			.ToArrayAsync();
 
 		Assert.Equal(4, actual.Length);
-		Assert.True(EventDataComparer.Equal(expected.Skip(1).ToArray(), actual));
+		Assert.True(MessageDataComparer.Equal(expected.Skip(1).ToArray(), actual));
 	}
 
 	[Fact]
@@ -82,7 +82,7 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 			.ToArrayAsync();
 
 		Assert.Equal(2, actual.Length);
-		Assert.True(EventDataComparer.Equal(expected.Skip(3).ToArray(), actual));
+		Assert.True(MessageDataComparer.Equal(expected.Skip(3).ToArray(), actual));
 	}
 
 	[Fact]
@@ -102,7 +102,7 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 			.ToArrayAsync();
 
 		Assert.Equal(4, actual.Length);
-		Assert.True(EventDataComparer.Equal(expected.Skip(1).Reverse().ToArray(), actual));
+		Assert.True(MessageDataComparer.Equal(expected.Skip(1).Reverse().ToArray(), actual));
 	}
 
 	[Fact]
@@ -122,6 +122,6 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 			.ToArrayAsync();
 
 		Assert.Equal(2, actual.Length);
-		Assert.True(EventDataComparer.Equal(expected.Skip(3).Reverse().ToArray(), actual));
+		Assert.True(MessageDataComparer.Equal(expected.Skip(3).Reverse().ToArray(), actual));
 	}
 }

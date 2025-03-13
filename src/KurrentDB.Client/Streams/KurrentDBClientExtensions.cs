@@ -1,8 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace KurrentDB.Client {
 	/// <summary>
@@ -36,8 +32,7 @@ namespace KurrentDB.Client {
 				SystemStreams.SettingsStream,
 				StreamState.Any,
 				[
-					new EventData(
-						Uuid.NewUuid(),
+					new MessageData(
 						SystemEventTypes.Settings,
 						JsonSerializer.SerializeToUtf8Bytes(settings, SystemSettingsJsonSerializerOptions)
 					)
@@ -63,22 +58,52 @@ namespace KurrentDB.Client {
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
-		) {
-			if (dbClient == null) throw new ArgumentNullException(nameof(dbClient));
-
-			return dbClient.AppendToStreamAsync(
-				SystemStreams.SettingsStream,
-				StreamState.Any,
-				[
-					new EventData(
-						Uuid.NewUuid(),
-						SystemEventTypes.Settings,
-						JsonSerializer.SerializeToUtf8Bytes(settings, SystemSettingsJsonSerializerOptions)
-					)
-				],
+		) =>
+			dbClient.SetSystemSettingsAsync(
+				settings,
 				new OperationOptions { Deadline = deadline, UserCredentials = userCredentials },
 				cancellationToken: cancellationToken
 			);
+
+		/// <summary>
+		/// Appends to a stream conditionally.
+		/// </summary>
+		/// <param name="dbClient"></param>
+		/// <param name="streamName"></param>
+		/// <param name="expectedState"></param>
+		/// <param name="messageData"></param>
+		/// <param name="options"></param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static async Task<ConditionalWriteResult> ConditionalAppendToStreamAsync(
+			this KurrentDBClient dbClient,
+			string streamName,
+			StreamState expectedState,
+			IEnumerable<MessageData> messageData,
+			OperationOptions? options = null,
+			CancellationToken cancellationToken = default
+		) {
+			if (dbClient == null) {
+				throw new ArgumentNullException(nameof(dbClient));
+			}
+
+			try {
+				var result = await dbClient.AppendToStreamAsync(
+						streamName,
+						expectedState,
+						messageData,
+						options,
+						cancellationToken
+					)
+					.ConfigureAwait(false);
+
+				return ConditionalWriteResult.FromWriteResult(result);
+			} catch (StreamDeletedException) {
+				return ConditionalWriteResult.StreamDeleted;
+			} catch (WrongExpectedVersionException ex) {
+				return ConditionalWriteResult.FromWrongExpectedVersion(ex);
+			}
 		}
 
 		/// <summary>
@@ -93,39 +118,27 @@ namespace KurrentDB.Client {
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static async Task<ConditionalWriteResult> ConditionalAppendToStreamAsync(
+		public static Task<ConditionalWriteResult> ConditionalAppendToStreamAsync(
 			this KurrentDBClient dbClient,
 			string streamName,
 			StreamState expectedState,
+#pragma warning disable CS0618 // Type or member is obsolete
 			IEnumerable<EventData> eventData,
+#pragma warning restore CS0618 // Type or member is obsolete
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
-		) {
-			if (dbClient == null) {
-				throw new ArgumentNullException(nameof(dbClient));
-			}
-
-			try {
-				var result = await dbClient.AppendToStreamAsync(
-						streamName,
-						expectedState,
-						eventData,
-						new OperationOptions {
-							ThrowOnAppendFailure = false,
-							Deadline = deadline,
-							UserCredentials = userCredentials
-						},
-						cancellationToken
-					)
-					.ConfigureAwait(false);
-
-				return ConditionalWriteResult.FromWriteResult(result);
-			} catch (StreamDeletedException) {
-				return ConditionalWriteResult.StreamDeleted;
-			} catch (WrongExpectedVersionException ex) {
-				return ConditionalWriteResult.FromWrongExpectedVersion(ex);
-			}
-		}
+		) =>
+			dbClient.ConditionalAppendToStreamAsync(
+				streamName,
+				expectedState,
+				eventData.Select(e => (MessageData)e),
+				new OperationOptions {
+					ThrowOnAppendFailure = false,
+					Deadline             = deadline,
+					UserCredentials      = userCredentials
+				},
+				cancellationToken
+			);
 	}
 }

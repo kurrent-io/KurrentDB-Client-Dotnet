@@ -60,7 +60,7 @@ public class SubscribeToAllFilterTests(ITestOutputHelper output, KurrentDBTempor
 			)
 			.WithTimeout();
 
-		Assert.Equal(events.Select(x => x.EventId), appearedEvents.Select(x => x.EventId));
+		Assert.Equal(events.Select(x => x.MessageId), appearedEvents.Select(x => x.EventId));
 	}
 
 	[RetryTheory]
@@ -124,7 +124,7 @@ public class SubscribeToAllFilterTests(ITestOutputHelper output, KurrentDBTempor
 			.AsTask()
 			.WithTimeout();
 
-		Assert.Equal(eventsToCapture.Select(x => x.EventId), appearedEvents.Select(x => x.EventId));
+		Assert.Equal(eventsToCapture.Select(x => x.MessageId), appearedEvents.Select(x => x.EventId));
 	}
 
 	public static IEnumerable<object?[]> FilterCases() => Filters.All.Select(filter => new object[] { filter });

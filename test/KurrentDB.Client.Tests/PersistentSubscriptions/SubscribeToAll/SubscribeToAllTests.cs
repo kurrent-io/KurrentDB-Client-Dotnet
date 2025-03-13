@@ -112,7 +112,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			.Where(resolvedEvent => !SystemStreams.IsSystemStream(resolvedEvent.OriginalStreamId))
 			.FirstOrDefaultAsync().AsTask().WithTimeout();
 
-		Assert.Equal(expectedEvent.EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(expectedEvent.MessageId, resolvedEvent.Event.EventId);
 		Assert.Equal(expectedStreamId, resolvedEvent.Event.EventStreamId);
 	}
 
@@ -144,7 +144,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			.AsTask()
 			.WithTimeout();
 
-		Assert.Equal(expectedEvent.EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(expectedEvent.MessageId, resolvedEvent.Event.EventId);
 		Assert.Equal(expectedStreamId, resolvedEvent.Event.EventStreamId);
 	}
 
@@ -360,10 +360,10 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 
 		var events = Fixture.CreateTestEvents(eventWriteCount)
 			.Select(
-				(e, i) => new EventData(
-					e.EventId,
+				(e, i) => new MessageData(
 					SystemEventTypes.LinkTo,
 					Encoding.UTF8.GetBytes($"{i}@test"),
+					messageId: e.MessageId,
 					contentType: Constants.Metadata.ContentTypes.ApplicationOctetStream
 				)
 			)
@@ -721,7 +721,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		}
 
 		Assert.True(secondCheckPoint > firstCheckPoint);
-		Assert.Equal(events.Select(e => e.EventId), appearedEvents.Select(e => e.Event.EventId));
+		Assert.Equal(events.Select(e => e.MessageId), appearedEvents.Select(e => e.Event.EventId));
 
 		return;
 

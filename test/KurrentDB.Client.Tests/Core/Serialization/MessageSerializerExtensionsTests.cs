@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using KurrentDB.Client;
 using KurrentDB.Client.Core.Serialization;
 
 namespace KurrentDB.Client.Tests.Core.Serialization;
@@ -86,13 +85,12 @@ public class MessageSerializerExtensionsTests {
 	}
 
 	class DummyMessageSerializer : IMessageSerializer {
-		public EventData Serialize(Message value, MessageSerializationContext context) {
-			return new EventData(
-				Uuid.NewUuid(),
+		public MessageData Serialize(Message value, MessageSerializationContext context) {
+			return new MessageData(
 				"TestEvent",
 				ReadOnlyMemory<byte>.Empty,
 				ReadOnlyMemory<byte>.Empty,
-				"application/json"
+				contentType: "application/json"
 			);
 		}
 

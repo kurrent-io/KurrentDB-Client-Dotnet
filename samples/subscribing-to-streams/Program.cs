@@ -165,7 +165,7 @@ static async Task SubscribeToAllFromPosition(KurrentDBClient client, Cancellatio
 	var result = await client.AppendToStreamAsync(
 		"subscribe-to-all-from-position",
 		StreamState.NoStream,
-		[EventData.For("-", ReadOnlyMemory<byte>.Empty)]
+		[MessageData.From("-", ReadOnlyMemory<byte>.Empty)]
 	);
 
 	await using var subscription = client.SubscribeToAll(

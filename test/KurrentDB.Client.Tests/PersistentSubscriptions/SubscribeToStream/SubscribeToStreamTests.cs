@@ -83,7 +83,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, KurrentDBPermanent
 			.FirstOrDefaultAsync().AsTask().WithTimeout();
 
 		Assert.Equal(StreamPosition.Start, resolvedEvent.Event.EventNumber);
-		Assert.Equal(events[0].EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(events[0].MessageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -91,7 +91,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, KurrentDBPermanent
 		var stream  = Fixture.GetStreamName();
 		var group   = Fixture.GetGroupName();
 		var events  = Fixture.CreateTestEvents().ToArray();
-		var eventId = events.Single().EventId;
+		var messageId = events.Single().MessageId;
 
 		await Fixture.Subscriptions.CreateToStreamAsync(
 			stream,
@@ -109,7 +109,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, KurrentDBPermanent
 			.FirstOrDefaultAsync().AsTask().WithTimeout();
 
 		Assert.Equal(StreamPosition.Start, resolvedEvent.Event.EventNumber);
-		Assert.Equal(eventId, resolvedEvent.Event.EventId);
+		Assert.Equal(messageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -139,7 +139,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, KurrentDBPermanent
 			.FirstOrDefaultAsync().AsTask().WithTimeout();
 
 		Assert.Equal(new(10), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Last().EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Last().MessageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -192,7 +192,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, KurrentDBPermanent
 		var stream = Fixture.GetStreamName();
 		var group  = Fixture.GetGroupName();
 
-		var eventId = events.Last().EventId;
+		var messageId = events.Last().MessageId;
 
 		await Fixture.Subscriptions.CreateToStreamAsync(
 			stream,
@@ -214,7 +214,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, KurrentDBPermanent
 			.FirstOrDefaultAsync().AsTask().WithTimeout();
 
 		Assert.Equal(new(2), resolvedEvent.Event.EventNumber);
-		Assert.Equal(eventId, resolvedEvent.Event.EventId);
+		Assert.Equal(messageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -245,7 +245,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, KurrentDBPermanent
 			.FirstOrDefaultAsync().AsTask().WithTimeout();
 
 		Assert.Equal(new(4), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Skip(4).First().EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Skip(4).First().MessageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -275,7 +275,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, KurrentDBPermanent
 			.FirstOrDefaultAsync().AsTask().WithTimeout();
 
 		Assert.Equal(new(10), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Last().EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Last().MessageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -305,7 +305,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, KurrentDBPermanent
 			.FirstOrDefaultAsync().AsTask().WithTimeout();
 
 		Assert.Equal(new(11), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Last().EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Last().MessageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -385,7 +385,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, KurrentDBPermanent
 			.FirstOrDefaultAsync().AsTask().WithTimeout();
 
 		Assert.Equal(new(11), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Last().EventId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Last().MessageId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -520,10 +520,10 @@ public class SubscribeToStreamTests(ITestOutputHelper output, KurrentDBPermanent
 
 		var events = Fixture.CreateTestEvents(eventWriteCount)
 			.Select(
-				(e, i) => new EventData(
-					e.EventId,
+				(e, i) => new MessageData(
 					SystemEventTypes.LinkTo,
 					Encoding.UTF8.GetBytes($"{i}@{stream}"),
+					messageId: e.MessageId,
 					contentType: Constants.Metadata.ContentTypes.ApplicationOctetStream
 				)
 			).ToArray();

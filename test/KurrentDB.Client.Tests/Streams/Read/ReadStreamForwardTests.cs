@@ -73,7 +73,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, expected.Length)
 			.Select(x => x.Event).ToArrayAsync();
 
-		Assert.True(EventDataComparer.Equal(expected, actual));
+		Assert.True(MessageDataComparer.Equal(expected, actual));
 	}
 
 	[Fact]
@@ -90,7 +90,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 			.Select(x => x.Event)
 			.SingleAsync();
 
-		Assert.True(EventDataComparer.Equal(expected, actual));
+		Assert.True(MessageDataComparer.Equal(expected, actual));
 	}
 
 	[Fact]
@@ -105,7 +105,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
-		Assert.True(EventDataComparer.Equal(events.Skip(3).Take(2).ToArray(), actual));
+		Assert.True(MessageDataComparer.Equal(events.Skip(3).Take(2).ToArray(), actual));
 	}
 
 	[Fact]
@@ -121,7 +121,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 			.ToArrayAsync();
 
 		Assert.Single(events);
-		Assert.True(EventDataComparer.Equal(testEvents[0], events[0]));
+		Assert.True(MessageDataComparer.Equal(testEvents[0], events[0]));
 	}
 
 	[Fact]

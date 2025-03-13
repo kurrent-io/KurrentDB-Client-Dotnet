@@ -66,7 +66,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			.ToArrayAsync();
 
 		Assert.Equal(3, actual.Length);
-		Assert.Equal(events.Select(x => x.EventId), actual.Select(x => x.EventId));
+		Assert.Equal(events.Select(x => x.MessageId), actual.Select(x => x.EventId));
 		Assert.Equal(
 			Enumerable.Range(1, 3).Select(i => new StreamPosition((ulong)i)),
 			actual.Select(x => x.EventNumber)
@@ -108,7 +108,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			.ToArrayAsync();
 
 		Assert.Equal(3, actual.Length);
-		Assert.Equal(events.Select(x => x.EventId), actual.Select(x => x.EventId));
+		Assert.Equal(events.Select(x => x.MessageId), actual.Select(x => x.EventId));
 		Assert.Equal(
 			Enumerable.Range(1, 3).Select(i => new StreamPosition((ulong)i)),
 			actual.Select(x => x.EventNumber)
@@ -159,7 +159,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			.ToArrayAsync();
 
 		Assert.Equal(3, actual.Length);
-		Assert.Equal(events.Select(x => x.EventId), actual.Select(x => x.EventId));
+		Assert.Equal(events.Select(x => x.MessageId), actual.Select(x => x.EventId));
 		Assert.Equal(
 			Enumerable.Range(count, 3).Select(i => new StreamPosition((ulong)i)),
 			actual.Select(x => x.EventNumber)
@@ -308,7 +308,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
-		Assert.Equal(firstEvents.Concat(secondEvents).Select(x => x.EventId), actual.Select(x => x.EventId));
+		Assert.Equal(firstEvents.Concat(secondEvents).Select(x => x.MessageId), actual.Select(x => x.EventId));
 		Assert.Equal(
 			Enumerable.Range(2, 5).Select(i => new StreamPosition((ulong)i)),
 			actual.Select(x => x.EventNumber)

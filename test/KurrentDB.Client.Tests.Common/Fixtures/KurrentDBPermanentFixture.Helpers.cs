@@ -32,7 +32,7 @@ public partial class KurrentDBPermanentFixture {
 
 	public ReadOnlyMemory<byte> CreateTestNonJsonMetadata() => "non-json-metadata"u8.ToArray();
 
-	public (IEnumerable<EventData> Events, uint size) CreateTestEventsUpToMaxSize(uint maxSize) {
+	public (IEnumerable<MessageData> Events, uint size) CreateTestEventsUpToMaxSize(uint maxSize) {
 		var size = 0;
 
 		var events = CreateTestEvents(int.MaxValue)
@@ -42,7 +42,7 @@ public partial class KurrentDBPermanentFixture {
 		return (events, (uint)size);
 	}
 
-	public IEnumerable<EventData> CreateTestEvents(
+	public IEnumerable<MessageData> CreateTestEvents(
 		int count = 1, string? type = null, ReadOnlyMemory<byte>? metadata = null, string? contentType = null
 	) =>
 		Enumerable.Range(0, count)
@@ -53,12 +53,12 @@ public partial class KurrentDBPermanentFixture {
 		Enumerable.Range(0, count)
 			.Select(index => CreateTestMessage(index, metadata));
 
-	public EventData CreateTestEvent(
+	public MessageData CreateTestEvent(
 		string? type = null, ReadOnlyMemory<byte>? metadata = null, string? contentType = null
 	) =>
 		CreateTestEvent(0, type ?? TestEventType, metadata, contentType);
 
-	public IEnumerable<EventData> CreateTestEventsThatThrowsException() {
+	public IEnumerable<MessageData> CreateTestEventsThatThrowsException() {
 		// Ensure initial IEnumerator.Current does not throw
 		yield return CreateTestEvent(1);
 
@@ -66,7 +66,7 @@ public partial class KurrentDBPermanentFixture {
 		throw new Exception();
 	}
 
-	protected static EventData CreateTestEvent(int index) => CreateTestEvent(index, TestEventType);
+	protected static MessageData CreateTestEvent(int index) => CreateTestEvent(index, TestEventType);
 
 	protected static Message CreateTestMessage(int index, object? metadata = null) =>
 		Message.From(
@@ -75,15 +75,14 @@ public partial class KurrentDBPermanentFixture {
 			Uuid.NewUuid()
 		);
 	
-	protected static EventData CreateTestEvent(
+	protected static MessageData CreateTestEvent(
 		int index, string type, ReadOnlyMemory<byte>? metadata = null, string? contentType = null
 	) =>
 		new(
-			Uuid.NewUuid(),
 			type,
 			Encoding.UTF8.GetBytes($$"""{"x":{{index}}}"""),
 			metadata,
-			contentType ?? "application/json"
+			contentType: contentType ?? "application/json"
 		);
 
 	public async Task<TestUser> CreateTestUser(bool withoutGroups = true, bool useUserCredentials = false) {

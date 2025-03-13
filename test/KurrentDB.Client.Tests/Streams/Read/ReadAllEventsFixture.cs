@@ -36,11 +36,11 @@ public class ReadAllEventsFixture : KurrentDBTemporaryFixture {
 
 	public string ExpectedStreamName { get; private set; } = null!;
 
-	public EventData[] Events { get; private set; } = Array.Empty<EventData>();
+	public MessageData[] Events { get; private set; } = [];
 
-	public EventBinaryData[] ExpectedEvents         { get; private set; } = Array.Empty<EventBinaryData>();
-	public EventBinaryData[] ExpectedEventsReversed { get; private set; } = Array.Empty<EventBinaryData>();
+	public MessageBinaryData[] ExpectedEvents         { get; private set; } = [];
+	public MessageBinaryData[] ExpectedEventsReversed { get; private set; } = [];
 
-	public EventBinaryData ExpectedFirstEvent { get; private set; }
-	public EventBinaryData ExpectedLastEvent  { get; private set; }
+	public MessageBinaryData ExpectedFirstEvent { get; private set; }
+	public MessageBinaryData ExpectedLastEvent  { get; private set; }
 }

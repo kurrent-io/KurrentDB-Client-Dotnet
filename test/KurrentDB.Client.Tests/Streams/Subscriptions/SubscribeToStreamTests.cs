@@ -13,7 +13,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 		var seedEvents = Fixture.CreateTestEvents(10).ToArray();
 		var pageSize   = seedEvents.Length / 2;
 
-		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents.Take(pageSize));
 
@@ -53,7 +53,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 		var pageSize   = seedEvents.Length / 2;
 
 		// only the second half of the events will be received
-		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.MessageId));
 
 		var writeResult =
 			await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents.Take(pageSize));
@@ -99,7 +99,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 
 		var seedEvents = Fixture.CreateTestEvents(10).ToArray();
 
-		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
 		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
 		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
@@ -156,7 +156,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 		return;
 
 		async Task Subscribe(IAsyncEnumerator<StreamMessage> subscription) {
-			var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+			var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
 			while (await subscription.MoveNextAsync()) {
 				if (subscription.Current is not StreamMessage.Event(var resolvedEvent)) {

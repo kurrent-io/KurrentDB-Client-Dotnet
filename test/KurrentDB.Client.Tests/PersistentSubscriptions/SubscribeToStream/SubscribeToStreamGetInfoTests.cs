@@ -179,7 +179,7 @@ public class SubscribeToStreamGetInfoTests(SubscribeToStreamGetInfoTests.CustomF
 					await Streams.AppendToStreamAsync(
 						Stream,
 						StreamState.Any,
-						[new EventData(Uuid.NewUuid(), "test-event", ReadOnlyMemory<byte>.Empty)],
+						[new MessageData("test-event", ReadOnlyMemory<byte>.Empty)],
 						new OperationOptions { UserCredentials = TestCredentials.Root }
 					);
 				}

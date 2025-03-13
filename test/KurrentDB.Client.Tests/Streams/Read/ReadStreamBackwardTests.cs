@@ -77,7 +77,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 			.Select(x => x.Event).ToArrayAsync();
 
 		Assert.True(
-			EventDataComparer.Equal(
+			MessageDataComparer.Equal(
 				Enumerable.Reverse(expected).ToArray(),
 				actual
 			)
@@ -97,7 +97,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 			.Select(x => x.Event)
 			.SingleAsync();
 
-		Assert.True(EventDataComparer.Equal(expected, actual));
+		Assert.True(MessageDataComparer.Equal(expected, actual));
 	}
 
 	[Fact]
@@ -112,7 +112,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
-		Assert.True(EventDataComparer.Equal(events.Skip(2).Take(2).Reverse().ToArray(), actual));
+		Assert.True(MessageDataComparer.Equal(events.Skip(2).Take(2).Reverse().ToArray(), actual));
 	}
 
 	[Fact]
@@ -128,7 +128,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 			.ToArrayAsync();
 
 		Assert.Single(events);
-		Assert.True(EventDataComparer.Equal(testEvents[0], events[0]));
+		Assert.True(MessageDataComparer.Equal(testEvents[0], events[0]));
 	}
 
 	[Fact]
@@ -143,7 +143,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 			.ToArrayAsync();
 
 		Assert.Single(events);
-		Assert.True(EventDataComparer.Equal(testEvents[^1], events[0]));
+		Assert.True(MessageDataComparer.Equal(testEvents[^1], events[0]));
 	}
 
 	[Fact]

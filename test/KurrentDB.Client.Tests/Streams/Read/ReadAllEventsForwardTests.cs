@@ -90,15 +90,15 @@ public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFi
 		await Fixture.Streams.AppendToStreamAsync(
 			linkedStream,
 			StreamState.Any,
-			new[] {
-				new EventData(
-					Uuid.NewUuid(),
+			[
+				new MessageData(
 					SystemEventTypes.LinkTo,
 					Encoding.UTF8.GetBytes($"0@{deletedStream}"),
 					Array.Empty<byte>(),
+					Uuid.NewUuid(),
 					Constants.Metadata.ContentTypes.ApplicationOctetStream
 				)
-			}
+			]
 		);
 
 		var events = await Fixture.Streams.ReadStreamAsync(

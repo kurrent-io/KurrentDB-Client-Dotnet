@@ -22,7 +22,7 @@ public class MessageSerializerTests {
 		var eventData = serializer.Serialize(message, context);
 
 		// Then
-		Assert.Equal(messageId, eventData.EventId);
+		Assert.Equal(messageId, eventData.MessageId);
 		Assert.Equal("UserRegistered", eventData.Type);
 		Assert.NotEmpty(eventData.Data.Span.ToArray());
 		Assert.NotEmpty(eventData.Metadata.Span.ToArray());
@@ -45,7 +45,7 @@ public class MessageSerializerTests {
 		var eventData = serializer.Serialize(message, context);
 
 		// Then
-		Assert.NotEqual(Uuid.Empty, eventData.EventId);
+		Assert.NotEqual(Uuid.Empty, eventData.MessageId);
 	}
 
 	[Fact]
@@ -118,9 +118,9 @@ public class MessageSerializerTests {
 
 		var testEvent    = new UserRegistered("user-123", "user@random-email.com");
 		var testMetadata = new TestMetadata { CorrelationId = "corr-123", UserId = "user-456" };
-		var eventId      = Uuid.NewUuid();
+		var messageId      = Uuid.NewUuid();
 
-		var eventRecord = CreateTestEventRecord("UserRegistered", testEvent, testMetadata, eventId);
+		var eventRecord = CreateTestEventRecord("UserRegistered", testEvent, testMetadata, messageId);
 
 		// When
 		var success = serializer.TryDeserialize(eventRecord, out var message);
@@ -128,7 +128,7 @@ public class MessageSerializerTests {
 		// Then
 		Assert.True(success);
 		Assert.NotNull(message);
-		Assert.Equal(eventId, message.MessageId);
+		Assert.Equal(messageId, message.MessageId);
 
 		var deserializedEvent = Assert.IsType<UserRegistered>(message.Data);
 		Assert.Equal("user-123", deserializedEvent.UserId);
@@ -181,9 +181,9 @@ public class MessageSerializerTests {
 		var serializer     = new MessageSerializer(schemaRegistry);
 
 		var testEvent = new UserRegistered("user-123", "user@random-email.com");
-		var eventId   = Uuid.NewUuid();
+		var messageId   = Uuid.NewUuid();
 
-		var eventRecord = CreateTestEventRecord("UserRegistered", testEvent, null, eventId);
+		var eventRecord = CreateTestEventRecord("UserRegistered", testEvent, null, messageId);
 
 		// When
 		var success = serializer.TryDeserialize(eventRecord, out var message);
@@ -191,7 +191,7 @@ public class MessageSerializerTests {
 		// Then
 		Assert.True(success);
 		Assert.NotNull(message);
-		Assert.Equal(eventId, message.MessageId);
+		Assert.Equal(messageId, message.MessageId);
 		Assert.Null(message.Metadata);
 
 		var deserializedEvent = Assert.IsType<UserRegistered>(message.Data);
@@ -235,11 +235,11 @@ public class MessageSerializerTests {
 	}
 
 	static EventRecord CreateTestEventRecord(
-		string eventType, object? data = null, object? metadata = null, Uuid? eventId = null
+		string eventType, object? data = null, object? metadata = null, Uuid? messageId = null
 	) =>
 		new(
 			Uuid.NewUuid().ToString(),
-			eventId ?? Uuid.NewUuid(),
+			messageId ?? Uuid.NewUuid(),
 			StreamPosition.FromInt64(0),
 			new Position(1, 1),
 			new Dictionary<string, string> {
