@@ -18,7 +18,7 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 		List<UserRegistered> expected = GenerateMessages();
 
 		//When
-		await Fixture.Streams.AppendToStreamAsync(stream, expected);
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
 		//Then
 		var resolvedEvents = await Fixture.Streams.SubscribeToStream(stream).Take(2).ToListAsync();
@@ -38,7 +38,7 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 			expected.Select(message => Message.From(message, metadata, Uuid.NewUuid())).ToList();
 
 		// When
-		await client.AppendToStreamAsync(stream, messagesWithMetadata);
+		await client.AppendToStreamAsync(stream, StreamState.NoStream, messagesWithMetadata);
 
 		// Then
 		var resolvedEvents = await client.SubscribeToStream(stream).Take(2).ToListAsync();
@@ -57,7 +57,7 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 			expected.Select(message => Message.From(message, metadata, Uuid.NewUuid())).ToList();
 
 		// When
-		await Fixture.Streams.AppendToStreamAsync(stream, messagesWithMetadata);
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, messagesWithMetadata);
 
 		// Then
 		var resolvedEvents = await Fixture.Streams.SubscribeToStream(stream).Take(2).ToListAsync();
@@ -172,7 +172,7 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 		}
 
 #if NET48
-	public bool TryResolveClrType(string messageTypeName, out Type? type) {
+		public bool TryResolveClrType(string messageTypeName, out Type? type) {
 #else
 		public bool TryResolveClrType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
 #endif
@@ -183,7 +183,7 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 		}
 
 #if NET48
-	public bool TryResolveClrMetadataType(string messageTypeName, out Type? type) {
+		public bool TryResolveClrMetadataType(string messageTypeName, out Type? type) {
 #else
 		public bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
 #endif
@@ -267,7 +267,8 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 	}
 
 	[RetryFact]
-	public async Task subscribe_to_stream_does_NOT_deserialize_resolved_message_appended_with_manual_incompatible_serialization() {
+	public async Task
+		subscribe_to_stream_does_NOT_deserialize_resolved_message_appended_with_manual_incompatible_serialization() {
 		// Given
 		var (stream, expected) = await AppendEventsUsingManualSerialization(_ => "user_registered");
 
@@ -323,11 +324,15 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 		);
 	}
 
-	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization(KurrentDBClient? kurrentDbClient = null) {
+	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization(
+		KurrentDBClient? kurrentDbClient = null
+	) {
 		var stream   = Fixture.GetStreamName();
 		var messages = GenerateMessages();
 
-		var writeResult = await (kurrentDbClient ?? Fixture.Streams).AppendToStreamAsync(stream, messages);
+		var writeResult =
+			await (kurrentDbClient ?? Fixture.Streams).AppendToStreamAsync(stream, StreamState.Any, messages);
+
 		Assert.Equal((ulong)messages.Count - 1, writeResult.NextExpectedStreamState);
 
 		return (stream, messages);

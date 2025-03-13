@@ -57,7 +57,7 @@ public class SubscribeToStreamNoDefaultCredentialsTests(ITestOutputHelper output
 			stream,
 			StreamState.NoStream,
 			Fixture.CreateTestEvents(),
-			userCredentials: TestCredentials.Root
+			new AppendToStreamOptions { UserCredentials = TestCredentials.Root }
 		);
 
 		await Fixture.Subscriptions.CreateToStreamAsync(

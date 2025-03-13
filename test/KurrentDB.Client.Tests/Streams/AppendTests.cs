@@ -6,7 +6,8 @@ namespace KurrentDB.Client.Tests.Streams;
 
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Append")]
-public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
+public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
+	: KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[Theory, ExpectedVersionCreateStreamTestCases]
 	public async Task appending_zero_events(StreamState expectedStreamState) {
 		var stream = $"{Fixture.GetStreamName()}_{expectedStreamState}";
@@ -232,7 +233,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			stream,
 			StreamState.StreamRevision(1),
 			Fixture.CreateTestEvents(),
-			options => { options.ThrowOnAppendFailure = false; }
+			new AppendToStreamOptions { ThrowOnAppendFailure = false }
 		);
 
 		var wrongExpectedVersionResult = (WrongExpectedVersionResult)writeResult;
@@ -305,7 +306,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			stream,
 			StreamState.StreamExists,
 			Fixture.CreateTestEvents(),
-			options => { options.ThrowOnAppendFailure = false; }
+			new OperationOptions { ThrowOnAppendFailure = false }
 		);
 
 		var wrongExpectedVersionResult = Assert.IsType<WrongExpectedVersionResult>(writeResult);
@@ -361,7 +362,9 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		);
 
 		Assert.Equal(
-			ConditionalWriteResult.FromWrongExpectedVersion(new(stream, StreamState.StreamRevision(7), StreamState.NoStream)),
+			ConditionalWriteResult.FromWrongExpectedVersion(
+				new(stream, StreamState.StreamRevision(7), StreamState.NoStream)
+			),
 			result
 		);
 	}
@@ -429,7 +432,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			stream,
 			StreamState.Any,
 			Fixture.CreateTestEvents(100),
-			deadline: TimeSpan.FromTicks(1)
+			new OperationOptions { Deadline = TimeSpan.FromTicks(1) }
 		).ShouldThrowAsync<RpcException>();
 
 		ex.StatusCode.ShouldBe(StatusCode.DeadlineExceeded);
@@ -445,7 +448,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			stream,
 			StreamState.StreamRevision(0),
 			Fixture.CreateTestEvents(10),
-			deadline: TimeSpan.Zero
+			new OperationOptions { Deadline = TimeSpan.Zero }
 		).ShouldThrowAsync<RpcException>();
 
 		ex.StatusCode.ShouldBe(StatusCode.DeadlineExceeded);
@@ -460,7 +463,12 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 				streamName,
 				StreamState.Any,
 				Fixture.CreateTestEventsThatThrowsException(),
-				userCredentials: new UserCredentials(TestCredentials.Root.Username!, TestCredentials.Root.Password!)
+				new OperationOptions {
+					UserCredentials = new UserCredentials(
+						TestCredentials.Root.Username!,
+						TestCredentials.Root.Password!
+					)
+				}
 			)
 			.ShouldThrowAsync<Exception>();
 
@@ -556,7 +564,9 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-		await Assert.ThrowsAsync<WrongExpectedVersionException>(() => Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(6), events.Take(1)));
+		await Assert.ThrowsAsync<WrongExpectedVersionException>(
+			() => Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(6), events.Take(1))
+		);
 	}
 
 	[RetryFact]
@@ -571,7 +581,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			stream,
 			StreamState.StreamRevision(6),
 			events.Take(1),
-			options => options.ThrowOnAppendFailure = false
+			new OperationOptions { ThrowOnAppendFailure = false }
 		);
 
 		Assert.IsType<WrongExpectedVersionResult>(writeResult);
@@ -585,7 +595,9 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-		await Assert.ThrowsAsync<WrongExpectedVersionException>(() => Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(4), events.Take(1)));
+		await Assert.ThrowsAsync<WrongExpectedVersionException>(
+			() => Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(4), events.Take(1))
+		);
 	}
 
 	[RetryFact]
@@ -600,7 +612,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			stream,
 			StreamState.StreamRevision(4),
 			events.Take(1),
-			options => options.ThrowOnAppendFailure = false
+			new OperationOptions { ThrowOnAppendFailure = false }
 		);
 
 		Assert.IsType<WrongExpectedVersionResult>(writeResult);
@@ -758,7 +770,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			stream,
 			StreamState.NoStream,
 			events,
-			options => options.ThrowOnAppendFailure = false
+			new OperationOptions { ThrowOnAppendFailure = false }
 		);
 
 		Assert.IsType<WrongExpectedVersionResult>(writeResult);

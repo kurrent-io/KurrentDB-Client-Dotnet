@@ -12,25 +12,40 @@ namespace KurrentDB.Client {
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public async Task<StreamMetadataResult> GetStreamMetadataAsync(string streamName, TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+		public async Task<StreamMetadataResult> GetStreamMetadataAsync(
+			string streamName, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
+		) {
 			_log.LogDebug("Read stream metadata for {streamName}.", streamName);
 
 			try {
-				var result = ReadStreamAsync(Direction.Backwards, SystemStreams.MetastreamOf(streamName),
-					StreamPosition.End, 1, false, deadline, userCredentials, cancellationToken);
+				var result = ReadStreamAsync(
+					Direction.Backwards,
+					SystemStreams.MetastreamOf(streamName),
+					StreamPosition.End,
+					1,
+					false,
+					deadline,
+					userCredentials,
+					cancellationToken
+				);
+
 				await foreach (var message in result.Messages.ConfigureAwait(false)) {
 					if (message is not StreamMessage.Event(var resolvedEvent)) {
 						continue;
 					}
 
-					return StreamMetadataResult.Create(streamName, resolvedEvent.OriginalEventNumber,
-						JsonSerializer.Deserialize<StreamMetadata>(resolvedEvent.Event.Data.Span,
-							StreamMetadataJsonSerializerOptions));
+					return StreamMetadataResult.Create(
+						streamName,
+						resolvedEvent.OriginalEventNumber,
+						JsonSerializer.Deserialize<StreamMetadata>(
+							resolvedEvent.Event.Data.Span,
+							StreamMetadataJsonSerializerOptions
+						)
+					);
 				}
+			} catch (StreamNotFoundException) { }
 
-			} catch (StreamNotFoundException) {
-			}
 			_log.LogWarning("Stream metadata for {streamName} not found.", streamName);
 			return StreamMetadataResult.None(streamName);
 		}
@@ -46,32 +61,51 @@ namespace KurrentDB.Client {
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public Task<IWriteResult> SetStreamMetadataAsync(string streamName, StreamState expectedState,
+		public Task<IWriteResult> SetStreamMetadataAsync(
+			string streamName, StreamState expectedState,
 			StreamMetadata metadata, Action<KurrentDBClientOperationOptions>? configureOperationOptions = null,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default
+		) {
 			var options = Settings.OperationOptions.Clone();
 			configureOperationOptions?.Invoke(options);
 
-			return SetStreamMetadataInternal(metadata, new AppendReq {
-				Options = new AppendReq.Types.Options {
-					StreamIdentifier = SystemStreams.MetastreamOf(streamName)
-				}
-			}.WithAnyStreamRevision(expectedState), options, deadline, userCredentials, cancellationToken);
+			var operationOptions =
+				new OperationOptions { Deadline = deadline, UserCredentials = userCredentials }.With(options);
+
+			return SetStreamMetadataInternal(
+				metadata,
+				new AppendReq {
+					Options = new AppendReq.Types.Options {
+						StreamIdentifier = SystemStreams.MetastreamOf(streamName)
+					}
+				}.WithAnyStreamRevision(expectedState),
+				operationOptions,
+				cancellationToken
+			);
 		}
 
-		private async Task<IWriteResult> SetStreamMetadataInternal(StreamMetadata metadata,
+		async Task<IWriteResult> SetStreamMetadataInternal(
+			StreamMetadata metadata,
 			AppendReq appendReq,
-			KurrentDBClientOperationOptions operationOptions,
-			TimeSpan? deadline,
-			UserCredentials? userCredentials,
-			CancellationToken cancellationToken) {
-
+			OperationOptions operationOptions,
+			CancellationToken cancellationToken
+		) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			return await AppendToStreamInternal(channelInfo, appendReq, new[] {
-				new EventData(Uuid.NewUuid(), SystemEventTypes.StreamMetadata,
-					JsonSerializer.SerializeToUtf8Bytes(metadata, StreamMetadataJsonSerializerOptions)),
-			}, operationOptions, deadline, userCredentials, cancellationToken).ConfigureAwait(false);
+			return await AppendToStreamInternal(
+				channelInfo,
+				appendReq,
+				[
+					new EventData(
+						Uuid.NewUuid(),
+						SystemEventTypes.StreamMetadata,
+						JsonSerializer.SerializeToUtf8Bytes(metadata, StreamMetadataJsonSerializerOptions)
+					)
+				],
+				operationOptions,
+				cancellationToken
+			).ConfigureAwait(false);
 		}
 	}
 }

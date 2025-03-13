@@ -18,7 +18,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 		List<UserRegistered> expected = GenerateMessages();
 
 		//When
-		await Fixture.Streams.AppendToStreamAsync(stream, expected);
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
 		//Then
 		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(stream).ToListAsync();
@@ -38,7 +38,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 			expected.Select(message => Message.From(message, metadata, Uuid.NewUuid())).ToList();
 
 		// When
-		await client.AppendToStreamAsync(stream, messagesWithMetadata);
+		await client.AppendToStreamAsync(stream, StreamState.NoStream, messagesWithMetadata);
 
 		// Then
 		var resolvedEvents = await client.ReadStreamAsync(stream).ToListAsync();
@@ -57,7 +57,7 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 			expected.Select(message => Message.From(message, metadata, Uuid.NewUuid())).ToList();
 
 		// When
-		await Fixture.Streams.AppendToStreamAsync(stream, messagesWithMetadata);
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, messagesWithMetadata);
 
 		// Then
 		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(stream).ToListAsync();
@@ -203,7 +203,11 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 
 		//Then
 		var resolvedEvents = await Fixture.Streams.ReadStreamAsync(stream).ToListAsync();
-		Assert.All(resolvedEvents, resolvedEvent => Assert.Equal($"custom-{typeof(UserRegistered).FullName}", resolvedEvent.Event.EventType));
+		Assert.All(
+			resolvedEvents,
+			resolvedEvent => Assert.Equal($"custom-{typeof(UserRegistered).FullName}", resolvedEvent.Event.EventType)
+		);
+
 		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
 	}
 
@@ -222,7 +226,11 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 			.ReadAllAsync(new ReadAllOptions { Filter = StreamFilter.Prefix(stream) })
 			.ToListAsync();
 
-		Assert.All(resolvedEvents, resolvedEvent => Assert.Equal($"custom-{typeof(UserRegistered).FullName}", resolvedEvent.Event.EventType));
+		Assert.All(
+			resolvedEvents,
+			resolvedEvent => Assert.Equal($"custom-{typeof(UserRegistered).FullName}", resolvedEvent.Event.EventType)
+		);
+
 		AssertThatMessages(AreDeserialized, expected, resolvedEvents);
 	}
 
@@ -259,7 +267,8 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 	}
 
 	[RetryFact]
-	public async Task read_stream_does_NOT_deserialize_resolved_message_appended_with_manual_incompatible_serialization() {
+	public async Task
+		read_stream_does_NOT_deserialize_resolved_message_appended_with_manual_incompatible_serialization() {
 		// Given
 		var (stream, expected) = await AppendEventsUsingManualSerialization(_ => "user_registered");
 
@@ -316,11 +325,15 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 		);
 	}
 
-	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization(KurrentDBClient? kurrentDbClient = null) {
+	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization(
+		KurrentDBClient? kurrentDbClient = null
+	) {
 		var stream   = Fixture.GetStreamName();
 		var messages = GenerateMessages();
 
-		var writeResult = await (kurrentDbClient ?? Fixture.Streams).AppendToStreamAsync(stream, messages);
+		var writeResult =
+			await (kurrentDbClient ?? Fixture.Streams).AppendToStreamAsync(stream, StreamState.NoStream, messages);
+
 		Assert.Equal((ulong)messages.Count - 1, writeResult.NextExpectedStreamState);
 
 		return (stream, messages);

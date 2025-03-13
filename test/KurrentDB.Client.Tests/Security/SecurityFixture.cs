@@ -149,7 +149,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 
 	protected virtual Task When() => Task.CompletedTask;
 
-	public Task ReadEvent(string streamId, UserCredentials? userCredentials = default) =>
+	public Task ReadEvent(string streamId, UserCredentials? userCredentials = null) =>
 		Streams.ReadStreamAsync(
 				Direction.Forwards,
 				streamId,
@@ -162,7 +162,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			.AsTask()
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public Task ReadStreamForward(string streamId, UserCredentials? userCredentials = default) =>
+	public Task ReadStreamForward(string streamId, UserCredentials? userCredentials = null) =>
 		Streams.ReadStreamAsync(
 				Direction.Forwards,
 				streamId,
@@ -175,7 +175,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			.AsTask()
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public Task ReadStreamBackward(string streamId, UserCredentials? userCredentials = default) =>
+	public Task ReadStreamBackward(string streamId, UserCredentials? userCredentials = null) =>
 		Streams.ReadStreamAsync(
 				Direction.Backwards,
 				streamId,
@@ -188,16 +188,16 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			.AsTask()
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public Task<IWriteResult> AppendStream(string streamId, UserCredentials? userCredentials = default) =>
+	public Task<IWriteResult> AppendStream(string streamId, UserCredentials? userCredentials = null) =>
 		Streams.AppendToStreamAsync(
 				streamId,
 				StreamState.Any,
 				CreateTestEvents(3),
-				userCredentials: userCredentials
+				new AppendToStreamOptions { UserCredentials = userCredentials }
 			)
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public Task ReadAllForward(UserCredentials? userCredentials = default) =>
+	public Task ReadAllForward(UserCredentials? userCredentials = null) =>
 		Streams.ReadAllAsync(
 				Direction.Forwards,
 				Position.Start,
@@ -209,7 +209,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			.AsTask()
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public Task ReadAllBackward(UserCredentials? userCredentials = default) =>
+	public Task ReadAllBackward(UserCredentials? userCredentials = null) =>
 		Streams
 			.ReadAllAsync(
 				Direction.Backwards,
@@ -222,11 +222,13 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			.AsTask()
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public Task<StreamMetadataResult> ReadMeta(string streamId, UserCredentials? userCredentials = default) =>
+	public Task<StreamMetadataResult> ReadMeta(string streamId, UserCredentials? userCredentials = null) =>
 		Streams.GetStreamMetadataAsync(streamId, userCredentials: userCredentials)
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public Task<IWriteResult> WriteMeta(string streamId, UserCredentials? userCredentials = default, string? role = default) =>
+	public Task<IWriteResult> WriteMeta(
+		string streamId, UserCredentials? userCredentials = null, string? role = null
+	) =>
 		Streams.SetStreamMetadataAsync(
 				streamId,
 				StreamState.Any,
@@ -242,7 +244,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			)
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public async Task SubscribeToStream(string streamId, UserCredentials? userCredentials = default) {
+	public async Task SubscribeToStream(string streamId, UserCredentials? userCredentials = null) {
 		await using var subscription =
 			Streams.SubscribeToStream(streamId, FromStream.Start, userCredentials: userCredentials);
 
@@ -251,7 +253,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 	}
 
-	public async Task SubscribeToAll(UserCredentials? userCredentials = default) {
+	public async Task SubscribeToAll(UserCredentials? userCredentials = null) {
 		await using var subscription =
 			Streams.SubscribeToAll(FromAll.Start, userCredentials: userCredentials);
 
@@ -260,7 +262,9 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 	}
 
-	public async Task<string> CreateStreamWithMeta(StreamMetadata metadataPermanent, [CallerMemberName] string streamId = "<unknown>") {
+	public async Task<string> CreateStreamWithMeta(
+		StreamMetadata metadataPermanent, [CallerMemberName] string streamId = "<unknown>"
+	) {
 		await Streams.SetStreamMetadataAsync(
 				streamId,
 				StreamState.NoStream,
@@ -272,7 +276,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 		return streamId;
 	}
 
-	public Task<DeleteResult> DeleteStream(string streamId, UserCredentials? userCredentials = default) =>
+	public Task<DeleteResult> DeleteStream(string streamId, UserCredentials? userCredentials = null) =>
 		Streams.TombstoneAsync(streamId, StreamState.Any, userCredentials: userCredentials)
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 }

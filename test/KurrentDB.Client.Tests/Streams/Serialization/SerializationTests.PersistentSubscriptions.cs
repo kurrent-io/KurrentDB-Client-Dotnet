@@ -18,7 +18,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		List<UserRegistered> expected = GenerateMessages();
 
 		//When
-		await Fixture.Streams.AppendToStreamAsync(stream, expected);
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
 		var group = await CreateToStreamSubscription(stream);
 
@@ -42,7 +42,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 			expected.Select(message => Message.From(message, metadata, Uuid.NewUuid())).ToList();
 
 		// When
-		await client.AppendToStreamAsync(stream, messagesWithMetadata);
+		await client.AppendToStreamAsync(stream, StreamState.NoStream, messagesWithMetadata);
 
 		// Then
 		var group          = await CreateToStreamSubscription(stream, subscriptionsClient);
@@ -62,10 +62,10 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 			expected.Select(message => Message.From(message, metadata, Uuid.NewUuid())).ToList();
 
 		// When
-		await Fixture.Streams.AppendToStreamAsync(stream, messagesWithMetadata);
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, messagesWithMetadata);
 
 		// Then
-		var group          = await CreateToStreamSubscription(stream);
+		var group = await CreateToStreamSubscription(stream);
 		var resolvedEvents = await Fixture.Subscriptions.SubscribeToStream(stream, group).Take(2)
 			.ToListAsync();
 
@@ -80,7 +80,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		var (stream, expected) = await AppendEventsUsingAutoSerialization();
 
 		// When
-		var group          = await CreateToStreamSubscription(stream);
+		var group = await CreateToStreamSubscription(stream);
 		var resolvedEvents = await Fixture.Subscriptions
 			.SubscribeToStream(stream, group, int.MaxValue).Take(2)
 			.ToListAsync();
@@ -95,9 +95,9 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		var (stream, expected) = await AppendEventsUsingAutoSerialization();
 
 		// When
-		var group          = await CreateToAllSubscription(stream);
+		var group = await CreateToAllSubscription(stream);
 		var resolvedEvents = await Fixture.Subscriptions
-			.SubscribeToAll(group, int.MaxValue) 
+			.SubscribeToAll(group, int.MaxValue)
 			.Take(2)
 			.ToListAsync();
 
@@ -130,7 +130,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		var (stream, expected) = await AppendEventsUsingAutoSerialization(client);
 
 		// Then
-		var group          = await CreateToStreamSubscription(stream, subscriptionsClient);
+		var group = await CreateToStreamSubscription(stream, subscriptionsClient);
 		var resolvedEvents = await subscriptionsClient.SubscribeToStream(stream, group).Take(2)
 			.ToListAsync();
 
@@ -153,7 +153,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		var (stream, expected) = await AppendEventsUsingAutoSerialization(client);
 
 		// Then
-		var group          = await CreateToAllSubscription(stream, subscriptionsClient);
+		var group = await CreateToAllSubscription(stream, subscriptionsClient);
 		var resolvedEvents = await subscriptionsClient
 			.SubscribeToAll(group)
 			.Where(r => r.Event.EventStreamId == stream)
@@ -180,7 +180,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		var (stream, expected) = await AppendEventsUsingAutoSerialization(client);
 
 		// Then
-		var group          = await CreateToStreamSubscription(stream, subscriptionsClient);
+		var group = await CreateToStreamSubscription(stream, subscriptionsClient);
 		var resolvedEvents = await subscriptionsClient.SubscribeToStream(stream, group).Take(2)
 			.ToListAsync();
 
@@ -197,7 +197,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		}
 
 #if NET48
-	public bool TryResolveClrType(string messageTypeName, out Type? type) {
+		public bool TryResolveClrType(string messageTypeName, out Type? type) {
 #else
 		public bool TryResolveClrType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
 #endif
@@ -208,7 +208,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		}
 
 #if NET48
-	public bool TryResolveClrMetadataType(string messageTypeName, out Type? type) {
+		public bool TryResolveClrMetadataType(string messageTypeName, out Type? type) {
 #else
 		public bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
 #endif
@@ -233,8 +233,8 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		var (stream, expected) = await AppendEventsUsingAutoSerialization(client);
 
 		//Then
-		var group          = await CreateToStreamSubscription(stream, subscriptionsClient);
-		var resolvedEvents = await subscriptionsClient.SubscribeToStream(stream,group).Take(2)
+		var group = await CreateToStreamSubscription(stream, subscriptionsClient);
+		var resolvedEvents = await subscriptionsClient.SubscribeToStream(stream, group).Take(2)
 			.ToListAsync();
 
 		Assert.All(
@@ -261,7 +261,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		var (stream, expected) = await AppendEventsUsingAutoSerialization(client);
 
 		//Then
-		var group          = await CreateToAllSubscription(stream, subscriptionsClient);
+		var group = await CreateToAllSubscription(stream, subscriptionsClient);
 		var resolvedEvents = await subscriptionsClient
 			.SubscribeToAll(group)
 			.Where(r => r.Event.EventStreamId == stream)
@@ -285,7 +285,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		);
 
 		// When
-		var group          = await CreateToStreamSubscription(stream);
+		var group = await CreateToStreamSubscription(stream);
 		var resolvedEvents = await Fixture.Subscriptions.SubscribeToStream(stream, group).Take(2)
 			.ToListAsync();
 
@@ -301,7 +301,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		);
 
 		// When
-		var group          = await CreateToAllSubscription(stream);
+		var group = await CreateToAllSubscription(stream);
 		var resolvedEvents = await Fixture.Subscriptions
 			.SubscribeToAll(group)
 			.Where(r => r.Event.EventStreamId == stream)
@@ -319,7 +319,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		var (stream, expected) = await AppendEventsUsingManualSerialization(_ => "user_registered");
 
 		// When
-		var group          = await CreateToStreamSubscription(stream);
+		var group = await CreateToStreamSubscription(stream);
 		var resolvedEvents = await Fixture.Subscriptions.SubscribeToStream(stream, group).Take(2)
 			.ToListAsync();
 
@@ -334,7 +334,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		var (stream, expected) = await AppendEventsUsingManualSerialization(_ => "user_registered");
 
 		// When
-		var group          = await CreateToAllSubscription(stream);
+		var group = await CreateToAllSubscription(stream);
 		var resolvedEvents = await Fixture.Subscriptions
 			.SubscribeToAll(group)
 			.Where(r => r.Event.EventStreamId == stream)
@@ -375,11 +375,14 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		);
 	}
 
-	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization(KurrentDBClient? kurrentDbClient = null) {
+	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization(
+		KurrentDBClient? kurrentDbClient = null
+	) {
 		var stream   = Fixture.GetStreamName();
 		var messages = GenerateMessages();
 
-		var writeResult = await (kurrentDbClient ?? Fixture.Streams).AppendToStreamAsync(stream, messages);
+		var writeResult = 
+			await (kurrentDbClient ?? Fixture.Streams).AppendToStreamAsync(stream, StreamState.Any, messages);
 		Assert.Equal((ulong)messages.Count - 1, writeResult.NextExpectedStreamState);
 
 		return (stream, messages);
@@ -437,7 +440,9 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		return new KurrentDBPersistentSubscriptionsClient(settings);
 	}
 
-	async Task<string> CreateToStreamSubscription(string stream, KurrentDBPersistentSubscriptionsClient? client = null) {
+	async Task<string> CreateToStreamSubscription(
+		string stream, KurrentDBPersistentSubscriptionsClient? client = null
+	) {
 		string group = Fixture.GetGroupName();
 
 		await (client ?? Fixture.Subscriptions).CreateToStreamAsync(
@@ -455,7 +460,7 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 
 		await (client ?? Fixture.Subscriptions).CreateToAllAsync(
 			group,
-			StreamFilter.Prefix(stream), 
+			StreamFilter.Prefix(stream),
 			new(startFrom: Position.Start),
 			userCredentials: TestCredentials.Root
 		);

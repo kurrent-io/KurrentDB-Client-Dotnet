@@ -31,7 +31,11 @@ public class SubscribeToStreamGetInfoTests(SubscribeToStreamGetInfoTests.CustomF
 	[Theory]
 	[MemberData(nameof(AllowedUsers))]
 	public async Task returns_expected_result(UserCredentials credentials) {
-		var result = await fixture.Subscriptions.GetInfoToStreamAsync(fixture.Stream, fixture.Group, userCredentials: credentials);
+		var result = await fixture.Subscriptions.GetInfoToStreamAsync(
+			fixture.Stream,
+			fixture.Group,
+			userCredentials: credentials
+		);
 
 		Assert.Equal(fixture.Stream, result.EventSource);
 		Assert.Equal(fixture.Group, result.GroupName);
@@ -153,7 +157,7 @@ public class SubscribeToStreamGetInfoTests(SubscribeToStreamGetInfoTests.CustomF
 		public string Stream { get; set; }
 
 		KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult? Subscription;
-		IAsyncEnumerator<PersistentSubscriptionMessage>?                   Enumerator;
+		IAsyncEnumerator<PersistentSubscriptionMessage>?                     Enumerator;
 
 		public CustomFixture() : base(x => x.WithoutDefaultCredentials()) {
 			Group  = GetGroupName();
@@ -176,7 +180,7 @@ public class SubscribeToStreamGetInfoTests(SubscribeToStreamGetInfoTests.CustomF
 						Stream,
 						StreamState.Any,
 						[new EventData(Uuid.NewUuid(), "test-event", ReadOnlyMemory<byte>.Empty)],
-						userCredentials: TestCredentials.Root
+						new OperationOptions { UserCredentials = TestCredentials.Root }
 					);
 				}
 

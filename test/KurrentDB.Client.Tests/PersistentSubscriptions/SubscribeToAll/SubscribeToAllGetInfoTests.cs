@@ -74,7 +74,7 @@ public class SubscribeToAllGetInfoTests(SubscribeToAllGetInfoTests.CustomFixture
 						$"test-{Guid.NewGuid():n}",
 						StreamState.NoStream,
 						[eventData],
-						userCredentials: TestCredentials.Root
+						new AppendToStreamOptions { UserCredentials = TestCredentials.Root }
 					);
 				}
 

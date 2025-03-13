@@ -19,14 +19,16 @@ namespace KurrentDB.Client {
 		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDBClientSettings"/>
 		/// </summary>
 		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="expectedState">The expected <see cref="KurrentDB.Client.StreamState"/> of the stream to append to.</param>
 		/// <param name="messages">Messages to append to the stream.</param>
-		/// <param name="options">Optional settings for the append operation, e.g. expected stream position for optimistic concurrency check</param>
+		/// <param name="options">Optional settings for the append operation, e.g. deadline, user credentials etc.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public Task<IWriteResult> AppendToStreamAsync(
 			string streamName,
+			StreamState expectedState,
 			IEnumerable<Message> messages,
-			AppendToStreamOptions options,
+			AppendToStreamOptions? options = null,
 			CancellationToken cancellationToken = default
 		) {
 			var serializationContext = new MessageSerializationContext(
@@ -34,11 +36,11 @@ namespace KurrentDB.Client {
 				Settings.Serialization.DefaultContentType
 			);
 
-			var messageSerializer = _messageSerializer.With(Settings.Serialization, options.SerializationSettings);
+			var messageSerializer = _messageSerializer.With(Settings.Serialization, options?.SerializationSettings);
 
 			var eventsData = messageSerializer.Serialize(messages, serializationContext);
 
-			return AppendToStreamAsync(streamName, eventsData, options, cancellationToken);
+			return AppendToStreamAsync(streamName, expectedState, eventsData, options, cancellationToken);
 		}
 
 		/// <summary>
@@ -47,21 +49,21 @@ namespace KurrentDB.Client {
 		/// This method intends to cover low-level scenarios in which you want to have full control of the serialization mechanism.
 		/// </summary>
 		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="expectedState">The expected <see cref="KurrentDB.Client.StreamState"/> of the stream to append to.</param>
 		/// <param name="eventsData">Raw message data to append to the stream.</param>
-		/// <param name="options">Optional settings for the append operation, e.g. expected stream position for optimistic concurrency check</param>
+		/// <param name="options">Optional settings for the append operation, e.g. deadline, user credentials etc.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public async Task<IWriteResult> AppendToStreamAsync(
 			string streamName,
+			StreamState expectedState,
 			IEnumerable<EventData> eventsData,
-			AppendToStreamRawOptions options,
+			OperationOptions? options = null,
 			CancellationToken cancellationToken = default
 		) {
-			var expectedState    = options.ExpectedStreamState ?? StreamState.Any;
-			var userCredentials  = options.UserCredentials;
-			var deadline         = options.Deadline;
-			var operationOptions = Settings.OperationOptions.Clone();
-			options.ConfigureOperationOptions?.Invoke(operationOptions);
+			var operationOptions = (options ?? new OperationOptions()).With(Settings.OperationOptions);
+			var userCredentials  = options?.UserCredentials;
+			var deadline         = options?.Deadline;
 
 			_log.LogDebug("Append to stream - {streamName}@{expectedState}.", streamName, expectedState);
 
@@ -77,58 +79,22 @@ namespace KurrentDB.Client {
 						}.WithAnyStreamRevision(expectedState),
 						eventsData,
 						operationOptions,
-						deadline,
-						userCredentials,
 						cancellationToken
 					);
 
 			return (await task.ConfigureAwait(false)).OptionallyThrowWrongExpectedVersionException(operationOptions);
 		}
 
-		/// <summary>
-		/// Appends events asynchronously to a stream.
-		/// </summary>
-		/// <param name="streamName">The name of the stream to append events to.</param>	
-		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream to append to.</param>
-		/// <param name="eventData">An <see cref="IEnumerable{EventData}"/> to append to the stream.</param>
-		/// <param name="configureOperationOptions">An <see cref="Action{KurrentDBClientOperationOptions}"/> to configure the operation's options.</param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		[Obsolete(
-			"This method may be removed in future releases. Use the overload with Message for auto-serialization or method with options parameter for raw serialization"
-		)]
-		public Task<IWriteResult> AppendToStreamAsync(
-			string streamName,
-			StreamState expectedState,
-			IEnumerable<EventData> eventData,
-			Action<KurrentDBClientOperationOptions>? configureOperationOptions = null,
-			TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default
-		) =>
-			AppendToStreamAsync(
-				streamName,
-				eventData,
-				new AppendToStreamRawOptions {
-					ExpectedStreamState       = expectedState,
-					ConfigureOperationOptions = configureOperationOptions,
-					Deadline                  = deadline,
-					UserCredentials           = userCredentials,
-				},
-				cancellationToken
-			);
-
 		ValueTask<IWriteResult> AppendToStreamInternal(
 			ChannelInfo channelInfo,
 			AppendReq header,
 			IEnumerable<EventData> eventData,
-			KurrentDBClientOperationOptions operationOptions,
-			TimeSpan? deadline,
-			UserCredentials? userCredentials,
+			OperationOptions operationOptions,
 			CancellationToken cancellationToken
 		) {
+			var userCredentials = operationOptions.UserCredentials;
+			var deadline        = operationOptions.Deadline;
+			
 			var tags = new ActivityTagsCollection()
 				.WithRequiredTag(
 					TelemetryTags.Kurrent.Stream,
@@ -209,7 +175,7 @@ namespace KurrentDB.Client {
 		}
 
 		IWriteResult HandleWrongExpectedRevision(
-			AppendResp response, AppendReq header, KurrentDBClientOperationOptions operationOptions
+			AppendResp response, AppendReq header, OperationOptions operationOptions
 		) {
 			var actualStreamRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase
 			                        == CurrentRevisionOptionOneofCase.CurrentRevision
@@ -223,7 +189,7 @@ namespace KurrentDB.Client {
 				actualStreamRevision
 			);
 
-			if (operationOptions.ThrowOnAppendFailure) {
+			if (operationOptions.ThrowOnAppendFailure == true) {
 				if (response.WrongExpectedVersion.ExpectedRevisionOptionCase
 				 == ExpectedRevisionOptionOneofCase.ExpectedRevision) {
 					throw new WrongExpectedVersionException(
@@ -459,48 +425,7 @@ namespace KurrentDB.Client {
 		/// </summary>
 		/// <param name="dbClient"></param>
 		/// <param name="streamName">The name of the stream to append events to.</param>
-		/// <param name="messages">Messages to append to the stream.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public static Task<IWriteResult> AppendToStreamAsync(
-			this KurrentDBClient dbClient,
-			string streamName,
-			IEnumerable<Message> messages,
-			CancellationToken cancellationToken = default
-		)
-			=> dbClient.AppendToStreamAsync(
-				streamName,
-				messages,
-				new AppendToStreamOptions(),
-				cancellationToken
-			);
-
-		/// <summary>
-		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDBClientSettings"/>
-		/// </summary>
-		/// <param name="dbClient"></param>
-		/// <param name="streamName">The name of the stream to append events to.</param>
-		/// <param name="messages">Messages to append to the stream.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public static Task<IWriteResult> AppendToStreamAsync(
-			this KurrentDBClient dbClient,
-			string streamName,
-			IEnumerable<object> messages,
-			CancellationToken cancellationToken = default
-		)
-			=> dbClient.AppendToStreamAsync(
-				streamName,
-				messages.Select(m => Message.From(m)),
-				new AppendToStreamOptions(),
-				cancellationToken
-			);
-
-		/// <summary>
-		/// Appends events asynchronously to a stream. Messages are serialized using default or custom serialization configured through <see cref="KurrentDBClientSettings"/>
-		/// </summary>
-		/// <param name="dbClient"></param>
-		/// <param name="streamName">The name of the stream to append events to.</param>
+		/// <param name="expectedState">The expected <see cref="KurrentDB.Client.StreamState"/> of the stream to append to.</param>
 		/// <param name="messages">Messages to append to the stream.</param>
 		/// <param name="options">Optional settings for the append operation, e.g. expected stream position for optimistic concurrency check</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
@@ -508,41 +433,61 @@ namespace KurrentDB.Client {
 		public static Task<IWriteResult> AppendToStreamAsync(
 			this KurrentDBClient dbClient,
 			string streamName,
+			StreamState expectedState,
 			IEnumerable<object> messages,
-			AppendToStreamOptions options,
+			AppendToStreamOptions? options = null,
 			CancellationToken cancellationToken = default
 		)
 			=> dbClient.AppendToStreamAsync(
 				streamName,
+				expectedState,
 				messages.Select(m => Message.From(m)),
 				options,
 				cancellationToken
 			);
+
+		/// <summary>
+		/// Appends events asynchronously to a stream.
+		/// </summary>
+		/// <param name="dbClient"></param>
+		/// <param name="streamName">The name of the stream to append events to.</param>	
+		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream to append to.</param>
+		/// <param name="eventData">An <see cref="IEnumerable{EventData}"/> to append to the stream.</param>
+		/// <param name="configureOperationOptions">An <see cref="Action{KurrentDBClientOperationOptions}"/> to configure the operation's options.</param>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with Message for auto-serialization or method with options parameter for raw serialization"
+		)]
+		public static Task<IWriteResult> AppendToStreamAsync(
+			this KurrentDBClient dbClient,
+			string streamName,
+			StreamState expectedState,
+			IEnumerable<EventData> eventData,
+			Action<OperationOptions>? configureOperationOptions = null,
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default
+		) {
+			var operationOptions = new OperationOptions {
+				Deadline                  = deadline,
+				UserCredentials           = userCredentials,
+			};
+			configureOperationOptions?.Invoke(operationOptions);
+			
+			return dbClient.AppendToStreamAsync(
+				streamName,
+				expectedState,
+				eventData,
+				operationOptions,
+				cancellationToken
+			);
+		}
 	}
 
-	public class AppendToStreamRawOptions {
-		/// <summary>
-		/// The expected <see cref="ExpectedStreamState"/> of the stream to append to.
-		/// </summary>
-		public StreamState? ExpectedStreamState { get; set; }
-
-		/// <summary>
-		/// An <see cref="Action{KurrentDBClientOperationOptions}"/> to configure the operation's options.
-		/// </summary>
-		public Action<KurrentDBClientOperationOptions>? ConfigureOperationOptions { get; set; }
-
-		/// <summary>
-		/// Maximum time that the operation will be run
-		/// </summary>
-		public TimeSpan? Deadline { get; set; }
-
-		/// <summary>
-		/// The <see cref="UserCredentials"/> for the operation.
-		/// </summary>
-		public UserCredentials? UserCredentials { get; set; }
-	}
-
-	public class AppendToStreamOptions : AppendToStreamRawOptions {
+	public record AppendToStreamOptions : OperationOptions {
 		/// <summary>
 		/// Allows to customize or disable the automatic deserialization
 		/// </summary>

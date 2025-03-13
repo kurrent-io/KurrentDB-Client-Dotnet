@@ -9,11 +9,43 @@ namespace KurrentDB.Client {
 	///  A set of extension methods for an <see cref="KurrentDBClient"/>.
 	/// </summary>
 	public static class KurrentDBClientExtensions {
-		private static readonly JsonSerializerOptions SystemSettingsJsonSerializerOptions = new JsonSerializerOptions {
+		static readonly JsonSerializerOptions SystemSettingsJsonSerializerOptions = new JsonSerializerOptions {
 			Converters = {
 				SystemSettingsJsonConverter.Instance
 			},
 		};
+
+		/// <summary>
+		/// Writes <see cref="SystemSettings"/> to the $settings stream.
+		/// </summary>
+		/// <param name="dbClient"></param>
+		/// <param name="settings"></param>
+		/// <param name="options">Optional settings for the append operation, e.g. deadline, user credentials etc.</param>
+		/// <param name="cancellationToken"></param>
+		/// <returns></returns>
+		/// <exception cref="ArgumentNullException"></exception>
+		public static Task SetSystemSettingsAsync(
+			this KurrentDBClient dbClient,
+			SystemSettings settings,
+			OperationOptions? options = null,
+			CancellationToken cancellationToken = default
+		) {
+			if (dbClient == null) throw new ArgumentNullException(nameof(dbClient));
+
+			return dbClient.AppendToStreamAsync(
+				SystemStreams.SettingsStream,
+				StreamState.Any,
+				[
+					new EventData(
+						Uuid.NewUuid(),
+						SystemEventTypes.Settings,
+						JsonSerializer.SerializeToUtf8Bytes(settings, SystemSettingsJsonSerializerOptions)
+					)
+				],
+				options,
+				cancellationToken
+			);
+		}
 
 		/// <summary>
 		/// Writes <see cref="SystemSettings"/> to the $settings stream.
@@ -28,14 +60,25 @@ namespace KurrentDB.Client {
 		public static Task SetSystemSettingsAsync(
 			this KurrentDBClient dbClient,
 			SystemSettings settings,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+			TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default
+		) {
 			if (dbClient == null) throw new ArgumentNullException(nameof(dbClient));
-			return dbClient.AppendToStreamAsync(SystemStreams.SettingsStream, StreamState.Any,
-				new[] {
-					new EventData(Uuid.NewUuid(), SystemEventTypes.Settings,
-						JsonSerializer.SerializeToUtf8Bytes(settings, SystemSettingsJsonSerializerOptions))
-				}, deadline: deadline, userCredentials: userCredentials, cancellationToken: cancellationToken);
+
+			return dbClient.AppendToStreamAsync(
+				SystemStreams.SettingsStream,
+				StreamState.Any,
+				[
+					new EventData(
+						Uuid.NewUuid(),
+						SystemEventTypes.Settings,
+						JsonSerializer.SerializeToUtf8Bytes(settings, SystemSettingsJsonSerializerOptions)
+					)
+				],
+				new OperationOptions { Deadline = deadline, UserCredentials = userCredentials },
+				cancellationToken: cancellationToken
+			);
 		}
 
 		/// <summary>
@@ -57,14 +100,26 @@ namespace KurrentDB.Client {
 			IEnumerable<EventData> eventData,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+			CancellationToken cancellationToken = default
+		) {
 			if (dbClient == null) {
 				throw new ArgumentNullException(nameof(dbClient));
 			}
+
 			try {
-				var result = await dbClient.AppendToStreamAsync(streamName, expectedState, eventData,
-						options => options.ThrowOnAppendFailure = false, deadline, userCredentials, cancellationToken)
+				var result = await dbClient.AppendToStreamAsync(
+						streamName,
+						expectedState,
+						eventData,
+						new OperationOptions {
+							ThrowOnAppendFailure = false,
+							Deadline = deadline,
+							UserCredentials = userCredentials
+						},
+						cancellationToken
+					)
 					.ConfigureAwait(false);
+
 				return ConditionalWriteResult.FromWriteResult(result);
 			} catch (StreamDeletedException) {
 				return ConditionalWriteResult.StreamDeleted;

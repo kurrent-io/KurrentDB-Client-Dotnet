@@ -5,7 +5,8 @@ namespace KurrentDB.Client.Tests.Streams;
 
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Delete")]
-public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
+public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
+	: KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	static JsonDocument CustomMetadata { get; }
 
 	static SoftDeleteTests() {
@@ -209,7 +210,9 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 
 		Assert.Equal(SystemStreams.MetastreamOf(stream), ex.Stream);
 
-		await Assert.ThrowsAsync<StreamDeletedException>(() => Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents()));
+		await Assert.ThrowsAsync<StreamDeletedException>(
+			() => Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents())
+		);
 	}
 
 	[Fact]
@@ -247,7 +250,11 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 	public async Task allows_recreating_for_first_write_only_returns_wrong_expected_version() {
 		var stream = Fixture.GetStreamName();
 
-		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents(2));
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			Fixture.CreateTestEvents(2)
+		);
 
 		Assert.Equal(new(1), writeResult.NextExpectedStreamState);
 
@@ -265,7 +272,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			stream,
 			StreamState.NoStream,
 			Fixture.CreateTestEvents(),
-			options => options.ThrowOnAppendFailure = false
+			new OperationOptions { ThrowOnAppendFailure = false }
 		);
 
 		Assert.IsType<WrongExpectedVersionResult>(wrongExpectedVersionResult);
