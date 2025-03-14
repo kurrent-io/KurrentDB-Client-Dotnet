@@ -52,7 +52,7 @@ namespace KurrentDB.Client {
 				readReq,
 				Settings,
 				options,
-				_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
+				_messageSerializer.With(options.SerializationSettings),
 				cancellationToken
 			);
 		}
@@ -229,7 +229,7 @@ namespace KurrentDB.Client {
 				Settings,
 				options.Deadline,
 				options.UserCredentials,
-				_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
+				_messageSerializer.With(options.SerializationSettings),
 				cancellationToken
 			);
 		}

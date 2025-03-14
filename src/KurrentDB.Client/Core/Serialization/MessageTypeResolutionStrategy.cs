@@ -11,8 +11,7 @@ public interface IMessageTypeNamingStrategy {
 #else
 	bool TryResolveClrType(string messageTypeName, [NotNullWhen(true)] out Type? type);
 #endif
-	
-	
+
 #if NET48
 	bool TryResolveClrMetadataType(string messageTypeName, out Type? type);
 #else
@@ -20,7 +19,10 @@ public interface IMessageTypeNamingStrategy {
 #endif
 }
 
-public record MessageTypeNamingResolutionContext(string CategoryName);
+public record MessageTypeNamingResolutionContext(string CategoryName) {
+	public static MessageTypeNamingResolutionContext FromStreamName(string streamName) =>
+		new(streamName.Split('-').FirstOrDefault() ?? "no_stream_category");
+}
 
 class MessageTypeNamingStrategyWrapper(
 	IMessageTypeRegistry messageTypeRegistry,
@@ -66,9 +68,9 @@ class MessageTypeNamingStrategyWrapper(
 
 public class DefaultMessageTypeNamingStrategy(Type? defaultMetadataType) : IMessageTypeNamingStrategy {
 	readonly Type _defaultMetadataType = defaultMetadataType ?? typeof(TracingMetadata);
-	
+
 	public string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext) =>
-		$"{resolutionContext.CategoryName}-{messageType.FullName}"; 
+		$"{resolutionContext.CategoryName}-{messageType.FullName}";
 
 #if NET48
 	public bool TryResolveClrType(string messageTypeName, out Type? type) {
@@ -83,7 +85,7 @@ public class DefaultMessageTypeNamingStrategy(Type? defaultMetadataType) : IMess
 		}
 
 		var clrTypeName = messageTypeName[(categorySeparatorIndex + 1)..];
-		
+
 		type = TypeProvider.GetTypeByFullName(clrTypeName);
 
 		return type != null;

@@ -71,7 +71,7 @@ public class KurrentDBClientSerializationSettings {
 	/// });
 	/// </code>
 	/// </example>
-	public static KurrentDBClientSerializationSettings Default(
+	public static KurrentDBClientSerializationSettings Get(
 		Action<KurrentDBClientSerializationSettings>? configure = null
 	) {
 		var settings = new KurrentDBClientSerializationSettings();
@@ -277,6 +277,17 @@ public class KurrentDBClientSerializationSettings {
 	/// <returns>The current instance for method chaining.</returns>
 	public KurrentDBClientSerializationSettings UseMetadataType(Type type) {
 		DefaultMetadataType = type;
+
+		return this;
+	}
+	/// <summary>
+	/// Configures which serialization format (JSON or binary) is used by default when writing messages
+	/// where the content type isn't explicitly specified. The default content type is "application/json"
+	/// </summary>
+	/// <param name="contentType">The serialization format content type</param>
+	/// <returns>The current instance for method chaining.</returns>
+	public KurrentDBClientSerializationSettings UseContentType(ContentType contentType) {
+		DefaultContentType = contentType;
 
 		return this;
 	}

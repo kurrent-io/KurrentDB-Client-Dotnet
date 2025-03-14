@@ -12,6 +12,7 @@ using Kurrent.Diagnostics.Telemetry;
 using Kurrent.Diagnostics.Tracing;
 using static EventStore.Client.Streams.AppendResp.Types.WrongExpectedVersion;
 using static EventStore.Client.Streams.Streams;
+using static KurrentDB.Client.Core.Serialization.MessageTypeNamingResolutionContext;
 
 namespace KurrentDB.Client {
 	public partial class KurrentDBClient {
@@ -31,19 +32,17 @@ namespace KurrentDB.Client {
 			AppendToStreamOptions? options = null,
 			CancellationToken cancellationToken = default
 		) {
-			var serializationContext 
-				= new MessageSerializationContext(streamName, Settings.Serialization.DefaultContentType);
-
-			var messageSerializer = _messageSerializer.With(Settings.Serialization, options?.SerializationSettings);
-
-			var messageData = messageSerializer.Serialize(messages, serializationContext);
+			var messageSerializationContext = new MessageSerializationContext(FromStreamName(streamName));
+			
+			var messageData = _messageSerializer.With(options?.SerializationSettings)
+				.Serialize(messages, messageSerializationContext);
 
 			return AppendToStreamAsync(streamName, expectedState, messageData, options, cancellationToken);
 		}
 
 		/// <summary>
 		/// Appends events asynchronously to a stream using raw message data.
-		/// If you want to use auto-serialization, use overload with <see cref="KurrentDB.Client.Core.Serialization.Message"/>.</param>.
+		/// If you want to use auto-serialization, use overload with <see cref="Message"/>.</param>.
 		/// This method intends to cover low-level scenarios in which you want to have full control of the serialization mechanism.
 		/// </summary>
 		/// <param name="streamName">The name of the stream to append events to.</param>

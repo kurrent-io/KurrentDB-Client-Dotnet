@@ -269,7 +269,7 @@ namespace KurrentDB.Client {
 				new() { Options = readOptions },
 				Settings,
 				options.UserCredentials,
-				_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
+				_messageSerializer.With(options.SerializationSettings),
 				cancellationToken
 			);
 		}

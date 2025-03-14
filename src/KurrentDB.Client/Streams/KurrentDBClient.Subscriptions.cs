@@ -190,7 +190,7 @@ namespace KurrentDB.Client {
 			},
 			Settings,
 			options.UserCredentials,
-			_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
+			_messageSerializer.With(options.SerializationSettings),
 			cancellationToken
 		);
 
@@ -329,7 +329,7 @@ namespace KurrentDB.Client {
 			},
 			Settings,
 			options.UserCredentials,
-			_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
+			_messageSerializer.With(options.SerializationSettings),
 			cancellationToken
 		);
 
