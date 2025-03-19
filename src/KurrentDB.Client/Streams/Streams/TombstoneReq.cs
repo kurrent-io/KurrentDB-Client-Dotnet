@@ -9,6 +9,8 @@ namespace EventStore.Client.Streams {
 				Options.NoStream = new Empty();
 			} else if (expectedState == StreamState.StreamExists) {
 				Options.StreamExists = new Empty();
+			} else {
+				Options.Revision = (ulong)expectedState.ToInt64();
 			}
 
 			return this;

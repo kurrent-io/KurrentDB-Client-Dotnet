@@ -328,7 +328,7 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 		var messages = GenerateMessages();
 
 		var writeResult = await (kurrentDbClient ?? Fixture.Streams).AppendToStreamAsync(stream, messages);
-		Assert.Equal(new((ulong)messages.Count - 1), writeResult.NextExpectedStreamRevision);
+		Assert.Equal((ulong)messages.Count - 1, writeResult.NextExpectedStreamState);
 
 		return (stream, messages);
 	}
@@ -352,8 +352,8 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 				)
 		);
 
-		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamRevision.None, eventData);
-		Assert.Equal(new((ulong)messages.Count - 1), writeResult.NextExpectedStreamRevision);
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, eventData);
+		Assert.Equal((ulong)messages.Count - 1, writeResult.NextExpectedStreamState);
 
 		return (stream, messages);
 	}

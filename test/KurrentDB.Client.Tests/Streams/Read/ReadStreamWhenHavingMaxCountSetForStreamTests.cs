@@ -55,7 +55,7 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
-		await Fixture.Streams.SetStreamMetadataAsync(stream, new StreamRevision(0), new(4));
+		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(0), new(4));
 
 		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 100)
 			.Select(x => x.Event)
@@ -75,7 +75,7 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
-		await Fixture.Streams.SetStreamMetadataAsync(stream, new StreamRevision(0), new(2));
+		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(0), new(2));
 
 		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 100)
 			.Select(x => x.Event)
@@ -95,7 +95,7 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
-		await Fixture.Streams.SetStreamMetadataAsync(stream, new StreamRevision(0), new(4));
+		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(0), new(4));
 
 		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100)
 			.Select(x => x.Event)
@@ -115,7 +115,7 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
-		await Fixture.Streams.SetStreamMetadataAsync(stream, new StreamRevision(0), new(2));
+		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(0), new(2));
 
 		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100)
 			.Select(x => x.Event)
