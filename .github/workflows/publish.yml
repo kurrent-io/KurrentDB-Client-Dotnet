@@ -59,7 +59,7 @@ jobs:
         framework: [ net8.0, net9.0 ]
     services:
       esdb:
-        image: docker.kurrent.io/eventstore-ce/eventstoredb-ce:lts
+        image: docker.kurrent.io/kurrent-lts/kurrentdb:lts
         env:
           EVENTSTORE_INSECURE: true
           EVENTSTORE_MEM_DB: false
@@ -91,26 +91,24 @@ jobs:
   generate-certificates:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.inputs.ref || github.ref }}
-      - name: Generate certificates
-        run: |
-          mkdir -p certs
-          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-ca -out /tmp/ca
-          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-node -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/node -ip-addresses 127.0.0.1 -dns-names localhost
-          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-user -username admin -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/user-admin
-          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-user -username invalid -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/user-invalid
-      - name: Set permissions on certificates
-        run: |
-          sudo chown -R $USER:$USER certs
-          sudo chmod -R 755 certs
-      - name: Upload certificates
-        uses: actions/upload-artifact@v4
-        with:
-          name: certs
-          path: certs
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Generate certificates
+      run: |
+        mkdir -p certs
+        docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-ca -out /tmp/ca
+        docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-node -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/node -ip-addresses 127.0.0.1 -dns-names localhost
+        docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-user -username admin -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/user-admin
+        docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-user -username invalid -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/user-invalid
+    - name: Set permissions on certificates
+      run: |
+        sudo chown -R $USER:$USER certs
+        sudo chmod -R 755 certs
+    - name: Upload certificates
+      uses: actions/upload-artifact@v4
+      with:
+        name: certs
+        path: certs
 
   test:
     needs: generate-certificates

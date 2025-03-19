@@ -2,23 +2,17 @@ name: Build
 
 on:
   workflow_call:
-    secrets:
-      CLOUDSMITH_CICD_USER:
-        required: false
-      CLOUDSMITH_CICD_TOKEN:
-        required: false
     inputs:
-      docker-tag:
+      kurrentdb-tag:
         required: true
         type: string
-      docker-image:
-        required: false
-        type: string
-        default: eventstore-ce/eventstoredb-ce
       test:
         required: true
         type: string
-
+env:
+  KURRENTDB_TAG: ${{ fromJSON(vars.KURRENTDB_DOCKER_IMAGES)[inputs.kurrentdb-tag].tag}}
+  KURRENTDB_IMAGE: ${{ fromJSON(vars.KURRENTDB_DOCKER_IMAGES)[inputs.kurrentdb-tag].image}}
+  KURRENTDB_REGISTRY: ${{ fromJSON(vars.KURRENTDB_DOCKER_IMAGES)[inputs.kurrentdb-tag].registry}}
 jobs:
   test:
     timeout-minutes: 20
@@ -30,39 +24,42 @@ jobs:
         configuration: [ release ]
     runs-on: ${{ matrix.os }}
     name: ${{ inputs.test }} (${{ matrix.os }}, ${{ matrix.framework }})
-    env:
-      CLOUDSMITH_CICD_USER: ${{ secrets.CLOUDSMITH_CICD_USER }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Login to Cloudsmith
-        if: ${{ env.CLOUDSMITH_CICD_USER != '' }}
-        uses: docker/login-action@v3
-        with:
-          registry: docker.kurrent.io
-          username: ${{ secrets.CLOUDSMITH_CICD_USER }}
-          password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
-      - name: Pull KurrentDB Image
-        shell: bash
-        run: |
-          docker pull docker.kurrent.io/${{ inputs.docker-image }}:${{ inputs.docker-tag }}
-      - name: Install dotnet SDKs
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-      - name: Run Tests
-        shell: bash
-        env:
-          ES_DOCKER_TAG: ${{ inputs.docker-tag }}
-          ES_DOCKER_REGISTRY: docker.kurrent.io/${{ inputs.docker-image }}
-        run: |
-          sudo ./gencert.sh
-          dotnet test --configuration ${{ matrix.configuration }} --blame \
-            --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
-            --framework ${{ matrix.framework }} \
-            --filter "Category=Target:${{ inputs.test }}" \
-            test/KurrentDB.Client.Tests
+    - name: Echo docker details
+      shell: bash
+      run: |
+        echo "${{env.KURRENTDB_REGISTRY}}"
+        echo "${{env.KURRENTDB_IMAGE}}"
+        echo "${{env.KURRENTDB_TAG}}"
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Login to Cloudsmith
+      uses: docker/login-action@v3
+      with:
+        registry: docker.kurrent.io
+        username: ${{ secrets.CLOUDSMITH_CICD_USER }}
+        password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
+    - name: Pull KurrentDB Image
+      shell: bash
+      run: |
+        docker pull ${{ env.KURRENTDB_REGISTRY }}/${{ env.KURRENTDB_IMAGE}}:${{ env.KURRENTDB_TAG}}
+    - name: Install dotnet SDKs
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: |
+          7.0.x
+          8.0.x
+    - name: Run Tests
+      shell: bash
+      env:
+        ES_DOCKER_TAG: ${{env.KURRENTDB_TAG}}
+        ES_DOCKER_REGISTRY: ${{env.KURRENTDB_REGISTRY}}/${{env.KURRENTDB_IMAGE}}
+      run: |
+        sudo ./gencert.sh
+        dotnet test --configuration ${{ matrix.configuration }} --blame \
+          --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
+          --framework ${{ matrix.framework }} \
+          --filter "Category=Target:${{ inputs.test }}" \
+          test/KurrentDB.Client.Tests
