@@ -25,7 +25,7 @@ public class SubscribeToAllFilterTests(ITestOutputHelper output, KurrentDBTempor
 			SystemStreams.AllStream,
 			StreamState.Any,
 			new(acl: new(SystemRoles.All)),
-			userCredentials: TestCredentials.Root
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 		);
 
 		var appearedEvents = new List<EventRecord>();
@@ -87,7 +87,7 @@ public class SubscribeToAllFilterTests(ITestOutputHelper output, KurrentDBTempor
 			SystemStreams.AllStream,
 			StreamState.Any,
 			new(acl: new(SystemRoles.All)),
-			userCredentials: TestCredentials.Root
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 		);
 
 		foreach (var e in eventsToSkip) {

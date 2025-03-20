@@ -202,7 +202,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 					SystemStreams.AllStream,
 					StreamState.Any,
 					new(acl: new(SystemRoles.All)),
-					userCredentials: TestCredentials.Root
+					new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 				);
 
 				await Streams.AppendToStreamAsync($"SubscriptionsFixture-Noise-{Guid.NewGuid():N}", StreamState.NoStream, CreateTestEvents(10));

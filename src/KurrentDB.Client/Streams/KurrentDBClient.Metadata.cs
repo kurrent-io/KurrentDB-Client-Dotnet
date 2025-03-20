@@ -67,10 +67,10 @@ namespace KurrentDB.Client {
 			string streamName,
 			StreamState expectedState,
 			StreamMetadata metadata,
-			SetStreamMetadata? operationOptions = null,
+			SetStreamMetadataOptions? operationOptions = null,
 			CancellationToken cancellationToken = default
 		) {
-			operationOptions ??= new SetStreamMetadata();
+			operationOptions ??= new SetStreamMetadataOptions();
 			operationOptions.With(Settings.OperationOptions);
 
 			return SetStreamMetadataInternal(
@@ -88,7 +88,7 @@ namespace KurrentDB.Client {
 		async Task<IWriteResult> SetStreamMetadataInternal(
 			StreamMetadata metadata,
 			AppendReq appendReq,
-			SetStreamMetadata operationOptions,
+			SetStreamMetadataOptions operationOptions,
 			CancellationToken cancellationToken
 		) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
@@ -117,6 +117,7 @@ namespace KurrentDB.Client {
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
+		[Obsolete("Use method with OperationOptions parameter")]
 		public static Task<StreamMetadataResult> GetStreamMetadataAsync(
 			this KurrentDBClient dbClient,
 			string streamName,
@@ -142,18 +143,19 @@ namespace KurrentDB.Client {
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
+		[Obsolete("Use method with SetStreamMetadataOptions parameter")]
 		public static Task<IWriteResult> SetStreamMetadataAsync(
 			this KurrentDBClient dbClient,
 			string streamName,
 			StreamState expectedState,
 			StreamMetadata metadata,
-			Action<SetStreamMetadata>? configureOperationOptions = null,
+			Action<SetStreamMetadataOptions>? configureOperationOptions = null,
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) {
 			var operationOptions =
-				new SetStreamMetadata { Deadline = deadline, UserCredentials = userCredentials };
+				new SetStreamMetadataOptions { Deadline = deadline, UserCredentials = userCredentials };
 			configureOperationOptions?.Invoke(operationOptions);
 
 			return dbClient.SetStreamMetadataAsync(
@@ -166,5 +168,5 @@ namespace KurrentDB.Client {
 		}
 	}
 
-	public class SetStreamMetadata : AppendToStreamOptions;
+	public class SetStreamMetadataOptions : AppendToStreamOptions;
 }

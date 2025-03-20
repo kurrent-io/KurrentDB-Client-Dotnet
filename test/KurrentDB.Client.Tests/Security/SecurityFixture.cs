@@ -52,42 +52,42 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			NoAclStream,
 			StreamState.NoStream,
 			new(),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
 			ReadStream,
 			StreamState.NoStream,
 			new(acl: new(TestCredentials.TestUser1.Username)),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
 			WriteStream,
 			StreamState.NoStream,
 			new(acl: new(writeRole: TestCredentials.TestUser1.Username)),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
 			MetaReadStream,
 			StreamState.NoStream,
 			new(acl: new(metaReadRole: TestCredentials.TestUser1.Username)),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
 			MetaWriteStream,
 			StreamState.NoStream,
 			new(acl: new(metaWriteRole: TestCredentials.TestUser1.Username)),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
 			AllStream,
 			StreamState.Any,
 			new(acl: new(TestCredentials.TestUser1.Username)),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
@@ -101,7 +101,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 					metaReadRole: TestCredentials.TestUser1.Username
 				)
 			),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
@@ -115,7 +115,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 					metaReadRole: SystemRoles.Admins
 				)
 			),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
@@ -129,7 +129,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 					metaReadRole: SystemRoles.All
 				)
 			),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
@@ -143,7 +143,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 					metaReadRole: SystemRoles.All
 				)
 			),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 	}
 
@@ -223,7 +223,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 	public Task<StreamMetadataResult> ReadMeta(string streamId, UserCredentials? userCredentials = null) =>
-		Streams.GetStreamMetadataAsync(streamId, userCredentials: userCredentials)
+		Streams.GetStreamMetadataAsync(streamId, new OperationOptions { UserCredentials = userCredentials })
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 	public Task<IWriteResult> WriteMeta(
@@ -240,7 +240,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 						metaReadRole: role
 					)
 				),
-				userCredentials: userCredentials
+				new SetStreamMetadataOptions { UserCredentials = userCredentials }
 			)
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
@@ -269,7 +269,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 				streamId,
 				StreamState.NoStream,
 				metadataPermanent,
-				userCredentials: TestCredentials.TestAdmin
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 			)
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 

@@ -1,5 +1,4 @@
 using KurrentDB.Client.Tests.TestNode;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
@@ -24,7 +23,7 @@ public class SubscribeToAllFilterObsoleteTests(ITestOutputHelper output, Kurrent
 			SystemStreams.AllStream,
 			StreamState.Any,
 			new(acl: new(SystemRoles.All)),
-			userCredentials: TestCredentials.Root
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 		);
 
 		var appearedEvents = new List<EventRecord>();
@@ -86,14 +85,14 @@ public class SubscribeToAllFilterObsoleteTests(ITestOutputHelper output, Kurrent
 			SystemStreams.AllStream,
 			StreamState.Any,
 			new(acl: new(SystemRoles.All)),
-			userCredentials: TestCredentials.Root
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 		);
 
 		foreach (var e in eventsToSkip) {
 			await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}_{Guid.NewGuid():n}",
 				StreamState.NoStream,
-				new[] { e }
+				[e]
 			);
 		}
 
@@ -101,7 +100,7 @@ public class SubscribeToAllFilterObsoleteTests(ITestOutputHelper output, Kurrent
 			var result = await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}_{Guid.NewGuid():n}",
 				StreamState.NoStream,
-				new[] { e }
+				[e]
 			);
 
 			eventToCaptureResult ??= result;

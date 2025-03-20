@@ -449,7 +449,8 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
 
-		var filterOptions = new SubscriptionFilterOptions(StreamFilter.Prefix($"$et-{KurrentDBPermanentFixture.TestEventType}"));
+		var filterOptions =
+			new SubscriptionFilterOptions(StreamFilter.Prefix($"$et-{KurrentDBPermanentFixture.TestEventType}"));
 
 		await using var subscription =
 			Fixture.Streams.SubscribeToAll(FromAll.Start, true, filterOptions: filterOptions);
@@ -467,7 +468,9 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 		async Task Subscribe() {
 			while (await enumerator.MoveNextAsync()) {
 				if (enumerator.Current is not StreamMessage.Event(var resolvedEvent) ||
-				    !resolvedEvent.OriginalEvent.EventStreamId.StartsWith($"$et-{KurrentDBPermanentFixture.TestEventType}")) {
+				    !resolvedEvent.OriginalEvent.EventStreamId.StartsWith(
+					    $"$et-{KurrentDBPermanentFixture.TestEventType}"
+				    )) {
 					continue;
 				}
 
@@ -487,10 +490,14 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 					SystemStreams.AllStream,
 					StreamState.NoStream,
 					new(acl: new(SystemRoles.All)),
-					userCredentials: TestCredentials.Root
+					new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 				);
 
-				await Streams.AppendToStreamAsync($"SubscriptionsFixture-Noise-{Guid.NewGuid():N}", StreamState.NoStream, CreateTestEvents(10));
+				await Streams.AppendToStreamAsync(
+					$"SubscriptionsFixture-Noise-{Guid.NewGuid():N}",
+					StreamState.NoStream,
+					CreateTestEvents(10)
+				);
 			};
 		}
 	}

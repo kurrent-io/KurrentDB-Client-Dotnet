@@ -14,7 +14,7 @@ public class ReadAllEventsFixture : KurrentDBTemporaryFixture {
 				SystemStreams.AllStream,
 				StreamState.NoStream,
 				new(acl: new(SystemRoles.All)),
-				userCredentials: TestCredentials.Root
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 			);
 
 			Events = CreateTestEvents(20)

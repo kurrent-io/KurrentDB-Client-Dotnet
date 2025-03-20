@@ -112,77 +112,77 @@ public class StreamSecurityInheritanceTests(ITestOutputHelper output, StreamSecu
 				"user-no-acl",
 				StreamState.NoStream,
 				new(),
-				userCredentials: TestCredentials.TestAdmin
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 			);
 
 			await Streams.SetStreamMetadataAsync(
 				"user-w-diff",
 				StreamState.NoStream,
 				new(acl: new(writeRole: "user2")),
-				userCredentials: TestCredentials.TestAdmin
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 			);
 
 			await Streams.SetStreamMetadataAsync(
 				"user-w-multiple",
 				StreamState.NoStream,
 				new(acl: new(writeRoles: new[] { "user1", "user2" })),
-				userCredentials: TestCredentials.TestAdmin
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 			);
 
 			await Streams.SetStreamMetadataAsync(
 				"user-w-restricted",
 				StreamState.NoStream,
 				new(acl: new(writeRoles: Array.Empty<string>())),
-				userCredentials: TestCredentials.TestAdmin
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 			);
 
 			await Streams.SetStreamMetadataAsync(
 				"user-w-all",
 				StreamState.NoStream,
 				new(acl: new(writeRole: SystemRoles.All)),
-				userCredentials: TestCredentials.TestAdmin
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 			);
 
 			await Streams.SetStreamMetadataAsync(
 				"user-r-restricted",
 				StreamState.NoStream,
 				new(acl: new("user1")),
-				userCredentials: TestCredentials.TestAdmin
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 			);
 
 			await Streams.SetStreamMetadataAsync(
 				"$sys-no-acl",
 				StreamState.NoStream,
 				new(),
-				userCredentials: TestCredentials.TestAdmin
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 			);
 
 			await Streams.SetStreamMetadataAsync(
 				"$sys-w-diff",
 				StreamState.NoStream,
 				new(acl: new(writeRole: "user2")),
-				userCredentials: TestCredentials.TestAdmin
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 			);
 
 			await Streams.SetStreamMetadataAsync(
 				"$sys-w-multiple",
 				StreamState.NoStream,
 				new(acl: new(writeRoles: new[] { "user1", "user2" })),
-				userCredentials: TestCredentials.TestAdmin
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 			);
 
 			await Streams.SetStreamMetadataAsync(
 				"$sys-w-restricted",
 				StreamState.NoStream,
 				new(acl: new(writeRoles: Array.Empty<string>())),
-				userCredentials: TestCredentials.TestAdmin
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 			);
 
 			await Streams.SetStreamMetadataAsync(
 				"$sys-w-all",
 				StreamState.NoStream,
 				new(acl: new(writeRole: SystemRoles.All)),
-				userCredentials: TestCredentials.TestAdmin
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 			);
 		}
 	}
