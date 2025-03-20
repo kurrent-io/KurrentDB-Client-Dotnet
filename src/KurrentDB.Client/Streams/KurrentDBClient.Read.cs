@@ -28,16 +28,17 @@ namespace KurrentDB.Client {
 					ReadDirection = options.Direction switch {
 						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
 						Direction.Forwards  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
-						_                   => throw InvalidOption(options.Direction)
+						null  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
+						_                   => throw InvalidOption(options.Direction.Value)
 					},
-					ResolveLinks = options.ResolveLinkTos,
+					ResolveLinks = options.ResolveLinkTos ?? false,
 					All = new() {
 						Position = new() {
-							CommitPosition  = options.Position.CommitPosition,
-							PreparePosition = options.Position.PreparePosition
+							CommitPosition  = (options.Position ?? Position.Start).CommitPosition,
+							PreparePosition = (options.Position ?? Position.Start).PreparePosition
 						}
 					},
-					Count         = (ulong)options.MaxCount,
+					Count         = (ulong)(options.MaxCount ?? long.MaxValue),
 					UuidOption    = new() { Structured    = new() },
 					ControlOption = new() { Compatibility = 1 },
 					Filter        = GetFilterOptions(options.Filter)
@@ -213,14 +214,15 @@ namespace KurrentDB.Client {
 						ReadDirection = options.Direction switch {
 							Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
 							Direction.Forwards  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
-							_                   => throw InvalidOption(options.Direction)
+							null                => ReadReq.Types.Options.Types.ReadDirection.Forwards,
+							_                   => throw InvalidOption(options.Direction.Value)
 						},
-						ResolveLinks = options.ResolveLinkTos,
+						ResolveLinks = options.ResolveLinkTos ?? false,
 						Stream = ReadReq.Types.Options.Types.StreamOptions.FromStreamNameAndRevision(
 							streamName,
-							options.StreamPosition
+							options.StreamPosition ?? StreamPosition.Start
 						),
-						Count         = (ulong)options.MaxCount,
+						Count         = (ulong)(options.MaxCount ?? long.MaxValue),
 						UuidOption    = new() { Structured = new() },
 						NoFilter      = new(),
 						ControlOption = new() { Compatibility = 1 }
@@ -443,14 +445,14 @@ namespace KurrentDB.Client {
 	/// </summary>
 	public class ReadAllOptions : OperationOptions {
 		/// <summary>
-		/// The <see cref="Direction"/> in which to read.
+		/// The <see cref="Direction"/> in which to read. When not provided Forwards is used.
 		/// </summary>
-		public Direction Direction { get; set; } = Direction.Forwards;
+		public Direction? Direction { get; set; }
 
 		/// <summary>
-		/// The <see cref="Position"/> to start reading from.
+		/// The <see cref="Position"/> to start reading from. When not provided Start is used.
 		/// </summary>
-		public Position Position { get; set; } = Position.Start;
+		public Position? Position { get; set; }
 
 		/// <summary>
 		/// The <see cref="IEventFilter"/> to apply.
@@ -458,14 +460,14 @@ namespace KurrentDB.Client {
 		public IEventFilter? Filter { get; set; }
 
 		/// <summary>
-		/// The number of events to read from the stream.
+		/// The number of events to read from the stream. When not provided, no limit is set.
 		/// </summary>
-		public long MaxCount { get; set; } = long.MaxValue;
+		public long? MaxCount { get; set; }
 
 		/// <summary>
-		/// Whether to resolve LinkTo events automatically.
+		/// Whether to resolve LinkTo events automatically. When not provided, false is used.
 		/// </summary>
-		public bool ResolveLinkTos { get; set; }
+		public bool? ResolveLinkTos { get; set; }
 
 		/// <summary>
 		/// Allows to customize or disable the automatic deserialization
@@ -476,7 +478,7 @@ namespace KurrentDB.Client {
 			new ReadAllOptions();
 
 		public ReadAllOptions Forwards() {
-			Direction = Direction.Forwards;
+			Direction = KurrentDB.Client.Direction.Forwards;
 
 			return this;
 		}
@@ -488,7 +490,7 @@ namespace KurrentDB.Client {
 		}
 
 		public ReadAllOptions Backwards() {
-			Direction = Direction.Backwards;
+			Direction = KurrentDB.Client.Direction.Backwards;
 
 			return this;
 		}
@@ -500,10 +502,10 @@ namespace KurrentDB.Client {
 		}
 
 		public ReadAllOptions FromStart() =>
-			From(Position.Start);
+			From(KurrentDB.Client.Position.Start);
 
 		public ReadAllOptions FromEnd() =>
-			From(Position.End);
+			From(KurrentDB.Client.Position.End);
 
 		public ReadAllOptions WithMaxCount(long maxCount) {
 			MaxCount = maxCount;
@@ -539,22 +541,22 @@ namespace KurrentDB.Client {
 		/// <summary>
 		/// The <see cref="Direction"/> in which to read.
 		/// </summary>
-		public Direction Direction { get; set; } = Direction.Forwards;
+		public Direction? Direction { get; set; }
 
 		/// <summary>
 		/// The <see cref="Client.StreamRevision"/> to start reading from.
 		/// </summary>
-		public StreamPosition StreamPosition { get; set; } = StreamPosition.Start;
+		public StreamPosition? StreamPosition { get; set; }
 
 		/// <summary>
 		/// The number of events to read from the stream.
 		/// </summary>
-		public long MaxCount { get; set; } = long.MaxValue;
+		public long? MaxCount { get; set; }
 
 		/// <summary>
 		/// Whether to resolve LinkTo events automatically.
 		/// </summary>
-		public bool ResolveLinkTos { get; set; }
+		public bool? ResolveLinkTos { get; set; }
 
 		/// <summary>
 		/// Allows to customize or disable the automatic deserialization
@@ -565,13 +567,13 @@ namespace KurrentDB.Client {
 			new ReadStreamOptions();
 
 		public ReadStreamOptions Forwards() {
-			Direction = Direction.Forwards;
+			Direction = KurrentDB.Client.Direction.Forwards;
 
 			return this;
 		}
 
 		public ReadStreamOptions Backwards() {
-			Direction = Direction.Backwards;
+			Direction = KurrentDB.Client.Direction.Backwards;
 
 			return this;
 		}
@@ -583,10 +585,10 @@ namespace KurrentDB.Client {
 		}
 
 		public ReadStreamOptions FromStart() =>
-			From(StreamPosition.Start);
+			From(KurrentDB.Client.StreamPosition.Start);
 
 		public ReadStreamOptions FromEnd() =>
-			From(StreamPosition.End);
+			From(KurrentDB.Client.StreamPosition.End);
 
 		public ReadStreamOptions WithMaxCount(long maxCount) {
 			MaxCount = maxCount;
