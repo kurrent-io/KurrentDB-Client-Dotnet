@@ -57,6 +57,7 @@ jobs:
       env:
         ES_DOCKER_TAG: ${{env.KURRENTDB_TAG}}
         ES_DOCKER_REGISTRY: ${{env.KURRENTDB_REGISTRY}}/${{env.KURRENTDB_IMAGE}}
+        KURRENTDB_LICENSE_KEY: ${{ secrets.KURRENTDB_TEST_LICENSE_KEY }}
       run: |
         sudo ./gencert.sh
         dotnet test --configuration ${{ matrix.configuration }} --blame \

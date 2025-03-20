@@ -46,7 +46,7 @@ jobs:
         framework: [ net8.0 ]
     services:
       esdb:
-        image: docker.kurrent.io/kurrent-lts/kurrentdb:lts
+        image: docker.kurrent.io/eventstore/eventstoredb-ee:lts
         env:
           EVENTSTORE_INSECURE: true
           EVENTSTORE_MEM_DB: false
