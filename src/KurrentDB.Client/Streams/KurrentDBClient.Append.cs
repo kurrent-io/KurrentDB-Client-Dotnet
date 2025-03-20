@@ -33,7 +33,7 @@ namespace KurrentDB.Client {
 			CancellationToken cancellationToken = default
 		) {
 			var messageSerializationContext = new MessageSerializationContext(FromStreamName(streamName));
-			
+
 			var messageData = _messageSerializer.With(options?.SerializationSettings)
 				.Serialize(messages, messageSerializationContext);
 
@@ -507,10 +507,11 @@ namespace KurrentDB.Client {
 		/// </summary>
 		/// <returns></returns>
 		public void With(KurrentDBClientOperationOptions clientOperationOptions) {
-			ThrowOnAppendFailure = clientOperationOptions.ThrowOnAppendFailure;
-			BatchAppendSize      = clientOperationOptions.BatchAppendSize;
+			ThrowOnAppendFailure ??= clientOperationOptions.ThrowOnAppendFailure;
+
+			BatchAppendSize ??= clientOperationOptions.BatchAppendSize;
 		}
-		
+
 		/// <summary>
 		/// Allows to customize or disable the automatic deserialization
 		/// </summary>

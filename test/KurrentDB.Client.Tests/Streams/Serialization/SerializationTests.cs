@@ -40,12 +40,12 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 			.ReadStreamAsync(stream)
 			.DeserializedMessages()
 			.ToListAsync();
-		
+
 		List<object> deserializedDomainMessages = await Fixture.Streams
 			.ReadStreamAsync(stream)
 			.DeserializedData()
 			.ToListAsync();
-		
+
 		Assert.Equal(messages, deserializedMessages);
 		Assert.Equal(domainMessages, deserializedDomainMessages);
 	}
@@ -97,8 +97,10 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 		var (stream, expected) = await AppendEventsUsingAutoSerialization();
 
 		// When
+#pragma warning disable CS0618 // Type or member is obsolete
 		var resolvedEvents = await Fixture.Streams
 			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+#pragma warning restore CS0618 // Type or member is obsolete
 			.ToListAsync();
 
 		// Then
@@ -106,13 +108,37 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 	}
 
 	[RetryFact]
-	public async Task read_all_without_options_does_NOT_deserialize_resolved_message() {
+	public async Task read_stream_with_disabled_autoserialization_does_NOT_deserialize_resolved_message() {
 		// Given
 		var (stream, expected) = await AppendEventsUsingAutoSerialization();
 
 		// When
 		var resolvedEvents = await Fixture.Streams
-			.ReadAllAsync(Direction.Forwards, Position.Start, StreamFilter.Prefix(stream))
+			.ReadStreamAsync(
+				stream,
+				new ReadStreamOptions {
+					SerializationSettings = OperationSerializationSettings.Disabled
+				}
+			)
+			.ToListAsync();
+
+		// Then
+		AssertThatReadEvents(AreNotDeserialized, expected, resolvedEvents);
+	}
+
+	[RetryFact]
+	public async Task read_all_with_disabled_autoserialization_does_NOT_deserialize_resolved_message() {
+		// Given
+		var (stream, expected) = await AppendEventsUsingAutoSerialization();
+
+		// When
+		var resolvedEvents = await Fixture.Streams
+			.ReadAllAsync(
+				new ReadAllOptions {
+					Filter                = StreamFilter.Prefix(stream),
+					SerializationSettings = OperationSerializationSettings.Disabled
+				}
+			)
 			.ToListAsync();
 
 		// Then

@@ -9,17 +9,25 @@ namespace KurrentDB.Client.Tests;
 [Trait("Category", "Operation:Read")]
 [Trait("Category", "Operation:Read:Forwards")]
 [Trait("Category", "Database:Dedicated")]
-public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFixture fixture) : KurrentTemporaryTests<ReadAllEventsFixture>(output, fixture) {
+public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFixture fixture)
+	: KurrentTemporaryTests<ReadAllEventsFixture>(output, fixture) {
 	[Fact]
 	public async Task return_empty_if_reading_from_end() {
-		var result = await Fixture.Streams.ReadAllAsync(Direction.Forwards, Position.End, 1).CountAsync();
+		var result = await Fixture.Streams.ReadAllAsync(
+			new ReadAllOptions {
+				Direction = Direction.Forwards,
+				Position  = Position.End,
+				MaxCount  = 1
+			}
+		).CountAsync();
+
 		result.ShouldBe(0);
 	}
 
 	[Fact]
 	public async Task return_partial_slice_if_not_enough_events() {
 		var sliceSize = Fixture.ExpectedEvents.Length * 2;
-		var result    = await Fixture.Streams.ReadAllAsync(Direction.Forwards, Position.Start, sliceSize).ToArrayAsync();
+		var result    = await Fixture.Streams.ReadAllAsync(new ReadAllOptions { MaxCount = sliceSize }).ToArrayAsync();
 		result.Length.ShouldBeLessThan(sliceSize);
 	}
 
@@ -27,7 +35,7 @@ public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFi
 	public async Task return_events_in_correct_order_compared_to_written() {
 		// TODO SS: this test must be fixed to deterministically read the expected events regardless of how many already exist. reading all for now...
 		var result = await Fixture.Streams
-			.ReadAllAsync(Direction.Forwards, Position.Start)
+			.ReadAllAsync()
 			.Where(x => x.OriginalStreamId == Fixture.ExpectedStreamName)
 			.ToBinaryData();
 
@@ -37,7 +45,7 @@ public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFi
 	[Fact]
 	public async Task return_single_event() {
 		var result = await Fixture.Streams
-			.ReadAllAsync(Direction.Forwards, Position.Start, 1)
+			.ReadAllAsync(new ReadAllOptions { MaxCount = 1 })
 			.ToArrayAsync();
 
 		result.ShouldHaveSingleItem();
@@ -47,7 +55,7 @@ public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFi
 	public async Task max_count_is_respected() {
 		var maxCount = Fixture.ExpectedEvents.Length / 2;
 		var result = await Fixture.Streams
-			.ReadAllAsync(Direction.Forwards, Position.Start, maxCount)
+			.ReadAllAsync(new ReadAllOptions { MaxCount = maxCount })
 			.Take(Fixture.ExpectedEvents.Length)
 			.ToArrayAsync();
 
@@ -57,7 +65,7 @@ public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFi
 	[Fact]
 	public async Task reads_all_events_by_default() {
 		var count = await Fixture.Streams
-			.ReadAllAsync(Direction.Forwards, Position.Start)
+			.ReadAllAsync()
 			.CountAsync();
 
 		Assert.True(count >= Fixture.ExpectedEvents.Length);
@@ -66,7 +74,7 @@ public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFi
 	[Fact]
 	public async Task stream_found() {
 		var count = await Fixture.Streams
-			.ReadAllAsync(Direction.Forwards, Position.Start)
+			.ReadAllAsync()
 			.Where(x => x.OriginalStreamId == Fixture.ExpectedStreamName)
 			.CountAsync();
 
@@ -102,10 +110,8 @@ public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFi
 		);
 
 		var events = await Fixture.Streams.ReadStreamAsync(
-				Direction.Forwards,
 				linkedStream,
-				StreamPosition.Start,
-				resolveLinkTos: true
+				new ReadStreamOptions { ResolveLinkTos = true }
 			)
 			.ToArrayAsync();
 
@@ -115,10 +121,7 @@ public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFi
 	[Fact]
 	public async Task enumeration_all_referencing_messages_twice_does_not_throw() {
 		var result = Fixture.Streams.ReadAllAsync(
-			Direction.Forwards,
-			Position.Start,
-			32,
-			userCredentials: TestCredentials.Root
+			new ReadAllOptions { MaxCount = 32, UserCredentials = TestCredentials.Root }
 		);
 
 		_ = result.Messages;
@@ -128,10 +131,7 @@ public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFi
 	[Fact]
 	public async Task enumeration_all_enumerating_messages_twice_throws() {
 		var result = Fixture.Streams.ReadAllAsync(
-			Direction.Forwards,
-			Position.Start,
-			32,
-			userCredentials: TestCredentials.Root
+			new ReadAllOptions { MaxCount = 32, UserCredentials = TestCredentials.Root }
 		);
 
 		await result.Messages.ToArrayAsync();
@@ -145,7 +145,12 @@ public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFi
 	[Fact]
 	public async Task filter_events_by_type() {
 		var result = await Fixture.Streams
-			.ReadAllAsync(Direction.Forwards, Position.Start, EventTypeFilter.Prefix(KurrentDBTemporaryFixture.AnotherTestEventTypePrefix))
+			.ReadAllAsync(
+				new ReadAllOptions
+				{
+					Filter = EventTypeFilter.Prefix(KurrentDBTemporaryFixture.AnotherTestEventTypePrefix)
+				}
+			)
 			.ToListAsync();
 
 		result.ForEach(x => x.Event.EventType.ShouldStartWith(KurrentDBTemporaryFixture.AnotherTestEventTypePrefix));

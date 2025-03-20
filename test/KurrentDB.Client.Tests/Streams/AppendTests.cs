@@ -1,4 +1,3 @@
-using KurrentDB.Client;
 using Grpc.Core;
 using Humanizer;
 
@@ -24,7 +23,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		}
 
 		await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, iterations)
+			.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = iterations })
 			.ShouldThrowAsync<StreamNotFoundException>(ex => ex.Stream.ShouldBe(stream));
 	}
 
@@ -44,7 +43,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		}
 
 		await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, iterations)
+			.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = iterations })
 			.ShouldThrowAsync<StreamNotFoundException>(ex => ex.Stream.ShouldBe(stream));
 	}
 
@@ -60,7 +59,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 
 		Assert.Equal(new(0), writeResult.NextExpectedStreamState);
 
-		var count = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 2)
+		var count = await Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = 2 })
 			.CountAsync();
 
 		Assert.Equal(1, count);
@@ -472,7 +471,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			)
 			.ShouldThrowAsync<Exception>();
 
-		var state = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, streamName, StreamPosition.Start)
+		var state = await Fixture.Streams.ReadStreamAsync(streamName)
 			.ReadState;
 
 		state.ShouldBe(ReadState.StreamNotFound);
@@ -521,7 +520,8 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(1));
 
 		var count = await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
+			.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = events.Length + 1 })
+			.CountAsync();
 
 		Assert.Equal(events.Length, count);
 	}
@@ -536,8 +536,8 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, events.Take(1));
 
 		var count = await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
-
+			.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = events.Length + 1 })
+			.CountAsync();
 		Assert.Equal(events.Length, count);
 	}
 
@@ -551,8 +551,9 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(5), events.Take(1));
 
 		var count = await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 2).CountAsync();
-
+			.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = events.Length + 2 })
+			.CountAsync();
+		
 		Assert.Equal(events.Length + 1, count);
 	}
 
@@ -628,8 +629,9 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(0), events.Take(1));
 
 		var count = await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 2).CountAsync();
-
+			.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = events.Length + 2 })
+			.CountAsync();
+		
 		Assert.Equal(events.Length + 1, count);
 	}
 
@@ -644,8 +646,8 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, events.Take(1));
 
 		var count = await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
-
+			.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = events.Length + 1 })
+			.CountAsync();
 		Assert.Equal(events.Length, count);
 	}
 
@@ -659,8 +661,8 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(1));
 
 		var count = await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
-
+			.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = events.Length + 1 })
+			.CountAsync();
 		Assert.Equal(events.Length, count);
 	}
 
@@ -675,8 +677,9 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, events.Skip(1).Take(1));
 
 		var count = await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
-
+			.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = events.Length + 1 })
+			.CountAsync();
+		
 		Assert.Equal(events.Length, count);
 	}
 
@@ -690,8 +693,9 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events.Take(1));
 
 		var count = await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
-
+			.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = events.Length + 1 })
+			.CountAsync();
+		
 		Assert.Equal(events.Length, count);
 	}
 
@@ -705,8 +709,9 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, events.Take(1));
 
 		var count = await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
-
+			.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = events.Length + 1 })
+			.CountAsync();
+		
 		Assert.Equal(events.Length, count);
 	}
 
@@ -721,8 +726,9 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(0), events.Skip(1));
 
 		var count = await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
-
+			.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = events.Length + 1 })
+			.CountAsync();
+		
 		Assert.Equal(events.Length, count);
 	}
 
@@ -736,8 +742,9 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, events.Skip(1).Take(1));
 
 		var count = await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, events.Length + 1).CountAsync();
-
+			.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = events.Length + 1 })
+			.CountAsync();
+		
 		Assert.Equal(events.Length, count);
 	}
 

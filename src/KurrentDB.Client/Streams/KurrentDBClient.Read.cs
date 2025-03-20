@@ -471,6 +471,64 @@ namespace KurrentDB.Client {
 		/// Allows to customize or disable the automatic deserialization
 		/// </summary>
 		public OperationSerializationSettings? SerializationSettings { get; set; }
+
+		public static ReadAllOptions Get() =>
+			new ReadAllOptions();
+
+		public ReadAllOptions Forwards() {
+			Direction = Direction.Forwards;
+
+			return this;
+		}
+
+		public ReadAllOptions WithFilter(IEventFilter filter) {
+			Filter = filter;
+
+			return this;
+		}
+
+		public ReadAllOptions Backwards() {
+			Direction = Direction.Backwards;
+
+			return this;
+		}
+
+		public ReadAllOptions From(Position streamPosition) {
+			Position = streamPosition;
+
+			return this;
+		}
+
+		public ReadAllOptions FromStart() =>
+			From(Position.Start);
+
+		public ReadAllOptions FromEnd() =>
+			From(Position.End);
+
+		public ReadAllOptions WithMaxCount(long maxCount) {
+			MaxCount = maxCount;
+
+			return this;
+		}
+
+		public ReadAllOptions MaxOne() =>
+			WithMaxCount(1);
+
+		public ReadAllOptions First() =>
+			FromStart()
+				.Forwards()
+				.MaxOne();
+
+		public ReadAllOptions Last() =>
+			FromEnd()
+				.Backwards()
+				.MaxOne();
+		
+		public ReadAllOptions DisableAutoSerialization() {
+			SerializationSettings = OperationSerializationSettings.Disabled;
+
+			return this;
+		}
 	}
 
 	/// <summary>
@@ -502,9 +560,62 @@ namespace KurrentDB.Client {
 		/// Allows to customize or disable the automatic deserialization
 		/// </summary>
 		public OperationSerializationSettings? SerializationSettings { get; set; }
+
+		public static ReadStreamOptions Get() =>
+			new ReadStreamOptions();
+
+		public ReadStreamOptions Forwards() {
+			Direction = Direction.Forwards;
+
+			return this;
+		}
+
+		public ReadStreamOptions Backwards() {
+			Direction = Direction.Backwards;
+
+			return this;
+		}
+
+		public ReadStreamOptions From(StreamPosition streamPosition) {
+			StreamPosition = streamPosition;
+
+			return this;
+		}
+
+		public ReadStreamOptions FromStart() =>
+			From(StreamPosition.Start);
+
+		public ReadStreamOptions FromEnd() =>
+			From(StreamPosition.End);
+
+		public ReadStreamOptions WithMaxCount(long maxCount) {
+			MaxCount = maxCount;
+
+			return this;
+		}
+
+		public ReadStreamOptions MaxOne() =>
+			WithMaxCount(1);
+
+		public ReadStreamOptions First() =>
+			FromStart()
+				.Forwards()
+				.MaxOne();
+
+		public ReadStreamOptions Last() =>
+			FromEnd()
+				.Backwards()
+				.MaxOne();
+
+		public ReadStreamOptions DisableAutoSerialization() {
+			SerializationSettings = OperationSerializationSettings.Disabled;
+
+			return this;
+		}
 	}
 
-	public static class KurrentDBClientReadExtensions {
+	[Obsolete("Those extensions may be removed in the future versions", false)]
+	public static class ObsoleteKurrentDBClientReadExtensions {
 		/// <summary>
 		/// Asynchronously reads all events.
 		/// </summary>
@@ -517,6 +628,10 @@ namespace KurrentDB.Client {
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with ReadAllOptions and get auto-serialization capabilities",
+			false
+		)]
 		public static KurrentDBClient.ReadAllStreamResult ReadAllAsync(
 			this KurrentDBClient dbClient,
 			Direction direction,
@@ -554,6 +669,10 @@ namespace KurrentDB.Client {
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with ReadAllOptions and get auto-serialization capabilities",
+			false
+		)]
 		public static KurrentDBClient.ReadAllStreamResult ReadAllAsync(
 			this KurrentDBClient dbClient,
 			Direction direction,
@@ -598,6 +717,10 @@ namespace KurrentDB.Client {
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with ReadStreamOptions and get auto-serialization capabilities",
+			false
+		)]
 		public static KurrentDBClient.ReadStreamResult ReadStreamAsync(
 			this KurrentDBClient dbClient,
 			Direction direction,

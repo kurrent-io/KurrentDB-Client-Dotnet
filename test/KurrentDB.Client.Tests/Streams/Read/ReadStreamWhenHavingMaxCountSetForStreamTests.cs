@@ -19,7 +19,7 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 100)
+		var actual = await Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = 100 })
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
@@ -37,7 +37,14 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100)
+		var actual = await Fixture.Streams.ReadStreamAsync(
+				stream,
+				new ReadStreamOptions {
+					Direction      = Direction.Backwards,
+					StreamPosition = StreamPosition.End,
+					MaxCount       = 100
+				}
+			)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
@@ -57,7 +64,7 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(0), new(4));
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 100)
+		var actual = await Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = 100 })
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
@@ -77,7 +84,7 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(0), new(2));
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 100)
+		var actual = await Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = 100 })
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
@@ -97,7 +104,14 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(0), new(4));
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100)
+		var actual = await Fixture.Streams.ReadStreamAsync(
+				stream,
+				new ReadStreamOptions {
+					Direction      = Direction.Backwards,
+					StreamPosition = StreamPosition.End,
+					MaxCount       = 100
+				}
+			)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
@@ -117,7 +131,14 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(0), new(2));
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100)
+		var actual = await Fixture.Streams.ReadStreamAsync(
+				stream,
+				new ReadStreamOptions {
+					Direction      = Direction.Backwards,
+					StreamPosition = StreamPosition.End,
+					MaxCount       = 100
+				}
+			)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 

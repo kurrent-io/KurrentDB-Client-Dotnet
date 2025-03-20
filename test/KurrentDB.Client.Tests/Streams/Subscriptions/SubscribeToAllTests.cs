@@ -203,7 +203,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 			Fixture.CreateTestEvents(3)
 		);
 
-		var existingEventsCount = await Fixture.Streams.ReadAllAsync(Direction.Forwards, Position.Start)
+		var existingEventsCount = await Fixture.Streams.ReadAllAsync()
 			.Messages.CountAsync();
 
 		Fixture.Log.Debug("Existing events count: {ExistingEventsCount}", existingEventsCount);
@@ -290,7 +290,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 			Fixture.CreateTestEvents(3)
 		);
 
-		var existingEventsCount = await Fixture.Streams.ReadAllAsync(Direction.Forwards, Position.Start)
+		var existingEventsCount = await Fixture.Streams.ReadAllAsync()
 			.Messages.CountAsync();
 
 		Fixture.Log.Debug("Existing events count: {ExistingEventsCount}", existingEventsCount);
@@ -377,7 +377,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 			Fixture.CreateTestEvents(3)
 		);
 
-		var existingEventsCount = await Fixture.Streams.ReadAllAsync(Direction.Forwards, Position.Start)
+		var existingEventsCount = await Fixture.Streams.ReadAllAsync()
 			.Messages.CountAsync();
 
 		Fixture.Log.Debug("Existing events count: {ExistingEventsCount}", existingEventsCount);

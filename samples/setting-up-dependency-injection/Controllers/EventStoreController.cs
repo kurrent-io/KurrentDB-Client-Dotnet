@@ -14,7 +14,7 @@ namespace setting_up_dependency_injection.Controllers {
 
 		[HttpGet]
 		public IAsyncEnumerable<ResolvedEvent> Get() {
-			return _KurrentClient.ReadAllAsync(Direction.Forwards, Position.Start);
+			return _KurrentClient.ReadAllAsync();
 		}
 		#endregion using-dependency
 	}

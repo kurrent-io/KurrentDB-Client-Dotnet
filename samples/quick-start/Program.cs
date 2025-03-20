@@ -54,9 +54,7 @@ await client.AppendToStreamAsync(
 #region readStream
 
 var result = client.ReadStreamAsync(
-	Direction.Forwards,
 	"some-stream",
-	StreamPosition.Start,
 	cancellationToken: cancellationToken
 );
 

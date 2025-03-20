@@ -1,5 +1,4 @@
 using Grpc.Core;
-using KurrentDB.Client;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using static System.TimeSpan;
@@ -52,11 +51,11 @@ public static class KurrentDBClientWarmupExtensions {
 				// 2. we are connected to leader if we require it
 				var users = await dbClient
 					.ReadStreamAsync(
-						direction: Direction.Forwards,
-						streamName: "$dbUsers",
-						revision: StreamPosition.Start,
-						maxCount: 1,
-						userCredentials: TestCredentials.Root,
+						"$dbUsers",
+						new ReadStreamOptions {
+							MaxCount = 1,
+							UserCredentials = TestCredentials.Root
+						},
 						cancellationToken: ct
 					)
 					.ToArrayAsync(ct);

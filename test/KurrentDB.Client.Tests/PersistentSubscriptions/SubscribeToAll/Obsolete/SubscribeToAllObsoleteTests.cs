@@ -10,7 +10,11 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentDBPerm
 		// Arrange
 		var group = Fixture.GetGroupName();
 
-		await Fixture.Subscriptions.CreateToAllAsync(group, new(maxSubscriberCount: 1), userCredentials: TestCredentials.Root);
+		await Fixture.Subscriptions.CreateToAllAsync(
+			group,
+			new(maxSubscriberCount: 1),
+			userCredentials: TestCredentials.Root
+		);
 
 		using var first = await Fixture.Subscriptions.SubscribeToAllAsync(
 			group,
@@ -67,10 +71,14 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentDBPerm
 		}
 
 		var events = await Fixture.Streams
-			.ReadAllAsync(Direction.Forwards, Position.Start, 10, userCredentials: TestCredentials.Root)
+			.ReadAllAsync(new ReadAllOptions { MaxCount = 10, UserCredentials = TestCredentials.Root })
 			.ToArrayAsync();
 
-		await Fixture.Subscriptions.CreateToAllAsync(group, new(startFrom: Position.Start), userCredentials: TestCredentials.Root);
+		await Fixture.Subscriptions.CreateToAllAsync(
+			group,
+			new(startFrom: Position.Start),
+			userCredentials: TestCredentials.Root
+		);
 
 		using var subscription = await Fixture.Subscriptions.SubscribeToAllAsync(
 			group,
@@ -150,7 +158,12 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentDBPerm
 			);
 		}
 
-		await Fixture.Subscriptions.CreateToAllAsync(group, new(startFrom: Position.End), userCredentials: TestCredentials.Root);
+		await Fixture.Subscriptions.CreateToAllAsync(
+			group,
+			new(startFrom: Position.End),
+			userCredentials: TestCredentials.Root
+		);
+
 		using var subscription = await Fixture.Subscriptions.SubscribeToAllAsync(
 			group,
 			async (subscription, e, r, ct) => {
@@ -208,7 +221,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentDBPerm
 		TaskCompletionSource<ResolvedEvent> firstEventSource = new();
 
 		var events = await Fixture.Streams
-			.ReadAllAsync(Direction.Forwards, Position.Start, 10, userCredentials: TestCredentials.Root)
+			.ReadAllAsync(new ReadAllOptions { MaxCount = 10, UserCredentials = TestCredentials.Root })
 			.ToArrayAsync();
 
 		var expectedEvent = events[events.Length / 2]; //just a random event in the middle of the results
@@ -245,7 +258,11 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentDBPerm
 
 		TaskCompletionSource<int> retryCountSource = new();
 
-		await Fixture.Subscriptions.CreateToAllAsync(group, new(startFrom: Position.Start), userCredentials: TestCredentials.Root);
+		await Fixture.Subscriptions.CreateToAllAsync(
+			group,
+			new(startFrom: Position.Start),
+			userCredentials: TestCredentials.Root
+		);
 
 		// Act
 		using var subscription = await Fixture.Subscriptions.SubscribeToAllAsync(
@@ -613,7 +630,11 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentDBPerm
 
 		TaskCompletionSource<(SubscriptionDroppedReason, Exception?)> droppedSource = new();
 
-		await Fixture.Subscriptions.CreateToAllAsync(group, new(startFrom: Position.Start), userCredentials: TestCredentials.Root);
+		await Fixture.Subscriptions.CreateToAllAsync(
+			group,
+			new(startFrom: Position.Start),
+			userCredentials: TestCredentials.Root
+		);
 
 		using var subscription = Fixture.Subscriptions.SubscribeToAllAsync(
 			group,

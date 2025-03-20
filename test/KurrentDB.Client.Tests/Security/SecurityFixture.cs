@@ -150,39 +150,26 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 	protected virtual Task When() => Task.CompletedTask;
 
 	public Task ReadEvent(string streamId, UserCredentials? userCredentials = null) =>
-		Streams.ReadStreamAsync(
-				Direction.Forwards,
-				streamId,
-				StreamPosition.Start,
-				1,
-				false,
-				userCredentials: userCredentials
-			)
+		Streams.ReadStreamAsync(streamId, new ReadStreamOptions { MaxCount = 1, UserCredentials = userCredentials })
 			.ToArrayAsync()
 			.AsTask()
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 	public Task ReadStreamForward(string streamId, UserCredentials? userCredentials = null) =>
-		Streams.ReadStreamAsync(
-				Direction.Forwards,
-				streamId,
-				StreamPosition.Start,
-				1,
-				false,
-				userCredentials: userCredentials
-			)
+		Streams.ReadStreamAsync(streamId, new ReadStreamOptions { MaxCount = 1, UserCredentials = userCredentials })
 			.ToArrayAsync()
 			.AsTask()
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 	public Task ReadStreamBackward(string streamId, UserCredentials? userCredentials = null) =>
 		Streams.ReadStreamAsync(
-				Direction.Backwards,
 				streamId,
-				StreamPosition.Start,
-				1,
-				false,
-				userCredentials: userCredentials
+				new ReadStreamOptions {
+					Direction       = Direction.Backwards,
+					StreamPosition  = StreamPosition.End,
+					MaxCount        = 1,
+					UserCredentials = userCredentials
+				}
 			)
 			.ToArrayAsync()
 			.AsTask()
@@ -198,25 +185,19 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 	public Task ReadAllForward(UserCredentials? userCredentials = null) =>
-		Streams.ReadAllAsync(
-				Direction.Forwards,
-				Position.Start,
-				1,
-				false,
-				userCredentials: userCredentials
-			)
+		Streams.ReadAllAsync(new ReadAllOptions { MaxCount = 1, UserCredentials = userCredentials })
 			.ToArrayAsync()
 			.AsTask()
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 	public Task ReadAllBackward(UserCredentials? userCredentials = null) =>
-		Streams
-			.ReadAllAsync(
-				Direction.Backwards,
-				Position.End,
-				1,
-				false,
-				userCredentials: userCredentials
+		Streams.ReadAllAsync(
+				new ReadAllOptions {
+					Direction       = Direction.Backwards, 
+					Position = Position.End, 
+					MaxCount = 1,
+					UserCredentials = userCredentials
+				}
 			)
 			.ToArrayAsync()
 			.AsTask()

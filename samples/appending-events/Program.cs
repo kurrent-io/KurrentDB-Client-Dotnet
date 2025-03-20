@@ -94,15 +94,11 @@ static async Task AppendWithConcurrencyCheck(KurrentDBClient client) {
 
 	#region append-with-concurrency-check
 
-	var clientOneRead = client.ReadStreamAsync(
-		Direction.Forwards,
-		"concurrency-stream",
-		StreamPosition.Start
-	);
+	var clientOneRead = client.ReadStreamAsync("concurrency-stream");
 
 	var clientOneRevision = (await clientOneRead.LastAsync()).Event.EventNumber.ToUInt64();
 
-	var clientTwoRead     = client.ReadStreamAsync(Direction.Forwards, "concurrency-stream", StreamPosition.Start);
+	var clientTwoRead     = client.ReadStreamAsync("concurrency-stream");
 	var clientTwoRevision = (await clientTwoRead.LastAsync()).Event.EventNumber.ToUInt64();
 
 	var clientOneData = MessageData.From(
