@@ -81,8 +81,15 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 
 		// When
 		var group = await CreateToStreamSubscription(stream);
+#pragma warning disable CS0618 // Type or member is obsolete
 		var resolvedEvents = await Fixture.Subscriptions
-			.SubscribeToStream(stream, group, int.MaxValue).Take(2)
+			.SubscribeToStream(
+				stream,
+				group,
+				bufferSize: int.MaxValue,
+				userCredentials: TestCredentials.Root
+			).Take(2)
+#pragma warning restore CS0618 // Type or member is obsolete
 			.ToListAsync();
 
 		// Then
@@ -96,8 +103,13 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 
 		// When
 		var group = await CreateToAllSubscription(stream);
+#pragma warning disable CS0618 // Type or member is obsolete
 		var resolvedEvents = await Fixture.Subscriptions
-			.SubscribeToAll(group, int.MaxValue)
+			.SubscribeToAll(
+				group,
+				int.MaxValue
+			)
+#pragma warning restore CS0618 // Type or member is obsolete
 			.Take(2)
 			.ToListAsync();
 
@@ -381,8 +393,9 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		var stream   = Fixture.GetStreamName();
 		var messages = GenerateMessages();
 
-		var writeResult = 
+		var writeResult =
 			await (kurrentDbClient ?? Fixture.Streams).AppendToStreamAsync(stream, StreamState.Any, messages);
+
 		Assert.Equal((ulong)messages.Count - 1, writeResult.NextExpectedStreamState);
 
 		return (stream, messages);

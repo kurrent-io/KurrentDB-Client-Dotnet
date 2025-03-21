@@ -72,8 +72,10 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 		var (stream, expected) = await AppendEventsUsingAutoSerialization();
 
 		// When
+#pragma warning disable CS0618 // Type or member is obsolete
 		var resolvedEvents = await Fixture.Streams
-			.SubscribeToStream(stream).Take(2)
+			.SubscribeToStream(stream, FromStream.Start).Take(2)
+#pragma warning restore CS0618 // Type or member is obsolete
 			.ToListAsync();
 
 		// Then
@@ -86,10 +88,10 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 		var (stream, expected) = await AppendEventsUsingAutoSerialization();
 
 		// When
+#pragma warning disable CS0618 // Type or member is obsolete
 		var resolvedEvents = await Fixture.Streams
-			.SubscribeToAll(
-				new SubscribeToAllOptions().WithFilter(new SubscriptionFilterOptions(StreamFilter.Prefix(stream)))
-			)
+			.SubscribeToAll(FromAll.Start, filterOptions: new SubscriptionFilterOptions(StreamFilter.Prefix(stream)))
+#pragma warning restore CS0618 // Type or member is obsolete
 			.Take(2)
 			.ToListAsync();
 

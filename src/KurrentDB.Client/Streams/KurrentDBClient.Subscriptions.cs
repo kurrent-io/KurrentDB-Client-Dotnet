@@ -47,8 +47,8 @@ namespace KurrentDB.Client {
 				new ReadReq {
 					Options = new ReadReq.Types.Options {
 						ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
-						ResolveLinks  = options.ResolveLinkTos,
-						All           = ReadReq.Types.Options.Types.AllOptions.FromSubscriptionPosition(options.Start),
+						ResolveLinks  = options.ResolveLinkTos ?? false,
+						All           = ReadReq.Types.Options.Types.AllOptions.FromSubscriptionPosition(options.Start ?? FromAll.Start),
 						Subscription  = new ReadReq.Types.Options.Types.SubscriptionOptions(),
 						Filter        = GetFilterOptions(options.FilterOptions)!,
 						UuidOption    = new() { Structured = new() }
@@ -101,10 +101,10 @@ namespace KurrentDB.Client {
 				new ReadReq {
 					Options = new ReadReq.Types.Options {
 						ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
-						ResolveLinks  = options.ResolveLinkTos,
+						ResolveLinks  = options.ResolveLinkTos ?? false,
 						Stream = ReadReq.Types.Options.Types.StreamOptions.FromSubscriptionPosition(
 							streamName,
-							options.Start
+							options.Start ?? FromStream.Start
 						),
 						Subscription = new ReadReq.Types.Options.Types.SubscriptionOptions(),
 						UuidOption   = new() { Structured = new() }
@@ -312,12 +312,12 @@ namespace KurrentDB.Client {
 		/// <summary>
 		/// A <see cref="FromAll"/> (exclusive of) to start the subscription from.
 		/// </summary>
-		public FromAll Start { get; set; } = FromAll.Start;
+		public FromAll? Start { get; set; }
 
 		/// <summary>
 		/// Whether to resolve LinkTo events automatically.
 		/// </summary>
-		public bool ResolveLinkTos { get; set; }
+		public bool? ResolveLinkTos { get; set; }
 
 		/// <summary>
 		/// The optional <see cref="SubscriptionFilterOptions"/> to apply.
@@ -392,12 +392,12 @@ namespace KurrentDB.Client {
 		/// <summary>
 		/// A <see cref="FromAll"/> (exclusive of) to start the subscription from.
 		/// </summary>
-		public FromStream Start { get; set; } = FromStream.Start;
+		public FromStream? Start { get; set; }
 
 		/// <summary>
 		/// Whether to resolve LinkTo events automatically.
 		/// </summary>
-		public bool ResolveLinkTos { get; set; }
+		public bool? ResolveLinkTos { get; set; }
 
 		/// <summary>
 		/// The optional user credentials to perform operation with.

@@ -1,5 +1,4 @@
 using KurrentDB.Client.Tests.TestNode;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
@@ -30,7 +29,8 @@ public class SubscribeToAllConnectToExistingWithStartFromNotSetObsoleteTests(ITe
 
 		using var subscription = await Fixture.Subscriptions.SubscribeToAllAsync(
 			group,
-			async (subscription, e, r, ct) => {
+			new PersistentSubscriptionListener{
+			 EventAppeared = async (subscription, e, r, ct) => {
 				if (SystemStreams.IsSystemStream(e.OriginalStreamId)) {
 					await subscription.Ack(e);
 					return;
@@ -39,11 +39,11 @@ public class SubscribeToAllConnectToExistingWithStartFromNotSetObsoleteTests(ITe
 				firstNonSystemEventSource.TrySetResult(e);
 				await subscription.Ack(e);
 			},
-			(subscription, reason, ex) => {
+			SubscriptionDropped = (subscription, reason, ex) => {
 				if (reason != SubscriptionDroppedReason.Disposed)
 					firstNonSystemEventSource.TrySetException(ex!);
-			},
-			TestCredentials.Root
+			}},
+			new SubscribeToPersistentSubscriptionOptions{ UserCredentials = TestCredentials.Root }
 		);
 
 		await Assert.ThrowsAsync<TimeoutException>(() => firstNonSystemEventSource.Task.WithTimeout());

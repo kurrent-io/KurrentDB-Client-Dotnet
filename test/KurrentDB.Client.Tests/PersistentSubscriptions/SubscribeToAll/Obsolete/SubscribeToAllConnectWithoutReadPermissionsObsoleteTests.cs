@@ -26,7 +26,7 @@ public class SubscribeToAllConnectWithoutReadPermissionsObsoleteTests(ITestOutpu
 				using var _ = await Fixture.Subscriptions.SubscribeToAllAsync(
 					group,
 					delegate { return Task.CompletedTask; },
-					userCredentials: user
+					new SubscribeToPersistentSubscriptionOptions { UserCredentials = user }
 				);
 			}
 		);

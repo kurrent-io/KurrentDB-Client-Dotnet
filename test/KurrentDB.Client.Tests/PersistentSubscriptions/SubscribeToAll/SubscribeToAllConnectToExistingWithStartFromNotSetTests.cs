@@ -4,7 +4,10 @@ using KurrentDB.Client.Tests.TestNode;
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
-public class SubscribeToAllConnectToExistingWithStartFromNotSetTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)
+public class SubscribeToAllConnectToExistingWithStartFromNotSetTests(
+	ITestOutputHelper output,
+	KurrentDBTemporaryFixture fixture
+)
 	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	[RetryFact]
 	public async Task connect_to_existing_with_start_from_not_set() {
@@ -19,7 +22,10 @@ public class SubscribeToAllConnectToExistingWithStartFromNotSetTests(ITestOutput
 			);
 
 		await Fixture.Subscriptions.CreateToAllAsync(group, new(), userCredentials: TestCredentials.Root);
-		await using var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
+		await using var subscription = Fixture.Subscriptions.SubscribeToAll(
+			group,
+			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+		);
 
 		await Assert.ThrowsAsync<TimeoutException>(
 			() => subscription.Messages

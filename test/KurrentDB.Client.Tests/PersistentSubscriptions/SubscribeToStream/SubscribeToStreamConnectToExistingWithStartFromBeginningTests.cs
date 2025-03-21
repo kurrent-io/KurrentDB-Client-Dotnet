@@ -23,7 +23,7 @@ public class SubscribeToStreamConnectToExistingWithStartFromBeginningTests(ITest
 		await using var subscription = Fixture.Subscriptions.SubscribeToStream(
 			stream,
 			group,
-			userCredentials: TestCredentials.Root
+			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
 		);
 
 		await Assert.ThrowsAsync<TimeoutException>(

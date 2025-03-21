@@ -44,7 +44,10 @@ public class SubscribeToAllFilterObsoleteTests(ITestOutputHelper output, Kurrent
 			userCredentials: TestCredentials.Root
 		);
 
-		await using var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
+		await using var subscription = Fixture.Subscriptions.SubscribeToAll(
+			group,
+			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+		);
 
 		await subscription.Messages
 			.OfType<PersistentSubscriptionMessage.Event>()
@@ -113,7 +116,11 @@ public class SubscribeToAllFilterObsoleteTests(ITestOutputHelper output, Kurrent
 			userCredentials: TestCredentials.Root
 		);
 
-		await using var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
+		await using var subscription =
+			Fixture.Subscriptions.SubscribeToAll(
+				group,
+				new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			);
 
 		var appearedEvents = await subscription.Messages.OfType<PersistentSubscriptionMessage.Event>()
 			.Take(10)

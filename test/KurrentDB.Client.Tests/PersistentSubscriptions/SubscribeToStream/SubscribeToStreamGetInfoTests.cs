@@ -172,8 +172,13 @@ public class SubscribeToStreamGetInfoTests(SubscribeToStreamGetInfoTests.CustomF
 				);
 
 				var counter = 0;
-				Subscription = Subscriptions.SubscribeToStream(Stream, Group, userCredentials: TestCredentials.Root);
-				Enumerator   = Subscription.Messages.GetAsyncEnumerator();
+				Subscription = Subscriptions.SubscribeToStream(
+					Stream,
+					Group,
+					new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+				);
+
+				Enumerator = Subscription.Messages.GetAsyncEnumerator();
 
 				for (var i = 0; i < 15; i++) {
 					await Streams.AppendToStreamAsync(

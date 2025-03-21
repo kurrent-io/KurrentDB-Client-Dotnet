@@ -30,7 +30,7 @@ public class SubscribeToAllNoDefaultCredentialsObsoleteTests(ITestOutputHelper o
 				using var _ = await Fixture.Subscriptions.SubscribeToAllAsync(
 					group,
 					delegate { return Task.CompletedTask; },
-					userCredentials: TestCredentials.Root
+					new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
 				);
 			}
 		).WithTimeout();

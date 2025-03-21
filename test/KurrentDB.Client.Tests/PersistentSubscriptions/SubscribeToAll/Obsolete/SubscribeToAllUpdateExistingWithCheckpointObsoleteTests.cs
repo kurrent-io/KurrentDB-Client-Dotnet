@@ -31,7 +31,7 @@ public class SubscribeToAllUpdateExistingWithCheckpointObsoleteTests(
 		await using var subscription = Fixture.Subscriptions.SubscribeToStream(
 			stream,
 			group,
-			userCredentials: TestCredentials.Root
+			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
 		);
 
 		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
@@ -48,7 +48,7 @@ public class SubscribeToAllUpdateExistingWithCheckpointObsoleteTests(
 		await using var sub = Fixture.Subscriptions.SubscribeToStream(
 			stream,
 			group,
-			userCredentials: TestCredentials.Root
+			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
 		);
 
 		var resolvedEvent = await sub.Messages

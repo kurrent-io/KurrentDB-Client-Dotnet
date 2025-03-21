@@ -183,7 +183,7 @@ public class SubscribeToStreamGetInfoObsoleteTests(SubscribeToStreamGetInfoObsol
 
 						return Task.CompletedTask;
 					},
-					userCredentials: TestCredentials.Root
+					new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
 				);
 
 				for (var i = 0; i < 15; i++) {
