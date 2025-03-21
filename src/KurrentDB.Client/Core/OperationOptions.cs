@@ -15,4 +15,14 @@ public class OperationOptions {
 	/// </summary>
 	public UserCredentials? UserCredentials { get; set; }
 
+	/// <summary>
+	/// Clones a copy of the current <see cref="KurrentDBClientOperationOptions"/>.
+	/// </summary>
+	/// <returns></returns>
+	public OperationOptions With(KurrentDBClientSettings clientSettings) {
+		Deadline ??= clientSettings.DefaultDeadline;
+		UserCredentials ??= clientSettings.DefaultCredentials;
+
+		return this;
+	}
 }

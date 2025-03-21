@@ -508,7 +508,6 @@ namespace KurrentDB.Client {
 		/// <returns></returns>
 		public void With(KurrentDBClientOperationOptions clientOperationOptions) {
 			ThrowOnAppendFailure ??= clientOperationOptions.ThrowOnAppendFailure;
-
 			BatchAppendSize ??= clientOperationOptions.BatchAppendSize;
 		}
 
