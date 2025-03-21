@@ -52,6 +52,10 @@ namespace KurrentDB.Client {
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with SetSystemSettingsOptions options",
+			false
+		)]
 		public static Task SetSystemSettingsAsync(
 			this KurrentDBClient dbClient,
 			SystemSettings settings,
@@ -118,13 +122,16 @@ namespace KurrentDB.Client {
 		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
+		
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with AppendToStreamOptions options",
+			false
+		)]
 		public static Task<ConditionalWriteResult> ConditionalAppendToStreamAsync(
 			this KurrentDBClient dbClient,
 			string streamName,
 			StreamState expectedState,
-#pragma warning disable CS0618 // Type or member is obsolete
 			IEnumerable<EventData> eventData,
-#pragma warning restore CS0618 // Type or member is obsolete
 			TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
