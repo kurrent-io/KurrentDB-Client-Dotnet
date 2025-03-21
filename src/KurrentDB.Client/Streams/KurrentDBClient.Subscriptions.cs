@@ -6,145 +6,7 @@ using KurrentDB.Client.Core.Serialization;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
 
 namespace KurrentDB.Client {
-	/// <summary>
-	/// Subscribes to all events options.
-	/// </summary>
-	public class SubscribeToAllOptions {
-		/// <summary>
-		/// A <see cref="FromAll"/> (exclusive of) to start the subscription from.
-		/// </summary>
-		public FromAll Start { get; set; } = FromAll.Start;
-
-		/// <summary>
-		/// Whether to resolve LinkTo events automatically.
-		/// </summary>
-		public bool ResolveLinkTos { get; set; }
-
-		/// <summary>
-		/// The optional <see cref="SubscriptionFilterOptions"/> to apply.
-		/// </summary>
-		public SubscriptionFilterOptions? FilterOptions { get; set; }
-
-		/// <summary>
-		/// The optional <see cref="SubscriptionFilterOptions"/> to apply.
-		/// </summary>
-		public IEventFilter Filter { set => FilterOptions = new SubscriptionFilterOptions(value); }
-
-		/// <summary>
-		/// The optional user credentials to perform operation with.
-		/// </summary>
-		public UserCredentials? UserCredentials { get; set; }
-
-		/// <summary>
-		/// Allows to customize or disable the automatic deserialization
-		/// </summary>
-		public OperationSerializationSettings? SerializationSettings { get; set; }
-	}
-
-	/// <summary>
-	/// Subscribes to all events options.
-	/// </summary>
-	public class SubscribeToStreamOptions {
-		/// <summary>
-		/// A <see cref="FromAll"/> (exclusive of) to start the subscription from.
-		/// </summary>
-		public FromStream Start { get; set; } = FromStream.Start;
-
-		/// <summary>
-		/// Whether to resolve LinkTo events automatically.
-		/// </summary>
-		public bool ResolveLinkTos { get; set; }
-
-		/// <summary>
-		/// The optional user credentials to perform operation with.
-		/// </summary>
-		public UserCredentials? UserCredentials { get; set; }
-
-		/// <summary>
-		/// Allows to customize or disable the automatic deserialization
-		/// </summary>
-		public OperationSerializationSettings? SerializationSettings { get; set; }
-	}
-
-	public class SubscriptionListener {
-#if NET48
-		/// <summary>
-		/// A handler called when a new event is received over the subscription.
-		/// </summary>
-		public Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> EventAppeared { get; set; } = null!;
-#else
-		public required Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> EventAppeared { get; set; }
-#endif
-		/// <summary>
-		/// A handler called if the subscription is dropped.
-		/// </summary>
-		public Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? SubscriptionDropped { get; set; }
-
-		/// <summary>
-		/// A handler called when a checkpoint is reached.
-		/// Set the checkpointInterval in subscription filter options to define how often this method is called.
-		/// </summary>
-		public Func<StreamSubscription, Position, CancellationToken, Task>? CheckpointReached { get; set; }
-
-		/// <summary>
-		/// Returns the subscription listener with configured handlers
-		/// </summary>
-		/// <param name="eventAppeared">Handler invoked when a new event is received over the subscription.</param>
-		/// <param name="subscriptionDropped">A handler invoked if the subscription is dropped.</param>
-		/// <param name="checkpointReached">A handler called when a checkpoint is reached.
-		/// Set the checkpointInterval in subscription filter options to define how often this method is called.
-		/// </param>
-		/// <returns></returns>
-		public static SubscriptionListener Handle(
-			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
-			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-			Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached = null
-		) =>
-			new SubscriptionListener {
-				EventAppeared       = eventAppeared,
-				SubscriptionDropped = subscriptionDropped,
-				CheckpointReached   = checkpointReached
-			};
-	}
-
 	public partial class KurrentDBClient {
-		/// <summary>
-		/// Subscribes to all events.
-		/// </summary>
-		/// <param name="start">A <see cref="FromAll"/> (exclusive of) to start the subscription from.</param>
-		/// <param name="eventAppeared">A Task invoked and awaited when a new event is received over the subscription.</param>
-		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
-		/// <param name="subscriptionDropped">An action invoked if the subscription is dropped.</param>
-		/// <param name="filterOptions">The optional <see cref="SubscriptionFilterOptions"/> to apply.</param>
-		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public Task<StreamSubscription> SubscribeToAllAsync(
-			FromAll start,
-			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
-			bool resolveLinkTos = false,
-			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = default,
-			SubscriptionFilterOptions? filterOptions = null,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default
-		) {
-			var listener = SubscriptionListener.Handle(
-				eventAppeared,
-				subscriptionDropped,
-				filterOptions?.CheckpointReached
-			);
-
-			var options = new SubscribeToAllOptions {
-				Start                 = start,
-				FilterOptions         = filterOptions,
-				ResolveLinkTos        = resolveLinkTos,
-				UserCredentials       = userCredentials,
-				SerializationSettings = OperationSerializationSettings.Disabled,
-			};
-
-			return SubscribeToAllAsync(listener, options, cancellationToken);
-		}
-
 		/// <summary>
 		/// Subscribes to all events.
 		/// </summary>
@@ -154,9 +16,10 @@ namespace KurrentDB.Client {
 		/// <returns></returns>
 		public Task<StreamSubscription> SubscribeToAllAsync(
 			SubscriptionListener listener,
-			SubscribeToAllOptions options,
+			SubscribeToAllOptions? options = null,
 			CancellationToken cancellationToken = default
 		) {
+			options                    ??= new SubscribeToAllOptions();
 			listener.CheckpointReached ??= options.FilterOptions?.CheckpointReached;
 
 			return StreamSubscription.Confirm(
@@ -174,84 +37,29 @@ namespace KurrentDB.Client {
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
 		public StreamSubscriptionResult SubscribeToAll(
-			SubscribeToAllOptions options,
+			SubscribeToAllOptions? options = null,
 			CancellationToken cancellationToken = default
-		) => new(
-			async _ => await GetChannelInfo(cancellationToken).ConfigureAwait(false),
-			new ReadReq {
-				Options = new ReadReq.Types.Options {
-					ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
-					ResolveLinks  = options.ResolveLinkTos,
-					All           = ReadReq.Types.Options.Types.AllOptions.FromSubscriptionPosition(options.Start),
-					Subscription  = new ReadReq.Types.Options.Types.SubscriptionOptions(),
-					Filter        = GetFilterOptions(options.FilterOptions)!,
-					UuidOption    = new() { Structured = new() }
-				}
-			},
-			Settings,
-			options.UserCredentials,
-			_messageSerializer.With(options.SerializationSettings),
-			cancellationToken
-		);
+		) {
+			options ??= new SubscribeToAllOptions();
 
-		/// <summary>
-		/// Subscribes to all events.
-		/// </summary>
-		/// <param name="start">A <see cref="FromAll"/> (exclusive of) to start the subscription from.</param>
-		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
-		/// <param name="filterOptions">The optional <see cref="SubscriptionFilterOptions"/> to apply.</param>
-		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public StreamSubscriptionResult SubscribeToAll(
-			FromAll start,
-			bool resolveLinkTos = false,
-			SubscriptionFilterOptions? filterOptions = null,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default
-		) =>
-			SubscribeToAll(
-				new SubscribeToAllOptions {
-					Start                 = start,
-					ResolveLinkTos        = resolveLinkTos,
-					FilterOptions         = filterOptions,
-					UserCredentials       = userCredentials,
-					SerializationSettings = OperationSerializationSettings.Disabled
+			return new StreamSubscriptionResult(
+				async _ => await GetChannelInfo(cancellationToken).ConfigureAwait(false),
+				new ReadReq {
+					Options = new ReadReq.Types.Options {
+						ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
+						ResolveLinks  = options.ResolveLinkTos,
+						All           = ReadReq.Types.Options.Types.AllOptions.FromSubscriptionPosition(options.Start),
+						Subscription  = new ReadReq.Types.Options.Types.SubscriptionOptions(),
+						Filter        = GetFilterOptions(options.FilterOptions)!,
+						UuidOption    = new() { Structured = new() }
+					}
 				},
+				Settings,
+				options.UserCredentials,
+				_messageSerializer.With(options.SerializationSettings),
 				cancellationToken
 			);
-
-		/// <summary>
-		/// Subscribes to a stream from a <see cref="StreamPosition">checkpoint</see>.
-		/// </summary>
-		/// <param name="start">A <see cref="FromStream"/> (exclusive of) to start the subscription from.</param>
-		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
-		/// <param name="eventAppeared">A Task invoked and awaited when a new event is received over the subscription.</param>
-		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
-		/// <param name="subscriptionDropped">An action invoked if the subscription is dropped.</param>
-		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public Task<StreamSubscription> SubscribeToStreamAsync(
-			string streamName,
-			FromStream start,
-			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
-			bool resolveLinkTos = false,
-			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = default,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default
-		) =>
-			SubscribeToStreamAsync(
-				streamName,
-				SubscriptionListener.Handle(eventAppeared, subscriptionDropped),
-				new SubscribeToStreamOptions {
-					Start                 = start,
-					ResolveLinkTos        = resolveLinkTos,
-					UserCredentials       = userCredentials,
-					SerializationSettings = OperationSerializationSettings.Disabled
-				},
-				cancellationToken
-			);
+		}
 
 		/// <summary>
 		/// Subscribes to a stream from a <see cref="StreamPosition">checkpoint</see>.
@@ -264,41 +72,13 @@ namespace KurrentDB.Client {
 		public Task<StreamSubscription> SubscribeToStreamAsync(
 			string streamName,
 			SubscriptionListener listener,
-			SubscribeToStreamOptions options,
+			SubscribeToStreamOptions? options = null,
 			CancellationToken cancellationToken = default
-		) {
-			return StreamSubscription.Confirm(
+		) =>
+			StreamSubscription.Confirm(
 				SubscribeToStream(streamName, options, cancellationToken),
 				listener,
 				_log,
-				cancellationToken
-			);
-		}
-
-		/// <summary>
-		/// Subscribes to a stream from a <see cref="StreamPosition">checkpoint</see>.
-		/// </summary>
-		/// <param name="start">A <see cref="FromStream"/> (exclusive of) to start the subscription from.</param>
-		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
-		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
-		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public StreamSubscriptionResult SubscribeToStream(
-			string streamName,
-			FromStream start,
-			bool resolveLinkTos = false,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default
-		) =>
-			SubscribeToStream(
-				streamName,
-				new SubscribeToStreamOptions {
-					Start                 = start,
-					ResolveLinkTos        = resolveLinkTos,
-					UserCredentials       = userCredentials,
-					SerializationSettings = OperationSerializationSettings.Disabled
-				},
 				cancellationToken
 			);
 
@@ -311,40 +91,44 @@ namespace KurrentDB.Client {
 		/// <returns></returns>
 		public StreamSubscriptionResult SubscribeToStream(
 			string streamName,
-			SubscribeToStreamOptions options,
+			SubscribeToStreamOptions? options = null,
 			CancellationToken cancellationToken = default
-		) => new(
-			async _ => await GetChannelInfo(cancellationToken).ConfigureAwait(false),
-			new ReadReq {
-				Options = new ReadReq.Types.Options {
-					ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
-					ResolveLinks  = options.ResolveLinkTos,
-					Stream = ReadReq.Types.Options.Types.StreamOptions.FromSubscriptionPosition(
-						streamName,
-						options.Start
-					),
-					Subscription = new ReadReq.Types.Options.Types.SubscriptionOptions(),
-					UuidOption   = new() { Structured = new() }
-				}
-			},
-			Settings,
-			options.UserCredentials,
-			_messageSerializer.With(options.SerializationSettings),
-			cancellationToken
-		);
+		) {
+			options ??= new SubscribeToStreamOptions();
+
+			return new StreamSubscriptionResult(
+				async _ => await GetChannelInfo(cancellationToken).ConfigureAwait(false),
+				new ReadReq {
+					Options = new ReadReq.Types.Options {
+						ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
+						ResolveLinks  = options.ResolveLinkTos,
+						Stream = ReadReq.Types.Options.Types.StreamOptions.FromSubscriptionPosition(
+							streamName,
+							options.Start
+						),
+						Subscription = new ReadReq.Types.Options.Types.SubscriptionOptions(),
+						UuidOption   = new() { Structured = new() }
+					}
+				},
+				Settings,
+				options.UserCredentials,
+				_messageSerializer.With(options.SerializationSettings),
+				cancellationToken
+			);
+		}
 
 		/// <summary>
 		/// A class that represents the result of a subscription operation. You may either enumerate this instance directly or <see cref="Messages"/>. Do not enumerate more than once.
 		/// </summary>
 		public class StreamSubscriptionResult : IAsyncEnumerable<ResolvedEvent>, IAsyncDisposable, IDisposable {
-			private readonly ReadReq                             _request;
-			private readonly Channel<StreamMessage>              _channel;
-			private readonly CancellationTokenSource             _cts;
-			private readonly CallOptions                         _callOptions;
-			private readonly KurrentDBClientSettings               _settings;
-			private          AsyncServerStreamingCall<ReadResp>? _call;
+			readonly ReadReq                    _request;
+			readonly Channel<StreamMessage>     _channel;
+			readonly CancellationTokenSource    _cts;
+			readonly CallOptions                _callOptions;
+			readonly KurrentDBClientSettings    _settings;
+			AsyncServerStreamingCall<ReadResp>? _call;
 
-			private int _messagesEnumerated;
+			int _messagesEnumerated;
 
 			/// <summary>
 			/// The server-generated unique identifier for the subscription.
@@ -521,112 +305,203 @@ namespace KurrentDB.Client {
 		}
 	}
 
-	public static class KurrentDBClientSubscribeToAllExtensions {
+	/// <summary>
+	/// Subscribes to all events options.
+	/// </summary>
+	public class SubscribeToAllOptions {
 		/// <summary>
-		/// Subscribes to all events.
+		/// A <see cref="FromAll"/> (exclusive of) to start the subscription from.
 		/// </summary>
-		/// <param name="kurrentDbClient"></param>
-		/// <param name="listener">Listener configured to receive notifications about new events and subscription state change.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public static Task<StreamSubscription> SubscribeToAllAsync(
-			this KurrentDBClient kurrentDbClient,
-			SubscriptionListener listener,
-			CancellationToken cancellationToken = default
-		) =>
-			kurrentDbClient.SubscribeToAllAsync(listener, new SubscribeToAllOptions(), cancellationToken);
+		public FromAll Start { get; set; } = FromAll.Start;
 
 		/// <summary>
-		/// Subscribes to all events.
+		/// Whether to resolve LinkTo events automatically.
 		/// </summary>
-		/// <param name="kurrentDbClient"></param>
-		/// <param name="eventAppeared"></param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public static Task<StreamSubscription> SubscribeToAllAsync(
-			this KurrentDBClient kurrentDbClient,
-			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
-			CancellationToken cancellationToken = default
-		) =>
-			kurrentDbClient.SubscribeToAllAsync(
-				eventAppeared,
-				new SubscribeToAllOptions(),
-				cancellationToken
-			);
+		public bool ResolveLinkTos { get; set; }
 
 		/// <summary>
-		/// Subscribes to all events.
+		/// The optional <see cref="SubscriptionFilterOptions"/> to apply.
 		/// </summary>
-		/// <param name="kurrentDbClient"></param>
-		/// <param name="eventAppeared">Handler invoked when a new event is received over the subscription.</param>
-		/// <param name="options">Optional settings like: Position <see cref="FromAll"/> from which to read, <see cref="SubscriptionFilterOptions"/> to apply, etc.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public static Task<StreamSubscription> SubscribeToAllAsync(
-			this KurrentDBClient kurrentDbClient,
-			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
-			SubscribeToAllOptions options,
-			CancellationToken cancellationToken = default
-		) =>
-			kurrentDbClient.SubscribeToAllAsync(
-				SubscriptionListener.Handle(eventAppeared),
-				options,
-				cancellationToken
-			);
+		public SubscriptionFilterOptions? FilterOptions { get; set; }
 
 		/// <summary>
-		/// Subscribes to all events.
+		/// The optional <see cref="SubscriptionFilterOptions"/> to apply.
 		/// </summary>
-		/// <param name="kurrentDbClient"></param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public static KurrentDBClient.StreamSubscriptionResult SubscribeToAll(
-			this KurrentDBClient kurrentDbClient,
-			CancellationToken cancellationToken = default
-		) =>
-			kurrentDbClient.SubscribeToAll(new SubscribeToAllOptions(), cancellationToken);
+		public IEventFilter Filter { set => FilterOptions = new SubscriptionFilterOptions(value); }
+
+		/// <summary>
+		/// The optional user credentials to perform operation with.
+		/// </summary>
+		public UserCredentials? UserCredentials { get; set; }
+
+		/// <summary>
+		/// Allows to customize or disable the automatic deserialization
+		/// </summary>
+		public OperationSerializationSettings? SerializationSettings { get; set; }
+
+		public static SubscribeToAllOptions Get() =>
+			new SubscribeToAllOptions();
+
+		public SubscribeToAllOptions WithFilter(SubscriptionFilterOptions filter) {
+			FilterOptions = filter;
+
+			return this;
+		}
+		
+		public SubscribeToAllOptions WithFilter(IEventFilter filter) {
+			Filter = filter;
+
+			return this;
+		}
+
+		public SubscribeToAllOptions From(FromAll position) {
+			Start = position;
+
+			return this;
+		}
+
+		public SubscribeToAllOptions FromStart() {
+			Start = FromAll.Start;
+
+			return this;
+		}
+
+		public SubscribeToAllOptions FromEnd() {
+			Start = FromAll.End;
+
+			return this;
+		}
+
+		public SubscribeToAllOptions WithResolveLinkTos(bool resolve = true) {
+			ResolveLinkTos = resolve;
+
+			return this;
+		}
+
+		public SubscribeToAllOptions DisableAutoSerialization() {
+			SerializationSettings = OperationSerializationSettings.Disabled;
+
+			return this;
+		}
 	}
 
-	public static class KurrentDBClientSubscribeToStreamExtensions {
+	/// <summary>
+	/// Subscribes to all events options.
+	/// </summary>
+	public class SubscribeToStreamOptions {
 		/// <summary>
-		/// Subscribes to messages from a specific stream
+		/// A <see cref="FromAll"/> (exclusive of) to start the subscription from.
 		/// </summary>
-		/// <param name="kurrentDbClient"></param>
-		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
-		/// <param name="listener">Listener configured to receive notifications about new events and subscription state change.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public static Task<StreamSubscription> SubscribeToStreamAsync(
-			this KurrentDBClient kurrentDbClient,
-			string streamName,
-			SubscriptionListener listener,
-			CancellationToken cancellationToken = default
-		) =>
-			kurrentDbClient.SubscribeToStreamAsync(
-				streamName,
-				listener,
-				new SubscribeToStreamOptions(),
-				cancellationToken
-			);
+		public FromStream Start { get; set; } = FromStream.Start;
 
 		/// <summary>
-		/// Subscribes to messages from a specific stream
+		/// Whether to resolve LinkTo events automatically.
+		/// </summary>
+		public bool ResolveLinkTos { get; set; }
+
+		/// <summary>
+		/// The optional user credentials to perform operation with.
+		/// </summary>
+		public UserCredentials? UserCredentials { get; set; }
+
+		/// <summary>
+		/// Allows to customize or disable the automatic deserialization
+		/// </summary>
+		public OperationSerializationSettings? SerializationSettings { get; set; }
+
+		public static SubscribeToStreamOptions Get() =>
+			new SubscribeToStreamOptions();
+
+		public SubscribeToStreamOptions From(FromStream position) {
+			Start = position;
+
+			return this;
+		}
+
+		public SubscribeToStreamOptions FromStart() {
+			Start = FromStream.Start;
+
+			return this;
+		}
+
+		public SubscribeToStreamOptions FromEnd() {
+			Start = FromStream.End;
+
+			return this;
+		}
+
+		public SubscribeToStreamOptions WithResolveLinkTos(bool resolve = true) {
+			ResolveLinkTos = resolve;
+
+			return this;
+		}
+
+		public SubscribeToStreamOptions DisableAutoSerialization() {
+			SerializationSettings = OperationSerializationSettings.Disabled;
+
+			return this;
+		}
+	}
+
+	public class SubscriptionListener {
+#if NET48
+		/// <summary>
+		/// A handler called when a new event is received over the subscription.
+		/// </summary>
+		public Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> EventAppeared { get; set; } = null!;
+#else
+		public required Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> EventAppeared { get; set; }
+#endif
+		/// <summary>
+		/// A handler called if the subscription is dropped.
+		/// </summary>
+		public Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? SubscriptionDropped { get; set; }
+
+		/// <summary>
+		/// A handler called when a checkpoint is reached.
+		/// Set the checkpointInterval in subscription filter options to define how often this method is called.
+		/// </summary>
+		public Func<StreamSubscription, Position, CancellationToken, Task>? CheckpointReached { get; set; }
+
+		/// <summary>
+		/// Returns the subscription listener with configured handlers
+		/// </summary>
+		/// <param name="eventAppeared">Handler invoked when a new event is received over the subscription.</param>
+		/// <param name="subscriptionDropped">A handler invoked if the subscription is dropped.</param>
+		/// <param name="checkpointReached">A handler called when a checkpoint is reached.
+		/// Set the checkpointInterval in subscription filter options to define how often this method is called.
+		/// </param>
+		/// <returns></returns>
+		public static SubscriptionListener Handle(
+			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
+			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
+			Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached = null
+		) =>
+			new SubscriptionListener {
+				EventAppeared       = eventAppeared,
+				SubscriptionDropped = subscriptionDropped,
+				CheckpointReached   = checkpointReached
+			};
+	}
+
+	public static class KurrentDBClientSubscribeExtensions {
+		/// <summary>
+		/// Subscribes to all events.
 		/// </summary>
 		/// <param name="kurrentDbClient"></param>
-		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
-		/// <param name="eventAppeared"></param>
+		/// <param name="eventAppeared">Handler invoked when a new event is received over the subscription.</param>
+		/// <param name="options">Optional settings like: Position <see cref="FromAll"/> from which to read, <see cref="SubscriptionFilterOptions"/> to apply, etc.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static Task<StreamSubscription> SubscribeToStreamAsync(
+		public static Task<StreamSubscription> SubscribeToAllAsync(
 			this KurrentDBClient kurrentDbClient,
-			string streamName,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
+			SubscribeToAllOptions? options = null,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentDbClient.SubscribeToStreamAsync(
-				streamName,
-				eventAppeared,
-				new SubscribeToStreamOptions(),
+			kurrentDbClient.SubscribeToAllAsync(
+				SubscriptionListener.Handle(eventAppeared),
+				options,
 				cancellationToken
 			);
 
@@ -643,7 +518,7 @@ namespace KurrentDB.Client {
 			this KurrentDBClient kurrentDbClient,
 			string streamName,
 			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
-			SubscribeToStreamOptions options,
+			SubscribeToStreamOptions? options = null,
 			CancellationToken cancellationToken = default
 		) =>
 			kurrentDbClient.SubscribeToStreamAsync(
@@ -652,19 +527,155 @@ namespace KurrentDB.Client {
 				options,
 				cancellationToken
 			);
+	}
 
+	[Obsolete("Those extensions may be removed in the future versions", false)]
+	public static class KurrentDBClientObsoleteSubscribeExtensions {
 		/// <summary>
-		/// Subscribes to messages from a specific stream
+		/// Subscribes to all events.
 		/// </summary>
-		/// <param name="kurrentDbClient"></param>
-		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
+		/// <param name="dbClient"></param>
+		/// <param name="start">A <see cref="FromAll"/> (exclusive of) to start the subscription from.</param>
+		/// <param name="eventAppeared">A Task invoked and awaited when a new event is received over the subscription.</param>
+		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
+		/// <param name="subscriptionDropped">An action invoked if the subscription is dropped.</param>
+		/// <param name="filterOptions">The optional <see cref="SubscriptionFilterOptions"/> to apply.</param>
+		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
-		public static KurrentDBClient.StreamSubscriptionResult SubscribeToStream(
-			this KurrentDBClient kurrentDbClient,
-			string streamName,
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with SubscribeToAllOptions and get auto-serialization capabilities",
+			false
+		)]
+		public static Task<StreamSubscription> SubscribeToAllAsync(
+			this KurrentDBClient dbClient,
+			FromAll start,
+			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
+			bool resolveLinkTos = false,
+			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
+			SubscriptionFilterOptions? filterOptions = null,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default
+		) {
+			var listener = SubscriptionListener.Handle(
+				eventAppeared,
+				subscriptionDropped,
+				filterOptions?.CheckpointReached
+			);
+
+			var options = new SubscribeToAllOptions {
+				Start                 = start,
+				FilterOptions         = filterOptions,
+				ResolveLinkTos        = resolveLinkTos,
+				UserCredentials       = userCredentials,
+				SerializationSettings = OperationSerializationSettings.Disabled,
+			};
+
+			return dbClient.SubscribeToAllAsync(listener, options, cancellationToken);
+		}
+
+		/// <summary>
+		/// Subscribes to all events.
+		/// </summary>
+		/// <param name="dbClient"></param>
+		/// <param name="start">A <see cref="FromAll"/> (exclusive of) to start the subscription from.</param>
+		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
+		/// <param name="filterOptions">The optional <see cref="SubscriptionFilterOptions"/> to apply.</param>
+		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with SubscribeToAllOptions and get auto-serialization capabilities",
+			false
+		)]
+		public static KurrentDBClient.StreamSubscriptionResult SubscribeToAll(
+			this KurrentDBClient dbClient,
+			FromAll start,
+			bool resolveLinkTos = false,
+			SubscriptionFilterOptions? filterOptions = null,
+			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentDbClient.SubscribeToStream(streamName, new SubscribeToStreamOptions(), cancellationToken);
+			dbClient.SubscribeToAll(
+				new SubscribeToAllOptions {
+					Start                 = start,
+					ResolveLinkTos        = resolveLinkTos,
+					FilterOptions         = filterOptions,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Subscribes to a stream from a <see cref="StreamPosition">checkpoint</see>.
+		/// </summary>
+		/// <param name="start">A <see cref="FromStream"/> (exclusive of) to start the subscription from.</param>
+		/// <param name="dbClient"></param>
+		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
+		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
+		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with SubscribeToStreamOptions and get auto-serialization capabilities",
+			false
+		)]
+		public static KurrentDBClient.StreamSubscriptionResult SubscribeToStream(
+			this KurrentDBClient dbClient,
+			string streamName,
+			FromStream start,
+			bool resolveLinkTos = false,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default
+		) =>
+			dbClient.SubscribeToStream(
+				streamName,
+				new SubscribeToStreamOptions {
+					Start                 = start,
+					ResolveLinkTos        = resolveLinkTos,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Subscribes to a stream from a <see cref="StreamPosition">checkpoint</see>.
+		/// </summary>
+		/// <param name="start">A <see cref="FromStream"/> (exclusive of) to start the subscription from.</param>
+		/// <param name="dbClient"></param>
+		/// <param name="streamName">The name of the stream to subscribe for notifications about new events.</param>
+		/// <param name="eventAppeared">A Task invoked and awaited when a new event is received over the subscription.</param>
+		/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
+		/// <param name="subscriptionDropped">An action invoked if the subscription is dropped.</param>
+		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with SubscribeToStreamOptions and get auto-serialization capabilities",
+			false
+		)]
+		public static Task<StreamSubscription> SubscribeToStreamAsync(
+			this KurrentDBClient dbClient,
+			string streamName,
+			FromStream start,
+			Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
+			bool resolveLinkTos = false,
+			Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = default,
+			UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default
+		) =>
+			dbClient.SubscribeToStreamAsync(
+				streamName,
+				SubscriptionListener.Handle(eventAppeared, subscriptionDropped),
+				new SubscribeToStreamOptions {
+					Start                 = start,
+					ResolveLinkTos        = resolveLinkTos,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
+				cancellationToken
+			);
 	}
 }

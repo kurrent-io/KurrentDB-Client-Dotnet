@@ -844,8 +844,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		async Task Checkpointed() {
 			await using var subscription = Fixture.Streams.SubscribeToStream(
 				checkPointStream,
-				FromStream.Start,
-				userCredentials: TestCredentials.Root
+				new SubscribeToStreamOptions { UserCredentials =  TestCredentials.Root }
 			);
 
 			await foreach (var message in subscription.Messages) {

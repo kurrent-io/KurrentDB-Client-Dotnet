@@ -1,6 +1,4 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
-using KurrentDB.Client.Tests;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
@@ -71,8 +69,7 @@ public class SubscribeToAllUpdateExistingWithCheckpointTest(ITestOutputHelper ou
 		async Task WaitForCheckpoint() {
 			await using var subscription = Fixture.Streams.SubscribeToStream(
 				$"$persistentsubscription-{stream}::{group}-checkpoint",
-				FromStream.Start,
-				userCredentials: TestCredentials.Root
+				new SubscribeToStreamOptions { UserCredentials = TestCredentials.Root }
 			);
 
 			await foreach (var message in subscription.Messages) {

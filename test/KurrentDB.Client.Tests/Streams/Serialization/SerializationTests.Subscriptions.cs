@@ -73,7 +73,7 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 
 		// When
 		var resolvedEvents = await Fixture.Streams
-			.SubscribeToStream(stream, FromStream.Start).Take(2)
+			.SubscribeToStream(stream).Take(2)
 			.ToListAsync();
 
 		// Then
@@ -87,7 +87,9 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 
 		// When
 		var resolvedEvents = await Fixture.Streams
-			.SubscribeToAll(FromAll.Start, filterOptions: new SubscriptionFilterOptions(StreamFilter.Prefix(stream)))
+			.SubscribeToAll(
+				new SubscribeToAllOptions().WithFilter(new SubscriptionFilterOptions(StreamFilter.Prefix(stream)))
+			)
 			.Take(2)
 			.ToListAsync();
 

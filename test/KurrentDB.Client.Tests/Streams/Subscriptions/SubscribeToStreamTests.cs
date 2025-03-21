@@ -1,5 +1,3 @@
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Tests.Streams;
 
 [Trait("Category", "Subscriptions")]
@@ -17,7 +15,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents.Take(pageSize));
 
-		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
+		await using var subscription = Fixture.Streams.SubscribeToStream(streamName);
 		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator.MoveNextAsync());
@@ -61,8 +59,12 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 		var streamPosition = StreamPosition.FromInt64(writeResult.NextExpectedStreamState.ToInt64());
 		var checkpoint     = FromStream.After(streamPosition);
 
-		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, checkpoint);
-		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
+		await using var subscription = Fixture.Streams.SubscribeToStream(
+			streamName,
+			new SubscribeToStreamOptions().From(checkpoint)
+		);
+
+		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator.MoveNextAsync());
 
@@ -101,7 +103,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 
 		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
-		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
+		await using var subscription = Fixture.Streams.SubscribeToStream(streamName);
 		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator.MoveNextAsync());
@@ -137,14 +139,14 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
 
-		await using var subscription1 = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
+		await using var subscription1 = Fixture.Streams.SubscribeToStream(streamName);
 		await using var enumerator1   = subscription1.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator1.MoveNextAsync());
 
 		Assert.IsType<StreamMessage.SubscriptionConfirmation>(enumerator1.Current);
 
-		await using var subscription2 = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
+		await using var subscription2 = Fixture.Streams.SubscribeToStream(streamName);
 		await using var enumerator2   = subscription2.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator2.MoveNextAsync());
@@ -176,7 +178,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 	public async Task drops_when_stream_tombstoned() {
 		var streamName = Fixture.GetStreamName();
 
-		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
+		await using var subscription = Fixture.Streams.SubscribeToStream(streamName);
 		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator.MoveNextAsync());
@@ -205,7 +207,11 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 					new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 				);
 
-				await Streams.AppendToStreamAsync($"SubscriptionsFixture-Noise-{Guid.NewGuid():N}", StreamState.NoStream, CreateTestEvents(10));
+				await Streams.AppendToStreamAsync(
+					$"SubscriptionsFixture-Noise-{Guid.NewGuid():N}",
+					StreamState.NoStream,
+					CreateTestEvents(10)
+				);
 			};
 		}
 	}

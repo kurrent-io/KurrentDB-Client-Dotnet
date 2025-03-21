@@ -585,8 +585,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		async Task WaitForCheckpoint() {
 			await using var subscription = Fixture.Streams.SubscribeToStream(
 				$"$persistentsubscription-$all::{group}-checkpoint",
-				FromStream.Start,
-				userCredentials: TestCredentials.Root
+				new SubscribeToStreamOptions { UserCredentials =  TestCredentials.Root }
 			);
 
 			await foreach (var message in subscription.Messages) {
@@ -664,8 +663,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		async Task WaitForCheckpoint() {
 			await using var subscription = Fixture.Streams.SubscribeToStream(
 				$"$persistentsubscription-$all::{group}-checkpoint",
-				FromStream.Start,
-				userCredentials: TestCredentials.Root
+				new SubscribeToStreamOptions { UserCredentials =  TestCredentials.Root }
 			);
 
 			await foreach (var message in subscription.Messages) {
@@ -795,8 +793,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			bool firstCheckpointSet = false;
 			await using var subscription = Fixture.Streams.SubscribeToStream(
 				$"$persistentsubscription-$all::{group}-checkpoint",
-				FromStream.Start,
-				userCredentials: TestCredentials.Root
+				new SubscribeToStreamOptions { UserCredentials =  TestCredentials.Root }
 			);
 
 			await foreach (var message in subscription.Messages) {

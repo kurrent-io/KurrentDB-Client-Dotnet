@@ -193,9 +193,9 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 	public Task ReadAllBackward(UserCredentials? userCredentials = null) =>
 		Streams.ReadAllAsync(
 				new ReadAllOptions {
-					Direction       = Direction.Backwards, 
-					Position = Position.End, 
-					MaxCount = 1,
+					Direction       = Direction.Backwards,
+					Position        = Position.End,
+					MaxCount        = 1,
 					UserCredentials = userCredentials
 				}
 			)
@@ -227,7 +227,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 
 	public async Task SubscribeToStream(string streamId, UserCredentials? userCredentials = null) {
 		await using var subscription =
-			Streams.SubscribeToStream(streamId, FromStream.Start, userCredentials: userCredentials);
+			Streams.SubscribeToStream(streamId, new SubscribeToStreamOptions { UserCredentials = userCredentials });
 
 		await subscription
 			.Messages.OfType<StreamMessage.SubscriptionConfirmation>().AnyAsync().AsTask()
@@ -236,7 +236,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 
 	public async Task SubscribeToAll(UserCredentials? userCredentials = null) {
 		await using var subscription =
-			Streams.SubscribeToAll(FromAll.Start, userCredentials: userCredentials);
+			Streams.SubscribeToAll(new SubscribeToAllOptions { UserCredentials = userCredentials });
 
 		await subscription
 			.Messages.OfType<StreamMessage.SubscriptionConfirmation>().AnyAsync().AsTask()
