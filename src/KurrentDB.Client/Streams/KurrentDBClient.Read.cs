@@ -28,7 +28,7 @@ namespace KurrentDB.Client {
 					ReadDirection = options.Direction switch {
 						Direction.Backwards => ReadReq.Types.Options.Types.ReadDirection.Backwards,
 						Direction.Forwards  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
-						null  => ReadReq.Types.Options.Types.ReadDirection.Forwards,
+						null                => ReadReq.Types.Options.Types.ReadDirection.Forwards,
 						_                   => throw InvalidOption(options.Direction.Value)
 					},
 					ResolveLinks = options.ResolveLinkTos ?? false,
@@ -477,44 +477,60 @@ namespace KurrentDB.Client {
 		public static ReadAllOptions Get() =>
 			new ReadAllOptions();
 
-		public ReadAllOptions Forwards() {
-			Direction = KurrentDB.Client.Direction.Forwards;
-
-			return this;
-		}
-
 		public ReadAllOptions WithFilter(IEventFilter filter) {
 			Filter = filter;
 
 			return this;
 		}
 
+		public ReadAllOptions Forwards() {
+			Direction =   KurrentDB.Client.Direction.Forwards;
+			Position  ??= KurrentDB.Client.Position.Start;
+
+			return this;
+		}
+
 		public ReadAllOptions Backwards() {
-			Direction = KurrentDB.Client.Direction.Backwards;
+			Direction =   KurrentDB.Client.Direction.Backwards;
+			Position  ??= KurrentDB.Client.Position.End;
 
 			return this;
 		}
 
-		public ReadAllOptions From(Position streamPosition) {
-			Position = streamPosition;
+		public ReadAllOptions From(Position position) {
+			this.Position = position;
 
 			return this;
 		}
 
-		public ReadAllOptions FromStart() =>
-			From(KurrentDB.Client.Position.Start);
+		public ReadAllOptions FromStart() {
+			Position  =   KurrentDB.Client.Position.Start;
+			Direction ??= Client.Direction.Forwards;
 
-		public ReadAllOptions FromEnd() =>
-			From(KurrentDB.Client.Position.End);
+			return this;
+		}
 
-		public ReadAllOptions WithMaxCount(long maxCount) {
+		public ReadAllOptions FromEnd() {
+			Position  =   KurrentDB.Client.Position.End;
+			Direction ??= Client.Direction.Backwards;
+
+			return this;
+		}
+
+		public ReadAllOptions WithResolveLinkTos(bool resolve = true) {
+			ResolveLinkTos = resolve;
+
+			return this;
+		}
+
+		public ReadAllOptions Max(long maxCount) {
 			MaxCount = maxCount;
 
 			return this;
 		}
 
 		public ReadAllOptions MaxOne() =>
-			WithMaxCount(1);
+			Max(1);
 
 		public ReadAllOptions First() =>
 			FromStart()
@@ -525,7 +541,7 @@ namespace KurrentDB.Client {
 			FromEnd()
 				.Backwards()
 				.MaxOne();
-		
+
 		public ReadAllOptions DisableAutoSerialization() {
 			SerializationSettings = OperationSerializationSettings.Disabled;
 
@@ -567,13 +583,15 @@ namespace KurrentDB.Client {
 			new ReadStreamOptions();
 
 		public ReadStreamOptions Forwards() {
-			Direction = KurrentDB.Client.Direction.Forwards;
+			Direction      =   KurrentDB.Client.Direction.Forwards;
+			StreamPosition ??= KurrentDB.Client.StreamPosition.Start;
 
 			return this;
 		}
 
 		public ReadStreamOptions Backwards() {
-			Direction = KurrentDB.Client.Direction.Backwards;
+			Direction      =   KurrentDB.Client.Direction.Backwards;
+			StreamPosition ??= KurrentDB.Client.StreamPosition.End;
 
 			return this;
 		}
@@ -584,20 +602,34 @@ namespace KurrentDB.Client {
 			return this;
 		}
 
-		public ReadStreamOptions FromStart() =>
-			From(KurrentDB.Client.StreamPosition.Start);
+		public ReadStreamOptions FromStart() {
+			StreamPosition =   KurrentDB.Client.StreamPosition.Start;
+			Direction      ??= Client.Direction.Forwards;
 
-		public ReadStreamOptions FromEnd() =>
-			From(KurrentDB.Client.StreamPosition.End);
+			return this;
+		}
 
-		public ReadStreamOptions WithMaxCount(long maxCount) {
+		public ReadStreamOptions FromEnd() {
+			StreamPosition =   KurrentDB.Client.StreamPosition.End;
+			Direction      ??= Client.Direction.Backwards;
+
+			return this;
+		}
+
+		public ReadStreamOptions WithResolveLinkTos(bool resolve = true) {
+			ResolveLinkTos = resolve;
+
+			return this;
+		}
+
+		public ReadStreamOptions Max(long maxCount) {
 			MaxCount = maxCount;
 
 			return this;
 		}
 
 		public ReadStreamOptions MaxOne() =>
-			WithMaxCount(1);
+			Max(1);
 
 		public ReadStreamOptions First() =>
 			FromStart()

@@ -13,7 +13,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 
 		var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
 			() =>
-				Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions().WithMaxCount(maxCount))
+				Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions().Max(maxCount))
 					.ToArrayAsync().AsTask()
 		);
 
@@ -69,7 +69,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
 		var actual = await Fixture.Streams
-			.ReadStreamAsync(stream, new ReadStreamOptions().WithMaxCount(expected.Length))
+			.ReadStreamAsync(stream, new ReadStreamOptions().Max(expected.Length))
 			.Select(x => x.Event).ToArrayAsync();
 
 		Assert.True(MessageDataComparer.Equal(expected, actual));
@@ -100,7 +100,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-		var actual = await Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions().From(new(3)).WithMaxCount(2))
+		var actual = await Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions().From(new(3)).Max(2))
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
@@ -135,7 +135,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 			Fixture.CreateTestEvents(count)
 		);
 
-		var events = await Fixture.Streams.ReadStreamAsync(streamName, new ReadStreamOptions().WithMaxCount(maxCount))
+		var events = await Fixture.Streams.ReadStreamAsync(streamName, new ReadStreamOptions().Max(maxCount))
 			.Take(count)
 			.ToArrayAsync();
 

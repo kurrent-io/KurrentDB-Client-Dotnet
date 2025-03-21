@@ -35,7 +35,7 @@ public class ReadAllEventsBackwardTests(ITestOutputHelper output, ReadAllEventsF
 	public async Task return_events_in_reversed_order_compared_to_written() {
 		// TODO SS: this test must be fixed to deterministically read the expected events regardless of how many already exist. reading all for now...
 		var result = await Fixture.Streams
-			.ReadAllAsync(new ReadAllOptions().Backwards().FromEnd())
+			.ReadAllAsync(new ReadAllOptions().FromEnd())
 			.Where(x => x.OriginalStreamId == Fixture.ExpectedStreamName)
 			.ToBinaryData();
 
@@ -55,7 +55,7 @@ public class ReadAllEventsBackwardTests(ITestOutputHelper output, ReadAllEventsF
 	public async Task max_count_is_respected() {
 		var maxCount = Fixture.ExpectedEvents.Length / 2;
 		var result = await Fixture.Streams
-			.ReadAllAsync(new ReadAllOptions().Backwards().FromEnd().WithMaxCount(maxCount))
+			.ReadAllAsync(new ReadAllOptions().FromEnd().Max(maxCount))
 			.Take(Fixture.ExpectedEvents.Length)
 			.ToArrayAsync();
 
@@ -65,7 +65,7 @@ public class ReadAllEventsBackwardTests(ITestOutputHelper output, ReadAllEventsF
 	[Fact]
 	public async Task stream_found() {
 		var count = await Fixture.Streams
-			.ReadAllAsync(new ReadAllOptions().Backwards().FromEnd())
+			.ReadAllAsync(new ReadAllOptions().FromEnd())
 			.Where(x => x.OriginalStreamId == Fixture.ExpectedStreamName)
 			.CountAsync();
 
@@ -93,7 +93,7 @@ public class ReadAllEventsBackwardTests(ITestOutputHelper output, ReadAllEventsF
 	public async Task filter_events_by_type() {
 		var result = await Fixture.Streams
 			.ReadAllAsync(
-				new ReadAllOptions().Backwards().FromEnd().WithFilter(
+				new ReadAllOptions().FromEnd().WithFilter(
 					EventTypeFilter.Prefix(KurrentDBTemporaryFixture.AnotherTestEventTypePrefix)
 				)
 			)

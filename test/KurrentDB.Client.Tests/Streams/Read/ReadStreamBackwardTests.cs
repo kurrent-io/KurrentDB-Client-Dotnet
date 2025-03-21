@@ -80,7 +80,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
 		var actual = await Fixture.Streams
-			.ReadStreamAsync(stream, new ReadStreamOptions().FromEnd().Backwards().WithMaxCount(expected.Length))
+			.ReadStreamAsync(stream, new ReadStreamOptions().FromEnd().Max(expected.Length))
 			.Select(x => x.Event).ToArrayAsync();
 
 		Assert.True(
@@ -117,7 +117,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
 		var actual = await Fixture.Streams
-			.ReadStreamAsync(stream, new ReadStreamOptions().From(new(3)).Backwards().WithMaxCount(2))
+			.ReadStreamAsync(stream, new ReadStreamOptions().From(new(3)).Backwards().Max(2))
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
@@ -133,7 +133,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, testEvents);
 
 		var events = await Fixture.Streams
-			.ReadStreamAsync(stream, new ReadStreamOptions().Backwards().FromStart().WithMaxCount(1))
+			.ReadStreamAsync(stream, new ReadStreamOptions().Backwards().FromStart().Max(1))
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
@@ -171,7 +171,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 		);
 
 		var events = await Fixture.Streams
-			.ReadStreamAsync(streamName, new ReadStreamOptions().Backwards().FromEnd().WithMaxCount(maxCount))
+			.ReadStreamAsync(streamName, new ReadStreamOptions().FromEnd().Max(maxCount))
 			.Take(count)
 			.ToArrayAsync();
 
@@ -242,7 +242,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 	[Fact]
 	public async Task stream_not_found() {
 		var result = await Fixture.Streams
-			.ReadStreamAsync(Fixture.GetStreamName(), new ReadStreamOptions().Backwards().FromEnd()).Messages
+			.ReadStreamAsync(Fixture.GetStreamName(), new ReadStreamOptions().FromEnd()).Messages
 			.SingleAsync();
 
 		Assert.Equal(StreamMessage.NotFound.Instance, result);
@@ -260,7 +260,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 
 		var result = await Fixture.Streams.ReadStreamAsync(
 			streamName,
-			new ReadStreamOptions().Backwards().FromEnd()
+			new ReadStreamOptions().FromEnd()
 		).Messages.ToArrayAsync();
 
 		Assert.Equal(
