@@ -113,7 +113,11 @@ public class DeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 	public async Task with_timeout_any_stream_revision_tombstoning_fails_when_operation_expired() {
 		var stream = Fixture.GetStreamName();
 		var rpcException = await Assert.ThrowsAsync<RpcException>(
-			() => Fixture.Streams.TombstoneAsync(stream, StreamState.Any, TimeSpan.Zero)
+			() => Fixture.Streams.TombstoneAsync(
+				stream,
+				StreamState.Any,
+				new TombstoneOptions { Deadline = TimeSpan.Zero }
+			)
 		);
 
 		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
@@ -124,7 +128,11 @@ public class DeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		var stream = Fixture.GetStreamName();
 
 		var rpcException = await Assert.ThrowsAsync<RpcException>(
-			() => Fixture.Streams.TombstoneAsync(stream, StreamState.StreamRevision(0), TimeSpan.Zero)
+			() => Fixture.Streams.TombstoneAsync(
+				stream,
+				StreamState.StreamRevision(0),
+				new TombstoneOptions { Deadline = TimeSpan.Zero }
+			)
 		);
 
 		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);

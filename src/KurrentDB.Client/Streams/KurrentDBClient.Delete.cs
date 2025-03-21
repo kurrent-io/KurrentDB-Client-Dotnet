@@ -52,7 +52,8 @@ namespace KurrentDB.Client {
 
 	public class DeleteOptions : OperationOptions;
 
-	public static class KurrentDBClientObsoleteDeleteExtensions {
+	[Obsolete("Those extensions may be removed in the future versions", false)]
+	public static class ObsoleteKurrentDBClientDeleteExtensions {
 		/// <summary>
 		/// Deletes a stream asynchronously.
 		/// </summary>

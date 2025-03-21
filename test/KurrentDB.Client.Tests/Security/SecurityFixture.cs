@@ -258,6 +258,6 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 	}
 
 	public Task<DeleteResult> DeleteStream(string streamId, UserCredentials? userCredentials = null) =>
-		Streams.TombstoneAsync(streamId, StreamState.Any, userCredentials: userCredentials)
+		Streams.TombstoneAsync(streamId, StreamState.Any, new TombstoneOptions { UserCredentials = userCredentials })
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 }
