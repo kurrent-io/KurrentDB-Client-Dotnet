@@ -1,15 +1,13 @@
-﻿using KurrentDB.Client;
-
-#pragma warning disable CS8321 // Local function is declared but never used
+﻿#pragma warning disable CS8321 // Local function is declared but never used
 
 await using var client = new KurrentDBClient(KurrentDBClientSettings.Create("esdb://localhost:2113?tls=false"));
 
 var events = Enumerable.Range(0, 20)
 	.Select(
-		r => MessageData.From(
-			"some-event",
-			Encoding.UTF8.GetBytes($"{{\"id\": \"{r}\" \"value\": \"some value\"}}")
-		)
+		_ => new TestEvent {
+			EntityId = Guid.NewGuid().ToString(),
+			ImportantData = Guid.NewGuid().ToString()
+		}
 	);
 
 await client.AppendToStreamAsync(
@@ -19,6 +17,7 @@ await client.AppendToStreamAsync(
 );
 
 await ReadFromStream(client);
+await ReadFromStreamWithDisabledAutoSerialization(client);
 
 return;
 
@@ -31,7 +30,8 @@ static async Task ReadFromStream(KurrentDBClient client) {
 
 	#region iterate-stream
 
-	await foreach (var @event in events) Console.WriteLine(@event.DeserializedData);
+	await foreach (var @event in events) 
+		Console.WriteLine(@event.DeserializedData);
 
 	#endregion iterate-stream
 
@@ -41,6 +41,21 @@ static async Task ReadFromStream(KurrentDBClient client) {
 	Console.WriteLine(events.LastStreamPosition);
 
 	#endregion
+}
+
+static async Task ReadFromStreamWithDisabledAutoSerialization(KurrentDBClient client) {
+	#region read-from-stream-with-disabled-auto-serialization
+
+	var events = client.ReadStreamAsync("some-stream", new ReadStreamOptions().DisableAutoSerialization());
+
+	#endregion read-from-stream-with-disabled-auto-serialization
+
+	#region iterate-stream-with-disabled-auto-serialization
+
+	await foreach (var resolvedEvent in events) 
+		Console.WriteLine(Encoding.UTF8.GetString(resolvedEvent.Event.Data.Span));
+
+	#endregion iterate-stream-with-disabled-auto-serialization
 }
 
 static async Task ReadFromStreamMessages(KurrentDBClient client) {
@@ -65,7 +80,7 @@ static async Task ReadFromStreamMessages(KurrentDBClient client) {
 				return;
 
 			case StreamMessage.Event(var resolvedEvent):
-				Console.WriteLine(Encoding.UTF8.GetString(resolvedEvent.Event.Data.Span));
+				Console.WriteLine(resolvedEvent.DeserializedData);
 				break;
 
 			case StreamMessage.FirstStreamPosition(var sp):
@@ -294,4 +309,9 @@ static void ReadAllResolvingLinkTos(KurrentDBClient client, CancellationToken ca
 	);
 
 	#endregion read-from-all-stream-resolving-link-Tos
+}
+
+public class TestEvent {
+	public string? EntityId      { get; set; }
+	public string? ImportantData { get; set; }
 }

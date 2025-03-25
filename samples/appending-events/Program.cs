@@ -1,6 +1,4 @@
-﻿using KurrentDB.Client;
-
-#pragma warning disable CS8321 // Local function is declared but never used
+﻿#pragma warning disable CS8321 // Local function is declared but never used
 
 var settings = KurrentDBClientSettings.Create("esdb://localhost:2113?tls=false");
 
@@ -9,9 +7,12 @@ settings.OperationOptions.ThrowOnAppendFailure = false;
 await using var client = new KurrentDBClient(settings);
 
 await AppendToStream(client);
+await AppendToStreamWithAutoSerialization(client);
+await AppendToStreamWithMetadataAndAutoSerialization(client);
 await AppendWithConcurrencyCheck(client);
 await AppendWithNoStream(client);
 await AppendWithSameId(client);
+await AppendWithSameIdAndAutoSerialization(client);
 
 return;
 
@@ -32,12 +33,56 @@ static async Task AppendToStream(KurrentDBClient client) {
 	#endregion append-to-stream
 }
 
+static async Task AppendToStreamWithAutoSerialization(KurrentDBClient client) {
+	#region append-to-stream-with-auto-serialization
+
+	var shoppingCartId = Guid.NewGuid();
+
+	var @event = new ProductItemAddedToShoppingCart(
+		shoppingCartId,
+		new PricedProductItem("t-shirt", 1, 99.99m)
+	);
+
+	await client.AppendToStreamAsync(
+		$"shopping_cart-{shoppingCartId}",
+		StreamState.NoStream,
+		[@event]
+	);
+
+	#endregion append-to-stream-with-auto-serialization
+}
+
+static async Task AppendToStreamWithMetadataAndAutoSerialization(KurrentDBClient client) {
+	#region append-to-stream-with-metadata-and-auto-serialization
+
+	var shoppingCartId = Guid.NewGuid();
+	var clientId       = Guid.NewGuid().ToString();
+
+	var @event = new ProductItemAddedToShoppingCart(
+		shoppingCartId,
+		new PricedProductItem("t-shirt", 1, 99.99m)
+	);
+
+	var metadata = new ShoppingCartMetadata(clientId);
+
+	var message = Message.From(@event, metadata);
+
+	await client.AppendToStreamAsync(
+		$"shopping_cart-{shoppingCartId}",
+		StreamState.NoStream,
+		[message]
+	);
+
+	#endregion append-to-stream-with-metadata-and-auto-serialization
+}
+
 static async Task AppendWithSameId(KurrentDBClient client) {
 	#region append-duplicate-event
 
 	var eventData = MessageData.From(
 		"some-event",
-		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
+		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray(),
+		messageId: Uuid.NewUuid()
 	);
 
 	await client.AppendToStreamAsync(
@@ -54,6 +99,37 @@ static async Task AppendWithSameId(KurrentDBClient client) {
 	);
 
 	#endregion append-duplicate-event
+}
+
+static async Task AppendWithSameIdAndAutoSerialization(KurrentDBClient client) {
+	#region append-duplicate-event-with-serialization
+
+	var shoppingCartId = Guid.NewGuid();
+
+	var @event = new ProductItemAddedToShoppingCart(
+		shoppingCartId,
+		new PricedProductItem("t-shirt", 1, 99.99m)
+	);
+
+	var message = Message.From(
+		@event,
+		messageId: Uuid.NewUuid()
+	);
+
+	await client.AppendToStreamAsync(
+		"same-event-stream",
+		StreamState.Any,
+		[message]
+	);
+
+	// attempt to append the same event again
+	await client.AppendToStreamAsync(
+		"same-event-stream",
+		StreamState.Any,
+		[message]
+	);
+
+	#endregion append-duplicate-event-with-serialization
 }
 
 static async Task AppendWithNoStream(KurrentDBClient client) {
@@ -144,3 +220,16 @@ static async Task AppendOverridingUserCredentials(KurrentDBClient client, Cancel
 
 	#endregion overriding-user-credentials
 }
+
+public record PricedProductItem(
+	string ProductId,
+	int Quantity,
+	decimal UnitPrice
+);
+
+public record ProductItemAddedToShoppingCart(
+	Guid CartId,
+	PricedProductItem ProductItem
+);
+
+public record ShoppingCartMetadata(string ClientId);

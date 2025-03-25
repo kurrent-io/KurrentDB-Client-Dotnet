@@ -1,7 +1,4 @@
-﻿using System.Text.Json;
-using KurrentDB.Client;
-
-var tokenSource       = new CancellationTokenSource();
+﻿var tokenSource       = new CancellationTokenSource();
 var cancellationToken = tokenSource.Token;
 
 #region createClient
@@ -21,11 +18,6 @@ var evt = new TestEvent {
 	ImportantData = "I wrote my first event!"
 };
 
-var eventData = MessageData.From(
-	"TestEvent",
-	JsonSerializer.SerializeToUtf8Bytes(evt)
-);
-
 #endregion createEvent
 
 #region appendEvents
@@ -33,7 +25,7 @@ var eventData = MessageData.From(
 await client.AppendToStreamAsync(
 	"some-stream",
 	StreamState.Any,
-	[eventData],
+	[evt],
 	cancellationToken: cancellationToken
 );
 
@@ -44,7 +36,7 @@ await client.AppendToStreamAsync(
 await client.AppendToStreamAsync(
 	"some-stream",
 	StreamState.Any,
-	[eventData],
+	[evt],
 	new AppendToStreamOptions { UserCredentials = new UserCredentials("admin", "changeit") },
 	cancellationToken
 );
@@ -58,7 +50,9 @@ var result = client.ReadStreamAsync(
 	cancellationToken: cancellationToken
 );
 
-var events = await result.ToListAsync(cancellationToken);
+var events = await result
+	.DeserializedData()
+	.ToListAsync(cancellationToken);
 
 #endregion readStream
 
