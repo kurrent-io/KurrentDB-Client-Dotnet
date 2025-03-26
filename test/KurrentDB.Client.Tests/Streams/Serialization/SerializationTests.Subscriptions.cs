@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
-using KurrentDB.Client;
 using KurrentDB.Client.Core.Serialization;
 using Kurrent.Diagnostics.Tracing;
 
@@ -176,20 +175,21 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 		}
 
 #if NET48
-		public bool TryResolveClrType(string messageTypeName, out Type? type) {
+		public bool TryResolveClrType(EventRecord record, out Type? type) {
 #else
-		public bool TryResolveClrType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
+		public bool TryResolveClrType(EventRecord record, [NotNullWhen(true)] out Type? type) {
 #endif
-			var typeName = messageTypeName[(messageTypeName.IndexOf('-') + 1)..];
+			var messageTypeName = record.EventType;
+			var typeName        = messageTypeName[(messageTypeName.IndexOf('-') + 1)..];
 			type = Type.GetType(typeName);
 
 			return type != null;
 		}
 
 #if NET48
-		public bool TryResolveClrMetadataType(string messageTypeName, out Type? type) {
+		public bool TryResolveClrMetadataType(EventRecord record, out Type? type) {
 #else
-		public bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
+		public bool TryResolveClrMetadataType(EventRecord record, [NotNullWhen(true)] out Type? type) {
 #endif
 			type = null;
 			return false;

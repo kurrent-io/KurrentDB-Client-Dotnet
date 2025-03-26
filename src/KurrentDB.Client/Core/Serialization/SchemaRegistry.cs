@@ -37,18 +37,18 @@ class SchemaRegistry(
 		messageTypeNamingStrategy.ResolveTypeName(messageType, resolutionContext);
 
 #if NET48
-	public bool TryResolveClrType(string messageTypeName, out Type? type) =>
+	public bool TryResolveClrType(EventRecord record, out Type? type) =>
 #else
-	public bool TryResolveClrType(string messageTypeName, [NotNullWhen(true)] out Type? type) =>
+	public bool TryResolveClrType(EventRecord record, [NotNullWhen(true)] out Type? type) =>
 #endif
-		messageTypeNamingStrategy.TryResolveClrType(messageTypeName, out type);
+		messageTypeNamingStrategy.TryResolveClrType(record, out type);
 
 #if NET48
-	public bool TryResolveClrMetadataType(string messageTypeName, out Type? type) =>
+	public bool TryResolveClrMetadataType(EventRecord record, out Type? type) =>
 #else
-	public bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? type) =>
+	public bool TryResolveClrMetadataType(EventRecord record, [NotNullWhen(true)] out Type? type) =>
 #endif
-		messageTypeNamingStrategy.TryResolveClrMetadataType(messageTypeName, out type);
+		messageTypeNamingStrategy.TryResolveClrMetadataType(record, out type);
 
 	public static SchemaRegistry From(KurrentDBClientSerializationSettings settings) {
 		var messageTypeNamingStrategy =

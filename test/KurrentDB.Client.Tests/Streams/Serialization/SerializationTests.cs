@@ -222,20 +222,21 @@ public class SerializationTests(ITestOutputHelper output, KurrentDBPermanentFixt
 		}
 
 #if NET48
-		public bool TryResolveClrType(string messageTypeName, out Type? type) {
+		public bool TryResolveClrType(EventRecord record, out Type? type) {
 #else
-		public bool TryResolveClrType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
+		public bool TryResolveClrType(EventRecord record, [NotNullWhen(true)] out Type? type) {
 #endif
-			var typeName = messageTypeName[(messageTypeName.IndexOf('-') + 1)..];
+			var messageTypeName = record.EventType;
+			var typeName        = messageTypeName[(messageTypeName.IndexOf('-') + 1)..];
 			type = Type.GetType(typeName);
 
 			return type != null;
 		}
 
 #if NET48
-		public bool TryResolveClrMetadataType(string messageTypeName, out Type? type) {
+		public bool TryResolveClrMetadataType(EventRecord record, out Type? type) {
 #else
-		public bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
+		public bool TryResolveClrMetadataType(EventRecord record, [NotNullWhen(true)] out Type? type) {
 #endif
 			type = null;
 			return false;

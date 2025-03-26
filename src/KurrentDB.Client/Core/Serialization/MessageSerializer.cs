@@ -66,7 +66,7 @@ class MessageSerializer(SchemaRegistry schemaRegistry, KurrentDBClientSerializat
 #else
 	public bool TryDeserialize(EventRecord record, [NotNullWhen(true)] out Message? deserialized) {
 #endif
-		if (!schemaRegistry.TryResolveClrType(record.EventType, out var clrType)) {
+		if (!schemaRegistry.TryResolveClrType(record, out var clrType)) {
 			deserialized = null;
 			return false;
 		}
@@ -81,7 +81,7 @@ class MessageSerializer(SchemaRegistry schemaRegistry, KurrentDBClientSerializat
 		}
 
 		object? metadata = record.Metadata.Length > 0
-		                && schemaRegistry.TryResolveClrMetadataType(record.EventType, out var clrMetadataType)
+		                && schemaRegistry.TryResolveClrMetadataType(record, out var clrMetadataType)
 			? _metadataSerializer.Deserialize(record.Metadata, clrMetadataType!)
 			: null;
 

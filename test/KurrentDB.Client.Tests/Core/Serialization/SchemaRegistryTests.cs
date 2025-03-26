@@ -109,10 +109,10 @@ public class SchemaRegistryTests {
 
 		// Then
 		// Verify types can be resolved
-		Assert.True(registry.TryResolveClrType("test-event-1", out var type1));
+		Assert.True(registry.TryResolveClrType(TestRecord("test-event-1"), out var type1));
 		Assert.Equal(typeof(TestEvent1), type1);
 
-		Assert.True(registry.TryResolveClrType("test-event-2", out var type2));
+		Assert.True(registry.TryResolveClrType(TestRecord("test-event-2"), out var type2));
 		Assert.Equal(typeof(TestEvent2), type2);
 	}
 
@@ -165,13 +165,13 @@ public class SchemaRegistryTests {
 		Assert.Equal(expectedTypeName3, typeName3);
 
 		// Verify types can be resolved by the type names
-		Assert.True(registry.TryResolveClrType(typeName1, out var resolvedType1));
+		Assert.True(registry.TryResolveClrType(TestRecord(typeName1), out var resolvedType1));
 		Assert.Equal(typeof(TestEvent1), resolvedType1);
 
-		Assert.True(registry.TryResolveClrType(typeName2, out var resolvedType2));
+		Assert.True(registry.TryResolveClrType(TestRecord(typeName2), out var resolvedType2));
 		Assert.Equal(typeof(TestEvent2), resolvedType2);
 
-		Assert.True(registry.TryResolveClrType(typeName3, out var resolvedType3));
+		Assert.True(registry.TryResolveClrType(TestRecord(typeName3), out var resolvedType3));
 		Assert.Equal(typeof(TestEvent3), resolvedType3);
 	}
 
@@ -205,13 +205,13 @@ public class SchemaRegistryTests {
 		);
 
 		// Verify types can be resolved by the type names
-		Assert.True(registry.TryResolveClrType(typeName1, out var resolvedType1));
+		Assert.True(registry.TryResolveClrType(TestRecord(typeName1), out var resolvedType1));
 		Assert.Equal(typeof(TestEvent1), resolvedType1);
 
-		Assert.True(registry.TryResolveClrType(typeName2, out var resolvedType2));
+		Assert.True(registry.TryResolveClrType(TestRecord(typeName2), out var resolvedType2));
 		Assert.Equal(typeof(TestEvent2), resolvedType2);
 
-		Assert.True(registry.TryResolveClrType(typeName3, out var resolvedType3));
+		Assert.True(registry.TryResolveClrType(TestRecord(typeName3), out var resolvedType3));
 		Assert.Equal(typeof(TestEvent3), resolvedType3);
 	}
 
@@ -250,10 +250,27 @@ public class SchemaRegistryTests {
 
 		// Then
 		// The wrapped default strategy should use our metadata type
-		Assert.True(registry.TryResolveClrMetadataType("some-type", out var defaultMetadataType));
+		Assert.True(registry.TryResolveClrMetadataType(TestRecord("some-type"), out var defaultMetadataType));
 
 		Assert.Equal(typeof(TestMetadata), defaultMetadataType);
 	}
+	
+	static EventRecord TestRecord(
+		string eventType
+	) =>
+		new(
+			Uuid.NewUuid().ToString(),
+			Uuid.NewUuid(),
+			StreamPosition.FromInt64(0),
+			new Position(1, 1),
+			new Dictionary<string, string> {
+				{ Constants.Metadata.Type, eventType },
+				{ Constants.Metadata.Created, DateTime.UtcNow.ToTicksSinceEpoch().ToString() },
+				{ Constants.Metadata.ContentType, Constants.Metadata.ContentTypes.ApplicationJson }
+			},
+			ReadOnlyMemory<byte>.Empty,
+			ReadOnlyMemory<byte>.Empty
+		);
 
 	// Custom naming strategy for testing
 	class TestNamingStrategy : IMessageTypeNamingStrategy {
@@ -261,13 +278,13 @@ public class SchemaRegistryTests {
 			return $"Custom-{type.Name}-{context.CategoryName}";
 		}
 #if NET48
-	public bool TryResolveClrType(string messageTypeName, out Type? clrType)
+	public bool TryResolveClrType(EventRecord record, out Type? clrType)
 #else
-		public bool TryResolveClrType(string messageTypeName, [NotNullWhen(true)] out Type? clrType)
+		public bool TryResolveClrType(EventRecord record, [NotNullWhen(true)] out Type? clrType)
 #endif
 		{
 			// Simple implementation for testing
-			clrType = messageTypeName.StartsWith("Custom-TestEvent1")
+			clrType = record.EventType.StartsWith("Custom-TestEvent1")
 				? typeof(TestEvent1)
 				: null;
 
@@ -275,9 +292,9 @@ public class SchemaRegistryTests {
 		}
 
 #if NET48
-	public bool TryResolveClrMetadataType(string messageTypeName, out Type? clrType)
+	public bool TryResolveClrMetadataType(EventRecord record, out Type? clrType)
 #else
-		public bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? clrType)
+		public bool TryResolveClrMetadataType(EventRecord record, [NotNullWhen(true)] out Type? clrType)
 #endif
 		{
 			clrType = typeof(TestMetadata);
