@@ -103,9 +103,9 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 			(settings, typeName) =>
 				settings.RegisterMessageType<UserRegistered>(typeName),
 			(settings, typeName) =>
-				settings.RegisterMessageType(typeof(UserRegistered), typeName),
+				settings.RegisterMessageType(typeName, typeof(UserRegistered)),
 			(settings, typeName) =>
-				settings.RegisterMessageTypes(new Dictionary<Type, string> { { typeof(UserRegistered), typeName } })
+				settings.RegisterMessageTypes(new Dictionary<string, Type> { { typeName, typeof(UserRegistered) } })
 		];
 	}
 

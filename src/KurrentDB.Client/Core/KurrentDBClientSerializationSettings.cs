@@ -41,7 +41,7 @@ public class KurrentDBClientSerializationSettings {
 	/// <summary>
 	/// Allows to register mapping of CLR message types to their corresponding message type names used in serialized messages.
 	/// </summary>
-	public IDictionary<Type, string> MessageTypeMap { get; set; } = new Dictionary<Type, string>();
+	public IDictionary<string, Type> MessageTypeMap { get; set; } = new Dictionary<string, Type>();
 
 	/// <summary>
 	/// Registers CLR message types that can be appended to the specific stream category.
@@ -233,7 +233,7 @@ public class KurrentDBClientSerializationSettings {
 	/// </code>
 	/// </example>
 	public KurrentDBClientSerializationSettings RegisterMessageType<T>(string typeName) =>
-		RegisterMessageType(typeof(T), typeName);
+		RegisterMessageType(typeName, typeof(T));
 
 	/// <summary>
 	/// Registers a message type with a specific type name.
@@ -241,8 +241,8 @@ public class KurrentDBClientSerializationSettings {
 	/// <param name="type">The message type to register.</param>
 	/// <param name="typeName">The type name to register for the message type.</param>
 	/// <returns>The current instance for method chaining.</returns>
-	public KurrentDBClientSerializationSettings RegisterMessageType(Type type, string typeName) {
-		MessageTypeMap[type] = typeName;
+	public KurrentDBClientSerializationSettings RegisterMessageType(string typeName, Type type) {
+		MessageTypeMap[typeName] = type;
 
 		return this;
 	}
@@ -252,7 +252,7 @@ public class KurrentDBClientSerializationSettings {
 	/// </summary>
 	/// <param name="typeMap">Dictionary mapping types to their type names.</param>
 	/// <returns>The current instance for method chaining.</returns>
-	public KurrentDBClientSerializationSettings RegisterMessageTypes(IDictionary<Type, string> typeMap) {
+	public KurrentDBClientSerializationSettings RegisterMessageTypes(IDictionary<string, Type> typeMap) {
 		foreach (var map in typeMap) {
 			MessageTypeMap[map.Key] = map.Value;
 		}
@@ -301,7 +301,7 @@ public class KurrentDBClientSerializationSettings {
 			BytesSerializer           = BytesSerializer,
 			JsonSerializer            = JsonSerializer,
 			DefaultContentType        = DefaultContentType,
-			MessageTypeMap            = new Dictionary<Type, string>(MessageTypeMap),
+			MessageTypeMap            = new Dictionary<string, Type>(MessageTypeMap),
 			CategoryMessageTypesMap   = new Dictionary<string, Type[]>(CategoryMessageTypesMap),
 			MessageTypeNamingStrategy = MessageTypeNamingStrategy
 		};

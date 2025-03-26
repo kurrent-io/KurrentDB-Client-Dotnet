@@ -82,7 +82,7 @@ class SchemaRegistry(
 		);
 	}
 
-	static Dictionary<Type, string> ResolveMessageTypeUsingNamingStrategy(
+	static Dictionary<string, Type> ResolveMessageTypeUsingNamingStrategy(
 		IDictionary<string, Type[]> categoryMessageTypesMap,
 		IMessageTypeNamingStrategy messageTypeNamingStrategy
 	) =>
@@ -100,7 +100,7 @@ class SchemaRegistry(
 				)
 			)
 			.ToDictionary(
-				ks => ks.Type,
-				vs => vs.TypeName
+				ks => ks.TypeName,
+				vs => vs.Type
 			);
 }
