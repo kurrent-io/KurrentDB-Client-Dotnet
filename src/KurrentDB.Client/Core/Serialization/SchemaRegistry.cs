@@ -52,15 +52,16 @@ class SchemaRegistry(
 
 	public static SchemaRegistry From(KurrentDBClientSerializationSettings settings) {
 		var messageTypeNamingStrategy =
-			settings.MessageTypeNamingStrategy ?? new DefaultMessageTypeNamingStrategy(settings.DefaultMetadataType);
+			settings.MessageTypeNamingStrategy
+		 ?? new DefaultMessageTypeNamingStrategy(settings.MessageTypeMapping.DefaultMetadataType);
 
 		var categoriesTypeMap = ResolveMessageTypeUsingNamingStrategy(
-			settings.CategoryMessageTypesMap,
+			settings.MessageTypeMapping,
 			messageTypeNamingStrategy
 		);
 
 		var messageTypeRegistry = new MessageTypeRegistry();
-		messageTypeRegistry.Register(settings.MessageTypeMap);
+		messageTypeRegistry.Register(settings.MessageTypeMapping.TypeMap);
 		messageTypeRegistry.Register(categoriesTypeMap);
 
 		var serializers = new Dictionary<ContentType, ISerializer> {
@@ -77,16 +78,17 @@ class SchemaRegistry(
 			serializers,
 			new MessageTypeNamingStrategyWrapper(
 				messageTypeRegistry,
-				settings.MessageTypeNamingStrategy ?? new DefaultMessageTypeNamingStrategy(settings.DefaultMetadataType)
+				settings.MessageTypeNamingStrategy
+			 ?? new DefaultMessageTypeNamingStrategy(settings.MessageTypeMapping.DefaultMetadataType)
 			)
 		);
 	}
 
 	static Dictionary<string, Type> ResolveMessageTypeUsingNamingStrategy(
-		IDictionary<string, Type[]> categoryMessageTypesMap,
+		MessageTypeMappingSettings messageTypeMappingSettings,
 		IMessageTypeNamingStrategy messageTypeNamingStrategy
 	) =>
-		categoryMessageTypesMap
+		messageTypeMappingSettings.CategoryTypesMap
 			.SelectMany(
 				categoryTypes => categoryTypes.Value.Select(
 					type =>

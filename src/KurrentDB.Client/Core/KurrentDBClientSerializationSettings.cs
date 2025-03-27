@@ -38,23 +38,7 @@ public class KurrentDBClientSerializationSettings {
 	/// </summary>
 	public IMessageTypeNamingStrategy? MessageTypeNamingStrategy { get; set; }
 
-	/// <summary>
-	/// Allows to register mapping of CLR message types to their corresponding message type names used in serialized messages.
-	/// </summary>
-	public IDictionary<string, Type> MessageTypeMap { get; set; } = new Dictionary<string, Type>();
-
-	/// <summary>
-	/// Registers CLR message types that can be appended to the specific stream category.
-	/// Types will have message type names resolved based on the used <see cref="KurrentDB.Client.Core.Serialization.IMessageTypeNamingStrategy"/>
-	/// </summary>
-	public IDictionary<string, Type[]> CategoryMessageTypesMap { get; set; } = new Dictionary<string, Type[]>();
-
-	/// <summary>
-	/// Specifies the CLR type that should be used when deserializing metadata for all events.
-	/// When set, the client will attempt to deserialize event metadata into this type.
-	/// If not provided, <see cref="Kurrent.Diagnostics.Tracing.TracingMetadata"/> will be used.
-	/// </summary>
-	public Type? DefaultMetadataType { get; set; }
+	public MessageTypeMappingSettings MessageTypeMapping { get; set; } = new MessageTypeMappingSettings();
 
 	/// <summary>
 	/// Creates a new instance of serialization settings with either default values or custom configuration.
@@ -181,106 +165,6 @@ public class KurrentDBClientSerializationSettings {
 	}
 
 	/// <summary>
-	/// Associates a message type with a specific stream category to enable automatic deserialization.
-	/// In event sourcing, streams are often prefixed with a category (e.g., "user-123", "order-456").
-	/// This method tells the client which message types can appear in streams of a given category.
-	/// </summary>
-	/// <typeparam name="T">The event or message type that can appear in the category's streams.</typeparam>
-	/// <param name="categoryName">The category prefix (e.g., "user", "order", "account").</param>
-	/// <returns>The current instance for method chaining.</returns>
-	/// <example>
-	/// <code>
-	/// // Register event types that can appear in user streams
-	/// settings.RegisterMessageTypeForCategory&lt;UserCreated&gt;("user")
-	///        .RegisterMessageTypeForCategory&lt;UserUpdated&gt;("user")
-	///        .RegisterMessageTypeForCategory&lt;UserDeleted&gt;("user");
-	/// </code>
-	/// </example>
-	public KurrentDBClientSerializationSettings RegisterMessageTypeForCategory<T>(string categoryName) =>
-		RegisterMessageTypeForCategory(categoryName, typeof(T));
-
-	/// <summary>
-	/// Registers multiple message types for a specific stream category.
-	/// </summary>
-	/// <param name="categoryName">The category name to register the types with.</param>
-	/// <param name="types">The message types to register.</param>
-	/// <returns>The current instance for method chaining.</returns>
-	public KurrentDBClientSerializationSettings RegisterMessageTypeForCategory(string categoryName, params Type[] types) {
-		CategoryMessageTypesMap[categoryName] = CategoryMessageTypesMap.TryGetValue(categoryName, out var current)
-			? [..current, ..types]
-			: types;
-
-		return this;
-	}
-
-	/// <summary>
-	/// Maps a .NET type to a specific message type name that will be stored in the message metadata.
-	/// This mapping is used during automatic deserialization, as it tells the client which CLR type
-	/// to instantiate when encountering a message with a particular type name in the database.
-	/// </summary>
-	/// <typeparam name="T">The .NET type to register (typically a message class).</typeparam>
-	/// <param name="typeName">The string identifier to use for this type in the database.</param>
-	/// <returns>The current instance for method chaining.</returns>
-	/// <remarks>
-	/// The type name is often different from the .NET type name to support versioning and evolution
-	/// of your domain model without breaking existing stored messages.
-	/// </remarks>
-	/// <example>
-	/// <code>
-	/// // Register me types with their corresponding type identifiers
-	/// settings.RegisterMessageType&lt;UserCreated&gt;("user-created-v1")
-	///        .RegisterMessageType&lt;OrderPlaced&gt;("order-placed-v2");
-	/// </code>
-	/// </example>
-	public KurrentDBClientSerializationSettings RegisterMessageType<T>(string typeName) =>
-		RegisterMessageType(typeName, typeof(T));
-
-	/// <summary>
-	/// Registers a message type with a specific type name.
-	/// </summary>
-	/// <param name="type">The message type to register.</param>
-	/// <param name="typeName">The type name to register for the message type.</param>
-	/// <returns>The current instance for method chaining.</returns>
-	public KurrentDBClientSerializationSettings RegisterMessageType(string typeName, Type type) {
-		MessageTypeMap[typeName] = type;
-
-		return this;
-	}
-
-	/// <summary>
-	/// Registers multiple message types with their corresponding type names.
-	/// </summary>
-	/// <param name="typeMap">Dictionary mapping types to their type names.</param>
-	/// <returns>The current instance for method chaining.</returns>
-	public KurrentDBClientSerializationSettings RegisterMessageTypes(IDictionary<string, Type> typeMap) {
-		foreach (var map in typeMap) {
-			MessageTypeMap[map.Key] = map.Value;
-		}
-
-		return this;
-	}
-
-	/// <summary>
-	/// Configures a strongly-typed metadata class for all mes in the system.
-	/// This enables accessing metadata properties in a type-safe manner rather than using dynamic objects.
-	/// </summary>
-	/// <typeparam name="T">The metadata class type containing properties matching the expected metadata fields.</typeparam>
-	/// <returns>The current instance for method chaining.</returns>
-	public KurrentDBClientSerializationSettings UseMetadataType<T>() =>
-		UseMetadataType(typeof(T));
-
-	/// <summary>
-	/// Configures a strongly-typed metadata class for all mes in the system.
-	/// This enables accessing metadata properties in a type-safe manner rather than using dynamic objects.
-	/// </summary>
-	/// <param name="type">The metadata class type containing properties matching the expected metadata fields.</param>
-	/// <returns>The current instance for method chaining.</returns>
-	public KurrentDBClientSerializationSettings UseMetadataType(Type type) {
-		DefaultMetadataType = type;
-
-		return this;
-	}
-	/// <summary>
 	/// Configures which serialization format (JSON or binary) is used by default when writing messages
 	/// where the content type isn't explicitly specified. The default content type is "application/json"
 	/// </summary>
@@ -288,6 +172,17 @@ public class KurrentDBClientSerializationSettings {
 	/// <returns>The current instance for method chaining.</returns>
 	public KurrentDBClientSerializationSettings UseContentType(ContentType contentType) {
 		DefaultContentType = contentType;
+
+		return this;
+	}
+
+	/// <summary>
+	/// Allows to configure message type mapping
+	/// </summary>
+	/// <param name="configure"></param>
+	/// <returns>The current instance for method chaining.</returns>
+	public KurrentDBClientSerializationSettings ConfigureTypeMap(Action<MessageTypeMappingSettings> configure) {
+		configure(MessageTypeMapping);
 
 		return this;
 	}
@@ -301,8 +196,7 @@ public class KurrentDBClientSerializationSettings {
 			BytesSerializer           = BytesSerializer,
 			JsonSerializer            = JsonSerializer,
 			DefaultContentType        = DefaultContentType,
-			MessageTypeMap            = new Dictionary<string, Type>(MessageTypeMap),
-			CategoryMessageTypesMap   = new Dictionary<string, Type[]>(CategoryMessageTypesMap),
+			MessageTypeMapping            = MessageTypeMapping.Clone(),
 			MessageTypeNamingStrategy = MessageTypeNamingStrategy
 		};
 	}
@@ -368,4 +262,135 @@ public enum AutomaticDeserialization {
 	/// domain messages but requires proper type registration.
 	/// </summary>
 	Enabled = 1
+}
+
+/// <summary>
+/// Represents message type mapping settings
+/// </summary>
+public class MessageTypeMappingSettings {
+	/// <summary>
+	/// Allows to register mapping of CLR message types to their corresponding message type names used in serialized messages.
+	/// </summary>
+	public IDictionary<string, Type> TypeMap { get; set; } = new Dictionary<string, Type>();
+
+	/// <summary>
+	/// Registers CLR message types that can be appended to the specific stream category.
+	/// Types will have message type names resolved based on the used <see cref="KurrentDB.Client.Core.Serialization.IMessageTypeNamingStrategy"/>
+	/// </summary>
+	public IDictionary<string, Type[]> CategoryTypesMap { get; set; } = new Dictionary<string, Type[]>();
+
+	/// <summary>
+	/// Specifies the CLR type that should be used when deserializing metadata for all events.
+	/// When set, the client will attempt to deserialize event metadata into this type.
+	/// If not provided, <see cref="Kurrent.Diagnostics.Tracing.TracingMetadata"/> will be used.
+	/// </summary>
+	public Type? DefaultMetadataType { get; set; }
+
+	/// <summary>
+	/// Associates a message type with a specific stream category to enable automatic deserialization.
+	/// In event sourcing, streams are often prefixed with a category (e.g., "user-123", "order-456").
+	/// This method tells the client which message types can appear in streams of a given category.
+	/// </summary>
+	/// <typeparam name="T">The event or message type that can appear in the category's streams.</typeparam>
+	/// <param name="categoryName">The category prefix (e.g., "user", "order", "account").</param>
+	/// <returns>The current instance for method chaining.</returns>
+	/// <example>
+	/// <code>
+	/// // Register event types that can appear in user streams
+	/// settings.RegisterMessageTypeForCategory&lt;UserCreated&gt;("user")
+	///        .RegisterMessageTypeForCategory&lt;UserUpdated&gt;("user")
+	///        .RegisterMessageTypeForCategory&lt;UserDeleted&gt;("user");
+	/// </code>
+	/// </example>
+	public MessageTypeMappingSettings RegisterForCategory<T>(string categoryName) =>
+		RegisterForCategory(categoryName, typeof(T));
+
+	/// <summary>
+	/// Registers multiple message types for a specific stream category.
+	/// </summary>
+	/// <param name="categoryName">The category name to register the types with.</param>
+	/// <param name="types">The message types to register.</param>
+	/// <returns>The current instance for method chaining.</returns>
+	public MessageTypeMappingSettings RegisterForCategory(string categoryName, params Type[] types) {
+		CategoryTypesMap[categoryName] =
+			CategoryTypesMap.TryGetValue(categoryName, out var current)
+				? [..current, ..types]
+				: types;
+
+		return this;
+	}
+
+	/// <summary>
+	/// Maps a .NET type to a specific message type name that will be stored in the message metadata.
+	/// This mapping is used during automatic deserialization, as it tells the client which CLR type
+	/// to instantiate when encountering a message with a particular type name in the database.
+	/// </summary>
+	/// <typeparam name="T">The .NET type to register (typically a message class).</typeparam>
+	/// <param name="typeName">The string identifier to use for this type in the database.</param>
+	/// <returns>The current instance for method chaining.</returns>
+	/// <remarks>
+	/// The type name is often different from the .NET type name to support versioning and evolution
+	/// of your domain model without breaking existing stored messages.
+	/// </remarks>
+	/// <example>
+	/// <code>
+	/// // Register me types with their corresponding type identifiers
+	/// settings.RegisterMessageType&lt;UserCreated&gt;("user-created-v1")
+	///        .RegisterMessageType&lt;OrderPlaced&gt;("order-placed-v2");
+	/// </code>
+	/// </example>
+	public MessageTypeMappingSettings Register<T>(string typeName) =>
+		Register(typeName, typeof(T));
+
+	/// <summary>
+	/// Registers a message type with a specific type name.
+	/// </summary>
+	/// <param name="type">The message type to register.</param>
+	/// <param name="typeName">The type name to register for the message type.</param>
+	/// <returns>The current instance for method chaining.</returns>
+	public MessageTypeMappingSettings Register(string typeName, Type type) {
+		TypeMap[typeName] = type;
+
+		return this;
+	}
+
+	/// <summary>
+	/// Registers multiple message types with their corresponding type names.
+	/// </summary>
+	/// <param name="typeMap">Dictionary mapping types to their type names.</param>
+	/// <returns>The current instance for method chaining.</returns>
+	public MessageTypeMappingSettings Register(IDictionary<string, Type> typeMap) {
+		foreach (var map in typeMap) {
+			TypeMap[map.Key] = map.Value;
+		}
+
+		return this;
+	}
+
+	/// <summary>
+	/// Configures a strongly-typed metadata class for all mes in the system.
+	/// This enables accessing metadata properties in a type-safe manner rather than using dynamic objects.
+	/// </summary>
+	/// <typeparam name="T">The metadata class type containing properties matching the expected metadata fields.</typeparam>
+	/// <returns>The current instance for method chaining.</returns>
+	public MessageTypeMappingSettings UseMetadataType<T>() =>
+		UseMetadataType(typeof(T));
+
+	/// <summary>
+	/// Configures a strongly-typed metadata class for all mes in the system.
+	/// This enables accessing metadata properties in a type-safe manner rather than using dynamic objects.
+	/// </summary>
+	/// <param name="type">The metadata class type containing properties matching the expected metadata fields.</param>
+	/// <returns>The current instance for method chaining.</returns>
+	public MessageTypeMappingSettings UseMetadataType(Type type) {
+		DefaultMetadataType = type;
+
+		return this;
+	}
+
+	internal MessageTypeMappingSettings Clone() =>
+		new MessageTypeMappingSettings {
+			TypeMap          = new Dictionary<string, Type>(TypeMap),
+			CategoryTypesMap = new Dictionary<string, Type[]>(CategoryTypesMap),
+		};
 }

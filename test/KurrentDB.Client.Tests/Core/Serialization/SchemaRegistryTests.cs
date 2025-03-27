@@ -101,8 +101,8 @@ public class SchemaRegistryTests {
 	public void From_WithMessageTypeMap_RegistersTypes() {
 		// Given
 		var settings = new KurrentDBClientSerializationSettings();
-		settings.RegisterMessageType<TestEvent1>("test-event-1");
-		settings.RegisterMessageType<TestEvent2>("test-event-2");
+		settings.MessageTypeMapping.Register<TestEvent1>("test-event-1");
+		settings.MessageTypeMapping.Register<TestEvent2>("test-event-2");
 
 		// When
 		var registry = SchemaRegistry.From(settings);
@@ -120,7 +120,7 @@ public class SchemaRegistryTests {
 	public void From_WithCategoryMessageTypesMap_WithDefaultMessageAutoRegistration() {
 		// Given
 		var settings                         = new KurrentDBClientSerializationSettings();
-		var defaultMessageTypeNamingStrategy = new DefaultMessageTypeNamingStrategy(settings.DefaultMetadataType);
+		var defaultMessageTypeNamingStrategy = new DefaultMessageTypeNamingStrategy(settings.MessageTypeMapping.DefaultMetadataType);
 
 		// When
 		var registry = SchemaRegistry.From(settings);
@@ -179,9 +179,9 @@ public class SchemaRegistryTests {
 	public void From_WithCategoryMessageTypesMap_RegistersTypesWithCategories() {
 		// Given
 		var settings = new KurrentDBClientSerializationSettings();
-		settings.RegisterMessageTypeForCategory<TestEvent1>("category1");
-		settings.RegisterMessageTypeForCategory<TestEvent2>("category1");
-		settings.RegisterMessageTypeForCategory<TestEvent3>("category2");
+		settings.MessageTypeMapping.RegisterForCategory<TestEvent1>("category1");
+		settings.MessageTypeMapping.RegisterForCategory<TestEvent2>("category1");
+		settings.MessageTypeMapping.RegisterForCategory<TestEvent3>("category2");
 
 		// When
 		var registry = SchemaRegistry.From(settings);
@@ -242,8 +242,7 @@ public class SchemaRegistryTests {
 		// Given
 		var settings = new KurrentDBClientSerializationSettings {
 			MessageTypeNamingStrategy = null,
-			DefaultMetadataType       = typeof(TestMetadata)
-		};
+		}.ConfigureTypeMap(setting => setting.DefaultMetadataType = typeof(TestMetadata));
 
 		// When
 		var registry = SchemaRegistry.From(settings);

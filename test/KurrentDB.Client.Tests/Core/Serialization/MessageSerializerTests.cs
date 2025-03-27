@@ -276,7 +276,7 @@ public class MessageSerializerTests {
 
 		var operationSettings = OperationSerializationSettings.Configure(
 			s =>
-				s.RegisterMessageType<UserRegistered>("CustomMessageName")
+				s.MessageTypeMapping.Register<UserRegistered>("CustomMessageName")
 		);
 
 		// When
@@ -309,9 +309,10 @@ public class MessageSerializerTests {
 
 	static KurrentDBClientSerializationSettings CreateTestSettings() {
 		var settings = new KurrentDBClientSerializationSettings();
-		settings.RegisterMessageType<UserRegistered>("UserRegistered");
-		settings.RegisterMessageType<UserAssignedToRole>("UserAssignedToRole");
-		settings.UseMetadataType<TestMetadata>();
+		settings.MessageTypeMapping
+			.Register<UserRegistered>("UserRegistered")
+			.Register<UserAssignedToRole>("UserAssignedToRole")
+			.UseMetadataType<TestMetadata>();
 
 		return settings;
 	}

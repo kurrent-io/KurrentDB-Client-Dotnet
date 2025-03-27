@@ -31,9 +31,11 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 	public async Task
 		message_data_and_metadata_are_serialized_and_deserialized_using_auto_serialization_with_registered_metadata() {
 		// Given
-		await using var client = NewClientWith(serialization => serialization.UseMetadataType<CustomMetadata>());
+		await using var client =
+			NewClientWith(serialization => serialization.MessageTypeMapping.UseMetadataType<CustomMetadata>());
+
 		await using var subscriptionsClient =
-			NewSubscriptionsClientWith(serialization => serialization.UseMetadataType<CustomMetadata>());
+			NewSubscriptionsClientWith(serialization => serialization.MessageTypeMapping.UseMetadataType<CustomMetadata>());
 
 		var stream   = Fixture.GetStreamName();
 		var metadata = new CustomMetadata(Guid.NewGuid());
@@ -120,11 +122,11 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 	public static TheoryData<Action<KurrentDBClientSerializationSettings, string>> CustomTypeMappings() {
 		return [
 			(settings, typeName) =>
-				settings.RegisterMessageType<UserRegistered>(typeName),
+				settings.MessageTypeMapping.Register<UserRegistered>(typeName),
 			(settings, typeName) =>
-				settings.RegisterMessageType(typeName, typeof(UserRegistered)),
+				settings.MessageTypeMapping.Register(typeName, typeof(UserRegistered)),
 			(settings, typeName) =>
-				settings.RegisterMessageTypes(new Dictionary<string, Type> { { typeName, typeof(UserRegistered) } })
+				settings.MessageTypeMapping.Register(new Dictionary<string, Type> { { typeName, typeof(UserRegistered) } })
 		];
 	}
 
