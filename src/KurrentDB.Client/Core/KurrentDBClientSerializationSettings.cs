@@ -49,9 +49,9 @@ public class KurrentDBClientSerializationSettings {
 	/// <example>
 	/// <code>
 	/// var settings = KurrentDBClientSerializationSettings.Default(options => {
-	///     options.RegisterMessageType&lt;UserCreated&gt;("user-created");
-	///     options.RegisterMessageType&lt;UserUpdated&gt;("user-updated");
-	///     options.RegisterMessageTypeForCategory&lt;UserCreated&gt;("user");
+	///     options.MessageTypeMapping.Register&lt;UserRegistered&gt;("user_registered");
+	///     options.MessageTypeMapping.Register&lt;RoleAssigned&gt;("role_assigned");
+	///     options.MessageTypeMapping.RegisterForCategory&lt;UserRegistered&gt;("user_onboarding");
 	/// });
 	/// </code>
 	/// </example>
@@ -196,7 +196,7 @@ public class KurrentDBClientSerializationSettings {
 			BytesSerializer           = BytesSerializer,
 			JsonSerializer            = JsonSerializer,
 			DefaultContentType        = DefaultContentType,
-			MessageTypeMapping            = MessageTypeMapping.Clone(),
+			MessageTypeMapping        = MessageTypeMapping.Clone(),
 			MessageTypeNamingStrategy = MessageTypeNamingStrategy
 		};
 	}
@@ -265,6 +265,25 @@ public enum AutomaticDeserialization {
 }
 
 /// <summary>
+/// Controls whether the KurrentDB client should automatically register
+/// message type names based on the CLR type using naming convention.
+/// By default, it's enabled.
+/// </summary>
+public enum AutomaticTypeMappingRegistration {
+	/// <summary>
+	/// Enables automatic type registration.
+	/// The messages will be automatically discovered and resolved using registered naming resolution strategy.
+	/// </summary>
+	Enabled = 0,
+	
+	/// <summary>
+	/// Disables automatic type registration. If you use this setting, you need to register all type mappings manually.
+	/// If the type mapping is not registered for the specific message, the exception will be thrown.
+	/// </summary>
+	Disabled = 1
+}
+
+/// <summary>
 /// Represents message type mapping settings
 /// </summary>
 public class MessageTypeMappingSettings {
@@ -277,7 +296,7 @@ public class MessageTypeMappingSettings {
 	/// Registers CLR message types that can be appended to the specific stream category.
 	/// Types will have message type names resolved based on the used <see cref="KurrentDB.Client.Core.Serialization.IMessageTypeNamingStrategy"/>
 	/// </summary>
-	public IDictionary<string, Type[]> CategoryTypesMap { get; set; } = new Dictionary<string, Type[]>();
+	internal IDictionary<string, Type[]> CategoryTypesMap { get; set; } = new Dictionary<string, Type[]>();
 
 	/// <summary>
 	/// Specifies the CLR type that should be used when deserializing metadata for all events.
@@ -285,6 +304,13 @@ public class MessageTypeMappingSettings {
 	/// If not provided, <see cref="Kurrent.Diagnostics.Tracing.TracingMetadata"/> will be used.
 	/// </summary>
 	public Type? DefaultMetadataType { get; set; }
+
+	/// <summary>
+	/// Controls whether the KurrentDB client should automatically register
+	/// message type names based on the CLR type using naming convention.
+	/// By default, it's enabled.
+	/// </summary>
+	public AutomaticTypeMappingRegistration? AutomaticTypeMappingRegistration { get; set; }
 
 	/// <summary>
 	/// Associates a message type with a specific stream category to enable automatic deserialization.
@@ -297,9 +323,9 @@ public class MessageTypeMappingSettings {
 	/// <example>
 	/// <code>
 	/// // Register event types that can appear in user streams
-	/// settings.RegisterMessageTypeForCategory&lt;UserCreated&gt;("user")
-	///        .RegisterMessageTypeForCategory&lt;UserUpdated&gt;("user")
-	///        .RegisterMessageTypeForCategory&lt;UserDeleted&gt;("user");
+	/// settings.RegisterForCategory&lt;UserRegistered&gt;("user")
+	///        .RegisterForCategory&lt;RoleAssigned&gt;("user")
+	///        .RegisterForCategory&lt;UserDeleted&gt;("user");
 	/// </code>
 	/// </example>
 	public MessageTypeMappingSettings RegisterForCategory<T>(string categoryName) =>
@@ -335,8 +361,8 @@ public class MessageTypeMappingSettings {
 	/// <example>
 	/// <code>
 	/// // Register me types with their corresponding type identifiers
-	/// settings.RegisterMessageType&lt;UserCreated&gt;("user-created-v1")
-	///        .RegisterMessageType&lt;OrderPlaced&gt;("order-placed-v2");
+	/// settings.Register&lt;UserRegistered&gt;("user_registered-v1")
+	///        .Register&lt;OrderPlaced&gt;("order-placed-v2");
 	/// </code>
 	/// </example>
 	public MessageTypeMappingSettings Register<T>(string typeName) =>
@@ -384,6 +410,29 @@ public class MessageTypeMappingSettings {
 	/// <returns>The current instance for method chaining.</returns>
 	public MessageTypeMappingSettings UseMetadataType(Type type) {
 		DefaultMetadataType = type;
+
+		return this;
+	}
+	
+	/// <summary>
+	/// Disables automatic deserialization. Messages will be returned in their raw serialized form,
+	/// requiring manual deserialization by the application. Use this when you need direct access to the raw data
+	/// or when working with messages that don't have registered type mappings.
+	/// </summary>
+	/// <returns>The current instance for method chaining.</returns>
+	public MessageTypeMappingSettings DisableAutomaticRegistration() {
+		AutomaticTypeMappingRegistration = Client.AutomaticTypeMappingRegistration.Disabled;
+
+		return this;
+	}
+	
+	/// <summary>
+	/// Disables automatic type registration. If you use this setting, you need to register all type mappings manually.
+	/// If the type mapping is not registered for the specific message, the exception will be thrown.
+	/// </summary>
+	/// <returns>The current instance for method chaining.</returns>
+	public MessageTypeMappingSettings EnableAutomaticRegistration() {
+		AutomaticTypeMappingRegistration = Client.AutomaticTypeMappingRegistration.Enabled;
 
 		return this;
 	}
