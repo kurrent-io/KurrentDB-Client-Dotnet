@@ -27,7 +27,9 @@ public class SchemaRegistryTests {
 
 		var registry = new SchemaRegistry(
 			serializers,
-			new DefaultMessageTypeNamingStrategy(typeof(TestMetadata))
+			new DefaultMessageTypeNamingStrategy(typeof(TestMetadata)),
+			new MessageTypeRegistry(),
+			AutomaticTypeMappingRegistration.Enabled
 		);
 
 		// When
@@ -277,26 +279,26 @@ public class SchemaRegistryTests {
 			return $"Custom-{type.Name}-{context.CategoryName}";
 		}
 #if NET48
-	public bool TryResolveClrType(EventRecord record, out Type? clrType)
+	public bool TryResolveClrTypeName(EventRecord record, out string? clrType)
 #else
-		public bool TryResolveClrType(EventRecord record, [NotNullWhen(true)] out Type? clrType)
+		public bool TryResolveClrTypeName(EventRecord record, [NotNullWhen(true)] out string? clrType)
 #endif
 		{
 			// Simple implementation for testing
 			clrType = record.EventType.StartsWith("Custom-TestEvent1")
-				? typeof(TestEvent1)
+				? typeof(TestEvent1).FullName
 				: null;
 
 			return clrType != null;
 		}
 
 #if NET48
-	public bool TryResolveClrMetadataType(EventRecord record, out Type? clrType)
+	public bool TryResolveClrMetadataTypeName(EventRecord record, out string? clrType)
 #else
-		public bool TryResolveClrMetadataType(EventRecord record, [NotNullWhen(true)] out Type? clrType)
+		public bool TryResolveClrMetadataTypeName(EventRecord record, [NotNullWhen(true)] out string? clrType)
 #endif
 		{
-			clrType = typeof(TestMetadata);
+			clrType = typeof(TestMetadata).FullName!;
 			return true;
 		}
 	}

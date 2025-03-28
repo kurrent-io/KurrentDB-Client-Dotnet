@@ -28,27 +28,68 @@ static class ContentTypeExtensions {
 
 class SchemaRegistry(
 	IDictionary<ContentType, ISerializer> serializers,
-	IMessageTypeNamingStrategy messageTypeNamingStrategy
+	IMessageTypeNamingStrategy messageTypeNamingStrategy,
+	IMessageTypeRegistry messageTypeRegistry,
+	AutomaticTypeMappingRegistration automaticTypeMappingRegistration
 ) {
 	public ISerializer GetSerializer(ContentType schemaType) =>
 		serializers[schemaType];
 
 	public string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext) =>
+		messageTypeRegistry.GetTypeName(messageType) ??
 		messageTypeNamingStrategy.ResolveTypeName(messageType, resolutionContext);
 
 #if NET48
-	public bool TryResolveClrType(EventRecord record, out Type? type) =>
+	public bool TryResolveClrType(EventRecord record, out Type? type) {
 #else
-	public bool TryResolveClrType(EventRecord record, [NotNullWhen(true)] out Type? type) =>
+	public bool TryResolveClrType(EventRecord record, [NotNullWhen(true)] out Type? type) {
 #endif
-		messageTypeNamingStrategy.TryResolveClrType(record, out type);
+		type = messageTypeRegistry.GetClrType(record.EventType);
+
+		if (type != null)
+			return true;
+
+		if (automaticTypeMappingRegistration == AutomaticTypeMappingRegistration.Disabled)
+			return false;
+
+		if (!messageTypeNamingStrategy.TryResolveClrTypeName(record, out var clrTypeName) || clrTypeName == null)
+			return false;
+
+		type = TypeProvider.GetTypeByFullName(clrTypeName);
+
+		if (type == null)
+			return false;
+
+		messageTypeRegistry.Register(record.EventType, type);
+
+		return true;
+	}
 
 #if NET48
-	public bool TryResolveClrMetadataType(EventRecord record, out Type? type) =>
+	public bool TryResolveClrMetadataType(EventRecord record, out Type? type) {
 #else
-	public bool TryResolveClrMetadataType(EventRecord record, [NotNullWhen(true)] out Type? type) =>
+	public bool TryResolveClrMetadataType(EventRecord record, [NotNullWhen(true)] out Type? type) {
 #endif
-		messageTypeNamingStrategy.TryResolveClrMetadataType(record, out type);
+		type = messageTypeRegistry.GetClrType($"{record.EventType}-metadata");
+
+		if (type != null)
+			return true;
+
+		if (automaticTypeMappingRegistration == AutomaticTypeMappingRegistration.Disabled)
+			return false;
+
+		if (!messageTypeNamingStrategy.TryResolveClrMetadataTypeName(record, out var clrTypeName) || clrTypeName == null)
+			return false;
+
+		type = TypeProvider.GetTypeByFullName(clrTypeName);
+
+		if (type == null)
+			return false;
+
+		messageTypeRegistry.Register($"{record.EventType}-metadata", type);
+
+		return true;
+	}
 
 	public static SchemaRegistry From(KurrentDBClientSerializationSettings settings) {
 		var messageTypeNamingStrategy =
@@ -59,6 +100,9 @@ class SchemaRegistry(
 			settings.MessageTypeMapping,
 			messageTypeNamingStrategy
 		);
+
+		var automaticTypeMappingRegistration = settings.MessageTypeMapping.AutomaticTypeMappingRegistration
+		                                    ?? AutomaticTypeMappingRegistration.Enabled;
 
 		var messageTypeRegistry = new MessageTypeRegistry();
 		messageTypeRegistry.Register(settings.MessageTypeMapping.TypeMap);
@@ -76,11 +120,9 @@ class SchemaRegistry(
 
 		return new SchemaRegistry(
 			serializers,
-			new MessageTypeNamingStrategyWrapper(
-				messageTypeRegistry,
-				settings.MessageTypeNamingStrategy
-			 ?? new DefaultMessageTypeNamingStrategy(settings.MessageTypeMapping.DefaultMetadataType)
-			)
+			messageTypeNamingStrategy,
+			messageTypeRegistry,
+			automaticTypeMappingRegistration
 		);
 	}
 

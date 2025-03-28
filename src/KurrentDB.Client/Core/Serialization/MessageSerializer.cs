@@ -66,14 +66,14 @@ class MessageSerializer(SchemaRegistry schemaRegistry, KurrentDBClientSerializat
 #else
 	public bool TryDeserialize(EventRecord record, [NotNullWhen(true)] out Message? deserialized) {
 #endif
-		if (!schemaRegistry.TryResolveClrType(record, out var clrType)) {
+		if (!schemaRegistry.TryResolveClrType(record, out var clrTypeName)) {
 			deserialized = null;
 			return false;
 		}
 
 		var data = schemaRegistry
 			.GetSerializer(FromMessageContentType(record.ContentType))
-			.Deserialize(record.Data, clrType!);
+			.Deserialize(record.Data, clrTypeName!);
 
 		if (data == null) {
 			deserialized = null;

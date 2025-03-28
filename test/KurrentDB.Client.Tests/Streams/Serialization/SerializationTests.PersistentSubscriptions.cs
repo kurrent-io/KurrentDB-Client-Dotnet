@@ -211,23 +211,22 @@ public class PersistentSubscriptionsSerializationTests(ITestOutputHelper output,
 		}
 
 #if NET48
-		public bool TryResolveClrType(EventRecord record, out Type? type) {
+		public bool TryResolveClrTypeName(EventRecord record, out string? typeName) {
 #else
-		public bool TryResolveClrType(EventRecord record, [NotNullWhen(true)] out Type? type) {
+		public bool TryResolveClrTypeName(EventRecord record, [NotNullWhen(true)] out string? typeName) {
 #endif
 			var messageTypeName = record.EventType;
-			var typeName        = messageTypeName[(messageTypeName.IndexOf('-') + 1)..];
-			type = Type.GetType(typeName);
+			typeName        = messageTypeName[(messageTypeName.IndexOf('-') + 1)..];
 
-			return type != null;
+			return true;
 		}
 
 #if NET48
-		public bool TryResolveClrMetadataType(EventRecord record, out Type? type) {
+		public bool TryResolveClrMetadataTypeName(EventRecord record, out string? typeName) {
 #else
-		public bool TryResolveClrMetadataType(EventRecord record, [NotNullWhen(true)] out Type? type) {
+		public bool TryResolveClrMetadataTypeName(EventRecord record, [NotNullWhen(true)] out string? typeName) {
 #endif
-			type = null;
+			typeName = null;
 			return false;
 		}
 	}

@@ -7,63 +7,21 @@ public interface IMessageTypeNamingStrategy {
 	string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext);
 
 #if NET48
-	bool TryResolveClrType(EventRecord record, out Type? type);
+	bool TryResolveClrTypeName(EventRecord record, out string? clrTypeName);
 #else
-	bool TryResolveClrType(EventRecord messageTypeName, [NotNullWhen(true)] out Type? type);
+	bool TryResolveClrTypeName(EventRecord messageTypeName, [NotNullWhen(true)] out string? clrTypeName);
 #endif
 
 #if NET48
-	bool TryResolveClrMetadataType(EventRecord record, out Type? type);
+	bool TryResolveClrMetadataTypeName(EventRecord record, out string? clrTypeName);
 #else
-	bool TryResolveClrMetadataType(EventRecord messageTypeName, [NotNullWhen(true)] out Type? type);
+	bool TryResolveClrMetadataTypeName(EventRecord messageTypeName, [NotNullWhen(true)] out string? clrTypeName);
 #endif
 }
 
 public record MessageTypeNamingResolutionContext(string CategoryName) {
 	public static MessageTypeNamingResolutionContext FromStreamName(string streamName) =>
 		new(streamName.Split('-').FirstOrDefault() ?? "no_stream_category");
-}
-
-class MessageTypeNamingStrategyWrapper(
-	IMessageTypeRegistry messageTypeRegistry,
-	IMessageTypeNamingStrategy messageTypeNamingStrategy
-) : IMessageTypeNamingStrategy {
-	public string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext) {
-		return messageTypeRegistry.GetOrAddTypeName(
-			messageType,
-			_ => messageTypeNamingStrategy.ResolveTypeName(messageType, resolutionContext)
-		);
-	}
-
-#if NET48
-	public bool TryResolveClrType(EventRecord record, out Type? type) {
-#else
-	public bool TryResolveClrType(EventRecord record, [NotNullWhen(true)] out Type? type) {
-#endif
-		type = messageTypeRegistry.GetOrAddClrType(
-			record.EventType,
-			_ => messageTypeNamingStrategy.TryResolveClrType(record, out var resolvedType)
-				? resolvedType
-				: null
-		);
-
-		return type != null;
-	}
-
-#if NET48
-	public bool TryResolveClrMetadataType(EventRecord record, out Type? type) {
-#else
-	public bool TryResolveClrMetadataType(EventRecord record, [NotNullWhen(true)] out Type? type) {
-#endif
-		type = messageTypeRegistry.GetOrAddClrType(
-			$"{record}-metadata",
-			_ => messageTypeNamingStrategy.TryResolveClrMetadataType(record, out var resolvedType)
-				? resolvedType
-				: null
-		);
-
-		return type != null;
-	}
 }
 
 public class DefaultMessageTypeNamingStrategy(Type? defaultMetadataType) : IMessageTypeNamingStrategy {
@@ -73,31 +31,29 @@ public class DefaultMessageTypeNamingStrategy(Type? defaultMetadataType) : IMess
 		$"{resolutionContext.CategoryName}-{messageType.FullName}";
 
 #if NET48
-	public bool TryResolveClrType(EventRecord record, out Type? type) {
+	public bool TryResolveClrTypeName(EventRecord record, out string? clrTypeName) {
 #else
-	public bool TryResolveClrType(EventRecord record, [NotNullWhen(true)] out Type? type) {
+	public bool TryResolveClrTypeName(EventRecord record, [NotNullWhen(true)] out string? clrTypeName) {
 #endif
 		var messageTypeName        = record.EventType;
 		var categorySeparatorIndex = messageTypeName.IndexOf('-');
 
 		if (categorySeparatorIndex == -1 || categorySeparatorIndex == messageTypeName.Length - 1) {
-			type = null;
+			clrTypeName = null;
 			return false;
 		}
 
-		var clrTypeName = messageTypeName[(categorySeparatorIndex + 1)..];
+		clrTypeName = messageTypeName[(categorySeparatorIndex + 1)..];
 
-		type = TypeProvider.GetTypeByFullName(clrTypeName);
-
-		return type != null;
+		return true;
 	}
 
 #if NET48
-	public bool TryResolveClrMetadataType(EventRecord record, out Type? type) {
+	public bool TryResolveClrMetadataTypeName(EventRecord record, out string? clrTypeName) {
 #else
-	public bool TryResolveClrMetadataType(EventRecord record, [NotNullWhen(true)] out Type? type) {
+	public bool TryResolveClrMetadataTypeName(EventRecord record, [NotNullWhen(true)] out string? clrTypeName) {
 #endif
-		type = _defaultMetadataType;
-		return true;
+		clrTypeName = _defaultMetadataType.FullName;
+		return clrTypeName != null;
 	}
 }
