@@ -59,7 +59,7 @@ jobs:
         framework: [ net8.0, net9.0 ]
     services:
       esdb:
-        image: docker.eventstore.com/eventstore-ce/eventstoredb-ce:lts
+        image: docker.kurrent.io/eventstore-ce/eventstoredb-ce:lts
         env:
           EVENTSTORE_INSECURE: true
           EVENTSTORE_MEM_DB: false
@@ -98,10 +98,10 @@ jobs:
       - name: Generate certificates
         run: |
           mkdir -p certs
-          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.eventstore.com/eventstore-utils/es-gencert-cli:latest create-ca -out /tmp/ca
-          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.eventstore.com/eventstore-utils/es-gencert-cli:latest create-node -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/node -ip-addresses 127.0.0.1 -dns-names localhost
-          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.eventstore.com/eventstore-utils/es-gencert-cli:latest create-user -username admin -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/user-admin
-          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.eventstore.com/eventstore-utils/es-gencert-cli:latest create-user -username invalid -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/user-invalid
+          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-ca -out /tmp/ca
+          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-node -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/node -ip-addresses 127.0.0.1 -dns-names localhost
+          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-user -username admin -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/user-admin
+          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-user -username invalid -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/user-invalid
       - name: Set permissions on certificates
         run: |
           sudo chown -R $USER:$USER certs
@@ -132,13 +132,13 @@ jobs:
       - name: Login to Cloudsmith
         uses: docker/login-action@v3
         with:
-          registry: docker.eventstore.com
+          registry: docker.kurrent.io
           username: ${{ secrets.CLOUDSMITH_CICD_USER }}
           password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
       - name: Pull EventStore Image
         shell: bash
         run: |
-          docker pull docker.eventstore.com/eventstore-ce/eventstoredb-ce:ci
+          docker pull docker.kurrent.io/eventstore-ce/eventstoredb-ce:ci
       - shell: bash
         run: |
           git fetch --prune --unshallow
@@ -162,7 +162,7 @@ jobs:
         shell: bash
         env:
           ES_DOCKER_TAG: ci
-          ES_DOCKER_REGISTRY: docker.eventstore.com/eventstore-ce/eventstoredb-ce
+          ES_DOCKER_REGISTRY: docker.kurrent.io/eventstore-ce/eventstoredb-ce
         run: |
           dotnet test --configuration ${{ matrix.configuration }} --blame \
             --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
@@ -174,7 +174,7 @@ jobs:
         shell: pwsh
         env:
           ES_DOCKER_TAG: ci
-          ES_DOCKER_REGISTRY: docker.eventstore.com/eventstore-ce/eventstoredb-ce
+          ES_DOCKER_REGISTRY: docker.kurrent.io/eventstore-ce/eventstoredb-ce
         run: |
           dotnet test --configuration ${{ matrix.configuration }} --blame `
             --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" `
@@ -214,7 +214,7 @@ jobs:
           dotnet pack /p:Version=${{ steps.get_version.outputs.version }} --configuration=Release \
             /p:PublishDir=./packages \
             /p:NoWarn=NU5105 \
-            /p:RepositoryUrl=https://github.com/EventStore/EventStore-Client-Dotnet \
+            /p:RepositoryUrl=https://github.com/kurrent-io/EventStore-Client-Dotnet \
             /p:RepositoryType=git
       - name: Publish Artifacts
         uses: actions/upload-artifact@v4
@@ -226,7 +226,7 @@ jobs:
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           dotnet tool restore
-          find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.github_token }} --source https://nuget.pkg.github.com/EventStore/index.json --skip-duplicate
+          find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.github_token }} --source https://nuget.pkg.github.com/kurrent-io/index.json --skip-duplicate
       - name: Dotnet Push to Nuget.org
         shell: bash
         if: (contains(steps.get_version.outputs.branch, 'kurrent@') && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_to_nuget == 'true')
