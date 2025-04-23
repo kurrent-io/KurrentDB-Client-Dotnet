@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         docker-tag: [ ci, lts, previous-lts ]
-        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement ]
+        test: [ Streams, PersistentSubscriptions, Operations, ProjectionManagement, UserManagement, Security, Misc ]
     name: Test CE (${{ matrix.docker-tag }})
     with:
       docker-tag: ${{ matrix.docker-tag }}
@@ -23,7 +23,7 @@ jobs:
       test: ${{ matrix.test }}
   ee:
     uses: ./.github/workflows/base.yml
-    if: ${{ github.repository_owner == 'EventStore' }}
+    if: ${{ github.repository_owner == 'kurrent-io' }}
     strategy:
       fail-fast: false
       matrix:

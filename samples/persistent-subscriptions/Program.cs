@@ -1,5 +1,7 @@
-﻿await using var client = new EventStorePersistentSubscriptionsClient(
-	EventStoreClientSettings.Create("esdb://localhost:2113?tls=false&tlsVerifyCert=false")
+﻿using KurrentDB.Client;
+
+await using var client = new KurrentDBPersistentSubscriptionsClient(
+	KurrentDBClientSettings.Create("esdb://localhost:2113?tls=false&tlsVerifyCert=false")
 );
 
 await DeletePersistentSubscription(client);
@@ -36,7 +38,7 @@ await DeletePersistentSubscriptionToAll(client);
 
 return;
 
-static async Task CreatePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
+static async Task CreatePersistentSubscription(KurrentDBPersistentSubscriptionsClient client) {
 	#region create-persistent-subscription-to-stream
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -54,7 +56,7 @@ static async Task CreatePersistentSubscription(EventStorePersistentSubscriptions
 	#endregion create-persistent-subscription-to-stream
 }
 
-static async Task ConnectToPersistentSubscriptionToStream(EventStorePersistentSubscriptionsClient client,
+static async Task ConnectToPersistentSubscriptionToStream(KurrentDBPersistentSubscriptionsClient client,
 	CancellationToken ct) {
 	#region subscribe-to-persistent-subscription-to-stream
 
@@ -77,7 +79,7 @@ static async Task ConnectToPersistentSubscriptionToStream(EventStorePersistentSu
 	#endregion subscribe-to-persistent-subscription-to-stream
 }
 
-static async Task CreatePersistentSubscriptionToAll(EventStorePersistentSubscriptionsClient client) {
+static async Task CreatePersistentSubscriptionToAll(KurrentDBPersistentSubscriptionsClient client) {
 	#region create-persistent-subscription-to-all
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -96,7 +98,7 @@ static async Task CreatePersistentSubscriptionToAll(EventStorePersistentSubscrip
 	#endregion create-persistent-subscription-to-all
 }
 
-static async Task ConnectToPersistentSubscriptionToAll(EventStorePersistentSubscriptionsClient client,
+static async Task ConnectToPersistentSubscriptionToAll(KurrentDBPersistentSubscriptionsClient client,
 	CancellationToken ct) {
 	#region subscribe-to-persistent-subscription-to-all
 
@@ -118,7 +120,7 @@ static async Task ConnectToPersistentSubscriptionToAll(EventStorePersistentSubsc
 	#endregion subscribe-to-persistent-subscription-to-all
 }
 
-static async Task ConnectToPersistentSubscriptionWithManualAcks(EventStorePersistentSubscriptionsClient client,
+static async Task ConnectToPersistentSubscriptionWithManualAcks(KurrentDBPersistentSubscriptionsClient client,
 	CancellationToken ct) {
 	#region subscribe-to-persistent-subscription-with-manual-acks
 
@@ -145,7 +147,7 @@ static async Task ConnectToPersistentSubscriptionWithManualAcks(EventStorePersis
 	#endregion subscribe-to-persistent-subscription-with-manual-acks
 }
 
-static async Task UpdatePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
+static async Task UpdatePersistentSubscription(KurrentDBPersistentSubscriptionsClient client) {
 	#region update-persistent-subscription
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -163,7 +165,7 @@ static async Task UpdatePersistentSubscription(EventStorePersistentSubscriptions
 	#endregion update-persistent-subscription
 }
 
-static async Task DeletePersistentSubscription(EventStorePersistentSubscriptionsClient client) {
+static async Task DeletePersistentSubscription(KurrentDBPersistentSubscriptionsClient client) {
 	#region delete-persistent-subscription
 
 	try {
@@ -184,7 +186,7 @@ static async Task DeletePersistentSubscription(EventStorePersistentSubscriptions
 	#endregion delete-persistent-subscription
 }
 
-static async Task DeletePersistentSubscriptionToAll(EventStorePersistentSubscriptionsClient client) {
+static async Task DeletePersistentSubscriptionToAll(KurrentDBPersistentSubscriptionsClient client) {
 	#region delete-persistent-subscription-to-all
 
 	try {
@@ -204,7 +206,7 @@ static async Task DeletePersistentSubscriptionToAll(EventStorePersistentSubscrip
 	#endregion delete-persistent-subscription-to-all
 }
 
-static async Task GetPersistentSubscriptionToStreamInfo(EventStorePersistentSubscriptionsClient client) {
+static async Task GetPersistentSubscriptionToStreamInfo(KurrentDBPersistentSubscriptionsClient client) {
 	#region get-persistent-subscription-to-stream-info
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -219,7 +221,7 @@ static async Task GetPersistentSubscriptionToStreamInfo(EventStorePersistentSubs
 	#endregion get-persistent-subscription-to-stream-info
 }
 
-static async Task GetPersistentSubscriptionToAllInfo(EventStorePersistentSubscriptionsClient client) {
+static async Task GetPersistentSubscriptionToAllInfo(KurrentDBPersistentSubscriptionsClient client) {
 	#region get-persistent-subscription-to-all-info
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -233,7 +235,7 @@ static async Task GetPersistentSubscriptionToAllInfo(EventStorePersistentSubscri
 	#endregion get-persistent-subscription-to-all-info
 }
 
-static async Task ReplayParkedToStream(EventStorePersistentSubscriptionsClient client) {
+static async Task ReplayParkedToStream(KurrentDBPersistentSubscriptionsClient client) {
 	#region replay-parked-of-persistent-subscription-to-stream
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -249,7 +251,7 @@ static async Task ReplayParkedToStream(EventStorePersistentSubscriptionsClient c
 	#endregion persistent-subscription-replay-parked-to-stream
 }
 
-static async Task ReplayParkedToAll(EventStorePersistentSubscriptionsClient client) {
+static async Task ReplayParkedToAll(KurrentDBPersistentSubscriptionsClient client) {
 	#region replay-parked-of-persistent-subscription-to-all
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -264,7 +266,7 @@ static async Task ReplayParkedToAll(EventStorePersistentSubscriptionsClient clie
 	#endregion replay-parked-of-persistent-subscription-to-all
 }
 
-static async Task ListPersistentSubscriptionsToStream(EventStorePersistentSubscriptionsClient client) {
+static async Task ListPersistentSubscriptionsToStream(KurrentDBPersistentSubscriptionsClient client) {
 	#region list-persistent-subscriptions-to-stream
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -281,7 +283,7 @@ static async Task ListPersistentSubscriptionsToStream(EventStorePersistentSubscr
 	#endregion list-persistent-subscriptions-to-stream
 }
 
-static async Task ListPersistentSubscriptionsToAll(EventStorePersistentSubscriptionsClient client) {
+static async Task ListPersistentSubscriptionsToAll(KurrentDBPersistentSubscriptionsClient client) {
 	#region list-persistent-subscriptions-to-all
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -295,7 +297,7 @@ static async Task ListPersistentSubscriptionsToAll(EventStorePersistentSubscript
 	#endregion list-persistent-subscriptions-to-all
 }
 
-static async Task ListAllPersistentSubscriptions(EventStorePersistentSubscriptionsClient client) {
+static async Task ListAllPersistentSubscriptions(KurrentDBPersistentSubscriptionsClient client) {
 	#region list-persistent-subscriptions
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -309,7 +311,7 @@ static async Task ListAllPersistentSubscriptions(EventStorePersistentSubscriptio
 	#endregion list-persistent-subscriptions
 }
 
-static async Task RestartPersistentSubscriptionSubsystem(EventStorePersistentSubscriptionsClient client) {
+static async Task RestartPersistentSubscriptionSubsystem(KurrentDBPersistentSubscriptionsClient client) {
 	#region restart-persistent-subscription-subsystem
 
 	var userCredentials = new UserCredentials("admin", "changeit");

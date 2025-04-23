@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
+using EventStore.Client;
 using EventStore.Client.Extensions.OpenTelemetry;
+using KurrentDB.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry.Exporter;
@@ -23,17 +25,17 @@ dotnet add package OpenTelemetry.Extensions.Hosting
 # endregion import-required-packages
 **/
 
-var settings = EventStoreClientSettings.Create("esdb://localhost:2113?tls=false");
+var settings = KurrentDBClientSettings.Create("esdb://localhost:2113?tls=false");
 
 settings.OperationOptions.ThrowOnAppendFailure = false;
 
-await using var client = new EventStoreClient(settings);
+await using var client = new KurrentDBClient(settings);
 
 await TraceAppendToStream(client);
 
 return;
 
-static async Task TraceAppendToStream(EventStoreClient client) {
+static async Task TraceAppendToStream(KurrentDBClient client) {
 	const string serviceName = "sample";
 
 	var host = Host.CreateDefaultBuilder()
@@ -53,8 +55,7 @@ static async Task TraceAppendToStream(EventStoreClient client) {
 
 		host.Start();
 
-		var eventData = new EventData(
-			Uuid.NewUuid(),
+		var eventData = MessageData.From(
 			"some-event",
 			"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 		);
@@ -62,9 +63,7 @@ static async Task TraceAppendToStream(EventStoreClient client) {
 		await client.AppendToStreamAsync(
 			Uuid.NewUuid().ToString(),
 			StreamState.Any,
-			new List<EventData> {
-				eventData
-			}
+			[eventData]
 		);
 
 		# endregion setup-client-for-tracing
@@ -76,7 +75,7 @@ static async Task TraceAppendToStream(EventStoreClient client) {
 		#region register-instrumentation
 
 		tracerProviderBuilder
-			.AddEventStoreClientInstrumentation();
+			.AddKurrentDBClientInstrumentation();
 
 		#endregion register-instrumentation
 

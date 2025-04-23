@@ -1,6 +1,6 @@
 <Project>
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
         <Nullable>enable</Nullable>
         <NullableContextOptions>enable</NullableContextOptions>
         <ImplicitUsings>true</ImplicitUsings>
@@ -10,6 +10,6 @@
 
     <ItemGroup>
         <Using Include="System.Text" />
-        <Using Include="EventStore.Client" />
+        <Using Include="KurrentDB.Client" />
     </ItemGroup>
 </Project>

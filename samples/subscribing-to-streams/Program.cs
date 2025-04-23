@@ -3,14 +3,17 @@
 // ReSharper disable UnusedParameter.Local
 // ReSharper disable UnusedVariable
 
-await using var client = new EventStoreClient(EventStoreClientSettings.Create("esdb://localhost:2113?tls=false"));
+await using var client = new KurrentDBClient(KurrentDBClientSettings.Create("esdb://localhost:2113?tls=false"));
 
-await Task.WhenAll(YieldSamples().Select(async sample => {
-	try {
-		await sample;
-	} catch (OperationCanceledException) { }
-}));
-
+await Task.WhenAll(
+	YieldSamples().Select(
+		async sample => {
+			try {
+				await sample;
+			} catch (OperationCanceledException) { }
+		}
+	)
+);
 
 return;
 
@@ -27,13 +30,17 @@ IEnumerable<Task> YieldSamples() {
 	yield return OverridingUserCredentials(client, GetCT());
 }
 
-static async Task SubscribeToStreamFromPosition(EventStoreClient client, CancellationToken ct) {
+static async Task SubscribeToStreamFromPosition(KurrentDBClient client, CancellationToken ct) {
 	#region subscribe-to-stream-from-position
 
 	await using var subscription = client.SubscribeToStream(
 		"some-stream",
-		FromStream.After(StreamPosition.FromInt64(20)),
-		cancellationToken: ct);
+		new SubscribeToStreamOptions {
+			Start = FromStream.After(StreamPosition.FromInt64(20))
+		},
+		cancellationToken: ct
+	);
+
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var evnt):
@@ -46,13 +53,15 @@ static async Task SubscribeToStreamFromPosition(EventStoreClient client, Cancell
 	#endregion subscribe-to-stream-from-position
 }
 
-static async Task SubscribeToStreamLive(EventStoreClient client, CancellationToken ct) {
+static async Task SubscribeToStreamLive(KurrentDBClient client, CancellationToken ct) {
 	#region subscribe-to-stream-live
 
 	await using var subscription = client.SubscribeToStream(
 		"some-stream",
-		FromStream.End,
-		cancellationToken: ct);
+		new SubscribeToStreamOptions { Start = FromStream.End },
+		cancellationToken: ct
+	);
+
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var evnt):
@@ -65,14 +74,15 @@ static async Task SubscribeToStreamLive(EventStoreClient client, CancellationTok
 	#endregion subscribe-to-stream-live
 }
 
-static async Task SubscribeToStreamResolvingLinkTos(EventStoreClient client, CancellationToken ct) {
+static async Task SubscribeToStreamResolvingLinkTos(KurrentDBClient client, CancellationToken ct) {
 	#region subscribe-to-stream-resolving-linktos
 
 	await using var subscription = client.SubscribeToStream(
 		"$et-myEventType",
-		FromStream.Start,
-		true,
-		cancellationToken: ct);
+		new SubscribeToStreamOptions { ResolveLinkTos = true },
+		cancellationToken: ct
+	);
+
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var evnt):
@@ -85,11 +95,11 @@ static async Task SubscribeToStreamResolvingLinkTos(EventStoreClient client, Can
 	#endregion subscribe-to-stream-resolving-linktos
 }
 
-static async Task SubscribeToStreamSubscriptionDropped(EventStoreClient client, CancellationToken ct) {
+static async Task SubscribeToStreamSubscriptionDropped(KurrentDBClient client, CancellationToken ct) {
 	#region subscribe-to-stream-subscription-dropped
 
 	var checkpoint = await ReadStreamCheckpointAsync() switch {
-		null => FromStream.Start,
+		null         => FromStream.Start,
 		var position => FromStream.After(position.Value)
 	};
 
@@ -97,8 +107,10 @@ static async Task SubscribeToStreamSubscriptionDropped(EventStoreClient client, 
 	try {
 		await using var subscription = client.SubscribeToStream(
 			"some-stream",
-			checkpoint,
-			cancellationToken: ct);
+			new SubscribeToStreamOptions { Start = checkpoint },
+			cancellationToken: ct
+		);
+
 		await foreach (var message in subscription.Messages) {
 			switch (message) {
 				case StreamMessage.Event(var evnt):
@@ -120,13 +132,11 @@ static async Task SubscribeToStreamSubscriptionDropped(EventStoreClient client, 
 	#endregion subscribe-to-stream-subscription-dropped
 }
 
-static async Task SubscribeToStream(EventStoreClient client, CancellationToken ct) {
+static async Task SubscribeToStream(KurrentDBClient client, CancellationToken ct) {
 	#region subscribe-to-stream
 
-	await using var subscription = client.SubscribeToStream(
-		"some-stream",
-		FromStream.Start,
-		cancellationToken: ct);
+	await using var subscription = client.SubscribeToStream("some-stream", cancellationToken: ct);
+
 	await foreach (var message in subscription.Messages.WithCancellation(ct)) {
 		switch (message) {
 			case StreamMessage.Event(var evnt):
@@ -139,12 +149,11 @@ static async Task SubscribeToStream(EventStoreClient client, CancellationToken c
 	#endregion subscribe-to-stream
 }
 
-static async Task SubscribeToAll(EventStoreClient client, CancellationToken ct) {
+static async Task SubscribeToAll(KurrentDBClient client, CancellationToken ct) {
 	#region subscribe-to-all
 
-	await using var subscription = client.SubscribeToAll(
-		FromAll.Start,
-		cancellationToken: ct);
+	await using var subscription = client.SubscribeToAll(cancellationToken: ct);
+
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var evnt):
@@ -157,19 +166,22 @@ static async Task SubscribeToAll(EventStoreClient client, CancellationToken ct) 
 	#endregion subscribe-to-all
 }
 
-static async Task SubscribeToAllFromPosition(EventStoreClient client, CancellationToken ct) {
+static async Task SubscribeToAllFromPosition(KurrentDBClient client, CancellationToken ct) {
 	#region subscribe-to-all-from-position
 
 	var result = await client.AppendToStreamAsync(
 		"subscribe-to-all-from-position",
 		StreamState.NoStream,
-		new[] {
-			new EventData(Uuid.NewUuid(), "-", ReadOnlyMemory<byte>.Empty)
-		});
+		[MessageData.From("-", ReadOnlyMemory<byte>.Empty)]
+	);
 
 	await using var subscription = client.SubscribeToAll(
-		FromAll.After(result.LogPosition),
-		cancellationToken: ct);
+		new SubscribeToAllOptions {
+			Start = FromAll.After(result.LogPosition)
+		},
+		cancellationToken: ct
+	);
+
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var evnt):
@@ -182,12 +194,16 @@ static async Task SubscribeToAllFromPosition(EventStoreClient client, Cancellati
 	#endregion subscribe-to-all-from-position
 }
 
-static async Task SubscribeToAllLive(EventStoreClient client, CancellationToken ct) {
+static async Task SubscribeToAllLive(KurrentDBClient client, CancellationToken ct) {
 	#region subscribe-to-all-live
 
 	var subscription = client.SubscribeToAll(
-		FromAll.End,
-		cancellationToken: ct);
+		new SubscribeToAllOptions {
+			Start = FromAll.End
+		},
+		cancellationToken: ct
+	);
+
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var evnt):
@@ -200,19 +216,21 @@ static async Task SubscribeToAllLive(EventStoreClient client, CancellationToken 
 	#endregion subscribe-to-all-live
 }
 
-static async Task SubscribeToAllSubscriptionDropped(EventStoreClient client, CancellationToken ct) {
+static async Task SubscribeToAllSubscriptionDropped(KurrentDBClient client, CancellationToken ct) {
 	#region subscribe-to-all-subscription-dropped
 
 	var checkpoint = await ReadCheckpointAsync() switch {
-		null => FromAll.Start,
+		null         => FromAll.Start,
 		var position => FromAll.After(position.Value)
 	};
 
 	Subscribe:
 	try {
 		await using var subscription = client.SubscribeToAll(
-			checkpoint,
-			cancellationToken: ct);
+			new SubscribeToAllOptions { Start = checkpoint },
+			cancellationToken: ct
+		);
+
 		await foreach (var message in subscription.Messages) {
 			switch (message) {
 				case StreamMessage.Event(var evnt):
@@ -237,14 +255,15 @@ static async Task SubscribeToAllSubscriptionDropped(EventStoreClient client, Can
 	#endregion subscribe-to-all-subscription-dropped
 }
 
-static async Task SubscribeToFiltered(EventStoreClient client, CancellationToken ct) {
+static async Task SubscribeToFiltered(KurrentDBClient client, CancellationToken ct) {
 	#region stream-prefix-filtered-subscription
 
 	var prefixStreamFilter = new SubscriptionFilterOptions(StreamFilter.Prefix("test-", "other-"));
 	await using var subscription = client.SubscribeToAll(
-		FromAll.Start,
-		filterOptions: prefixStreamFilter,
-		cancellationToken: ct);
+		new SubscribeToAllOptions { FilterOptions = prefixStreamFilter },
+		cancellationToken: ct
+	);
+
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var evnt):
@@ -252,6 +271,7 @@ static async Task SubscribeToFiltered(EventStoreClient client, CancellationToken
 				await HandleEvent(evnt);
 
 				break;
+
 			case StreamMessage.AllStreamCheckpointReached(var position):
 				Console.WriteLine($"Checkpoint reached: {position}");
 				break;
@@ -267,13 +287,14 @@ static async Task SubscribeToFiltered(EventStoreClient client, CancellationToken
 	#endregion stream-regex-filtered-subscription
 }
 
-static async Task OverridingUserCredentials(EventStoreClient client, CancellationToken ct) {
+static async Task OverridingUserCredentials(KurrentDBClient client, CancellationToken ct) {
 	#region overriding-user-credentials
 
 	await using var subscription = client.SubscribeToAll(
-		FromAll.Start,
-		userCredentials: new UserCredentials("admin", "changeit"),
-		cancellationToken: ct);
+		new SubscribeToAllOptions { UserCredentials = new UserCredentials("admin", "changeit") },
+		cancellationToken: ct
+	);
+
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var evnt):

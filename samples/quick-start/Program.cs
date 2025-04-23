@@ -1,15 +1,13 @@
-﻿using System.Text.Json;
-
-var tokenSource       = new CancellationTokenSource();
+﻿var tokenSource       = new CancellationTokenSource();
 var cancellationToken = tokenSource.Token;
 
 #region createClient
 
 const string connectionString = "esdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false";
 
-var settings = EventStoreClientSettings.Create(connectionString);
+var settings = KurrentDBClientSettings.Create(connectionString);
 
-var client = new EventStoreClient(settings);
+var client = new KurrentDBClient(settings);
 
 #endregion createClient
 
@@ -20,12 +18,6 @@ var evt = new TestEvent {
 	ImportantData = "I wrote my first event!"
 };
 
-var eventData = new EventData(
-	Uuid.NewUuid(),
-	"TestEvent",
-	JsonSerializer.SerializeToUtf8Bytes(evt)
-);
-
 #endregion createEvent
 
 #region appendEvents
@@ -33,7 +25,7 @@ var eventData = new EventData(
 await client.AppendToStreamAsync(
 	"some-stream",
 	StreamState.Any,
-	new[] { eventData },
+	[evt],
 	cancellationToken: cancellationToken
 );
 
@@ -44,9 +36,9 @@ await client.AppendToStreamAsync(
 await client.AppendToStreamAsync(
 	"some-stream",
 	StreamState.Any,
-	new[] { eventData },
-	userCredentials: new UserCredentials("admin", "changeit"),
-	cancellationToken: cancellationToken
+	[evt],
+	new AppendToStreamOptions { UserCredentials = new UserCredentials("admin", "changeit") },
+	cancellationToken
 );
 
 #endregion overriding-user-credentials
@@ -54,13 +46,13 @@ await client.AppendToStreamAsync(
 #region readStream
 
 var result = client.ReadStreamAsync(
-	Direction.Forwards,
 	"some-stream",
-	StreamPosition.Start,
 	cancellationToken: cancellationToken
 );
 
-var events = await result.ToListAsync(cancellationToken);
+var events = await result
+	.DeserializedData()
+	.ToListAsync(cancellationToken);
 
 #endregion readStream
 
