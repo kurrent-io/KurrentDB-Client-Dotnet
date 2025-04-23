@@ -60,7 +60,7 @@ static async Task ExcludeSystemEvents(KurrentDBClient client) {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 		}
 	}
@@ -79,7 +79,7 @@ static async Task EventTypePrefix(KurrentDBClient client) {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 		}
 	}
@@ -96,7 +96,7 @@ static async Task EventTypeRegex(KurrentDBClient client) {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 		}
 	}
@@ -113,7 +113,7 @@ static async Task StreamPrefix(KurrentDBClient client) {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 		}
 	}
@@ -130,7 +130,7 @@ static async Task StreamRegex(KurrentDBClient client) {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 		}
 	}
@@ -145,11 +145,12 @@ static async Task CheckpointCallback(KurrentDBClient client) {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 
 			case StreamMessage.AllStreamCheckpointReached(var p):
-				Console.WriteLine($"checkpoint taken at {p.PreparePosition}");
+				// Save commit position to a persistent store as a checkpoint
+				Console.WriteLine($"checkpoint taken at {p.CommitPosition}");
 				break;
 		}
 	}
@@ -168,11 +169,12 @@ static async Task CheckpointCallbackWithInterval(KurrentDBClient client) {
 	await foreach (var message in subscription.Messages) {
 		switch (message) {
 			case StreamMessage.Event(var e):
-				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.PreparePosition}");
+				Console.WriteLine($"{e.Event.EventType} @ {e.Event.Position.CommitPosition}");
 				break;
 
 			case StreamMessage.AllStreamCheckpointReached(var p):
-				Console.WriteLine($"checkpoint taken at {p.PreparePosition}");
+				// Save commit position to a persistent store as a checkpoint
+				Console.WriteLine($"checkpoint taken at {p.CommitPosition}");
 				break;
 		}
 	}
