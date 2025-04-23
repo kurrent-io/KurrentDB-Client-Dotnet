@@ -55,8 +55,7 @@ static async Task TraceAppendToStream(KurrentDBClient client) {
 
 		host.Start();
 
-		var eventData = new EventData(
-			Uuid.NewUuid(),
+		var eventData = MessageData.From(
 			"some-event",
 			"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 		);
@@ -64,9 +63,7 @@ static async Task TraceAppendToStream(KurrentDBClient client) {
 		await client.AppendToStreamAsync(
 			Uuid.NewUuid().ToString(),
 			StreamState.Any,
-			new List<EventData> {
-				eventData
-			}
+			[eventData]
 		);
 
 		# endregion setup-client-for-tracing

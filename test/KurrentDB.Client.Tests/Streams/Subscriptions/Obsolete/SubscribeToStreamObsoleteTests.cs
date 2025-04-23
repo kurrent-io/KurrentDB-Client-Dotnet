@@ -18,7 +18,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, SubscribeT
 		var seedEvents = Fixture.CreateTestEvents(10).ToArray();
 		var pageSize   = seedEvents.Length / 2;
 
-		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents.Take(pageSize));
 
@@ -67,7 +67,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, SubscribeT
 		var pageSize   = seedEvents.Length / 2;
 
 		// only the second half of the events will be received
-		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.MessageId));
 
 		var writeResult    = await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents.Take(pageSize));
 		var streamPosition = StreamPosition.FromInt64(writeResult.NextExpectedStreamState.ToInt64());
@@ -116,7 +116,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, SubscribeT
 
 		var seedEvents = Fixture.CreateTestEvents(10).ToArray();
 
-		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
 		using var subscription = await Fixture.Streams
 			.SubscribeToStreamAsync(streamName, FromStream.Start, OnReceived, false, OnDropped)
@@ -265,7 +265,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, SubscribeT
 		var subscriptionDropped = new TaskCompletionSource<SubscriptionDroppedResult>();
 
 		var seedEvents      = Fixture.CreateTestEvents(3).ToArray();
-		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
 

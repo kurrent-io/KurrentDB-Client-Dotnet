@@ -1,10 +1,12 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
-public class SubscribeToAllConnectWithoutReadPermissionsTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)
+public class SubscribeToAllConnectWithoutReadPermissionsTests(
+	ITestOutputHelper output,
+	KurrentDBTemporaryFixture fixture
+)
 	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	[RetryFact]
 	public async Task connect_to_existing_without_read_all_permissions() {
@@ -23,7 +25,11 @@ public class SubscribeToAllConnectWithoutReadPermissionsTests(ITestOutputHelper 
 
 		await Assert.ThrowsAsync<AccessDeniedException>(
 			async () => {
-				await using var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: user);
+				await using var subscription = Fixture.Subscriptions.SubscribeToAll(
+					group,
+					new SubscribeToPersistentSubscriptionOptions { UserCredentials = user }
+				);
+
 				await subscription.Messages.AnyAsync().AsTask().WithTimeout();
 			}
 		);

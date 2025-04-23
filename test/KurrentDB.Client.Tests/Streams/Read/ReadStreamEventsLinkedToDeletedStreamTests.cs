@@ -27,14 +27,16 @@ public abstract class ReadStreamEventsLinkedToDeletedStreamTests(ReadEventsLinke
 	[UsedImplicitly]
 	[Trait("Category", "Operation:Read")]
 	[Trait("Category", "Operation:Read:Forwards")]
-	public class Forwards(Forwards.CustomFixture fixture) : ReadStreamEventsLinkedToDeletedStreamTests(fixture), IClassFixture<Forwards.CustomFixture> {
+	public class Forwards(Forwards.CustomFixture fixture) : ReadStreamEventsLinkedToDeletedStreamTests(fixture),
+		IClassFixture<Forwards.CustomFixture> {
 		public class CustomFixture() : ReadEventsLinkedToDeletedStreamFixture(Direction.Forwards);
 	}
 
 	[UsedImplicitly]
 	[Trait("Category", "Operation:Read")]
 	[Trait("Category", "Operation:Read:Backwards")]
-	public class Backwards(Backwards.CustomFixture fixture) : ReadStreamEventsLinkedToDeletedStreamTests(fixture), IClassFixture<Backwards.CustomFixture> {
+	public class Backwards(Backwards.CustomFixture fixture) : ReadStreamEventsLinkedToDeletedStreamTests(fixture),
+		IClassFixture<Backwards.CustomFixture> {
 		public class CustomFixture() : ReadEventsLinkedToDeletedStreamFixture(Direction.Backwards);
 	}
 }
@@ -50,25 +52,25 @@ public abstract class ReadEventsLinkedToDeletedStreamFixture : KurrentDBTemporar
 			await Streams.AppendToStreamAsync(
 				LinkedStream,
 				StreamState.Any,
-				new[] {
-					new EventData(
-						Uuid.NewUuid(),
+				[
+					new MessageData(
 						SystemEventTypes.LinkTo,
 						Encoding.UTF8.GetBytes($"0@{DeletedStream}"),
 						Array.Empty<byte>(),
-						Constants.Metadata.ContentTypes.ApplicationOctetStream
+						contentType: Constants.Metadata.ContentTypes.ApplicationOctetStream
 					)
-				}
+				]
 			);
 
 			await Streams.DeleteAsync(DeletedStream, StreamState.Any);
 
 			Events = await Streams.ReadStreamAsync(
-				direction,
 				LinkedStream,
-				StreamPosition.Start,
-				1,
-				true
+				new ReadStreamOptions {
+					Direction      = direction,
+					MaxCount       = 1,
+					ResolveLinkTos = true
+				}
 			).ToArrayAsync();
 		};
 	}

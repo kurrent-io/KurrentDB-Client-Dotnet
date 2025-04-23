@@ -1,5 +1,3 @@
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Tests.Streams;
 
 [Trait("Category", "Subscriptions")]
@@ -13,11 +11,11 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 		var seedEvents = Fixture.CreateTestEvents(10).ToArray();
 		var pageSize   = seedEvents.Length / 2;
 
-		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents.Take(pageSize));
 
-		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
+		await using var subscription = Fixture.Streams.SubscribeToStream(streamName);
 		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator.MoveNextAsync());
@@ -53,7 +51,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 		var pageSize   = seedEvents.Length / 2;
 
 		// only the second half of the events will be received
-		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.MessageId));
 
 		var writeResult =
 			await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents.Take(pageSize));
@@ -61,8 +59,12 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 		var streamPosition = StreamPosition.FromInt64(writeResult.NextExpectedStreamState.ToInt64());
 		var checkpoint     = FromStream.After(streamPosition);
 
-		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, checkpoint);
-		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
+		await using var subscription = Fixture.Streams.SubscribeToStream(
+			streamName,
+			new SubscribeToStreamOptions().From(checkpoint)
+		);
+
+		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator.MoveNextAsync());
 
@@ -99,9 +101,9 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 
 		var seedEvents = Fixture.CreateTestEvents(10).ToArray();
 
-		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
-		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
+		await using var subscription = Fixture.Streams.SubscribeToStream(streamName);
 		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator.MoveNextAsync());
@@ -137,14 +139,14 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
 
-		await using var subscription1 = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
+		await using var subscription1 = Fixture.Streams.SubscribeToStream(streamName);
 		await using var enumerator1   = subscription1.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator1.MoveNextAsync());
 
 		Assert.IsType<StreamMessage.SubscriptionConfirmation>(enumerator1.Current);
 
-		await using var subscription2 = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
+		await using var subscription2 = Fixture.Streams.SubscribeToStream(streamName);
 		await using var enumerator2   = subscription2.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator2.MoveNextAsync());
@@ -156,7 +158,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 		return;
 
 		async Task Subscribe(IAsyncEnumerator<StreamMessage> subscription) {
-			var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+			var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.MessageId));
 
 			while (await subscription.MoveNextAsync()) {
 				if (subscription.Current is not StreamMessage.Event(var resolvedEvent)) {
@@ -176,7 +178,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 	public async Task drops_when_stream_tombstoned() {
 		var streamName = Fixture.GetStreamName();
 
-		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
+		await using var subscription = Fixture.Streams.SubscribeToStream(streamName);
 		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
 
 		Assert.True(await enumerator.MoveNextAsync());
@@ -202,10 +204,14 @@ public class SubscribeToStreamTests(ITestOutputHelper output, SubscribeToStreamT
 					SystemStreams.AllStream,
 					StreamState.Any,
 					new(acl: new(SystemRoles.All)),
-					userCredentials: TestCredentials.Root
+					new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 				);
 
-				await Streams.AppendToStreamAsync($"SubscriptionsFixture-Noise-{Guid.NewGuid():N}", StreamState.NoStream, CreateTestEvents(10));
+				await Streams.AppendToStreamAsync(
+					$"SubscriptionsFixture-Noise-{Guid.NewGuid():N}",
+					StreamState.NoStream,
+					CreateTestEvents(10)
+				);
 			};
 		}
 	}

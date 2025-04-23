@@ -1,6 +1,4 @@
-using KurrentDB.Client;
-
-namespace KurrentDB.Client.Core.Serialization;
+namespace KurrentDB.Client;
 
 /// <summary>
 /// Represents a message wrapper in the KurrentDB system, containing both domain data and optional metadata.
@@ -9,7 +7,23 @@ namespace KurrentDB.Client.Core.Serialization;
 /// <param name="Data">The message domain data.</param>
 /// <param name="Metadata">Optional metadata providing additional context about the message, such as correlation IDs, timestamps, or user information.</param>
 /// <param name="MessageId">Unique identifier for this specific message instance. When null, the system will auto-generate an ID.</param>
-public record Message(object Data, object? Metadata, Uuid? MessageId = null) {
+public sealed record Message(object Data, object? Metadata, Uuid MessageId) {
+	/// <summary>
+	/// Creates a new Message with the specified domain data and random ID, but without metadata.
+	/// This factory method is a convenient shorthand when working with systems that don't require metadata.
+	/// </summary>
+	/// <param name="data">The message domain data.</param>
+	/// <returns>A new immutable Message instance containing the provided data and ID with null metadata.</returns>
+	/// <example>
+	/// <code>
+	/// // Create a message with a specific ID
+	/// var userRegistered = new UserRegistered { Id = "123", Name = "Alice" };
+	/// var message = Message.From(userRegistered);
+	/// </code>
+	/// </example>
+	public static Message From(object data) =>
+		From(data, null);
+	
 	/// <summary>
 	/// Creates a new Message with the specified domain data and message ID, but without metadata.
 	/// This factory method is a convenient shorthand when working with systems that don't require metadata.
@@ -20,9 +34,9 @@ public record Message(object Data, object? Metadata, Uuid? MessageId = null) {
 	/// <example>
 	/// <code>
 	/// // Create a message with a specific ID
-	/// var userCreated = new UserCreated { Id = "123", Name = "Alice" };
+	/// var userRegistered = new UserRegistered { Id = "123", Name = "Alice" };
 	/// var messageId = Uuid.NewUuid();
-	/// var message = Message.From(userCreated, messageId);
+	/// var message = Message.From(userRegistered, messageId);
 	/// </code>
 	/// </example>
 	public static Message From(object data, Uuid messageId) =>
@@ -53,10 +67,10 @@ public record Message(object Data, object? Metadata, Uuid? MessageId = null) {
 	/// var messageWithId = Message.From(orderPlaced, metadata, Uuid.NewUuid());
 	/// </code>
 	/// </example>
-	public static Message From(object data, object? metadata = null, Uuid? messageId = null) {
+	public static Message From(object data, object? metadata, Uuid? messageId = null) {
 		if (messageId == Uuid.Empty)
 			throw new ArgumentOutOfRangeException(nameof(messageId), "Message ID cannot be an empty UUID.");
 
-		return new Message(data, metadata, messageId);
+		return new Message(data, metadata, messageId ?? Uuid.NewUuid());
 	}
 }

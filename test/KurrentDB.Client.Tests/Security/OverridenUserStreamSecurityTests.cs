@@ -4,7 +4,10 @@ using KurrentDB.Client.Tests.TestNode;
 namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:Security")]
-public class OverridenUserStreamSecurityTests(ITestOutputHelper output, OverridenUserStreamSecurityTests.CustomFixture fixture)
+public class OverridenUserStreamSecurityTests(
+	ITestOutputHelper output,
+	OverridenUserStreamSecurityTests.CustomFixture fixture
+)
 	: KurrentTemporaryTests<OverridenUserStreamSecurityTests.CustomFixture>(output, fixture) {
 	[Fact]
 	public async Task operations_on_user_stream_succeeds_for_authorized_user() {
@@ -27,14 +30,21 @@ public class OverridenUserStreamSecurityTests(ITestOutputHelper output, Override
 	public async Task operations_on_user_stream_fail_for_not_authorized_user() {
 		var stream = Fixture.GetStreamName();
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadEvent(stream, TestCredentials.TestUser2));
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadStreamForward(stream, TestCredentials.TestUser2));
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadStreamBackward(stream, TestCredentials.TestUser2));
+		await Assert.ThrowsAsync<AccessDeniedException>(
+			() => Fixture.ReadStreamForward(stream, TestCredentials.TestUser2)
+		);
+
+		await Assert.ThrowsAsync<AccessDeniedException>(
+			() => Fixture.ReadStreamBackward(stream, TestCredentials.TestUser2)
+		);
 
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.AppendStream(stream, TestCredentials.TestUser2));
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadMeta(stream, TestCredentials.TestUser2));
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.WriteMeta(stream, TestCredentials.TestUser2));
 
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStream(stream, TestCredentials.TestUser2));
+		await Assert.ThrowsAsync<AccessDeniedException>(
+			() => Fixture.SubscribeToStream(stream, TestCredentials.TestUser2)
+		);
 
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.DeleteStream(stream, TestCredentials.TestUser2));
 	}
@@ -75,7 +85,10 @@ public class OverridenUserStreamSecurityTests(ITestOutputHelper output, Override
 	public class CustomFixture : SecurityFixture {
 		protected override Task When() {
 			var settings = new SystemSettings(new("user1", "user1", "user1", "user1", "user1"));
-			return Streams.SetSystemSettingsAsync(settings, userCredentials: TestCredentials.TestAdmin);
+			return Streams.SetSystemSettingsAsync(
+				settings,
+				new SetSystemSettingsOptions { UserCredentials = TestCredentials.TestAdmin }
+			);
 		}
 	}
 }

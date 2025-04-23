@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
-using KurrentDB.Client;
 using KurrentDB.Client.Core.Serialization;
 using Kurrent.Diagnostics.Tracing;
 
@@ -18,7 +17,7 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 		List<UserRegistered> expected = GenerateMessages();
 
 		//When
-		await Fixture.Streams.AppendToStreamAsync(stream, expected);
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
 		//Then
 		var resolvedEvents = await Fixture.Streams.SubscribeToStream(stream).Take(2).ToListAsync();
@@ -29,7 +28,10 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 	public async Task
 		message_data_and_metadata_are_serialized_and_deserialized_using_auto_serialization_with_registered_metadata() {
 		// Given
-		await using var client = NewClientWith(serialization => serialization.UseMetadataType<CustomMetadata>());
+		await using var client = NewClientWith(
+			serialization =>
+				serialization.MessageTypeMapping.UseMetadataType<CustomMetadata>()
+		);
 
 		var stream   = Fixture.GetStreamName();
 		var metadata = new CustomMetadata(Guid.NewGuid());
@@ -38,7 +40,7 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 			expected.Select(message => Message.From(message, metadata, Uuid.NewUuid())).ToList();
 
 		// When
-		await client.AppendToStreamAsync(stream, messagesWithMetadata);
+		await client.AppendToStreamAsync(stream, StreamState.NoStream, messagesWithMetadata);
 
 		// Then
 		var resolvedEvents = await client.SubscribeToStream(stream).Take(2).ToListAsync();
@@ -57,7 +59,7 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 			expected.Select(message => Message.From(message, metadata, Uuid.NewUuid())).ToList();
 
 		// When
-		await Fixture.Streams.AppendToStreamAsync(stream, messagesWithMetadata);
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, messagesWithMetadata);
 
 		// Then
 		var resolvedEvents = await Fixture.Streams.SubscribeToStream(stream).Take(2).ToListAsync();
@@ -72,8 +74,10 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 		var (stream, expected) = await AppendEventsUsingAutoSerialization();
 
 		// When
+#pragma warning disable CS0618 // Type or member is obsolete
 		var resolvedEvents = await Fixture.Streams
 			.SubscribeToStream(stream, FromStream.Start).Take(2)
+#pragma warning restore CS0618 // Type or member is obsolete
 			.ToListAsync();
 
 		// Then
@@ -86,8 +90,10 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 		var (stream, expected) = await AppendEventsUsingAutoSerialization();
 
 		// When
+#pragma warning disable CS0618 // Type or member is obsolete
 		var resolvedEvents = await Fixture.Streams
 			.SubscribeToAll(FromAll.Start, filterOptions: new SubscriptionFilterOptions(StreamFilter.Prefix(stream)))
+#pragma warning restore CS0618 // Type or member is obsolete
 			.Take(2)
 			.ToListAsync();
 
@@ -98,11 +104,13 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 	public static TheoryData<Action<KurrentDBClientSerializationSettings, string>> CustomTypeMappings() {
 		return [
 			(settings, typeName) =>
-				settings.RegisterMessageType<UserRegistered>(typeName),
+				settings.MessageTypeMapping.Register<UserRegistered>(typeName),
 			(settings, typeName) =>
-				settings.RegisterMessageType(typeof(UserRegistered), typeName),
+				settings.MessageTypeMapping.Register(typeName, typeof(UserRegistered)),
 			(settings, typeName) =>
-				settings.RegisterMessageTypes(new Dictionary<Type, string> { { typeof(UserRegistered), typeName } })
+				settings.MessageTypeMapping.Register(
+					new Dictionary<string, Type> { { typeName, typeof(UserRegistered) } }
+				)
 		];
 	}
 
@@ -172,20 +180,20 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 		}
 
 #if NET48
-	public bool TryResolveClrType(string messageTypeName, out Type? type) {
+		public bool TryResolveClrTypeName(EventRecord record, out string? typeName) {
 #else
-		public bool TryResolveClrType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
+		public bool TryResolveClrTypeName(EventRecord record, [NotNullWhen(true)] out string? typeName) {
 #endif
-			var typeName = messageTypeName[(messageTypeName.IndexOf('-') + 1)..];
-			type = Type.GetType(typeName);
+			var messageTypeName = record.EventType;
+			typeName = messageTypeName[(messageTypeName.IndexOf('-') + 1)..];
 
-			return type != null;
+			return true;
 		}
 
 #if NET48
-	public bool TryResolveClrMetadataType(string messageTypeName, out Type? type) {
+		public bool TryResolveClrMetadataTypeName(EventRecord record, out string? type) {
 #else
-		public bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
+		public bool TryResolveClrMetadataTypeName(EventRecord record, [NotNullWhen(true)] out string? type) {
 #endif
 			type = null;
 			return false;
@@ -267,7 +275,8 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 	}
 
 	[RetryFact]
-	public async Task subscribe_to_stream_does_NOT_deserialize_resolved_message_appended_with_manual_incompatible_serialization() {
+	public async Task
+		subscribe_to_stream_does_NOT_deserialize_resolved_message_appended_with_manual_incompatible_serialization() {
 		// Given
 		var (stream, expected) = await AppendEventsUsingManualSerialization(_ => "user_registered");
 
@@ -323,11 +332,15 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 		);
 	}
 
-	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization(KurrentDBClient? kurrentDbClient = null) {
+	async Task<(string, List<UserRegistered>)> AppendEventsUsingAutoSerialization(
+		KurrentDBClient? kurrentDbClient = null
+	) {
 		var stream   = Fixture.GetStreamName();
 		var messages = GenerateMessages();
 
-		var writeResult = await (kurrentDbClient ?? Fixture.Streams).AppendToStreamAsync(stream, messages);
+		var writeResult =
+			await (kurrentDbClient ?? Fixture.Streams).AppendToStreamAsync(stream, StreamState.Any, messages);
+
 		Assert.Equal((ulong)messages.Count - 1, writeResult.NextExpectedStreamState);
 
 		return (stream, messages);
@@ -340,8 +353,7 @@ public class SubscriptionsSerializationTests(ITestOutputHelper output, KurrentDB
 		var messages = GenerateMessages();
 		var eventData = messages.Select(
 			message =>
-				new EventData(
-					Uuid.NewUuid(),
+				new MessageData(
 					getTypeName(message),
 					Encoding.UTF8.GetBytes(
 						JsonSerializer.Serialize(

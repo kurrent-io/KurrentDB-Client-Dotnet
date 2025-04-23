@@ -1,5 +1,4 @@
 using Grpc.Core;
-using KurrentDB.Client;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using static System.TimeSpan;
@@ -14,7 +13,9 @@ public static class KurrentDBClientWarmupExtensions {
 	/// </summary>
 	static readonly IEnumerable<TimeSpan> DefaultBackoffDelay = Backoff.ConstantBackoff(FromMilliseconds(100), 300);
 
-	static async Task<T> TryWarmUp<T>(T client, Func<CancellationToken, Task> action, CancellationToken cancellationToken = default)
+	static async Task<T> TryWarmUp<T>(
+		T client, Func<CancellationToken, Task> action, CancellationToken cancellationToken = default
+	)
 		where T : KurrentDBClientBase {
 		await Policy
 			.Handle<RpcException>(ex => ex.StatusCode != StatusCode.Unimplemented)
@@ -25,8 +26,7 @@ public static class KurrentDBClientWarmupExtensions {
 				async ct => {
 					try {
 						await action(ct).ConfigureAwait(false);
-					}
-					catch (Exception ex) when (ex is not OperationCanceledException) {
+					} catch (Exception ex) when (ex is not OperationCanceledException) {
 						// grpc throws a rpcexception when you cancel the token (which we convert into
 						// invalid operation) - but polly expects operationcancelledexception or it wont
 						// call onTimeoutAsync. so raise that here.
@@ -40,7 +40,9 @@ public static class KurrentDBClientWarmupExtensions {
 		return client;
 	}
 
-	public static Task<KurrentDBClient> WarmUp(this KurrentDBClient dbClient, CancellationToken cancellationToken = default) =>
+	public static Task<KurrentDBClient> WarmUp(
+		this KurrentDBClient dbClient, CancellationToken cancellationToken = default
+	) =>
 		TryWarmUp(
 			dbClient,
 			async ct => {
@@ -49,11 +51,11 @@ public static class KurrentDBClientWarmupExtensions {
 				// 2. we are connected to leader if we require it
 				var users = await dbClient
 					.ReadStreamAsync(
-						direction: Direction.Forwards,
-						streamName: "$dbUsers",
-						revision: StreamPosition.Start,
-						maxCount: 1,
-						userCredentials: TestCredentials.Root,
+						"$dbUsers",
+						new ReadStreamOptions {
+							MaxCount = 1,
+							UserCredentials = TestCredentials.Root
+						},
 						cancellationToken: ct
 					)
 					.ToArrayAsync(ct);
@@ -63,17 +65,19 @@ public static class KurrentDBClientWarmupExtensions {
 
 				// the read from leader above is not enough to guarantee the next write goes to leader
 				_ = await dbClient.AppendToStreamAsync(
-					streamName: "warmup",
-					expectedState: StreamState.Any,
-					eventData: Enumerable.Empty<EventData>(),
-					userCredentials: TestCredentials.Root,
-					cancellationToken: ct
+					"warmup",
+					StreamState.Any,
+					Enumerable.Empty<MessageData>(),
+					new AppendToStreamOptions { UserCredentials = TestCredentials.Root },
+					ct
 				);
 			},
 			cancellationToken
 		);
 
-	public static Task<KurrentDBOperationsClient> WarmUp(this KurrentDBOperationsClient client, CancellationToken cancellationToken = default) =>
+	public static Task<KurrentDBOperationsClient> WarmUp(
+		this KurrentDBOperationsClient client, CancellationToken cancellationToken = default
+	) =>
 		TryWarmUp(
 			client,
 			async ct => {
@@ -81,7 +85,7 @@ public static class KurrentDBClientWarmupExtensions {
 					userCredentials: TestCredentials.Root,
 					cancellationToken: ct
 				);
-			}, 
+			},
 			cancellationToken
 		);
 
@@ -119,7 +123,9 @@ public static class KurrentDBClientWarmupExtensions {
 			cancellationToken
 		);
 
-	public static Task<KurrentDBUserManagementClient> WarmUp(this KurrentDBUserManagementClient client, CancellationToken cancellationToken = default) =>
+	public static Task<KurrentDBUserManagementClient> WarmUp(
+		this KurrentDBUserManagementClient client, CancellationToken cancellationToken = default
+	) =>
 		TryWarmUp(
 			client,
 			async ct => {

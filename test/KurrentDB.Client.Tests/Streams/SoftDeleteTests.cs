@@ -5,7 +5,8 @@ namespace KurrentDB.Client.Tests.Streams;
 
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Delete")]
-public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
+public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
+	: KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	static JsonDocument CustomMetadata { get; }
 
 	static SoftDeleteTests() {
@@ -33,7 +34,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 		await Fixture.Streams.DeleteAsync(stream, writeResult.NextExpectedStreamState);
 
 		await Assert.ThrowsAsync<StreamNotFoundException>(
-			() => Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+			() => Fixture.Streams.ReadStreamAsync(stream)
 				.ToArrayAsync().AsTask()
 		);
 	}
@@ -60,12 +61,12 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 
 		await Task.Delay(50); //TODO: This is a workaround until github issue #1744 is fixed
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+		var actual = await Fixture.Streams.ReadStreamAsync(stream)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
 		Assert.Equal(3, actual.Length);
-		Assert.Equal(events.Select(x => x.EventId), actual.Select(x => x.EventId));
+		Assert.Equal(events.Select(x => x.MessageId), actual.Select(x => x.EventId));
 		Assert.Equal(
 			Enumerable.Range(1, 3).Select(i => new StreamPosition((ulong)i)),
 			actual.Select(x => x.EventNumber)
@@ -102,12 +103,12 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 
 		await Task.Delay(50); //TODO: This is a workaround until github issue #1744 is fixed
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+		var actual = await Fixture.Streams.ReadStreamAsync(stream)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
 		Assert.Equal(3, actual.Length);
-		Assert.Equal(events.Select(x => x.EventId), actual.Select(x => x.EventId));
+		Assert.Equal(events.Select(x => x.MessageId), actual.Select(x => x.EventId));
 		Assert.Equal(
 			Enumerable.Range(1, 3).Select(i => new StreamPosition((ulong)i)),
 			actual.Select(x => x.EventNumber)
@@ -153,12 +154,12 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 
 		await Task.Delay(500); //TODO: This is a workaround until github issue #1744 is fixed
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+		var actual = await Fixture.Streams.ReadStreamAsync(stream)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
 		Assert.Equal(3, actual.Length);
-		Assert.Equal(events.Select(x => x.EventId), actual.Select(x => x.EventId));
+		Assert.Equal(events.Select(x => x.MessageId), actual.Select(x => x.EventId));
 		Assert.Equal(
 			Enumerable.Range(count, 3).Select(i => new StreamPosition((ulong)i)),
 			actual.Select(x => x.EventNumber)
@@ -196,7 +197,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 		await Fixture.Streams.TombstoneAsync(stream, StreamState.Any);
 
 		var ex = await Assert.ThrowsAsync<StreamDeletedException>(
-			() => Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+			() => Fixture.Streams.ReadStreamAsync(stream)
 				.ToArrayAsync().AsTask()
 		);
 
@@ -209,7 +210,9 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 
 		Assert.Equal(SystemStreams.MetastreamOf(stream), ex.Stream);
 
-		await Assert.ThrowsAsync<StreamDeletedException>(() => Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents()));
+		await Assert.ThrowsAsync<StreamDeletedException>(
+			() => Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents())
+		);
 	}
 
 	[Fact]
@@ -247,7 +250,11 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 	public async Task allows_recreating_for_first_write_only_returns_wrong_expected_version() {
 		var stream = Fixture.GetStreamName();
 
-		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents(2));
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			Fixture.CreateTestEvents(2)
+		);
 
 		Assert.Equal(new(1), writeResult.NextExpectedStreamState);
 
@@ -265,7 +272,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			stream,
 			StreamState.NoStream,
 			Fixture.CreateTestEvents(),
-			options => options.ThrowOnAppendFailure = false
+			new AppendToStreamOptions { ThrowOnAppendFailure = false }
 		);
 
 		Assert.IsType<WrongExpectedVersionResult>(wrongExpectedVersionResult);
@@ -297,11 +304,11 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 
 		Assert.Equal(new(6), writeResult.NextExpectedStreamState);
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+		var actual = await Fixture.Streams.ReadStreamAsync(stream)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
-		Assert.Equal(firstEvents.Concat(secondEvents).Select(x => x.EventId), actual.Select(x => x.EventId));
+		Assert.Equal(firstEvents.Concat(secondEvents).Select(x => x.MessageId), actual.Select(x => x.EventId));
 		Assert.Equal(
 			Enumerable.Range(2, 5).Select(i => new StreamPosition((ulong)i)),
 			actual.Select(x => x.EventNumber)
@@ -340,7 +347,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 
 		await Assert.ThrowsAsync<StreamNotFoundException>(
 			() => Fixture.Streams
-				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+				.ReadStreamAsync(stream)
 				.ToArrayAsync().AsTask()
 		);
 
@@ -397,7 +404,7 @@ public class SoftDeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture
 			await Task.Delay(200);
 
 		var actual = await Fixture.Streams
-			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+			.ReadStreamAsync(stream)
 			.ToArrayAsync();
 
 		Assert.Empty(actual);

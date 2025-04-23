@@ -1,16 +1,13 @@
-﻿using KurrentDB.Client;
-
-#pragma warning disable CS8321 // Local function is declared but never used
+﻿#pragma warning disable CS8321 // Local function is declared but never used
 
 await using var client = new KurrentDBClient(KurrentDBClientSettings.Create("esdb://localhost:2113?tls=false"));
 
 var events = Enumerable.Range(0, 20)
 	.Select(
-		r => new EventData(
-			Uuid.NewUuid(),
-			"some-event",
-			Encoding.UTF8.GetBytes($"{{\"id\": \"{r}\" \"value\": \"some value\"}}")
-		)
+		_ => new TestEvent {
+			EntityId = Guid.NewGuid().ToString(),
+			ImportantData = Guid.NewGuid().ToString()
+		}
 	);
 
 await client.AppendToStreamAsync(
@@ -20,23 +17,21 @@ await client.AppendToStreamAsync(
 );
 
 await ReadFromStream(client);
+await ReadFromStreamWithDisabledAutoSerialization(client);
 
 return;
 
 static async Task ReadFromStream(KurrentDBClient client) {
 	#region read-from-stream
 
-	var events = client.ReadStreamAsync(
-		Direction.Forwards,
-		"some-stream",
-		StreamPosition.Start
-	);
+	var events = client.ReadStreamAsync("some-stream");
 
 	#endregion read-from-stream
 
 	#region iterate-stream
 
-	await foreach (var @event in events) Console.WriteLine(Encoding.UTF8.GetString(@event.Event.Data.ToArray()));
+	await foreach (var @event in events) 
+		Console.WriteLine(@event.DeserializedData);
 
 	#endregion iterate-stream
 
@@ -48,19 +43,31 @@ static async Task ReadFromStream(KurrentDBClient client) {
 	#endregion
 }
 
+static async Task ReadFromStreamWithDisabledAutoSerialization(KurrentDBClient client) {
+	#region read-from-stream-with-disabled-auto-serialization
+
+	var events = client.ReadStreamAsync("some-stream", new ReadStreamOptions().DisableAutoSerialization());
+
+	#endregion read-from-stream-with-disabled-auto-serialization
+
+	#region iterate-stream-with-disabled-auto-serialization
+
+	await foreach (var resolvedEvent in events) 
+		Console.WriteLine(Encoding.UTF8.GetString(resolvedEvent.Event.Data.Span));
+
+	#endregion iterate-stream-with-disabled-auto-serialization
+}
+
 static async Task ReadFromStreamMessages(KurrentDBClient client) {
 	#region read-from-stream-messages
 
-	var streamPosition = StreamPosition.Start;
-	var results = client.ReadStreamAsync(
-		Direction.Forwards,
-		"some-stream",
-		streamPosition
-	);
+	var results = client.ReadStreamAsync("some-stream");
 
 	#endregion read-from-stream-messages
 
 	#region iterate-stream-messages
+
+	var streamPosition = StreamPosition.Start;
 
 	await foreach (var message in results.Messages)
 		switch (message) {
@@ -73,7 +80,7 @@ static async Task ReadFromStreamMessages(KurrentDBClient client) {
 				return;
 
 			case StreamMessage.Event(var resolvedEvent):
-				Console.WriteLine(Encoding.UTF8.GetString(resolvedEvent.Event.Data.Span));
+				Console.WriteLine(resolvedEvent.DeserializedData);
 				break;
 
 			case StreamMessage.FirstStreamPosition(var sp):
@@ -96,17 +103,15 @@ static async Task ReadFromStreamPosition(KurrentDBClient client) {
 	#region read-from-stream-position
 
 	var events = client.ReadStreamAsync(
-		Direction.Forwards,
 		"some-stream",
-		10,
-		20
+		new ReadStreamOptions { StreamPosition = 10, MaxCount = 20 }
 	);
 
 	#endregion read-from-stream-position
 
 	#region iterate-stream
 
-	await foreach (var @event in events) Console.WriteLine(Encoding.UTF8.GetString(@event.Event.Data.ToArray()));
+	await foreach (var @event in events) Console.WriteLine(@event.DeserializedData);
 
 	#endregion iterate-stream
 }
@@ -115,10 +120,8 @@ static async Task ReadFromStreamPositionCheck(KurrentDBClient client) {
 	#region checking-for-stream-presence
 
 	var result = client.ReadStreamAsync(
-		Direction.Forwards,
 		"some-stream",
-		10,
-		20
+		new ReadStreamOptions { StreamPosition = 10, MaxCount = 20 }
 	);
 
 	if (await result.ReadState == ReadState.StreamNotFound) return;
@@ -132,9 +135,8 @@ static async Task ReadFromStreamBackwards(KurrentDBClient client) {
 	#region reading-backwards
 
 	var events = client.ReadStreamAsync(
-		Direction.Backwards,
 		"some-stream",
-		StreamPosition.End
+		new ReadStreamOptions { Direction = Direction.Backwards, StreamPosition = StreamPosition.End }
 	);
 
 	await foreach (var e in events) Console.WriteLine(Encoding.UTF8.GetString(e.Event.Data.ToArray()));
@@ -146,9 +148,8 @@ static async Task ReadFromStreamMessagesBackwards(KurrentDBClient client) {
 	#region read-from-stream-messages-backwards
 
 	var results = client.ReadStreamAsync(
-		Direction.Forwards,
 		"some-stream",
-		StreamPosition.End
+		new ReadStreamOptions { Direction = Direction.Backwards, StreamPosition = StreamPosition.End }
 	);
 
 	#endregion read-from-stream-messages-backwards
@@ -180,13 +181,13 @@ static async Task ReadFromStreamMessagesBackwards(KurrentDBClient client) {
 static async Task ReadFromAllStream(KurrentDBClient client) {
 	#region read-from-all-stream
 
-	var events = client.ReadAllAsync(Direction.Forwards, Position.Start);
+	var events = client.ReadAllAsync();
 
 	#endregion read-from-all-stream
 
 	#region read-from-all-stream-iterate
 
-	await foreach (var e in events) Console.WriteLine(Encoding.UTF8.GetString(e.Event.Data.ToArray()));
+	await foreach (var e in events) Console.WriteLine(e.DeserializedData);
 
 	#endregion read-from-all-stream-iterate
 }
@@ -195,10 +196,7 @@ static async Task ReadFromAllStreamMessages(KurrentDBClient client) {
 	#region read-from-all-stream-messages
 
 	var position = Position.Start;
-	var results = client.ReadAllAsync(
-		Direction.Forwards,
-		position
-	);
+	var results  = client.ReadAllAsync(new ReadAllOptions { Position = position });
 
 	#endregion read-from-all-stream-messages
 
@@ -221,12 +219,12 @@ static async Task ReadFromAllStreamMessages(KurrentDBClient client) {
 static async Task IgnoreSystemEvents(KurrentDBClient client) {
 	#region ignore-system-events
 
-	var events = client.ReadAllAsync(Direction.Forwards, Position.Start);
+	var events = client.ReadAllAsync();
 
 	await foreach (var e in events) {
 		if (e.Event.EventType.StartsWith("$")) continue;
 
-		Console.WriteLine(Encoding.UTF8.GetString(e.Event.Data.ToArray()));
+		Console.WriteLine(e.DeserializedData);
 	}
 
 	#endregion ignore-system-events
@@ -235,7 +233,7 @@ static async Task IgnoreSystemEvents(KurrentDBClient client) {
 static async Task ReadFromAllStreamBackwards(KurrentDBClient client) {
 	#region read-from-all-stream-backwards
 
-	var events = client.ReadAllAsync(Direction.Backwards, Position.End);
+	var events = client.ReadAllAsync(new ReadAllOptions { Direction = Direction.Backwards, Position = Position.End });
 
 	#endregion read-from-all-stream-backwards
 
@@ -250,10 +248,7 @@ static async Task ReadFromAllStreamBackwardsMessages(KurrentDBClient client) {
 	#region read-from-all-stream-messages-backwards
 
 	var position = Position.End;
-	var results = client.ReadAllAsync(
-		Direction.Backwards,
-		position
-	);
+	var results  = client.ReadAllAsync(new ReadAllOptions { Direction = Direction.Backwards, Position = position });
 
 	#endregion read-from-all-stream-messages-backwards
 
@@ -275,7 +270,7 @@ static async Task ReadFromAllStreamBackwardsMessages(KurrentDBClient client) {
 }
 
 static async Task FilteringOutSystemEvents(KurrentDBClient client) {
-	var events = client.ReadAllAsync(Direction.Forwards, Position.Start);
+	var events = client.ReadAllAsync();
 
 	await foreach (var e in events)
 		if (!e.Event.EventType.StartsWith("$"))
@@ -286,10 +281,8 @@ static void ReadStreamOverridingUserCredentials(KurrentDBClient client, Cancella
 	#region overriding-user-credentials
 
 	var result = client.ReadStreamAsync(
-		Direction.Forwards,
 		"some-stream",
-		StreamPosition.Start,
-		userCredentials: new UserCredentials("admin", "changeit"),
+		new ReadStreamOptions { UserCredentials = new UserCredentials("admin", "changeit") },
 		cancellationToken: cancellationToken
 	);
 
@@ -300,9 +293,7 @@ static void ReadAllOverridingUserCredentials(KurrentDBClient client, Cancellatio
 	#region read-all-overriding-user-credentials
 
 	var result = client.ReadAllAsync(
-		Direction.Forwards,
-		Position.Start,
-		userCredentials: new UserCredentials("admin", "changeit"),
+		new ReadAllOptions { UserCredentials = new UserCredentials("admin", "changeit") },
 		cancellationToken: cancellationToken
 	);
 
@@ -313,11 +304,14 @@ static void ReadAllResolvingLinkTos(KurrentDBClient client, CancellationToken ca
 	#region read-from-all-stream-resolving-link-Tos
 
 	var result = client.ReadAllAsync(
-		Direction.Forwards,
-		Position.Start,
-		resolveLinkTos: true,
+		new ReadAllOptions { ResolveLinkTos = true },
 		cancellationToken: cancellationToken
 	);
 
 	#endregion read-from-all-stream-resolving-link-Tos
+}
+
+public class TestEvent {
+	public string? EntityId      { get; set; }
+	public string? ImportantData { get; set; }
 }

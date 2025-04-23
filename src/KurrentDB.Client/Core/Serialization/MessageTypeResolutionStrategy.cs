@@ -7,94 +7,53 @@ public interface IMessageTypeNamingStrategy {
 	string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext);
 
 #if NET48
-	bool TryResolveClrType(string messageTypeName, out Type? type);
+	bool TryResolveClrTypeName(EventRecord record, out string? clrTypeName);
 #else
-	bool TryResolveClrType(string messageTypeName, [NotNullWhen(true)] out Type? type);
+	bool TryResolveClrTypeName(EventRecord messageTypeName, [NotNullWhen(true)] out string? clrTypeName);
 #endif
-	
-	
+
 #if NET48
-	bool TryResolveClrMetadataType(string messageTypeName, out Type? type);
+	bool TryResolveClrMetadataTypeName(EventRecord record, out string? clrTypeName);
 #else
-	bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? type);
+	bool TryResolveClrMetadataTypeName(EventRecord messageTypeName, [NotNullWhen(true)] out string? clrTypeName);
 #endif
 }
 
-public record MessageTypeNamingResolutionContext(string CategoryName);
-
-class MessageTypeNamingStrategyWrapper(
-	IMessageTypeRegistry messageTypeRegistry,
-	IMessageTypeNamingStrategy messageTypeNamingStrategy
-) : IMessageTypeNamingStrategy {
-	public string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext) {
-		return messageTypeRegistry.GetOrAddTypeName(
-			messageType,
-			_ => messageTypeNamingStrategy.ResolveTypeName(messageType, resolutionContext)
-		);
-	}
-
-#if NET48
-	public bool TryResolveClrType(string messageTypeName, out Type? type) {
-#else
-	public bool TryResolveClrType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
-#endif
-		type = messageTypeRegistry.GetOrAddClrType(
-			messageTypeName,
-			_ => messageTypeNamingStrategy.TryResolveClrType(messageTypeName, out var resolvedType)
-				? resolvedType
-				: null
-		);
-
-		return type != null;
-	}
-
-#if NET48
-	public bool TryResolveClrMetadataType(string messageTypeName, out Type? type) {
-#else
-	public bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
-#endif
-		type = messageTypeRegistry.GetOrAddClrType(
-			$"{messageTypeName}-metadata",
-			_ => messageTypeNamingStrategy.TryResolveClrMetadataType(messageTypeName, out var resolvedType)
-				? resolvedType
-				: null
-		);
-
-		return type != null;
-	}
+public record MessageTypeNamingResolutionContext(string CategoryName) {
+	public static MessageTypeNamingResolutionContext FromStreamName(string streamName) =>
+		new(streamName.Split('-').FirstOrDefault() ?? "no_stream_category");
 }
 
 public class DefaultMessageTypeNamingStrategy(Type? defaultMetadataType) : IMessageTypeNamingStrategy {
 	readonly Type _defaultMetadataType = defaultMetadataType ?? typeof(TracingMetadata);
-	
+
 	public string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext) =>
-		$"{resolutionContext.CategoryName}-{messageType.FullName}"; 
+		$"{resolutionContext.CategoryName}-{messageType.FullName}";
 
 #if NET48
-	public bool TryResolveClrType(string messageTypeName, out Type? type) {
+	public bool TryResolveClrTypeName(EventRecord record, out string? clrTypeName) {
 #else
-	public bool TryResolveClrType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
+	public bool TryResolveClrTypeName(EventRecord record, [NotNullWhen(true)] out string? clrTypeName) {
 #endif
+		var messageTypeName        = record.EventType;
 		var categorySeparatorIndex = messageTypeName.IndexOf('-');
 
 		if (categorySeparatorIndex == -1 || categorySeparatorIndex == messageTypeName.Length - 1) {
-			type = null;
+			clrTypeName = null;
 			return false;
 		}
 
-		var clrTypeName = messageTypeName[(categorySeparatorIndex + 1)..];
-		
-		type = TypeProvider.GetTypeByFullName(clrTypeName);
+		clrTypeName = messageTypeName[(categorySeparatorIndex + 1)..];
 
-		return type != null;
+		return true;
 	}
 
 #if NET48
-	public bool TryResolveClrMetadataType(string messageTypeName, out Type? type) {
+	public bool TryResolveClrMetadataTypeName(EventRecord record, out string? clrTypeName) {
 #else
-	public bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? type) {
+	public bool TryResolveClrMetadataTypeName(EventRecord record, [NotNullWhen(true)] out string? clrTypeName) {
 #endif
-		type = _defaultMetadataType;
-		return true;
+		clrTypeName = _defaultMetadataType.FullName;
+		return clrTypeName != null;
 	}
 }

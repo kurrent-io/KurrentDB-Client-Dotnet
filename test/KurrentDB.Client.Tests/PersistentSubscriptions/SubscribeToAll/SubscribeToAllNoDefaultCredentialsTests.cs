@@ -1,9 +1,10 @@
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
-public class SubscribeToAllNoDefaultCredentialsTests(ITestOutputHelper output, SubscribeToAllNoDefaultCredentialsTests.CustomFixture fixture)
+public class SubscribeToAllNoDefaultCredentialsTests(
+	ITestOutputHelper output,
+	SubscribeToAllNoDefaultCredentialsTests.CustomFixture fixture
+)
 	: KurrentPermanentTests<SubscribeToAllNoDefaultCredentialsTests.CustomFixture>(output, fixture) {
 	[RetryFact]
 	public async Task connect_to_existing_without_permissions() {
@@ -23,7 +24,10 @@ public class SubscribeToAllNoDefaultCredentialsTests(ITestOutputHelper output, S
 	public async Task throws_persistent_subscription_not_found() {
 		var group = Fixture.GetGroupName();
 
-		await using var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
+		await using var subscription = Fixture.Subscriptions.SubscribeToAll(
+			group,
+			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+		);
 
 		Assert.True(
 			await subscription.Messages.OfType<PersistentSubscriptionMessage.NotFound>().AnyAsync()
@@ -34,7 +38,9 @@ public class SubscribeToAllNoDefaultCredentialsTests(ITestOutputHelper output, S
 
 	[RetryFact]
 	public async Task deleting_without_permissions() {
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.Subscriptions.DeleteToAllAsync(Guid.NewGuid().ToString()));
+		await Assert.ThrowsAsync<AccessDeniedException>(
+			() => Fixture.Subscriptions.DeleteToAllAsync(Guid.NewGuid().ToString())
+		);
 	}
 
 	[RetryFact]

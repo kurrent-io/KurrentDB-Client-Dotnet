@@ -1,7 +1,8 @@
 using KurrentDB.Client.Core.Serialization;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests.Core.Serialization;
+
+using static MessageTypeNamingResolutionContext;
 
 public class NullMessageSerializerTests {
 	[Fact]
@@ -9,7 +10,7 @@ public class NullMessageSerializerTests {
 		// Given
 		var serializer = NullMessageSerializer.Instance;
 		var message    = Message.From(new object());
-		var context    = new MessageSerializationContext("test-stream", ContentType.Json);
+		var context    = new MessageSerializationContext(FromStreamName("test-stream"));
 
 		// When & Assert
 		Assert.Throws<InvalidOperationException>(() => serializer.Serialize(message, context));

@@ -11,7 +11,7 @@ public class MessageTypeRegistryTests {
 		const string typeName = "test-event-1";
 
 		// When
-		registry.Register(type, typeName);
+		registry.Register(typeName, type);
 
 		// Then
 		Assert.Equal(typeName, registry.GetTypeName(type));
@@ -19,7 +19,7 @@ public class MessageTypeRegistryTests {
 	}
 
 	[Fact]
-	public void Register_CalledTwiceForTheSameTypeOverridesExistingRegistration() {
+	public void Register_CalledTwiceForTheSameTypeOverridesExistingTypeRegistration() {
 		// Given
 		var          registry         = new MessageTypeRegistry();
 		var          type             = typeof(TestEvent1);
@@ -27,8 +27,8 @@ public class MessageTypeRegistryTests {
 		const string updatedTypeName  = "updated-name";
 
 		// When
-		registry.Register(type, originalTypeName);
-		registry.Register(type, updatedTypeName);
+		registry.Register(originalTypeName, type);
+		registry.Register(updatedTypeName, type);
 
 		// Then
 		Assert.Equal(updatedTypeName, registry.GetTypeName(type));
@@ -69,7 +69,7 @@ public class MessageTypeRegistryTests {
 		var          type             = typeof(TestEvent1);
 		const string existingTypeName = "existing-type-name";
 
-		registry.Register(type, existingTypeName);
+		registry.Register(existingTypeName, type);
 		var typeResolutionCount = 0;
 
 		// When
@@ -116,7 +116,7 @@ public class MessageTypeRegistryTests {
 		var          registry = new MessageTypeRegistry();
 		var          type     = typeof(TestEvent1);
 		const string typeName = "test-event-name";
-		registry.Register(type, typeName);
+		registry.Register(typeName, type);
 		var typeResolutionCount = 0;
 
 		// When
@@ -190,9 +190,9 @@ public class MessageTypeRegistryTests {
 	public void RegisterDictionary_RegistersMultipleTypes() {
 		// Given
 		var registry = new MessageTypeRegistry();
-		var typeMap = new Dictionary<Type, string> {
-			{ typeof(TestEvent1), "test-event-1" },
-			{ typeof(TestEvent2), "test-event-2" }
+		var typeMap = new Dictionary<string, Type> {
+			{ "test-event-1", typeof(TestEvent1) },
+			{ "test-event-2", typeof(TestEvent2) }
 		};
 
 		// When

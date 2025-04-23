@@ -25,7 +25,7 @@ public class SubscribeToAllFilterTests(ITestOutputHelper output, KurrentDBTempor
 			SystemStreams.AllStream,
 			StreamState.Any,
 			new(acl: new(SystemRoles.All)),
-			userCredentials: TestCredentials.Root
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 		);
 
 		var appearedEvents = new List<EventRecord>();
@@ -46,7 +46,10 @@ public class SubscribeToAllFilterTests(ITestOutputHelper output, KurrentDBTempor
 			userCredentials: TestCredentials.Root
 		);
 
-		await using var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
+		await using var subscription = Fixture.Subscriptions.SubscribeToAll(
+			group,
+			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+		);
 
 		await subscription.Messages
 			.OfType<PersistentSubscriptionMessage.Event>()
@@ -60,7 +63,7 @@ public class SubscribeToAllFilterTests(ITestOutputHelper output, KurrentDBTempor
 			)
 			.WithTimeout();
 
-		Assert.Equal(events.Select(x => x.EventId), appearedEvents.Select(x => x.EventId));
+		Assert.Equal(events.Select(x => x.MessageId), appearedEvents.Select(x => x.EventId));
 	}
 
 	[RetryTheory]
@@ -87,7 +90,7 @@ public class SubscribeToAllFilterTests(ITestOutputHelper output, KurrentDBTempor
 			SystemStreams.AllStream,
 			StreamState.Any,
 			new(acl: new(SystemRoles.All)),
-			userCredentials: TestCredentials.Root
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
 		);
 
 		foreach (var e in eventsToSkip) {
@@ -115,7 +118,8 @@ public class SubscribeToAllFilterTests(ITestOutputHelper output, KurrentDBTempor
 			userCredentials: TestCredentials.Root
 		);
 
-		await using var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
+		await using var subscription =
+			Fixture.Subscriptions.SubscribeToAll(group, new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root });
 
 		var appearedEvents = await subscription.Messages.OfType<PersistentSubscriptionMessage.Event>()
 			.Take(10)
@@ -124,7 +128,7 @@ public class SubscribeToAllFilterTests(ITestOutputHelper output, KurrentDBTempor
 			.AsTask()
 			.WithTimeout();
 
-		Assert.Equal(eventsToCapture.Select(x => x.EventId), appearedEvents.Select(x => x.EventId));
+		Assert.Equal(eventsToCapture.Select(x => x.MessageId), appearedEvents.Select(x => x.EventId));
 	}
 
 	public static IEnumerable<object?[]> FilterCases() => Filters.All.Select(filter => new object[] { filter });

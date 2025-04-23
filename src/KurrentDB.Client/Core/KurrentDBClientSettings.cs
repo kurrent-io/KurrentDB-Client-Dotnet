@@ -62,6 +62,6 @@ namespace KurrentDB.Client {
 		/// Provides configuration options for messages serialization and deserialization in the KurrentDB client.
 		/// If null, default settings are used.
 		/// </summary>
-		public KurrentDBClientSerializationSettings Serialization  { get; set; } = KurrentDBClientSerializationSettings.Default();
+		public KurrentDBClientSerializationSettings Serialization  { get; set; } = KurrentDBClientSerializationSettings.Get();
 	}
 }

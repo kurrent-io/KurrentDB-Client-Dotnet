@@ -6,99 +6,32 @@ using Grpc.Core;
 using KurrentDB.Client.Core.Serialization;
 using static EventStore.Client.PersistentSubscriptions.PersistentSubscriptions;
 using static EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase;
+using static KurrentDB.Client.KurrentDBPersistentSubscriptionsClient;
 
 namespace KurrentDB.Client {
-	public class SubscribeToPersistentSubscriptionOptions {
-		/// <summary>
-		/// The size of the buffer.
-		/// </summary>
-		public int BufferSize { get; set; } = 10;
-
-		/// <summary>
-		/// The optional user credentials to perform operation with.
-		/// </summary>
-		public UserCredentials? UserCredentials { get; set; } = null;
-
-		/// <summary>
-		/// Allows to customize or disable the automatic deserialization
-		/// </summary>
-		public OperationSerializationSettings? SerializationSettings { get; set; }
-	}
-
-	public class PersistentSubscriptionListener {
-		/// <summary>
-		/// A handler called when a new event is received over the subscription.
-		/// </summary>
-#if NET48
-		public Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> EventAppeared { get; set; } =
- null!;
-#else
-		public required Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> EventAppeared {
-			get;
-			set;
-		}
-#endif
-		/// <summary>
-		/// A handler called if the subscription is dropped.
-		/// </summary>
-		public Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? SubscriptionDropped { get; set; }
-
-		/// <summary>
-		/// Returns the subscription listener with configured handlers
-		/// </summary>
-		/// <param name="eventAppeared">Handler invoked when a new event is received over the subscription.</param>
-		/// <param name="subscriptionDropped">A handler invoked if the subscription is dropped.</param>
-		/// <param name="checkpointReached">A handler called when a checkpoint is reached.
-		/// Set the checkpointInterval in subscription filter options to define how often this method is called.
-		/// </param>
-		/// <returns></returns>
-		public static PersistentSubscriptionListener Handle(
-			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null
-		) =>
-			new PersistentSubscriptionListener {
-				EventAppeared       = eventAppeared,
-				SubscriptionDropped = subscriptionDropped
-			};
-	}
-
 	partial class KurrentDBPersistentSubscriptionsClient {
+		internal const int DefaultBufferSize = 10;
 		/// <summary>
-		/// Subscribes to a persistent subscription.
+		/// Subscribes to a persistent subscription. Messages must be manually acknowledged
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
-		[Obsolete("SubscribeAsync is no longer supported. Use SubscribeToStream with manual acks instead.", false)]
-		public async Task<PersistentSubscription> SubscribeAsync(
+		public Task<PersistentSubscription> SubscribeToStreamAsync(
 			string streamName,
 			string groupName,
-			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-			UserCredentials? userCredentials = null,
-			int bufferSize = 10,
-			bool autoAck = true,
+			PersistentSubscriptionListener listener,
+			SubscribeToPersistentSubscriptionOptions? options = null,
 			CancellationToken cancellationToken = default
-		) {
-			if (autoAck) {
-				throw new InvalidOperationException(
-					$"AutoAck is no longer supported. Please use {nameof(SubscribeToStream)} with manual acks instead."
+		) =>
+			PersistentSubscription
+				.Confirm(
+					SubscribeToStream(streamName, groupName, options, cancellationToken),
+					listener,
+					_log,
+					cancellationToken
 				);
-			}
-
-			return await SubscribeToStreamAsync(
-				streamName,
-				groupName,
-				PersistentSubscriptionListener.Handle(eventAppeared, subscriptionDropped),
-				new SubscribeToPersistentSubscriptionOptions {
-					UserCredentials       = userCredentials,
-					BufferSize            = bufferSize,
-					SerializationSettings = OperationSerializationSettings.Disabled
-				},
-				cancellationToken
-			);
-		}
-
+		
 		/// <summary>
 		/// Subscribes to a persistent subscription. Messages must be manually acknowledged
 		/// </summary>
@@ -109,101 +42,16 @@ namespace KurrentDB.Client {
 			string streamName,
 			string groupName,
 			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-			UserCredentials? userCredentials = null,
-			int bufferSize = 10,
+			SubscribeToPersistentSubscriptionOptions? options = null,
 			CancellationToken cancellationToken = default
 		) =>
 			SubscribeToStreamAsync(
 				streamName,
 				groupName,
-				PersistentSubscriptionListener.Handle(eventAppeared, subscriptionDropped),
-				new SubscribeToPersistentSubscriptionOptions {
-					UserCredentials       = userCredentials,
-					BufferSize            = bufferSize,
-					SerializationSettings = OperationSerializationSettings.Disabled
-				},
+				PersistentSubscriptionListener.Handle(eventAppeared),
+				options,
 				cancellationToken
 			);
-
-		/// <summary>
-		/// Subscribes to a persistent subscription. Messages must be manually acknowledged
-		/// </summary>
-		/// <exception cref="ArgumentNullException"></exception>
-		/// <exception cref="ArgumentException"></exception>
-		/// <exception cref="ArgumentOutOfRangeException"></exception>
-		public async Task<PersistentSubscription> SubscribeToStreamAsync(
-			string streamName,
-			string groupName,
-			PersistentSubscriptionListener listener,
-			SubscribeToPersistentSubscriptionOptions options,
-			CancellationToken cancellationToken = default
-		) {
-			return await PersistentSubscription
-				.Confirm(
-					SubscribeToStream(streamName, groupName, options, cancellationToken),
-					listener,
-					_log,
-					cancellationToken
-				)
-				.ConfigureAwait(false);
-		}
-
-		/// <summary>
-		/// Subscribes to a persistent subscription. Messages must be manually acknowledged.
-		/// </summary>
-		/// <param name="streamName">The name of the stream to read events from.</param>
-		/// <param name="groupName">The name of the persistent subscription group.</param>
-		/// <param name="bufferSize">The size of the buffer.</param>
-		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public PersistentSubscriptionResult SubscribeToStream(
-			string streamName,
-			string groupName,
-			int bufferSize,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default
-		) {
-			return SubscribeToStream(
-				streamName,
-				groupName,
-				new SubscribeToPersistentSubscriptionOptions {
-					BufferSize            = bufferSize,
-					UserCredentials       = userCredentials,
-					SerializationSettings = OperationSerializationSettings.Disabled
-				},
-				cancellationToken
-			);
-		}
-		
-		
-
-		/// <summary>
-		/// Subscribes to a persistent subscription. Messages must be manually acknowledged.
-		/// </summary>
-		/// <param name="streamName">The name of the stream to read events from.</param>
-		/// <param name="groupName">The name of the persistent subscription group.</param>
-		/// <param name="bufferSize">The size of the buffer.</param>
-		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public PersistentSubscriptionResult SubscribeToStream(
-			string streamName,
-			string groupName,
-			UserCredentials? userCredentials,
-			CancellationToken cancellationToken = default
-		) {
-			return SubscribeToStream(
-				streamName,
-				groupName,
-				new SubscribeToPersistentSubscriptionOptions {
-					UserCredentials       = userCredentials,
-					SerializationSettings = OperationSerializationSettings.Disabled
-				},
-				cancellationToken
-			);
-		}
 
 		/// <summary>
 		/// Subscribes to a persistent subscription. Messages must be manually acknowledged.
@@ -216,7 +64,7 @@ namespace KurrentDB.Client {
 		public PersistentSubscriptionResult SubscribeToStream(
 			string streamName,
 			string groupName,
-			SubscribeToPersistentSubscriptionOptions options,
+			SubscribeToPersistentSubscriptionOptions? options = null,
 			CancellationToken cancellationToken = default
 		) {
 			if (streamName == null) {
@@ -235,12 +83,14 @@ namespace KurrentDB.Client {
 				throw new ArgumentException($"{nameof(groupName)} may not be empty.", nameof(groupName));
 			}
 
+			options ??= new SubscribeToPersistentSubscriptionOptions();
+
 			if (options.BufferSize <= 0) {
 				throw new ArgumentOutOfRangeException(nameof(options.BufferSize));
 			}
 
 			var readOptions = new ReadReq.Types.Options {
-				BufferSize = options.BufferSize,
+				BufferSize = options.BufferSize ?? DefaultBufferSize,
 				GroupName  = groupName,
 				UuidOption = new ReadReq.Types.Options.Types.UUIDOption { Structured = new Empty() }
 			};
@@ -269,7 +119,7 @@ namespace KurrentDB.Client {
 				new() { Options = readOptions },
 				Settings,
 				options.UserCredentials,
-				_messageSerializer.With(Settings.Serialization, options.SerializationSettings),
+				_messageSerializer.With(options.SerializationSettings),
 				cancellationToken
 			);
 		}
@@ -279,30 +129,8 @@ namespace KurrentDB.Client {
 		/// </summary>
 		public Task<PersistentSubscription> SubscribeToAllAsync(
 			string groupName,
-			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
-			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-			UserCredentials? userCredentials = null, 
-			int bufferSize = 10,
-			CancellationToken cancellationToken = default
-		) =>
-			SubscribeToAllAsync(
-				groupName,
-				PersistentSubscriptionListener.Handle(eventAppeared, subscriptionDropped),
-				new SubscribeToPersistentSubscriptionOptions {
-					BufferSize            = bufferSize,
-					UserCredentials       = userCredentials,
-					SerializationSettings = OperationSerializationSettings.Disabled
-				},
-				cancellationToken
-			);
-
-		/// <summary>
-		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged
-		/// </summary>
-		public Task<PersistentSubscription> SubscribeToAllAsync(
-			string groupName,
 			PersistentSubscriptionListener listener,
-			SubscribeToPersistentSubscriptionOptions options,
+			SubscribeToPersistentSubscriptionOptions? options = null,
 			CancellationToken cancellationToken = default
 		) =>
 			SubscribeToStreamAsync(
@@ -312,53 +140,17 @@ namespace KurrentDB.Client {
 				options,
 				cancellationToken
 			);
-
-		/// <summary>
-		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged.
-		/// </summary>
-		/// <param name="groupName">The name of the persistent subscription group.</param>
-		/// <param name="bufferSize">The size of the buffer.</param>
-		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public PersistentSubscriptionResult SubscribeToAll(
+		
+		public Task<PersistentSubscription> SubscribeToAllAsync(
 			string groupName,
-			int bufferSize,
-			UserCredentials? userCredentials = null,
+			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+			SubscribeToPersistentSubscriptionOptions? options = null,
 			CancellationToken cancellationToken = default
 		) =>
-			SubscribeToStream(
-				SystemStreams.AllStream,
+			SubscribeToAllAsync(
 				groupName,
-				new SubscribeToPersistentSubscriptionOptions {
-					BufferSize            = bufferSize,
-					UserCredentials       = userCredentials,
-					SerializationSettings = OperationSerializationSettings.Disabled
-				},
-				cancellationToken
-			);
-		
-		
-		/// <summary>
-		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged.
-		/// </summary>
-		/// <param name="groupName">The name of the persistent subscription group.</param>
-		/// <param name="bufferSize">The size of the buffer.</param>
-		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public PersistentSubscriptionResult SubscribeToAll(
-			string groupName,
-			UserCredentials? userCredentials,
-			CancellationToken cancellationToken = default
-		) =>
-			SubscribeToStream(
-				SystemStreams.AllStream,
-				groupName,
-				new SubscribeToPersistentSubscriptionOptions {
-					UserCredentials       = userCredentials,
-					SerializationSettings = OperationSerializationSettings.Disabled
-				},
+				PersistentSubscriptionListener.Handle(eventAppeared),
+				options,
 				cancellationToken
 			);
 
@@ -371,7 +163,7 @@ namespace KurrentDB.Client {
 		/// <returns></returns>
 		public PersistentSubscriptionResult SubscribeToAll(
 			string groupName,
-			SubscribeToPersistentSubscriptionOptions options,
+			SubscribeToPersistentSubscriptionOptions? options = null,
 			CancellationToken cancellationToken = default
 		) =>
 			SubscribeToStream(
@@ -703,81 +495,279 @@ namespace KurrentDB.Client {
 			}
 		}
 	}
+	
+	public class SubscribeToPersistentSubscriptionOptions {
+		/// <summary>
+		/// The size of the buffer.
+		/// </summary>
+		public int? BufferSize { get; set; }
 
-	public static class KurrentDBClientPersistentSubscriptionsExtensions {
+		/// <summary>
+		/// The optional user credentials to perform operation with.
+		/// </summary>
+		public UserCredentials? UserCredentials { get; set; }
+
+		/// <summary>
+		/// Allows to customize or disable the automatic deserialization
+		/// </summary>
+		public OperationSerializationSettings? SerializationSettings { get; set; }
+	}
+
+	public class PersistentSubscriptionListener {
+		/// <summary>
+		/// A handler called when a new event is received over the subscription.
+		/// </summary>
+#if NET48
+		public Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> EventAppeared { get; set; } =
+ null!;
+#else
+		public required Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> EventAppeared {
+			get;
+			set;
+		}
+#endif
+		/// <summary>
+		/// A handler called if the subscription is dropped.
+		/// </summary>
+		public Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? SubscriptionDropped { get; set; }
+
+		/// <summary>
+		/// Returns the subscription listener with configured handlers
+		/// </summary>
+		/// <param name="eventAppeared">Handler invoked when a new event is received over the subscription.</param>
+		/// <param name="subscriptionDropped">A handler invoked if the subscription is dropped.</param>
+		/// <param name="checkpointReached">A handler called when a checkpoint is reached.
+		/// Set the checkpointInterval in subscription filter options to define how often this method is called.
+		/// </param>
+		/// <returns></returns>
+		public static PersistentSubscriptionListener Handle(
+			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null
+		) =>
+			new PersistentSubscriptionListener {
+				EventAppeared       = eventAppeared,
+				SubscriptionDropped = subscriptionDropped
+			};
+	}
+
+	public static class ObsoleteKurrentDBClientPersistentSubscriptionsExtensions {
+		/// <summary>
+		/// Subscribes to a persistent subscription.
+		/// </summary>
+		/// <exception cref="ArgumentNullException"></exception>
+		/// <exception cref="ArgumentException"></exception>
+		/// <exception cref="ArgumentOutOfRangeException"></exception>
+		[Obsolete("SubscribeAsync is no longer supported. Use SubscribeToStream with manual acks instead.", false)]
+		public static async Task<PersistentSubscription> SubscribeAsync(
+			this KurrentDBPersistentSubscriptionsClient dbClient,
+			string streamName,
+			string groupName,
+			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
+			UserCredentials? userCredentials = null,
+			int bufferSize = DefaultBufferSize,
+			bool autoAck = true,
+			CancellationToken cancellationToken = default
+		) {
+			if (autoAck) {
+				throw new InvalidOperationException(
+					$"AutoAck is no longer supported. Please use {nameof(SubscribeToStream)} with manual acks instead."
+				);
+			}
+
+			return await dbClient.SubscribeToStreamAsync(
+				streamName,
+				groupName,
+				PersistentSubscriptionListener.Handle(eventAppeared, subscriptionDropped),
+				new SubscribeToPersistentSubscriptionOptions {
+					UserCredentials       = userCredentials,
+					BufferSize            = bufferSize,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
+				cancellationToken
+			);
+		}
+
 		/// <summary>
 		/// Subscribes to a persistent subscription. Messages must be manually acknowledged
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
 		/// <exception cref="ArgumentException"></exception>
 		/// <exception cref="ArgumentOutOfRangeException"></exception>
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with SubscribeToPersistentSubscriptionOptions and get auto-serialization capabilities",
+			false
+		)]
 		public static Task<PersistentSubscription> SubscribeToStreamAsync(
-			this KurrentDBPersistentSubscriptionsClient kurrentDbClient,
+			this KurrentDBPersistentSubscriptionsClient dbClient,
 			string streamName,
 			string groupName,
-			PersistentSubscriptionListener listener,
+			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
+			UserCredentials? userCredentials = null,
+			int bufferSize = DefaultBufferSize,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentDbClient.SubscribeToStreamAsync(
+			dbClient.SubscribeToStreamAsync(
 				streamName,
 				groupName,
-				listener,
-				new SubscribeToPersistentSubscriptionOptions(),
+				PersistentSubscriptionListener.Handle(eventAppeared, subscriptionDropped),
+				new SubscribeToPersistentSubscriptionOptions {
+					UserCredentials       = userCredentials,
+					BufferSize            = bufferSize,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
 				cancellationToken
 			);
 
 		/// <summary>
 		/// Subscribes to a persistent subscription. Messages must be manually acknowledged.
 		/// </summary>
-		/// <param name="kurrentDbClient"></param>
+		/// <param name="dbClient"></param>
 		/// <param name="streamName">The name of the stream to read events from.</param>
 		/// <param name="groupName">The name of the persistent subscription group.</param>
+		/// <param name="bufferSize">The size of the buffer.</param>
+		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with SubscribeToPersistentSubscriptionOptions and get auto-serialization capabilities",
+			false
+		)]
 		public static KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult SubscribeToStream(
-			this KurrentDBPersistentSubscriptionsClient kurrentDbClient,
+			this KurrentDBPersistentSubscriptionsClient dbClient,
 			string streamName,
 			string groupName,
+			int bufferSize,
+			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentDbClient.SubscribeToStream(
+			dbClient.SubscribeToStream(
 				streamName,
 				groupName,
-				new SubscribeToPersistentSubscriptionOptions(),
+				new SubscribeToPersistentSubscriptionOptions {
+					BufferSize            = bufferSize,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Subscribes to a persistent subscription. Messages must be manually acknowledged.
+		/// </summary>
+		/// <param name="dbClient"></param>
+		/// <param name="streamName">The name of the stream to read events from.</param>
+		/// <param name="groupName">The name of the persistent subscription group.</param>
+		/// <param name="bufferSize">The size of the buffer.</param>
+		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with SubscribeToPersistentSubscriptionOptions and get auto-serialization capabilities",
+			false
+		)]
+		public static KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult SubscribeToStream(
+			this KurrentDBPersistentSubscriptionsClient dbClient,
+			string streamName,
+			string groupName,
+			UserCredentials? userCredentials,
+			CancellationToken cancellationToken = default
+		) =>
+			dbClient.SubscribeToStream(
+				streamName,
+				groupName,
+				new SubscribeToPersistentSubscriptionOptions {
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
 				cancellationToken
 			);
 
 		/// <summary>
 		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged
 		/// </summary>
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with SubscribeToPersistentSubscriptionOptions and get auto-serialization capabilities",
+			false
+		)]
 		public static Task<PersistentSubscription> SubscribeToAllAsync(
-			this KurrentDBPersistentSubscriptionsClient kurrentDbClient,
+			this KurrentDBPersistentSubscriptionsClient dbClient,
 			string groupName,
-			PersistentSubscriptionListener listener,
+			Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
+			Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
+			UserCredentials? userCredentials = null, 
+			int bufferSize = DefaultBufferSize,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentDbClient.SubscribeToAllAsync(
+			dbClient.SubscribeToAllAsync(
 				groupName,
-				listener,
-				new SubscribeToPersistentSubscriptionOptions(),
+				PersistentSubscriptionListener.Handle(eventAppeared, subscriptionDropped),
+				new SubscribeToPersistentSubscriptionOptions {
+					BufferSize            = bufferSize,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
 				cancellationToken
 			);
 
 		/// <summary>
 		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged.
 		/// </summary>
-		/// <param name="kurrentDbClient"></param>
+		/// <param name="dbClient"></param>
 		/// <param name="groupName">The name of the persistent subscription group.</param>
+		/// <param name="bufferSize">The size of the buffer.</param>
+		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 		/// <returns></returns>
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with SubscribeToPersistentSubscriptionOptions and get auto-serialization capabilities",
+			false
+		)]
 		public static KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult SubscribeToAll(
-			this KurrentDBPersistentSubscriptionsClient kurrentDbClient,
+			this KurrentDBPersistentSubscriptionsClient dbClient,
 			string groupName,
+			int bufferSize,
+			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) =>
-			kurrentDbClient.SubscribeToAll(
+			dbClient.SubscribeToStream(
+				SystemStreams.AllStream,
 				groupName,
-				new SubscribeToPersistentSubscriptionOptions(),
+				new SubscribeToPersistentSubscriptionOptions {
+					BufferSize            = bufferSize,
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
+				cancellationToken
+			);
+
+		/// <summary>
+		/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged.
+		/// </summary>
+		/// <param name="dbClient"></param>
+		/// <param name="groupName">The name of the persistent subscription group.</param>
+		/// <param name="bufferSize">The size of the buffer.</param>
+		/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
+		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+		/// <returns></returns>
+		[Obsolete(
+			"This method may be removed in future releases. Use the overload with SubscribeToPersistentSubscriptionOptions and get auto-serialization capabilities",
+			false
+		)]
+		public static KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult SubscribeToAll(
+			this KurrentDBPersistentSubscriptionsClient dbClient,
+			string groupName,
+			UserCredentials? userCredentials,
+			CancellationToken cancellationToken = default
+		) =>
+			dbClient.SubscribeToStream(
+				SystemStreams.AllStream,
+				groupName,
+				new SubscribeToPersistentSubscriptionOptions {
+					UserCredentials       = userCredentials,
+					SerializationSettings = OperationSerializationSettings.Disabled
+				},
 				cancellationToken
 			);
 	}

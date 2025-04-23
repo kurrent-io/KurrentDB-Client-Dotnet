@@ -1,7 +1,8 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Core.Serialization;
 
 namespace KurrentDB.Client.Tests.Core.Serialization;
+
+using static MessageTypeNamingResolutionContext;
 
 public class MessageSerializerTests {
 	[Fact]
@@ -9,20 +10,20 @@ public class MessageSerializerTests {
 		// Given
 		var settings       = CreateTestSettings();
 		var schemaRegistry = SchemaRegistry.From(settings);
-		var serializer     = new MessageSerializer(schemaRegistry);
+		var serializer     = new MessageSerializer(schemaRegistry, settings);
 
 		var data      = new UserRegistered("user-123", "user@random-email.com");
 		var metadata  = new TestMetadata();
 		var messageId = Uuid.NewUuid();
 		var message   = Message.From(data, metadata, messageId);
 
-		var context = new MessageSerializationContext("user-123", ContentType.Json);
+		var context = new MessageSerializationContext(FromStreamName("user-123"));
 
 		// When
 		var eventData = serializer.Serialize(message, context);
 
 		// Then
-		Assert.Equal(messageId, eventData.EventId);
+		Assert.Equal(messageId, eventData.MessageId);
 		Assert.Equal("UserRegistered", eventData.Type);
 		Assert.NotEmpty(eventData.Data.Span.ToArray());
 		Assert.NotEmpty(eventData.Metadata.Span.ToArray());
@@ -34,18 +35,18 @@ public class MessageSerializerTests {
 		// Given
 		var settings       = CreateTestSettings();
 		var schemaRegistry = SchemaRegistry.From(settings);
-		var serializer     = new MessageSerializer(schemaRegistry);
+		var serializer     = new MessageSerializer(schemaRegistry, settings);
 
 		var data    = new UserRegistered("user-123", "user@random-email.com");
 		var message = Message.From(data); // No ID provided
 
-		var context = new MessageSerializationContext("user-123", ContentType.Json);
+		var context = new MessageSerializationContext(FromStreamName("user-123"));
 
 		// When
 		var eventData = serializer.Serialize(message, context);
 
 		// Then
-		Assert.NotEqual(Uuid.Empty, eventData.EventId);
+		Assert.NotEqual(Uuid.Empty, eventData.MessageId);
 	}
 
 	[Fact]
@@ -53,12 +54,12 @@ public class MessageSerializerTests {
 		// Given
 		var settings       = CreateTestSettings();
 		var schemaRegistry = SchemaRegistry.From(settings);
-		var serializer     = new MessageSerializer(schemaRegistry);
+		var serializer     = new MessageSerializer(schemaRegistry, settings);
 
 		var data    = new UserRegistered("user-123", "user@random-email.com");
 		var message = Message.From(data);
 
-		var context = new MessageSerializationContext("user-123", ContentType.Json);
+		var context = new MessageSerializationContext(FromStreamName("user-123"));
 
 		// When
 		var eventData = serializer.Serialize(message, context);
@@ -70,14 +71,14 @@ public class MessageSerializerTests {
 	[Fact]
 	public void Serialize_WithBinaryContentType_UsesBinarySerializer() {
 		// Given
-		var settings       = CreateTestSettings();
+		var settings       = CreateTestSettings().UseContentType(ContentType.Bytes);
 		var schemaRegistry = SchemaRegistry.From(settings);
-		var serializer     = new MessageSerializer(schemaRegistry);
+		var serializer     = new MessageSerializer(schemaRegistry, settings);
 
 		var data    = new UserRegistered("user-123", "user@random-email.com");
 		var message = Message.From(data);
 
-		var context = new MessageSerializationContext("user-123", ContentType.Bytes);
+		var context = new MessageSerializationContext(FromStreamName("user-123"));
 
 		// When
 		var eventData = serializer.Serialize(message, context);
@@ -91,7 +92,7 @@ public class MessageSerializerTests {
 		// Given
 		var settings       = CreateTestSettings();
 		var schemaRegistry = SchemaRegistry.From(settings);
-		var serializer     = new MessageSerializer(schemaRegistry);
+		var serializer     = new MessageSerializer(schemaRegistry, settings);
 
 		var messages = new[] {
 			Message.From(new UserRegistered("1", "u1@random-email.com")),
@@ -99,7 +100,7 @@ public class MessageSerializerTests {
 			Message.From(new UserRegistered("3", "u3@random-email.com"))
 		};
 
-		var context = new MessageSerializationContext("user-123", ContentType.Json);
+		var context = new MessageSerializationContext(FromStreamName("user-123"));
 
 		// When
 		var eventDataArray = serializer.Serialize(messages, context);
@@ -114,13 +115,13 @@ public class MessageSerializerTests {
 		// Given
 		var settings       = CreateTestSettings();
 		var schemaRegistry = SchemaRegistry.From(settings);
-		var serializer     = new MessageSerializer(schemaRegistry);
+		var serializer     = new MessageSerializer(schemaRegistry, settings);
 
 		var testEvent    = new UserRegistered("user-123", "user@random-email.com");
 		var testMetadata = new TestMetadata { CorrelationId = "corr-123", UserId = "user-456" };
-		var eventId      = Uuid.NewUuid();
+		var messageId    = Uuid.NewUuid();
 
-		var eventRecord = CreateTestEventRecord("UserRegistered", testEvent, testMetadata, eventId);
+		var eventRecord = CreateTestEventRecord("UserRegistered", testEvent, testMetadata, messageId);
 
 		// When
 		var success = serializer.TryDeserialize(eventRecord, out var message);
@@ -128,7 +129,7 @@ public class MessageSerializerTests {
 		// Then
 		Assert.True(success);
 		Assert.NotNull(message);
-		Assert.Equal(eventId, message.MessageId);
+		Assert.Equal(messageId, message.MessageId);
 
 		var deserializedEvent = Assert.IsType<UserRegistered>(message.Data);
 		Assert.Equal("user-123", deserializedEvent.UserId);
@@ -144,7 +145,7 @@ public class MessageSerializerTests {
 		// Given
 		var settings       = CreateTestSettings();
 		var schemaRegistry = SchemaRegistry.From(settings);
-		var serializer     = new MessageSerializer(schemaRegistry);
+		var serializer     = new MessageSerializer(schemaRegistry, settings);
 
 		var testEvent   = new UserRegistered("user-123", "user@random-email.com");
 		var eventRecord = CreateTestEventRecord("UnknownEventType", testEvent);
@@ -162,7 +163,7 @@ public class MessageSerializerTests {
 		// Given
 		var settings       = CreateTestSettings();
 		var schemaRegistry = SchemaRegistry.From(settings);
-		var serializer     = new MessageSerializer(schemaRegistry);
+		var serializer     = new MessageSerializer(schemaRegistry, settings);
 		var eventRecord    = CreateTestEventRecord("UserRegistered", null);
 
 		// When
@@ -178,12 +179,12 @@ public class MessageSerializerTests {
 		// Given
 		var settings       = CreateTestSettings();
 		var schemaRegistry = SchemaRegistry.From(settings);
-		var serializer     = new MessageSerializer(schemaRegistry);
+		var serializer     = new MessageSerializer(schemaRegistry, settings);
 
 		var testEvent = new UserRegistered("user-123", "user@random-email.com");
-		var eventId   = Uuid.NewUuid();
+		var messageId = Uuid.NewUuid();
 
-		var eventRecord = CreateTestEventRecord("UserRegistered", testEvent, null, eventId);
+		var eventRecord = CreateTestEventRecord("UserRegistered", testEvent, null, messageId);
 
 		// When
 		var success = serializer.TryDeserialize(eventRecord, out var message);
@@ -191,7 +192,7 @@ public class MessageSerializerTests {
 		// Then
 		Assert.True(success);
 		Assert.NotNull(message);
-		Assert.Equal(eventId, message.MessageId);
+		Assert.Equal(messageId, message.MessageId);
 		Assert.Null(message.Metadata);
 
 		var deserializedEvent = Assert.IsType<UserRegistered>(message.Data);
@@ -219,27 +220,109 @@ public class MessageSerializerTests {
 		// Then - test it works with our settings
 		var data    = new UserRegistered("user-123", "user@random-email.com");
 		var message = Message.From(data);
-		var context = new MessageSerializationContext("user-123", ContentType.Json);
+
+		var context = new MessageSerializationContext(FromStreamName("user-123"));
 
 		var eventData = serializer.Serialize(message, context);
 		Assert.Equal("UserRegistered", eventData.Type);
 	}
+	
+	[Fact]
+	public void With_NullOperationSettings_ReturnsDefaultMessageSerializer() {
+		// Given
+		var defaultSettings   = new KurrentDBClientSerializationSettings();
+		var messageSerializer = new MessageSerializer(SchemaRegistry.From(defaultSettings), defaultSettings);
+
+		// When
+		var result = messageSerializer.With(null);
+
+		// Then
+		Assert.Same(messageSerializer, result);
+	}
+
+	[Fact]
+	public void With_DisabledAutomaticDeserialization_ReturnsNullSerializer() {
+		// Given
+		var defaultSettings   = new KurrentDBClientSerializationSettings();
+		var messageSerializer = new MessageSerializer(SchemaRegistry.From(defaultSettings), defaultSettings);
+		var operationSettings = OperationSerializationSettings.Disabled;
+
+		// When
+		var result = messageSerializer.With(operationSettings);
+
+		// Then
+		Assert.Same(NullMessageSerializer.Instance, result);
+	}
+
+	[Fact]
+	public void With_NoConfigureSettings_ReturnsDefaultMessageSerializer() {
+		// Given
+		var defaultSettings   = new KurrentDBClientSerializationSettings();
+		var messageSerializer = new MessageSerializer(SchemaRegistry.From(defaultSettings), defaultSettings);
+		var operationSettings = new OperationSerializationSettings(); // Default-enabled with no config
+
+		// When
+		var result = messageSerializer.With(operationSettings);
+
+		// Then
+		Assert.Same(messageSerializer, result);
+	}
+
+	[Fact]
+	public void With_ConfigureSettings_CreatesNewMessageSerializer() {
+		// Given
+		var defaultSettings   = KurrentDBClientSerializationSettings.Get();
+		var messageSerializer = new MessageSerializer(SchemaRegistry.From(defaultSettings), defaultSettings);
+
+		var operationSettings = OperationSerializationSettings.Configure(
+			s =>
+				s.MessageTypeMapping.Register<UserRegistered>("CustomMessageName")
+		);
+
+		// When
+		var result = messageSerializer.With(operationSettings);
+
+		// Then
+		Assert.NotSame(messageSerializer, result);
+		Assert.IsType<MessageSerializer>(result);
+	}
+
+	[Fact]
+	public void Serialize_WithMultipleMessages_ReturnsArrayOfMessageData() {
+		// Given
+		var defaultSettings   = KurrentDBClientSerializationSettings.Get();
+		var messageSerializer = new MessageSerializer(SchemaRegistry.From(defaultSettings), defaultSettings);
+		var messages = new List<Message> {
+			Message.From(new UserRegistered("Joe Doe", "joe.doe@unknown.com")),
+			Message.From(new UserRegistered("Anne Smith", "anne.smith@unknown.com")),
+			Message.From(new UserRegistered("Ouro the Dragon", "ouro.dragon@unknown.com"))
+		};
+
+		var context = new MessageSerializationContext(FromStreamName("test-stream"));
+
+		// When
+		var result = messageSerializer.Serialize(messages, context);
+
+		// Then
+		Assert.Equal(3, result.Length);
+	}
 
 	static KurrentDBClientSerializationSettings CreateTestSettings() {
 		var settings = new KurrentDBClientSerializationSettings();
-		settings.RegisterMessageType<UserRegistered>("UserRegistered");
-		settings.RegisterMessageType<UserAssignedToRole>("UserAssignedToRole");
-		settings.UseMetadataType<TestMetadata>();
+		settings.MessageTypeMapping
+			.Register<UserRegistered>("UserRegistered")
+			.Register<UserAssignedToRole>("UserAssignedToRole")
+			.UseMetadataType<TestMetadata>();
 
 		return settings;
 	}
 
 	static EventRecord CreateTestEventRecord(
-		string eventType, object? data = null, object? metadata = null, Uuid? eventId = null
+		string eventType, object? data = null, object? metadata = null, Uuid? messageId = null
 	) =>
 		new(
 			Uuid.NewUuid().ToString(),
-			eventId ?? Uuid.NewUuid(),
+			messageId ?? Uuid.NewUuid(),
 			StreamPosition.FromInt64(0),
 			new Position(1, 1),
 			new Dictionary<string, string> {
@@ -248,10 +331,14 @@ public class MessageSerializerTests {
 				{ Constants.Metadata.ContentType, Constants.Metadata.ContentTypes.ApplicationJson }
 			},
 			data != null ? _serializer.Serialize(data) : ReadOnlyMemory<byte>.Empty,
-			metadata != null ? _serializer.Serialize(metadata) : ReadOnlyMemory<byte>.Empty
+			metadata != null ? _metadataSerializer.Serialize(metadata) : ReadOnlyMemory<byte>.Empty
 		);
 
 	static readonly SystemTextJsonSerializer _serializer = new SystemTextJsonSerializer();
+
+	static readonly SystemTextJsonSerializer _metadataSerializer = new SystemTextJsonSerializer(
+		new SystemTextJsonSerializationSettings { Options = KurrentDBClient.StreamMetadataJsonSerializerOptions }
+	);
 
 	public record UserRegistered(string UserId, string Email);
 

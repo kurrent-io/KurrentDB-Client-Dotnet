@@ -52,42 +52,42 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			NoAclStream,
 			StreamState.NoStream,
 			new(),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
 			ReadStream,
 			StreamState.NoStream,
 			new(acl: new(TestCredentials.TestUser1.Username)),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
 			WriteStream,
 			StreamState.NoStream,
 			new(acl: new(writeRole: TestCredentials.TestUser1.Username)),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
 			MetaReadStream,
 			StreamState.NoStream,
 			new(acl: new(metaReadRole: TestCredentials.TestUser1.Username)),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
 			MetaWriteStream,
 			StreamState.NoStream,
 			new(acl: new(metaWriteRole: TestCredentials.TestUser1.Username)),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
 			AllStream,
 			StreamState.Any,
 			new(acl: new(TestCredentials.TestUser1.Username)),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
@@ -101,7 +101,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 					metaReadRole: TestCredentials.TestUser1.Username
 				)
 			),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
@@ -115,7 +115,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 					metaReadRole: SystemRoles.Admins
 				)
 			),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
@@ -129,7 +129,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 					metaReadRole: SystemRoles.All
 				)
 			),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		await Streams.SetStreamMetadataAsync(
@@ -143,90 +143,73 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 					metaReadRole: SystemRoles.All
 				)
 			),
-			userCredentials: TestCredentials.TestAdmin
+			new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 		).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 	}
 
 	protected virtual Task When() => Task.CompletedTask;
 
-	public Task ReadEvent(string streamId, UserCredentials? userCredentials = default) =>
+	public Task ReadEvent(string streamId, UserCredentials? userCredentials = null) =>
+		Streams.ReadStreamAsync(streamId, new ReadStreamOptions { MaxCount = 1, UserCredentials = userCredentials })
+			.ToArrayAsync()
+			.AsTask()
+			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
+
+	public Task ReadStreamForward(string streamId, UserCredentials? userCredentials = null) =>
+		Streams.ReadStreamAsync(streamId, new ReadStreamOptions { MaxCount = 1, UserCredentials = userCredentials })
+			.ToArrayAsync()
+			.AsTask()
+			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
+
+	public Task ReadStreamBackward(string streamId, UserCredentials? userCredentials = null) =>
 		Streams.ReadStreamAsync(
-				Direction.Forwards,
 				streamId,
-				StreamPosition.Start,
-				1,
-				false,
-				userCredentials: userCredentials
+				new ReadStreamOptions {
+					Direction       = Direction.Backwards,
+					StreamPosition  = StreamPosition.End,
+					MaxCount        = 1,
+					UserCredentials = userCredentials
+				}
 			)
 			.ToArrayAsync()
 			.AsTask()
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public Task ReadStreamForward(string streamId, UserCredentials? userCredentials = default) =>
-		Streams.ReadStreamAsync(
-				Direction.Forwards,
-				streamId,
-				StreamPosition.Start,
-				1,
-				false,
-				userCredentials: userCredentials
-			)
-			.ToArrayAsync()
-			.AsTask()
-			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
-
-	public Task ReadStreamBackward(string streamId, UserCredentials? userCredentials = default) =>
-		Streams.ReadStreamAsync(
-				Direction.Backwards,
-				streamId,
-				StreamPosition.Start,
-				1,
-				false,
-				userCredentials: userCredentials
-			)
-			.ToArrayAsync()
-			.AsTask()
-			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
-
-	public Task<IWriteResult> AppendStream(string streamId, UserCredentials? userCredentials = default) =>
+	public Task<IWriteResult> AppendStream(string streamId, UserCredentials? userCredentials = null) =>
 		Streams.AppendToStreamAsync(
 				streamId,
 				StreamState.Any,
 				CreateTestEvents(3),
-				userCredentials: userCredentials
+				new AppendToStreamOptions { UserCredentials = userCredentials }
 			)
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public Task ReadAllForward(UserCredentials? userCredentials = default) =>
+	public Task ReadAllForward(UserCredentials? userCredentials = null) =>
+		Streams.ReadAllAsync(new ReadAllOptions { MaxCount = 1, UserCredentials = userCredentials })
+			.ToArrayAsync()
+			.AsTask()
+			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
+
+	public Task ReadAllBackward(UserCredentials? userCredentials = null) =>
 		Streams.ReadAllAsync(
-				Direction.Forwards,
-				Position.Start,
-				1,
-				false,
-				userCredentials: userCredentials
+				new ReadAllOptions {
+					Direction       = Direction.Backwards,
+					Position        = Position.End,
+					MaxCount        = 1,
+					UserCredentials = userCredentials
+				}
 			)
 			.ToArrayAsync()
 			.AsTask()
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public Task ReadAllBackward(UserCredentials? userCredentials = default) =>
-		Streams
-			.ReadAllAsync(
-				Direction.Backwards,
-				Position.End,
-				1,
-				false,
-				userCredentials: userCredentials
-			)
-			.ToArrayAsync()
-			.AsTask()
+	public Task<StreamMetadataResult> ReadMeta(string streamId, UserCredentials? userCredentials = null) =>
+		Streams.GetStreamMetadataAsync(streamId, new OperationOptions { UserCredentials = userCredentials })
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public Task<StreamMetadataResult> ReadMeta(string streamId, UserCredentials? userCredentials = default) =>
-		Streams.GetStreamMetadataAsync(streamId, userCredentials: userCredentials)
-			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
-
-	public Task<IWriteResult> WriteMeta(string streamId, UserCredentials? userCredentials = default, string? role = default) =>
+	public Task<IWriteResult> WriteMeta(
+		string streamId, UserCredentials? userCredentials = null, string? role = null
+	) =>
 		Streams.SetStreamMetadataAsync(
 				streamId,
 				StreamState.Any,
@@ -238,41 +221,43 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 						metaReadRole: role
 					)
 				),
-				userCredentials: userCredentials
+				new SetStreamMetadataOptions { UserCredentials = userCredentials }
 			)
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
-	public async Task SubscribeToStream(string streamId, UserCredentials? userCredentials = default) {
+	public async Task SubscribeToStream(string streamId, UserCredentials? userCredentials = null) {
 		await using var subscription =
-			Streams.SubscribeToStream(streamId, FromStream.Start, userCredentials: userCredentials);
+			Streams.SubscribeToStream(streamId, new SubscribeToStreamOptions { UserCredentials = userCredentials });
 
 		await subscription
 			.Messages.OfType<StreamMessage.SubscriptionConfirmation>().AnyAsync().AsTask()
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 	}
 
-	public async Task SubscribeToAll(UserCredentials? userCredentials = default) {
+	public async Task SubscribeToAll(UserCredentials? userCredentials = null) {
 		await using var subscription =
-			Streams.SubscribeToAll(FromAll.Start, userCredentials: userCredentials);
+			Streams.SubscribeToAll(new SubscribeToAllOptions { UserCredentials = userCredentials });
 
 		await subscription
 			.Messages.OfType<StreamMessage.SubscriptionConfirmation>().AnyAsync().AsTask()
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 	}
 
-	public async Task<string> CreateStreamWithMeta(StreamMetadata metadataPermanent, [CallerMemberName] string streamId = "<unknown>") {
+	public async Task<string> CreateStreamWithMeta(
+		StreamMetadata metadataPermanent, [CallerMemberName] string streamId = "<unknown>"
+	) {
 		await Streams.SetStreamMetadataAsync(
 				streamId,
 				StreamState.NoStream,
 				metadataPermanent,
-				userCredentials: TestCredentials.TestAdmin
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.TestAdmin }
 			)
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 
 		return streamId;
 	}
 
-	public Task<DeleteResult> DeleteStream(string streamId, UserCredentials? userCredentials = default) =>
-		Streams.TombstoneAsync(streamId, StreamState.Any, userCredentials: userCredentials)
+	public Task<DeleteResult> DeleteStream(string streamId, UserCredentials? userCredentials = null) =>
+		Streams.TombstoneAsync(streamId, StreamState.Any, new TombstoneOptions { UserCredentials = userCredentials })
 			.WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
 }

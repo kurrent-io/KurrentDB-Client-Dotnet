@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using KurrentDB.Client.Core.Serialization;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests.Core.Serialization;
 
@@ -16,23 +15,6 @@ public class SchemaRegistryTests {
 	record TestMetadata;
 
 	[Fact]
-	public void Constructor_InitializesProperties() {
-		// Given
-		var serializers = new Dictionary<ContentType, ISerializer> {
-			{ ContentType.Json, new SystemTextJsonSerializer() },
-			{ ContentType.Bytes, new SystemTextJsonSerializer() }
-		};
-
-		var namingStrategy = new DefaultMessageTypeNamingStrategy(typeof(TestMetadata));
-
-		// When
-		var registry = new SchemaRegistry(serializers, namingStrategy);
-
-		// Then
-		Assert.Same(namingStrategy, registry.MessageTypeNamingStrategy);
-	}
-
-	[Fact]
 	public void GetSerializer_ReturnsCorrectSerializer() {
 		// Given
 		var jsonSerializer  = new SystemTextJsonSerializer();
@@ -45,7 +27,9 @@ public class SchemaRegistryTests {
 
 		var registry = new SchemaRegistry(
 			serializers,
-			new DefaultMessageTypeNamingStrategy(typeof(TestMetadata))
+			new DefaultMessageTypeNamingStrategy(typeof(TestMetadata)),
+			new MessageTypeRegistry(),
+			AutomaticTypeMappingRegistration.Enabled
 		);
 
 		// When
@@ -68,11 +52,9 @@ public class SchemaRegistryTests {
 
 		// Then
 		Assert.NotNull(registry);
-		Assert.NotNull(registry.MessageTypeNamingStrategy);
 		Assert.NotNull(registry.GetSerializer(ContentType.Json));
 		Assert.NotNull(registry.GetSerializer(ContentType.Bytes));
 
-		Assert.IsType<MessageTypeNamingStrategyWrapper>(registry.MessageTypeNamingStrategy);
 		Assert.IsType<SystemTextJsonSerializer>(registry.GetSerializer(ContentType.Json));
 		Assert.IsType<SystemTextJsonSerializer>(registry.GetSerializer(ContentType.Bytes));
 	}
@@ -121,60 +103,117 @@ public class SchemaRegistryTests {
 	public void From_WithMessageTypeMap_RegistersTypes() {
 		// Given
 		var settings = new KurrentDBClientSerializationSettings();
-		settings.RegisterMessageType<TestEvent1>("test-event-1");
-		settings.RegisterMessageType<TestEvent2>("test-event-2");
+		settings.MessageTypeMapping.Register<TestEvent1>("test-event-1");
+		settings.MessageTypeMapping.Register<TestEvent2>("test-event-2");
 
 		// When
-		var registry       = SchemaRegistry.From(settings);
-		var namingStrategy = registry.MessageTypeNamingStrategy;
+		var registry = SchemaRegistry.From(settings);
 
 		// Then
 		// Verify types can be resolved
-		Assert.True(namingStrategy.TryResolveClrType("test-event-1", out var type1));
+		Assert.True(registry.TryResolveClrType(TestRecord("test-event-1"), out var type1));
 		Assert.Equal(typeof(TestEvent1), type1);
 
-		Assert.True(namingStrategy.TryResolveClrType("test-event-2", out var type2));
+		Assert.True(registry.TryResolveClrType(TestRecord("test-event-2"), out var type2));
 		Assert.Equal(typeof(TestEvent2), type2);
+	}
+
+	[Fact]
+	public void From_WithCategoryMessageTypesMap_WithDefaultMessageAutoRegistration() {
+		// Given
+		var settings                         = new KurrentDBClientSerializationSettings();
+		var defaultMessageTypeNamingStrategy = new DefaultMessageTypeNamingStrategy(settings.MessageTypeMapping.DefaultMetadataType);
+
+		// When
+		var registry = SchemaRegistry.From(settings);
+
+		// Then
+		// For categories, the naming strategy should have resolved the type names
+		// using the ResolveTypeName method, which by default uses the type's name
+		string typeName1 = registry.ResolveTypeName(
+			typeof(TestEvent1),
+			new MessageTypeNamingResolutionContext("category1")
+		);
+
+		string expectedTypeName1 = defaultMessageTypeNamingStrategy.ResolveTypeName(
+			typeof(TestEvent1),
+			new MessageTypeNamingResolutionContext("category1")
+		);
+
+		Assert.Equal(expectedTypeName1, typeName1);
+
+		string typeName2 = registry.ResolveTypeName(
+			typeof(TestEvent2),
+			new MessageTypeNamingResolutionContext("category1")
+		);
+
+		string expectedTypeName2 = defaultMessageTypeNamingStrategy.ResolveTypeName(
+			typeof(TestEvent2),
+			new MessageTypeNamingResolutionContext("category1")
+		);
+
+		Assert.Equal(expectedTypeName2, typeName2);
+
+		string typeName3 = registry.ResolveTypeName(
+			typeof(TestEvent3),
+			new MessageTypeNamingResolutionContext("category2")
+		);
+
+		string expectedTypeName3 = defaultMessageTypeNamingStrategy.ResolveTypeName(
+			typeof(TestEvent3),
+			new MessageTypeNamingResolutionContext("category2")
+		);
+
+		Assert.Equal(expectedTypeName3, typeName3);
+
+		// Verify types can be resolved by the type names
+		Assert.True(registry.TryResolveClrType(TestRecord(typeName1), out var resolvedType1));
+		Assert.Equal(typeof(TestEvent1), resolvedType1);
+
+		Assert.True(registry.TryResolveClrType(TestRecord(typeName2), out var resolvedType2));
+		Assert.Equal(typeof(TestEvent2), resolvedType2);
+
+		Assert.True(registry.TryResolveClrType(TestRecord(typeName3), out var resolvedType3));
+		Assert.Equal(typeof(TestEvent3), resolvedType3);
 	}
 
 	[Fact]
 	public void From_WithCategoryMessageTypesMap_RegistersTypesWithCategories() {
 		// Given
 		var settings = new KurrentDBClientSerializationSettings();
-		settings.RegisterMessageTypeForCategory<TestEvent1>("category1");
-		settings.RegisterMessageTypeForCategory<TestEvent2>("category1");
-		settings.RegisterMessageTypeForCategory<TestEvent3>("category2");
+		settings.MessageTypeMapping.RegisterForCategory<TestEvent1>("category1");
+		settings.MessageTypeMapping.RegisterForCategory<TestEvent2>("category1");
+		settings.MessageTypeMapping.RegisterForCategory<TestEvent3>("category2");
 
 		// When
-		var registry       = SchemaRegistry.From(settings);
-		var namingStrategy = registry.MessageTypeNamingStrategy;
+		var registry = SchemaRegistry.From(settings);
 
 		// Then
 		// For categories, the naming strategy should have resolved the type names
 		// using the ResolveTypeName method, which by default uses the type's name
-		string typeName1 = namingStrategy.ResolveTypeName(
+		string typeName1 = registry.ResolveTypeName(
 			typeof(TestEvent1),
 			new MessageTypeNamingResolutionContext("category1")
 		);
 
-		string typeName2 = namingStrategy.ResolveTypeName(
+		string typeName2 = registry.ResolveTypeName(
 			typeof(TestEvent2),
 			new MessageTypeNamingResolutionContext("category1")
 		);
 
-		string typeName3 = namingStrategy.ResolveTypeName(
+		string typeName3 = registry.ResolveTypeName(
 			typeof(TestEvent3),
 			new MessageTypeNamingResolutionContext("category2")
 		);
 
 		// Verify types can be resolved by the type names
-		Assert.True(namingStrategy.TryResolveClrType(typeName1, out var resolvedType1));
+		Assert.True(registry.TryResolveClrType(TestRecord(typeName1), out var resolvedType1));
 		Assert.Equal(typeof(TestEvent1), resolvedType1);
 
-		Assert.True(namingStrategy.TryResolveClrType(typeName2, out var resolvedType2));
+		Assert.True(registry.TryResolveClrType(TestRecord(typeName2), out var resolvedType2));
 		Assert.Equal(typeof(TestEvent2), resolvedType2);
 
-		Assert.True(namingStrategy.TryResolveClrType(typeName3, out var resolvedType3));
+		Assert.True(registry.TryResolveClrType(TestRecord(typeName3), out var resolvedType3));
 		Assert.Equal(typeof(TestEvent3), resolvedType3);
 	}
 
@@ -190,11 +229,8 @@ public class SchemaRegistryTests {
 
 		// Then
 		// The registry wraps the naming strategy, but should still use it
-		var wrappedStrategy = registry.MessageTypeNamingStrategy;
-		Assert.IsType<MessageTypeNamingStrategyWrapper>(wrappedStrategy);
-
 		// Test to make sure it behaves like our custom strategy
-		string typeName = wrappedStrategy.ResolveTypeName(
+		string typeName = registry.ResolveTypeName(
 			typeof(TestEvent1),
 			new MessageTypeNamingResolutionContext("test")
 		);
@@ -208,22 +244,34 @@ public class SchemaRegistryTests {
 		// Given
 		var settings = new KurrentDBClientSerializationSettings {
 			MessageTypeNamingStrategy = null,
-			DefaultMetadataType       = typeof(TestMetadata)
-		};
+		}.ConfigureTypeMap(setting => setting.DefaultMetadataType = typeof(TestMetadata));
 
 		// When
 		var registry = SchemaRegistry.From(settings);
 
 		// Then
-		Assert.NotNull(registry.MessageTypeNamingStrategy);
-
 		// The wrapped default strategy should use our metadata type
-		Assert.True(
-			registry.MessageTypeNamingStrategy.TryResolveClrMetadataType("some-type", out var defaultMetadataType)
-		);
+		Assert.True(registry.TryResolveClrMetadataType(TestRecord("some-type"), out var defaultMetadataType));
 
 		Assert.Equal(typeof(TestMetadata), defaultMetadataType);
 	}
+	
+	static EventRecord TestRecord(
+		string eventType
+	) =>
+		new(
+			Uuid.NewUuid().ToString(),
+			Uuid.NewUuid(),
+			StreamPosition.FromInt64(0),
+			new Position(1, 1),
+			new Dictionary<string, string> {
+				{ Constants.Metadata.Type, eventType },
+				{ Constants.Metadata.Created, DateTime.UtcNow.ToTicksSinceEpoch().ToString() },
+				{ Constants.Metadata.ContentType, Constants.Metadata.ContentTypes.ApplicationJson }
+			},
+			ReadOnlyMemory<byte>.Empty,
+			ReadOnlyMemory<byte>.Empty
+		);
 
 	// Custom naming strategy for testing
 	class TestNamingStrategy : IMessageTypeNamingStrategy {
@@ -231,26 +279,26 @@ public class SchemaRegistryTests {
 			return $"Custom-{type.Name}-{context.CategoryName}";
 		}
 #if NET48
-	public bool TryResolveClrType(string messageTypeName, out Type? clrType)
+	public bool TryResolveClrTypeName(EventRecord record, out string? clrType)
 #else
-		public bool TryResolveClrType(string messageTypeName, [NotNullWhen(true)] out Type? clrType)
+		public bool TryResolveClrTypeName(EventRecord record, [NotNullWhen(true)] out string? clrType)
 #endif
 		{
 			// Simple implementation for testing
-			clrType = messageTypeName.StartsWith("Custom-TestEvent1")
-				? typeof(TestEvent1)
+			clrType = record.EventType.StartsWith("Custom-TestEvent1")
+				? typeof(TestEvent1).FullName
 				: null;
 
 			return clrType != null;
 		}
 
 #if NET48
-	public bool TryResolveClrMetadataType(string messageTypeName, out Type? clrType)
+	public bool TryResolveClrMetadataTypeName(EventRecord record, out string? clrType)
 #else
-		public bool TryResolveClrMetadataType(string messageTypeName, [NotNullWhen(true)] out Type? clrType)
+		public bool TryResolveClrMetadataTypeName(EventRecord record, [NotNullWhen(true)] out string? clrType)
 #endif
 		{
-			clrType = typeof(TestMetadata);
+			clrType = typeof(TestMetadata).FullName!;
 			return true;
 		}
 	}

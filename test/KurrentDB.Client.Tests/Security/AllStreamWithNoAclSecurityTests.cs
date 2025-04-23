@@ -1,24 +1,35 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
-using KurrentDB.Client.Tests;
 
 namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:Security")]
-public class AllStreamWithNoAclSecurityTests(ITestOutputHelper output, AllStreamWithNoAclSecurityTests.CustomFixture fixture)
+public class AllStreamWithNoAclSecurityTests(
+	ITestOutputHelper output,
+	AllStreamWithNoAclSecurityTests.CustomFixture fixture
+)
 	: KurrentTemporaryTests<AllStreamWithNoAclSecurityTests.CustomFixture>(output, fixture) {
 	[Fact]
 	public async Task write_to_all_is_never_allowed() {
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.AppendStream(SecurityFixture.AllStream));
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.AppendStream(SecurityFixture.AllStream, TestCredentials.TestUser1));
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.AppendStream(SecurityFixture.AllStream, TestCredentials.TestAdmin));
+		await Assert.ThrowsAsync<AccessDeniedException>(
+			() => Fixture.AppendStream(SecurityFixture.AllStream, TestCredentials.TestUser1)
+		);
+
+		await Assert.ThrowsAsync<AccessDeniedException>(
+			() => Fixture.AppendStream(SecurityFixture.AllStream, TestCredentials.TestAdmin)
+		);
 	}
 
 	[Fact]
 	public async Task delete_of_all_is_never_allowed() {
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.DeleteStream(SecurityFixture.AllStream));
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.DeleteStream(SecurityFixture.AllStream, TestCredentials.TestUser1));
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.DeleteStream(SecurityFixture.AllStream, TestCredentials.TestAdmin));
+		await Assert.ThrowsAsync<AccessDeniedException>(
+			() => Fixture.DeleteStream(SecurityFixture.AllStream, TestCredentials.TestUser1)
+		);
+
+		await Assert.ThrowsAsync<AccessDeniedException>(
+			() => Fixture.DeleteStream(SecurityFixture.AllStream, TestCredentials.TestAdmin)
+		);
 	}
 
 	[Fact]
@@ -33,7 +44,10 @@ public class AllStreamWithNoAclSecurityTests(ITestOutputHelper output, AllStream
 	public async Task reading_and_subscribing_is_not_allowed_for_usual_user() {
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadAllForward(TestCredentials.TestUser1));
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadAllBackward(TestCredentials.TestUser1));
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadMeta(SecurityFixture.AllStream, TestCredentials.TestUser1));
+		await Assert.ThrowsAsync<AccessDeniedException>(
+			() => Fixture.ReadMeta(SecurityFixture.AllStream, TestCredentials.TestUser1)
+		);
+
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToAll(TestCredentials.TestUser1));
 	}
 
@@ -51,7 +65,9 @@ public class AllStreamWithNoAclSecurityTests(ITestOutputHelper output, AllStream
 
 	[Fact]
 	public async Task meta_write_is_not_allowed_for_usual_user() =>
-		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.WriteMeta(SecurityFixture.AllStream, TestCredentials.TestUser1));
+		await Assert.ThrowsAsync<AccessDeniedException>(
+			() => Fixture.WriteMeta(SecurityFixture.AllStream, TestCredentials.TestUser1)
+		);
 
 	[Fact]
 	public Task meta_write_is_allowed_for_admin_user() =>
@@ -61,7 +77,12 @@ public class AllStreamWithNoAclSecurityTests(ITestOutputHelper output, AllStream
 		protected override async Task Given() {
 			await base.Given();
 
-			await Streams.SetStreamMetadataAsync(AllStream, StreamState.Any, new(), userCredentials: TestCredentials.Root);
+			await Streams.SetStreamMetadataAsync(
+				AllStream,
+				StreamState.Any,
+				new(),
+				new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
+			);
 		}
 	}
 }

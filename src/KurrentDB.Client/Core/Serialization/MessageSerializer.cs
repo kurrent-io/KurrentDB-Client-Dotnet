@@ -1,88 +1,63 @@
-using System.Diagnostics.CodeAnalysis;
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Core.Serialization;
 
+using System.Diagnostics.CodeAnalysis;
 using static ContentTypeExtensions;
 
 interface IMessageSerializer {
-	public EventData Serialize(Message value, MessageSerializationContext context);
+	public MessageData Serialize(Message value, MessageSerializationContext context);
 
 #if NET48
 	public bool TryDeserialize(EventRecord record, out Message? deserialized);
 #else
 	public bool TryDeserialize(EventRecord record, [NotNullWhen(true)] out Message? deserialized);
 #endif
+
+	public IMessageSerializer With(OperationSerializationSettings? operationSettings);
 }
 
-record MessageSerializationContext(
-	string StreamName,
-	ContentType ContentType
-) {
-	public string CategoryName =>
-		StreamName.Split('-').FirstOrDefault() ?? "no_stream_category";
-}
+record MessageSerializationContext(MessageTypeNamingResolutionContext NamingResolution);
 
 static class MessageSerializerExtensions {
-	public static EventData[] Serialize(
+	public static MessageData[] Serialize(
 		this IMessageSerializer serializer,
 		IEnumerable<Message> messages,
-		MessageSerializationContext context
-	) {
-		return messages.Select(m => serializer.Serialize(m, context)).ToArray();
-	}
-
-	public static IMessageSerializer With(
-		this IMessageSerializer defaultMessageSerializer,
-		KurrentDBClientSerializationSettings defaultSettings,
-		OperationSerializationSettings? operationSettings
-	) {
-		if (operationSettings == null)
-			return defaultMessageSerializer;
-
-		if (operationSettings.AutomaticDeserialization == AutomaticDeserialization.Disabled)
-			return NullMessageSerializer.Instance;
-
-		if (operationSettings.ConfigureSettings == null)
-			return defaultMessageSerializer;
-
-		var settings = defaultSettings.Clone();
-		operationSettings.ConfigureSettings.Invoke(settings);
-
-		return new MessageSerializer(SchemaRegistry.From(settings));
-	}
+		MessageSerializationContext serializationContext
+	) =>
+		messages.Select(m => serializer.Serialize(m, serializationContext)).ToArray();
 }
 
-class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializer {
-	readonly ISerializer _jsonSerializer =
-		schemaRegistry.GetSerializer(ContentType.Json);
+class MessageSerializer(SchemaRegistry schemaRegistry, KurrentDBClientSerializationSettings serializationSettings)
+	: IMessageSerializer {
+	readonly SystemTextJsonSerializer _metadataSerializer =
+		new SystemTextJsonSerializer(
+			new SystemTextJsonSerializationSettings { Options = KurrentDBClient.StreamMetadataJsonSerializerOptions }
+		);
 
-	readonly IMessageTypeNamingStrategy _messageTypeNamingStrategy =
-		schemaRegistry.MessageTypeNamingStrategy;
+	readonly string _contentType = serializationSettings.DefaultContentType.ToMessageContentType();
 
-	public EventData Serialize(Message message, MessageSerializationContext serializationContext) {
-		var (data, metadata, eventId) = message;
+	public MessageData Serialize(Message message, MessageSerializationContext serializationContext) {
+		var (data, metadata, messageId) = message;
 
-		var eventType = _messageTypeNamingStrategy
+		var messageType = schemaRegistry
 			.ResolveTypeName(
 				message.Data.GetType(),
-				new MessageTypeNamingResolutionContext(serializationContext.CategoryName)
+				serializationContext.NamingResolution
 			);
 
 		var serializedData = schemaRegistry
-			.GetSerializer(serializationContext.ContentType)
+			.GetSerializer(serializationSettings.DefaultContentType)
 			.Serialize(data);
 
 		var serializedMetadata = metadata != null
-			? _jsonSerializer.Serialize(metadata)
+			? _metadataSerializer.Serialize(metadata)
 			: ReadOnlyMemory<byte>.Empty;
 
-		return new EventData(
-			eventId ?? Uuid.NewUuid(),
-			eventType,
+		return new MessageData(
+			messageType,
 			serializedData,
 			serializedMetadata,
-			serializationContext.ContentType.ToMessageContentType()
+			messageId,
+			_contentType
 		);
 	}
 
@@ -91,49 +66,56 @@ class MessageSerializer(SchemaRegistry schemaRegistry) : IMessageSerializer {
 #else
 	public bool TryDeserialize(EventRecord record, [NotNullWhen(true)] out Message? deserialized) {
 #endif
-		if (!TryResolveClrType(record, out var clrType)) {
+		if (!schemaRegistry.TryResolveClrType(record, out var clrTypeName)) {
 			deserialized = null;
 			return false;
 		}
 
 		var data = schemaRegistry
 			.GetSerializer(FromMessageContentType(record.ContentType))
-			.Deserialize(record.Data, clrType!);
+			.Deserialize(record.Data, clrTypeName!);
 
 		if (data == null) {
 			deserialized = null;
 			return false;
 		}
 
-		object? metadata = record.Metadata.Length > 0 && TryResolveClrMetadataType(record, out var clrMetadataType)
-				? _jsonSerializer.Deserialize(record.Metadata, clrMetadataType!)
-				: null;
+		object? metadata = record.Metadata.Length > 0
+		                && schemaRegistry.TryResolveClrMetadataType(record, out var clrMetadataType)
+			? _metadataSerializer.Deserialize(record.Metadata, clrMetadataType!)
+			: null;
 
 		deserialized = Message.From(data, metadata, record.EventId);
 		return true;
 	}
 
-	public static MessageSerializer From(KurrentDBClientSerializationSettings? settings = null) {
-		settings ??= KurrentDBClientSerializationSettings.Default();
+	public IMessageSerializer With(OperationSerializationSettings? operationSettings) {
+		if (operationSettings == null)
+			return this;
 
-		return new MessageSerializer(SchemaRegistry.From(settings));
+		if (operationSettings.AutomaticDeserialization == AutomaticDeserialization.Disabled)
+			return NullMessageSerializer.Instance;
+
+		if (operationSettings.ConfigureSettings == null)
+			return this;
+
+		var settings = serializationSettings.Clone();
+		operationSettings.ConfigureSettings.Invoke(settings);
+
+		return new MessageSerializer(SchemaRegistry.From(settings), settings);
 	}
 
-	bool TryResolveClrType(EventRecord record, out Type? clrType) =>
-		schemaRegistry
-			.MessageTypeNamingStrategy
-			.TryResolveClrType(record.EventType, out clrType);
+	public static MessageSerializer From(KurrentDBClientSerializationSettings? settings = null) {
+		settings ??= KurrentDBClientSerializationSettings.Get();
 
-	bool TryResolveClrMetadataType(EventRecord record, out Type? clrMetadataType) =>
-		schemaRegistry
-			.MessageTypeNamingStrategy
-			.TryResolveClrMetadataType(record.EventType, out clrMetadataType);
+		return new MessageSerializer(SchemaRegistry.From(settings), settings);
+	}
 }
 
 class NullMessageSerializer : IMessageSerializer {
 	public static readonly NullMessageSerializer Instance = new NullMessageSerializer();
 
-	public EventData Serialize(Message value, MessageSerializationContext context) {
+	public MessageData Serialize(Message value, MessageSerializationContext context) {
 		throw new InvalidOperationException("Cannot serialize, automatic deserialization is disabled");
 	}
 
@@ -144,5 +126,9 @@ class NullMessageSerializer : IMessageSerializer {
 #endif
 		deserialized = null;
 		return false;
+	}
+
+	public IMessageSerializer With(OperationSerializationSettings? operationSettings) {
+		return this;
 	}
 }

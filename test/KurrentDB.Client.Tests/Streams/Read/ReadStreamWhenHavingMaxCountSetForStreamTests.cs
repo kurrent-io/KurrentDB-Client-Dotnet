@@ -19,12 +19,12 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 100)
+		var actual = await Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = 100 })
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
 		Assert.Equal(3, actual.Length);
-		Assert.True(EventDataComparer.Equal(expected.Skip(2).ToArray(), actual));
+		Assert.True(MessageDataComparer.Equal(expected.Skip(2).ToArray(), actual));
 	}
 
 	[Fact]
@@ -37,12 +37,19 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100)
+		var actual = await Fixture.Streams.ReadStreamAsync(
+				stream,
+				new ReadStreamOptions {
+					Direction      = Direction.Backwards,
+					StreamPosition = StreamPosition.End,
+					MaxCount       = 100
+				}
+			)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
 		Assert.Equal(3, actual.Length);
-		Assert.True(EventDataComparer.Equal(expected.Skip(2).Reverse().ToArray(), actual));
+		Assert.True(MessageDataComparer.Equal(expected.Skip(2).Reverse().ToArray(), actual));
 	}
 
 	[Fact]
@@ -57,12 +64,12 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(0), new(4));
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 100)
+		var actual = await Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = 100 })
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
 		Assert.Equal(4, actual.Length);
-		Assert.True(EventDataComparer.Equal(expected.Skip(1).ToArray(), actual));
+		Assert.True(MessageDataComparer.Equal(expected.Skip(1).ToArray(), actual));
 	}
 
 	[Fact]
@@ -77,12 +84,12 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(0), new(2));
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 100)
+		var actual = await Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions { MaxCount = 100 })
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
 		Assert.Equal(2, actual.Length);
-		Assert.True(EventDataComparer.Equal(expected.Skip(3).ToArray(), actual));
+		Assert.True(MessageDataComparer.Equal(expected.Skip(3).ToArray(), actual));
 	}
 
 	[Fact]
@@ -97,12 +104,19 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(0), new(4));
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100)
+		var actual = await Fixture.Streams.ReadStreamAsync(
+				stream,
+				new ReadStreamOptions {
+					Direction      = Direction.Backwards,
+					StreamPosition = StreamPosition.End,
+					MaxCount       = 100
+				}
+			)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
 		Assert.Equal(4, actual.Length);
-		Assert.True(EventDataComparer.Equal(expected.Skip(1).Reverse().ToArray(), actual));
+		Assert.True(MessageDataComparer.Equal(expected.Skip(1).Reverse().ToArray(), actual));
 	}
 
 	[Fact]
@@ -117,11 +131,18 @@ public class ReadStreamWhenHavingMaxCountSetForStreamTests(ITestOutputHelper out
 
 		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(0), new(2));
 
-		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 100)
+		var actual = await Fixture.Streams.ReadStreamAsync(
+				stream,
+				new ReadStreamOptions {
+					Direction      = Direction.Backwards,
+					StreamPosition = StreamPosition.End,
+					MaxCount       = 100
+				}
+			)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
 		Assert.Equal(2, actual.Length);
-		Assert.True(EventDataComparer.Equal(expected.Skip(3).Reverse().ToArray(), actual));
+		Assert.True(MessageDataComparer.Equal(expected.Skip(3).Reverse().ToArray(), actual));
 	}
 }

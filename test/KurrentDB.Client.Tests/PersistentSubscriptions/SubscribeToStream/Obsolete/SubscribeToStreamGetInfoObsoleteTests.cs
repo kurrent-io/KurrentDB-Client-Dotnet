@@ -29,7 +29,11 @@ public class SubscribeToStreamGetInfoObsoleteTests(SubscribeToStreamGetInfoObsol
 	[Theory]
 	[MemberData(nameof(AllowedUsers))]
 	public async Task returns_expected_result(UserCredentials credentials) {
-		var result = await fixture.Subscriptions.GetInfoToStreamAsync(fixture.Stream, fixture.Group, userCredentials: credentials);
+		var result = await fixture.Subscriptions.GetInfoToStreamAsync(
+			fixture.Stream,
+			fixture.Group,
+			userCredentials: credentials
+		);
 
 		Assert.Equal(fixture.Stream, result.EventSource);
 		Assert.Equal(fixture.Group, result.GroupName);
@@ -179,15 +183,15 @@ public class SubscribeToStreamGetInfoObsoleteTests(SubscribeToStreamGetInfoObsol
 
 						return Task.CompletedTask;
 					},
-					userCredentials: TestCredentials.Root
+					new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
 				);
 
 				for (var i = 0; i < 15; i++) {
 					await Streams.AppendToStreamAsync(
 						Stream,
 						StreamState.Any,
-						[new EventData(Uuid.NewUuid(), "test-event", ReadOnlyMemory<byte>.Empty)],
-						userCredentials: TestCredentials.Root
+						[new MessageData("test-event", ReadOnlyMemory<byte>.Empty)],
+						new AppendToStreamOptions { UserCredentials = TestCredentials.Root }
 					);
 				}
 			};
