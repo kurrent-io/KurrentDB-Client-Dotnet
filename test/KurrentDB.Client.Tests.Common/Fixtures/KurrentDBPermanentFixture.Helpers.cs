@@ -36,7 +36,7 @@ public partial class KurrentDBPermanentFixture {
 		var size = 0;
 
 		var events = CreateTestEvents(int.MaxValue)
-			.TakeWhile(evt => (size += evt.Data.Length) < maxSize)
+			.TakeWhile(evt => (size += evt.Data.Length + evt.Metadata.Length + evt.Type.Length * 2) < maxSize)
 			.ToList();
 
 		return (events, (uint)size);

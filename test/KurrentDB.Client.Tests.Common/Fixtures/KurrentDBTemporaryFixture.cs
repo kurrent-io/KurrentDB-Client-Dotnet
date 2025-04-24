@@ -127,7 +127,8 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 		}
 
 		static Version GetKurrentVersion() {
-			const string versionPrefix = "EventStoreDB version";
+			const string versionPrefix     = "KurrentDB version";
+			const string esdbVersionPrefix = "EventStoreDB version";
 
 			using var cancellator = new CancellationTokenSource(FromSeconds(30));
 			using var eventstore = new Builder()
@@ -139,13 +140,15 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 
 			using var log = eventstore.Logs(true, cancellator.Token);
 			foreach (var line in log.ReadToEnd()) {
-				Logger.Information("EventStoreDB: {Line}", line);
+				Logger.Information("KurrentDB: {Line}", line);
 				if (line.StartsWith(versionPrefix) &&
-				    Version.TryParse(
-					    new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()),
-					    out var version
-				    )) {
+				    Version.TryParse(new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()), out var version)) {
 					return version;
+				}
+				
+				if (line.StartsWith(esdbVersionPrefix) &&
+				    Version.TryParse(new string(ReadVersion(line[(esdbVersionPrefix.Length + 1)..]).ToArray()), out var esdbVersion)) {
+					return esdbVersion;
 				}
 			}
 
