@@ -3,8 +3,6 @@ using System.Net.Http;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using AutoFixture;
-using KurrentDB.Client;
-using HashCode = KurrentDB.Client.HashCode;
 
 namespace KurrentDB.Client.Tests;
 
@@ -95,6 +93,23 @@ public class ConnectionStringTests {
 		}
 
 		static string MockingTone(string key) => new(key.Select((c, i) => i % 2 == 0 ? char.ToUpper(c) : char.ToLower(c)).ToArray());
+	}
+
+	[Fact]
+	public void connection_string_should_create_valid_http_handler() {
+		// Arrange
+		var settings = KurrentDBClientSettings.Create("kurrentdb://localhost:2113?tls=false");
+
+		// Act
+		var handler = settings.CreateHttpMessageHandler?.Invoke();
+
+		// Assert
+		Assert.NotNull(handler);
+#if NET48
+		Assert.IsType<WinHttpHandler>(handler);
+#else
+		Assert.IsType<SocketsHttpHandler>(handler);
+#endif
 	}
 
 	[Theory]

@@ -25,11 +25,11 @@ namespace KurrentDB.Client {
 			AllowSynchronousContinuations = true
 		};
 
-		readonly ILogger<KurrentDBClient>  _log;
-		Lazy<StreamAppender>             _batchAppenderLazy;
-		StreamAppender                   BatchAppender => _batchAppenderLazy.Value;
-		readonly CancellationTokenSource _disposedTokenSource;
-		readonly IMessageSerializer      _messageSerializer;
+		readonly ILogger<KurrentDBClient> _log;
+		Lazy<StreamAppender>              _batchAppenderLazy;
+		StreamAppender                    BatchAppender => _batchAppenderLazy.Value;
+		readonly CancellationTokenSource  _disposedTokenSource;
+		readonly IMessageSerializer       _messageSerializer;
 
 		static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
 			[Constants.Exceptions.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),
@@ -69,10 +69,10 @@ namespace KurrentDB.Client {
 		/// </summary>
 		/// <param name="settings"></param>
 		public KurrentDBClient(KurrentDBClientSettings? settings = null) : base(settings, ExceptionMap) {
-			_log = Settings.LoggerFactory?.CreateLogger<KurrentDBClient>() ?? new NullLogger<KurrentDBClient>();
+			_log                 = Settings.LoggerFactory?.CreateLogger<KurrentDBClient>() ?? new NullLogger<KurrentDBClient>();
 			_disposedTokenSource = new CancellationTokenSource();
-			_batchAppenderLazy = new Lazy<StreamAppender>(CreateStreamAppender);
-			
+			_batchAppenderLazy   = new Lazy<StreamAppender>(CreateStreamAppender);
+
 			_messageSerializer = MessageSerializer.From(settings?.Serialization);
 		}
 
