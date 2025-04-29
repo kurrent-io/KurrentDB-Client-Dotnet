@@ -19,10 +19,10 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <param name="createHttpMessageHandler"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static IServiceCollection AddKurrentProjectionManagementClient(this IServiceCollection services,
+		public static IServiceCollection AddKurrentDBProjectionManagementClient(this IServiceCollection services,
 			Uri address,
 			Func<HttpMessageHandler>? createHttpMessageHandler = null)
-			=> services.AddKurrentProjectionManagementClient(options => {
+			=> services.AddKurrentDBProjectionManagementClient(options => {
 				options.ConnectivitySettings.Address = address;
 				options.CreateHttpMessageHandler = createHttpMessageHandler;
 			});
@@ -34,9 +34,9 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <param name="configureSettings"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static IServiceCollection AddKurrentProjectionManagementClient(this IServiceCollection services,
+		public static IServiceCollection AddKurrentDBProjectionManagementClient(this IServiceCollection services,
 			Action<KurrentDBClientSettings>? configureSettings = null) =>
-			services.AddKurrentProjectionManagementClient(new KurrentDBClientSettings(), configureSettings);
+			services.AddKurrentDBProjectionManagementClient(new KurrentDBClientSettings(), configureSettings);
 
 		/// <summary>
 		/// Adds an <see cref="KurrentDBProjectionManagementClient"/> to the <see cref="IServiceCollection"/>.
@@ -46,12 +46,12 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <param name="configureSettings"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static IServiceCollection AddKurrentProjectionManagementClient(this IServiceCollection services,
+		public static IServiceCollection AddKurrentDBProjectionManagementClient(this IServiceCollection services,
 			string connectionString, Action<KurrentDBClientSettings>? configureSettings = null) =>
-			services.AddKurrentProjectionManagementClient(KurrentDBClientSettings.Create(connectionString),
+			services.AddKurrentDBProjectionManagementClient(KurrentDBClientSettings.Create(connectionString),
 				configureSettings);
 
-		private static IServiceCollection AddKurrentProjectionManagementClient(this IServiceCollection services,
+		private static IServiceCollection AddKurrentDBProjectionManagementClient(this IServiceCollection services,
 			KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings) {
 			if (services == null) {
 				throw new ArgumentNullException(nameof(services));
