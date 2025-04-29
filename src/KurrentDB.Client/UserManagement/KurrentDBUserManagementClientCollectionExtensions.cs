@@ -19,9 +19,9 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <param name="createHttpMessageHandler"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static IServiceCollection AddKurrentUserManagementClient(this IServiceCollection services,
+		public static IServiceCollection AddKurrentDBUserManagementClient(this IServiceCollection services,
 			Uri address, Func<HttpMessageHandler>? createHttpMessageHandler = null)
-			=> services.AddKurrentUserManagementClient(options => {
+			=> services.AddKurrentDBUserManagementClient(options => {
 				options.ConnectivitySettings.Address = address;
 				options.CreateHttpMessageHandler = createHttpMessageHandler;
 			});
@@ -34,9 +34,9 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <param name="configureSettings"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static IServiceCollection AddKurrentUserManagementClient(this IServiceCollection services,
+		public static IServiceCollection AddKurrentDBUserManagementClient(this IServiceCollection services,
 			string connectionString, Action<KurrentDBClientSettings>? configureSettings = null)
-			=> services.AddKurrentUserManagementClient(KurrentDBClientSettings.Create(connectionString),
+			=> services.AddKurrentDBUserManagementClient(KurrentDBClientSettings.Create(connectionString),
 				configureSettings);
 
 
@@ -47,11 +47,11 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <param name="configureSettings"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static IServiceCollection AddKurrentUserManagementClient(this IServiceCollection services,
+		public static IServiceCollection AddKurrentDBUserManagementClient(this IServiceCollection services,
 			Action<KurrentDBClientSettings>? configureSettings = null) =>
-			services.AddKurrentUserManagementClient(new KurrentDBClientSettings(), configureSettings);
+			services.AddKurrentDBUserManagementClient(new KurrentDBClientSettings(), configureSettings);
 
-		private static IServiceCollection AddKurrentUserManagementClient(this IServiceCollection services,
+		private static IServiceCollection AddKurrentDBUserManagementClient(this IServiceCollection services,
 			KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings = null) {
 			configureSettings?.Invoke(settings);
 			if (services == null) {
