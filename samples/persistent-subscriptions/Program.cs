@@ -1,5 +1,5 @@
-﻿await using var client = new KurrentPersistentSubscriptionsClient(
-	KurrentClientSettings.Create("esdb://localhost:2113?tls=false&tlsVerifyCert=false")
+﻿await using var client = new KurrentDBPersistentSubscriptionsClient(
+	KurrentDBClientSettings.Create("kurrentdb://localhost:2113?tls=false&tlsVerifyCert=false")
 );
 
 await DeletePersistentSubscription(client);
@@ -36,7 +36,7 @@ await DeletePersistentSubscriptionToAll(client);
 
 return;
 
-static async Task CreatePersistentSubscription(KurrentPersistentSubscriptionsClient client) {
+static async Task CreatePersistentSubscription(KurrentDBPersistentSubscriptionsClient client) {
 	#region create-persistent-subscription-to-stream
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -54,7 +54,7 @@ static async Task CreatePersistentSubscription(KurrentPersistentSubscriptionsCli
 	#endregion create-persistent-subscription-to-stream
 }
 
-static async Task ConnectToPersistentSubscriptionToStream(KurrentPersistentSubscriptionsClient client,
+static async Task ConnectToPersistentSubscriptionToStream(KurrentDBPersistentSubscriptionsClient client,
 	CancellationToken ct) {
 	#region subscribe-to-persistent-subscription-to-stream
 
@@ -77,7 +77,7 @@ static async Task ConnectToPersistentSubscriptionToStream(KurrentPersistentSubsc
 	#endregion subscribe-to-persistent-subscription-to-stream
 }
 
-static async Task CreatePersistentSubscriptionToAll(KurrentPersistentSubscriptionsClient client) {
+static async Task CreatePersistentSubscriptionToAll(KurrentDBPersistentSubscriptionsClient client) {
 	#region create-persistent-subscription-to-all
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -96,7 +96,7 @@ static async Task CreatePersistentSubscriptionToAll(KurrentPersistentSubscriptio
 	#endregion create-persistent-subscription-to-all
 }
 
-static async Task ConnectToPersistentSubscriptionToAll(KurrentPersistentSubscriptionsClient client,
+static async Task ConnectToPersistentSubscriptionToAll(KurrentDBPersistentSubscriptionsClient client,
 	CancellationToken ct) {
 	#region subscribe-to-persistent-subscription-to-all
 
@@ -118,7 +118,7 @@ static async Task ConnectToPersistentSubscriptionToAll(KurrentPersistentSubscrip
 	#endregion subscribe-to-persistent-subscription-to-all
 }
 
-static async Task ConnectToPersistentSubscriptionWithManualAcks(KurrentPersistentSubscriptionsClient client,
+static async Task ConnectToPersistentSubscriptionWithManualAcks(KurrentDBPersistentSubscriptionsClient client,
 	CancellationToken ct) {
 	#region subscribe-to-persistent-subscription-with-manual-acks
 
@@ -145,7 +145,7 @@ static async Task ConnectToPersistentSubscriptionWithManualAcks(KurrentPersisten
 	#endregion subscribe-to-persistent-subscription-with-manual-acks
 }
 
-static async Task UpdatePersistentSubscription(KurrentPersistentSubscriptionsClient client) {
+static async Task UpdatePersistentSubscription(KurrentDBPersistentSubscriptionsClient client) {
 	#region update-persistent-subscription
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -163,7 +163,7 @@ static async Task UpdatePersistentSubscription(KurrentPersistentSubscriptionsCli
 	#endregion update-persistent-subscription
 }
 
-static async Task DeletePersistentSubscription(KurrentPersistentSubscriptionsClient client) {
+static async Task DeletePersistentSubscription(KurrentDBPersistentSubscriptionsClient client) {
 	#region delete-persistent-subscription
 
 	try {
@@ -184,7 +184,7 @@ static async Task DeletePersistentSubscription(KurrentPersistentSubscriptionsCli
 	#endregion delete-persistent-subscription
 }
 
-static async Task DeletePersistentSubscriptionToAll(KurrentPersistentSubscriptionsClient client) {
+static async Task DeletePersistentSubscriptionToAll(KurrentDBPersistentSubscriptionsClient client) {
 	#region delete-persistent-subscription-to-all
 
 	try {
@@ -204,7 +204,7 @@ static async Task DeletePersistentSubscriptionToAll(KurrentPersistentSubscriptio
 	#endregion delete-persistent-subscription-to-all
 }
 
-static async Task GetPersistentSubscriptionToStreamInfo(KurrentPersistentSubscriptionsClient client) {
+static async Task GetPersistentSubscriptionToStreamInfo(KurrentDBPersistentSubscriptionsClient client) {
 	#region get-persistent-subscription-to-stream-info
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -219,7 +219,7 @@ static async Task GetPersistentSubscriptionToStreamInfo(KurrentPersistentSubscri
 	#endregion get-persistent-subscription-to-stream-info
 }
 
-static async Task GetPersistentSubscriptionToAllInfo(KurrentPersistentSubscriptionsClient client) {
+static async Task GetPersistentSubscriptionToAllInfo(KurrentDBPersistentSubscriptionsClient client) {
 	#region get-persistent-subscription-to-all-info
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -233,7 +233,7 @@ static async Task GetPersistentSubscriptionToAllInfo(KurrentPersistentSubscripti
 	#endregion get-persistent-subscription-to-all-info
 }
 
-static async Task ReplayParkedToStream(KurrentPersistentSubscriptionsClient client) {
+static async Task ReplayParkedToStream(KurrentDBPersistentSubscriptionsClient client) {
 	#region replay-parked-of-persistent-subscription-to-stream
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -249,7 +249,7 @@ static async Task ReplayParkedToStream(KurrentPersistentSubscriptionsClient clie
 	#endregion persistent-subscription-replay-parked-to-stream
 }
 
-static async Task ReplayParkedToAll(KurrentPersistentSubscriptionsClient client) {
+static async Task ReplayParkedToAll(KurrentDBPersistentSubscriptionsClient client) {
 	#region replay-parked-of-persistent-subscription-to-all
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -264,7 +264,7 @@ static async Task ReplayParkedToAll(KurrentPersistentSubscriptionsClient client)
 	#endregion replay-parked-of-persistent-subscription-to-all
 }
 
-static async Task ListPersistentSubscriptionsToStream(KurrentPersistentSubscriptionsClient client) {
+static async Task ListPersistentSubscriptionsToStream(KurrentDBPersistentSubscriptionsClient client) {
 	#region list-persistent-subscriptions-to-stream
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -281,7 +281,7 @@ static async Task ListPersistentSubscriptionsToStream(KurrentPersistentSubscript
 	#endregion list-persistent-subscriptions-to-stream
 }
 
-static async Task ListPersistentSubscriptionsToAll(KurrentPersistentSubscriptionsClient client) {
+static async Task ListPersistentSubscriptionsToAll(KurrentDBPersistentSubscriptionsClient client) {
 	#region list-persistent-subscriptions-to-all
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -295,7 +295,7 @@ static async Task ListPersistentSubscriptionsToAll(KurrentPersistentSubscription
 	#endregion list-persistent-subscriptions-to-all
 }
 
-static async Task ListAllPersistentSubscriptions(KurrentPersistentSubscriptionsClient client) {
+static async Task ListAllPersistentSubscriptions(KurrentDBPersistentSubscriptionsClient client) {
 	#region list-persistent-subscriptions
 
 	var userCredentials = new UserCredentials("admin", "changeit");
@@ -309,7 +309,7 @@ static async Task ListAllPersistentSubscriptions(KurrentPersistentSubscriptionsC
 	#endregion list-persistent-subscriptions
 }
 
-static async Task RestartPersistentSubscriptionSubsystem(KurrentPersistentSubscriptionsClient client) {
+static async Task RestartPersistentSubscriptionSubsystem(KurrentDBPersistentSubscriptionsClient client) {
 	#region restart-persistent-subscription-subsystem
 
 	var userCredentials = new UserCredentials("admin", "changeit");

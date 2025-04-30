@@ -1,12 +1,12 @@
 ﻿#pragma warning disable CS8321 // Local function is declared but never used
 
-using EventTypeFilter = EventStore.Client.EventTypeFilter;
+using EventTypeFilter = KurrentDB.Client.EventTypeFilter;
 
 const int eventCount = 100;
 
 var semaphore = new SemaphoreSlim(eventCount);
 
-await using var client = new KurrentClient(KurrentClientSettings.Create("esdb://localhost:2113?tls=false"));
+await using var client = new KurrentDBClient(KurrentDBClientSettings.Create("kurrentdb://localhost:2113?tls=false"));
 
 _ = Task.Run(async () => {
 	await using var subscription = client.SubscribeToAll(
@@ -46,7 +46,7 @@ await semaphore.WaitAsync();
 
 return;
 
-static async Task ExcludeSystemEvents(KurrentClient client) {
+static async Task ExcludeSystemEvents(KurrentDBClient client) {
 	#region exclude-system
 
 	await using var subscription = client.SubscribeToAll(
@@ -63,7 +63,7 @@ static async Task ExcludeSystemEvents(KurrentClient client) {
 	#endregion exclude-system
 }
 
-static async Task EventTypePrefix(KurrentClient client) {
+static async Task EventTypePrefix(KurrentDBClient client) {
 	#region event-type-prefix
 
 	var filterOptions = new SubscriptionFilterOptions(EventTypeFilter.Prefix("customer-"));
@@ -80,7 +80,7 @@ static async Task EventTypePrefix(KurrentClient client) {
 	}
 }
 
-static async Task EventTypeRegex(KurrentClient client) {
+static async Task EventTypeRegex(KurrentDBClient client) {
 	#region event-type-regex
 
 	var filterOptions = new SubscriptionFilterOptions(EventTypeFilter.RegularExpression("^user|^company"));
@@ -97,7 +97,7 @@ static async Task EventTypeRegex(KurrentClient client) {
 	}
 }
 
-static async Task StreamPrefix(KurrentClient client) {
+static async Task StreamPrefix(KurrentDBClient client) {
 	#region stream-prefix
 
 	var filterOptions = new SubscriptionFilterOptions(StreamFilter.Prefix("user-"));
@@ -114,7 +114,7 @@ static async Task StreamPrefix(KurrentClient client) {
 	}
 }
 
-static async Task StreamRegex(KurrentClient client) {
+static async Task StreamRegex(KurrentDBClient client) {
 	#region stream-regex
 
 	var filterOptions = new SubscriptionFilterOptions(StreamFilter.RegularExpression("^account|^savings"));
@@ -131,7 +131,7 @@ static async Task StreamRegex(KurrentClient client) {
 	}
 }
 
-static async Task CheckpointCallback(KurrentClient client) {
+static async Task CheckpointCallback(KurrentDBClient client) {
 	#region checkpoint
 
 	var filterOptions = new SubscriptionFilterOptions(EventTypeFilter.ExcludeSystemEvents());
@@ -151,7 +151,7 @@ static async Task CheckpointCallback(KurrentClient client) {
 	#endregion checkpoint
 }
 
-static async Task CheckpointCallbackWithInterval(KurrentClient client) {
+static async Task CheckpointCallbackWithInterval(KurrentDBClient client) {
 	#region checkpoint-with-interval
 
 	var filterOptions = new SubscriptionFilterOptions(EventTypeFilter.ExcludeSystemEvents(), 1000);

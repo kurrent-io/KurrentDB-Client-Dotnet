@@ -10,6 +10,6 @@
 
     <ItemGroup>
         <Using Include="System.Text" />
-        <Using Include="EventStore.Client" />
+        <Using Include="KurrentDB.Client" />
     </ItemGroup>
 </Project>

@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
-using EventStore.Client;
-using EventStore.Client.Extensions.OpenTelemetry;
+using KurrentDB.Client.Extensions.OpenTelemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry.Exporter;
@@ -24,17 +23,17 @@ dotnet add package OpenTelemetry.Extensions.Hosting
 # endregion import-required-packages
 **/
 
-var settings = KurrentClientSettings.Create("esdb://localhost:2113?tls=false");
+var settings = KurrentDBClientSettings.Create("kurrentdb://localhost:2113?tls=false");
 
 settings.OperationOptions.ThrowOnAppendFailure = false;
 
-await using var client = new KurrentClient(settings);
+await using var client = new KurrentDBClient(settings);
 
 await TraceAppendToStream(client);
 
 return;
 
-static async Task TraceAppendToStream(KurrentClient client) {
+static async Task TraceAppendToStream(KurrentDBClient client) {
 	const string serviceName = "sample";
 
 	var host = Host.CreateDefaultBuilder()
@@ -77,7 +76,7 @@ static async Task TraceAppendToStream(KurrentClient client) {
 		#region register-instrumentation
 
 		tracerProviderBuilder
-			.AddKurrentClientInstrumentation();
+			.AddKurrentDBClientInstrumentation();
 
 		#endregion register-instrumentation
 

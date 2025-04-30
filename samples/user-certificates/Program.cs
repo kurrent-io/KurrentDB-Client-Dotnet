@@ -9,11 +9,11 @@ static async Task ClientWithUserCertificates() {
 		const string userCertFile = "/path/to/user.crt";
 		const string userKeyFile  = "/path/to/user.key";
 
-		var settings = KurrentClientSettings.Create(
-			$"esdb://localhost:2113/?tls=true&tlsVerifyCert=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}"
+		var settings = KurrentDBClientSettings.Create(
+			$"kurrentdb://localhost:2113/?tls=true&tlsVerifyCert=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}"
 		);
 
-		await using var client = new KurrentClient(settings);
+		await using var client = new KurrentDBClient(settings);
 
 		# endregion client-with-user-certificates
 	} catch (InvalidClientCertificateException) {

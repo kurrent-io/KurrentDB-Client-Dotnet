@@ -3,6 +3,6 @@
         <RootNamespace>quick_start</RootNamespace>
     </PropertyGroup>
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Kurrent.Client\Kurrent.Client.csproj" />
+      <ProjectReference Include="..\..\src\KurrentDB.Client\KurrentDB.Client.csproj" />
     </ItemGroup>
 </Project>
