@@ -4,36 +4,36 @@ using Grpc.Net.Client;
 using EndPoint = System.Net.EndPoint;
 using TChannel = Grpc.Net.Client.GrpcChannel;
 
-namespace KurrentDB.Client {
+namespace KurrentDB.Client;
 
-	internal static class ChannelFactory {
-		private const int MaxReceiveMessageLength = 17 * 1024 * 1024;
+internal static class ChannelFactory {
+	private const int MaxReceiveMessageLength = 17 * 1024 * 1024;
 
-		public static TChannel CreateChannel(KurrentDBClientSettings settings, EndPoint endPoint) {
-			var address = endPoint.ToUri(!settings.ConnectivitySettings.Insecure);
+	public static TChannel CreateChannel(KurrentDBClientSettings settings, EndPoint endPoint) {
+		var address = endPoint.ToUri(!settings.ConnectivitySettings.Insecure);
 
-			if (settings.ConnectivitySettings.Insecure) {
-				//this must be switched on before creation of the HttpMessageHandler
-				AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-			}
+		if (settings.ConnectivitySettings.Insecure) {
+			//this must be switched on before creation of the HttpMessageHandler
+			AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+		}
 
-			return TChannel.ForAddress(
-				address,
-				new GrpcChannelOptions {
+		return TChannel.ForAddress(
+			address,
+			new GrpcChannelOptions {
 #if NET48
 					HttpHandler = CreateHandler(settings),
 #else
-					HttpClient = new HttpClient(CreateHandler(settings), true) {
-						Timeout               = System.Threading.Timeout.InfiniteTimeSpan,
-						DefaultRequestVersion = new Version(2, 0)
-					},
+				HttpClient = new HttpClient(CreateHandler(settings), true) {
+					Timeout               = System.Threading.Timeout.InfiniteTimeSpan,
+					DefaultRequestVersion = new Version(2, 0)
+				},
 #endif
-					LoggerFactory         = settings.LoggerFactory,
-					Credentials           = settings.ChannelCredentials,
-					DisposeHttpClient     = true,
-					MaxReceiveMessageSize = MaxReceiveMessageLength
-				}
-			);
+				LoggerFactory         = settings.LoggerFactory,
+				Credentials           = settings.ChannelCredentials,
+				DisposeHttpClient     = true,
+				MaxReceiveMessageSize = MaxReceiveMessageLength
+			}
+		);
 
 
 #if NET48
@@ -101,6 +101,5 @@ namespace KurrentDB.Client {
 			return handler;
 		}
 #endif
-		}
 	}
 }

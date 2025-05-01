@@ -1,15 +1,15 @@
-namespace KurrentDB.Client {
+namespace KurrentDB.Client;
+
+/// <summary>
+/// An enumeration representing the state of a read operation.
+/// </summary>
+public enum ReadState {
 	/// <summary>
-	/// An enumeration representing the state of a read operation.
+	/// The stream does not exist.
 	/// </summary>
-	public enum ReadState {
-		/// <summary>
-		/// The stream does not exist.
-		/// </summary>
-		StreamNotFound,
-		/// <summary>
-		/// The stream exists.
-		/// </summary>
-		Ok
-	}
+	StreamNotFound,
+	/// <summary>
+	/// The stream exists.
+	/// </summary>
+	Ok
 }

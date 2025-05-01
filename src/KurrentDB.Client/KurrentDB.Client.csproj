@@ -60,7 +60,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Modules\V2\" />
+	  <Folder Include="Modules\Shared\" />
+	  <Folder Include="Modules\V2\Streams\" />
 	  <Folder Include="Schemas\" />
 	</ItemGroup>
 </Project>

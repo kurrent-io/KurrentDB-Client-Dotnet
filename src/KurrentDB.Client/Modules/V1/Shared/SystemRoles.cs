@@ -1,21 +1,21 @@
-namespace KurrentDB.Client {
+namespace KurrentDB.Client;
+
+/// <summary>
+/// Roles used by the system.
+/// </summary>
+public static class SystemRoles {
 	/// <summary>
-	/// Roles used by the system.
+	/// The $admins role.
 	/// </summary>
-	public static class SystemRoles {
-		/// <summary>
-		/// The $admins role.
-		/// </summary>
-		public const string Admins = "$admins";
+	public const string Admins = "$admins";
 
-		/// <summary>
-		/// The $ops role.
-		/// </summary>
-		public const string Operations = "$ops";
+	/// <summary>
+	/// The $ops role.
+	/// </summary>
+	public const string Operations = "$ops";
 
-		/// <summary>
-		/// The $all role.
-		/// </summary>
-		public const string All = "$all";
-	}
+	/// <summary>
+	/// The $all role.
+	/// </summary>
+	public const string All = "$all";
 }

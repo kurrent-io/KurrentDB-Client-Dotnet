@@ -5,32 +5,32 @@ using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace KurrentDB.Client {
-	internal class SingleNodeChannelSelector : IChannelSelector {
-		private readonly ILogger _log;
-		private readonly ChannelCache _channelCache;
-		private readonly DnsEndPoint _endPoint;
+namespace KurrentDB.Client;
 
-		public SingleNodeChannelSelector(
-			KurrentDBClientSettings settings,
-			ChannelCache channelCache) {
+internal class SingleNodeChannelSelector : IChannelSelector {
+	private readonly ILogger      _log;
+	private readonly ChannelCache _channelCache;
+	private readonly DnsEndPoint  _endPoint;
 
-			_log = settings.LoggerFactory?.CreateLogger<SingleNodeChannelSelector>() ??
-				new NullLogger<SingleNodeChannelSelector>();
+	public SingleNodeChannelSelector(
+		KurrentDBClientSettings settings,
+		ChannelCache channelCache) {
 
-			_channelCache = channelCache;
+		_log = settings.LoggerFactory?.CreateLogger<SingleNodeChannelSelector>() ??
+		       new NullLogger<SingleNodeChannelSelector>();
+
+		_channelCache = channelCache;
 			
-			var uri = settings.ConnectivitySettings.ResolvedAddressOrDefault;
-			_endPoint = new DnsEndPoint(host: uri.Host, port: uri.Port);
-		}
+		var uri = settings.ConnectivitySettings.ResolvedAddressOrDefault;
+		_endPoint = new DnsEndPoint(host: uri.Host, port: uri.Port);
+	}
 
-		public Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken) =>
-			Task.FromResult(SelectChannel(_endPoint));
+	public Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken) =>
+		Task.FromResult(SelectChannel(_endPoint));
 
-		public ChannelBase SelectChannel(DnsEndPoint endPoint) {
-			_log.LogInformation("Selected {endPoint}.", endPoint);
+	public ChannelBase SelectChannel(DnsEndPoint endPoint) {
+		_log.LogInformation("Selected {endPoint}.", endPoint);
 
-			return _channelCache.GetChannelInfo(endPoint);
-		}
+		return _channelCache.GetChannelInfo(endPoint);
 	}
 }
