@@ -23,7 +23,7 @@ jobs:
       test: ${{ matrix.test }}
   ee:
     uses: ./.github/workflows/base.yml
-    if: ${{ github.repository_owner == 'EventStore' }}
+    if: ${{ github.repository_owner == 'kurrent-io' }}
     strategy:
       fail-fast: false
       matrix:
