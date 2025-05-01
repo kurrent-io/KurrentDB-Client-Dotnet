@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using Kurrent.Diagnostics;
-using Kurrent.Diagnostics.Tracing;
+using KurrentDB.Diagnostics;
+using KurrentDB.Diagnostics.Tracing;
 
 namespace KurrentDB.Client.Diagnostics;
 

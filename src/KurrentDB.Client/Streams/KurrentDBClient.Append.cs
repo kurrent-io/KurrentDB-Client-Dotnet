@@ -5,9 +5,9 @@ using EventStore.Client.Streams;
 using Google.Protobuf;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using Kurrent.Diagnostics;
-using Kurrent.Diagnostics.Telemetry;
-using Kurrent.Diagnostics.Tracing;
+using KurrentDB.Diagnostics;
+using KurrentDB.Diagnostics.Telemetry;
+using KurrentDB.Diagnostics.Tracing;
 using KurrentDB.Client.Diagnostics;
 
 namespace KurrentDB.Client {
@@ -67,7 +67,7 @@ namespace KurrentDB.Client {
 			CancellationToken cancellationToken
 		) {
 			var tags = new ActivityTagsCollection()
-				.WithRequiredTag(TelemetryTags.Kurrent.Stream, header.Options.StreamIdentifier.StreamName.ToStringUtf8())
+				.WithRequiredTag(TelemetryTags.KurrentDB.Stream, header.Options.StreamIdentifier.StreamName.ToStringUtf8())
 				.WithGrpcChannelServerTags(channelInfo)
 				.WithClientSettingsServerTags(Settings)
 				.WithOptionalTag(TelemetryTags.Database.User, userCredentials?.Username ?? Settings.DefaultCredentials?.Username);
@@ -227,7 +227,7 @@ namespace KurrentDB.Client {
 				CancellationToken cancellationToken
 			) {
 				var tags = new ActivityTagsCollection()
-					.WithRequiredTag(TelemetryTags.Kurrent.Stream, options.StreamIdentifier.StreamName.ToStringUtf8())
+					.WithRequiredTag(TelemetryTags.KurrentDB.Stream, options.StreamIdentifier.StreamName.ToStringUtf8())
 					.WithGrpcChannelServerTags(_channelInfo)
 					.WithClientSettingsServerTags(_settings)
 					.WithOptionalTag(TelemetryTags.Database.User, _settings.DefaultCredentials?.Username);

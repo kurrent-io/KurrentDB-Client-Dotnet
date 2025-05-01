@@ -1,6 +1,6 @@
 // ReSharper disable CheckNamespace
 
-namespace Kurrent.Diagnostics.Telemetry;
+namespace KurrentDB.Diagnostics.Telemetry;
 
 // The attributes below match the specification of v1.24.0 of the Open Telemetry semantic conventions.
 // Some attributes are ignored where not required or relevant.

@@ -13,9 +13,9 @@
         <PackageProjectUrl>https://kurrent.io</PackageProjectUrl>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>https://kurrent.io/blog/</PackageReleaseNotes>
-        <PackageTags>kurrent client grpc</PackageTags>
-        <Authors>Kurrent Ltd</Authors>
-        <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Kurrent Ltd</Copyright>
+        <PackageTags>KurrentDB Client gRPC</PackageTags>
+        <Authors>Kurrent, Inc</Authors>
+        <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Kurrent, Inc</Copyright>
         <MinVerTagPrefix>v</MinVerTagPrefix>
     </PropertyGroup>
 

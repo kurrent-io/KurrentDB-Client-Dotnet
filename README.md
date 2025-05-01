@@ -1,65 +1,58 @@
-# EventStoreDB .NET Client
+<a href="https://kurrent.io">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="KurrentLogo-White.png">
+    <source media="(prefers-color-scheme: light)" srcset="KurrentLogo-Black.png">
+    <img alt="Kurrent" src="KurrentLogo-Plum.png" height="50%" width="50%">
+  </picture>
+</a>
 
-EventStoreDB is the event-native database, where business events are immutably stored and streamed. Designed for event-sourced, event-driven, and microservices architectures
+# KurrentDB .NET Client
 
-This is the repository for the .NET client for EventStoreDB version 20+ and uses gRPC as the communication protocol.
-If you're looking for the TCP client library (legacy), check the [EventStoreDB-Client-Dotnet-Legacy](https://github.com/EventStore/EventStoreDB-Client-Dotnet-Legacy) repo.
+KurrentDB is a database that's engineered for modern software applications and event-driven architectures. Its
+event-native design simplifies data modeling and preserves data integrity while the integrated streaming engine solves
+distributed messaging challenges and ensures data consistency.
 
-## Installation
+This repository contains an [KurrentDB](https://kurrent.io) Client SDK written in .NET.
 
-Reference the nuget package(s) for the API that you would like to call
+## Access to binaries
 
-[Streams](https://www.nuget.org/packages/EventStore.Client.Grpc.Streams)
+Kurrent, Inc publishes GA (general availability) versions
+to [NuGet](https://www.nuget.org/profiles/kurrent).
 
-[Operations](https://www.nuget.org/packages/EventStore.Client.Grpc.Operations)
+## KurrentDB Server Compatibility
 
-[Persistent Subscriptions](https://www.nuget.org/packages/EventStore.Client.Grpc.PersistentSubscriptions)
+This client is compatible with version `20.6.1` upwards.
 
-[Projection Management](https://www.nuget.org/packages/EventStore.Client.Grpc.ProjectionManagement)
+Server setup instructions can be found in
+the [docs](https://developers.kurrent.io/server/v25.0/quick-start/installation), follow the docker setup for the
+simplest configuration.
 
-[User Management](https://www.nuget.org/packages/EventStore.Client.Grpc.UserManagement)
+### Documentation
 
-## Open Telemetry
-
-Telemetry instrumentation can be enabled by installing the [Open Telemetry Extensions](https://www.nuget.org/packages/EventStore.Client.Extensions.OpenTelemetry) package.
-
-Once installed you can configure instrumentation using the `AddEventStoreClientInstrumentation` extension method on a `TracerProviderBuilder`.
-
-```csharp
-using var tracerProvider = Sdk.CreateTracerProviderBuilder()
-    ...
-    .AddEventStoreClientInstrumentation()
-    ...
-    .Build();
-```
-
-Tracing is the only telemetry currently exported, specifically for the `Append` and `Subscribe` (Catchup and Persistent) operations.
-
-For more information about Open Telemetry, refer to the [official documentation](https://opentelemetry.io/docs/what-is-opentelemetry/).
-
-## Support
-
-Information on support and commercial tools such as LDAP authentication can be found here: [Event Store Support](https://eventstore.com/support/).
-
-## CI Status
-
-![Build](https://github.com/EventStore/EventStore-Client-Dotnet/actions/workflows/ci.yml/badge.svg)
-![Build](https://github.com/EventStore/EventStore-Client-Dotnet/actions/workflows/lts.yml/badge.svg)
-![Build](https://github.com/EventStore/EventStore-Client-Dotnet/actions/workflows/previous-lts.yml/badge.svg)
-
-## Documentation
-
-Documentation for EventStoreDB can be found here: [Event Store Docs](https://eventstore.com/docs/).
-
-Bear in mind that this client is not yet properly documented. We are working hard on a new version of the documentation.
+* [Samples](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/tree/master/samples)
 
 ## Communities
 
-- [Discuss](https://discuss.eventstore.com/)
-- [Discord (Event Store)](https://discord.gg/Phn9pmCw3t)
+[Join our global community](https://www.kurrent.io/community) of developers.
+
+- [Discuss](https://discuss.kurrent.io/)
+- [Discord (Kurrent)](https://discord.gg/Phn9pmCw3t)
 - [Discord (ddd-cqrs-es)](https://discord.com/invite/sEZGSHNNbH)
 
 ## Contributing
 
-Development is done on the `master` branch.
-We attempt to do our best to ensure that the history remains clean and to do so, we generally ask contributors to squash their commits into a set or single logical commit.
+Development is done on the `main` branch.
+We attempt to do our best to ensure that the history remains clean and to do so, we generally ask contributors to squash
+their commits into a set or single logical commit.
+
+- [Create an issue](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/issues)
+- [Documentation](https://docs.kurrent.io/)
+- [Contributing guide](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/blob/main/CONTRIBUTING.md)
+
+## More resources
+
+- [Release notes](https://kurrent.io/blog/release-notes)
+- [Beginners Guide to Event Sourcing](https://kurrent.io/event-sourcing)
+- [Articles](https://kurrent.io/blog)
+- [Webinars](https://kurrent.io/webinars)
+- [Contact us](https://kurrent.io/contact)

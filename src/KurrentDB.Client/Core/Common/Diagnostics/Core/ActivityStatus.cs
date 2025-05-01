@@ -2,7 +2,7 @@
 
 using System.Diagnostics;
 
-namespace Kurrent.Diagnostics;
+namespace KurrentDB.Diagnostics;
 
 record ActivityStatus(ActivityStatusCode StatusCode, string? Description, Exception? Exception) {
 	public static ActivityStatus Ok(string? description = null) =>

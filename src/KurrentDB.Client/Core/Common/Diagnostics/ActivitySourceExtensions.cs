@@ -1,9 +1,9 @@
 // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 using System.Diagnostics;
-using Kurrent.Diagnostics;
-using Kurrent.Diagnostics.Telemetry;
-using Kurrent.Diagnostics.Tracing;
+using KurrentDB.Diagnostics;
+using KurrentDB.Diagnostics.Telemetry;
+using KurrentDB.Diagnostics.Tracing;
 
 namespace KurrentDB.Client.Diagnostics;
 
@@ -42,10 +42,10 @@ static class ActivitySourceExtensions {
 		if (parentContext == default(ActivityContext)) return;
 
 		var tags = new ActivityTagsCollection()
-			.WithRequiredTag(TelemetryTags.Kurrent.Stream, resolvedEvent.OriginalEvent.EventStreamId)
-			.WithOptionalTag(TelemetryTags.Kurrent.SubscriptionId, subscriptionId)
-			.WithRequiredTag(TelemetryTags.Kurrent.EventId, resolvedEvent.OriginalEvent.EventId.ToString())
-			.WithRequiredTag(TelemetryTags.Kurrent.EventType, resolvedEvent.OriginalEvent.EventType)
+			.WithRequiredTag(TelemetryTags.KurrentDB.Stream, resolvedEvent.OriginalEvent.EventStreamId)
+			.WithOptionalTag(TelemetryTags.KurrentDB.SubscriptionId, subscriptionId)
+			.WithRequiredTag(TelemetryTags.KurrentDB.EventId, resolvedEvent.OriginalEvent.EventId.ToString())
+			.WithRequiredTag(TelemetryTags.KurrentDB.EventType, resolvedEvent.OriginalEvent.EventType)
 			// Ensure consistent server.address attribute when connecting to cluster via dns discovery
 			.WithGrpcChannelServerTags(channelInfo)
 			.WithClientSettingsServerTags(settings)

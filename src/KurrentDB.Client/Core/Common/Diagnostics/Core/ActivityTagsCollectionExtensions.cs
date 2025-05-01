@@ -3,7 +3,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace Kurrent.Diagnostics;
+namespace KurrentDB.Diagnostics;
 
 static class ActivityTagsCollectionExtensions {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
