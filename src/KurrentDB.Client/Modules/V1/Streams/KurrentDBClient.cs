@@ -19,16 +19,19 @@ public sealed partial class KurrentDBClient : KurrentDBClientBase {
 		},
 	};
 
-	static BoundedChannelOptions ReadBoundedChannelOptions = new(1) {
+	static readonly BoundedChannelOptions ReadBoundedChannelOptions = new(1) {
 		SingleReader                  = true,
 		SingleWriter                  = true,
 		AllowSynchronousContinuations = true
 	};
 
 	readonly ILogger<KurrentDBClient> _log;
-	Lazy<StreamAppender>              _batchAppenderLazy;
-	StreamAppender                    BatchAppender => _batchAppenderLazy.Value;
 	readonly CancellationTokenSource  _disposedTokenSource;
+
+	Lazy<StreamAppender> _batchAppenderLazy;
+
+	StreamAppender BatchAppender => _batchAppenderLazy.Value;
+
 
 	static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
 		[Constants.Exceptions.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),

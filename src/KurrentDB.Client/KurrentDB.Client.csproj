@@ -61,7 +61,5 @@
 
 	<ItemGroup>
 	  <Folder Include="Modules\Shared\" />
-	  <Folder Include="Modules\V2\Streams\" />
-	  <Folder Include="Schemas\" />
 	</ItemGroup>
 </Project>

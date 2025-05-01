@@ -5,7 +5,7 @@ namespace KurrentDB.Client;
 /// <summary>
 ///  A set of extension methods for an <see cref="KurrentDBClient"/>.
 /// </summary>
-public static class KurrentDBClientExtensions {
+public static partial class KurrentDBClientExtensions {
 	static readonly JsonSerializerOptions SystemSettingsJsonSerializerOptions = new JsonSerializerOptions {
 		Converters = {
 			SystemSettingsJsonConverter.Instance
