@@ -18,7 +18,7 @@ namespace KurrentDB.Client {
 		/// <param name="streamName">The name of the stream to append events to.</param>
 		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream to append to.</param>
 		/// <param name="eventData">An <see cref="IEnumerable{EventData}"/> to append to the stream.</param>
-		/// <param name="configureOperationOptions">An <see cref="Action{KurrentClientOperationOptions}"/> to configure the operation's options.</param>
+		/// <param name="configureOperationOptions">An <see cref="Action{KurrentDBClientOperationOptions}"/> to configure the operation's options.</param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>

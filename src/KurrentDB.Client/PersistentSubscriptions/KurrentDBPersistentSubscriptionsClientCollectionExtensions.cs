@@ -16,9 +16,9 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// Adds an <see cref="KurrentDBPersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static IServiceCollection AddKurrentPersistentSubscriptionsClient(this IServiceCollection services,
+		public static IServiceCollection AddKurrentDBPersistentSubscriptionsClient(this IServiceCollection services,
 			Uri address, Func<HttpMessageHandler>? createHttpMessageHandler = null)
-			=> services.AddKurrentPersistentSubscriptionsClient(options => {
+			=> services.AddKurrentDBPersistentSubscriptionsClient(options => {
 				options.ConnectivitySettings.Address = address;
 				options.CreateHttpMessageHandler = createHttpMessageHandler;
 			});
@@ -27,21 +27,21 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// Adds an <see cref="KurrentDBPersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static IServiceCollection AddKurrentPersistentSubscriptionsClient(this IServiceCollection services,
+		public static IServiceCollection AddKurrentDBPersistentSubscriptionsClient(this IServiceCollection services,
 			Action<KurrentDBClientSettings>? configureSettings = null) =>
-			services.AddKurrentPersistentSubscriptionsClient(new KurrentDBClientSettings(),
+			services.AddKurrentDBPersistentSubscriptionsClient(new KurrentDBClientSettings(),
 				configureSettings);
 
 		/// <summary>
 		/// Adds an <see cref="KurrentDBPersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 		/// </summary>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static IServiceCollection AddKurrentPersistentSubscriptionsClient(this IServiceCollection services,
+		public static IServiceCollection AddKurrentDBPersistentSubscriptionsClient(this IServiceCollection services,
 			string connectionString, Action<KurrentDBClientSettings>? configureSettings = null) =>
-			services.AddKurrentPersistentSubscriptionsClient(KurrentDBClientSettings.Create(connectionString),
+			services.AddKurrentDBPersistentSubscriptionsClient(KurrentDBClientSettings.Create(connectionString),
 				configureSettings);
 
-		private static IServiceCollection AddKurrentPersistentSubscriptionsClient(this IServiceCollection services,
+		private static IServiceCollection AddKurrentDBPersistentSubscriptionsClient(this IServiceCollection services,
 			KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings) {
 			if (services == null) {
 				throw new ArgumentNullException(nameof(services));

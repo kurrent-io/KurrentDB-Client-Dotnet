@@ -102,7 +102,7 @@ public class ConnectionStringTests {
 	public void valid_connection_string(string connectionString, KurrentDBClientSettings expected) {
 		var result = KurrentDBClientSettings.Create(connectionString);
 
-		Assert.Equal(expected, result, KurrentClientSettingsEqualityComparer.Instance);
+		Assert.Equal(expected, result, KurrentDBClientSettingsEqualityComparer.Instance);
 	}
 
 	[Theory]
@@ -110,7 +110,7 @@ public class ConnectionStringTests {
 	public void valid_connection_string_with_empty_path(string connectionString, KurrentDBClientSettings expected) {
 		var result = KurrentDBClientSettings.Create(connectionString.Replace("?", "/?"));
 
-		Assert.Equal(expected, result, KurrentClientSettingsEqualityComparer.Instance);
+		Assert.Equal(expected, result, KurrentDBClientSettingsEqualityComparer.Instance);
 	}
 
 #if !GRPC_CORE
@@ -444,8 +444,8 @@ public class ConnectionStringTests {
 		return string.Join("&", pairs.Select(pair => $"{getKey?.Invoke(pair.Key) ?? pair.Key}={pair.Value}"));
 	}
 
-	class KurrentClientSettingsEqualityComparer : IEqualityComparer<KurrentDBClientSettings> {
-		public static readonly KurrentClientSettingsEqualityComparer Instance = new();
+	class KurrentDBClientSettingsEqualityComparer : IEqualityComparer<KurrentDBClientSettings> {
+		public static readonly KurrentDBClientSettingsEqualityComparer Instance = new();
 
 		public bool Equals(KurrentDBClientSettings? x, KurrentDBClientSettings? y) {
 			if (ReferenceEquals(x, y))
@@ -461,11 +461,11 @@ public class ConnectionStringTests {
 				return false;
 
 			return x.ConnectionName == y.ConnectionName &&
-			       KurrentClientConnectivitySettingsEqualityComparer.Instance.Equals(
+			       KurrentDBClientConnectivitySettingsEqualityComparer.Instance.Equals(
 				       x.ConnectivitySettings,
 				       y.ConnectivitySettings
 			       ) &&
-			       KurrentClientOperationOptionsEqualityComparer.Instance.Equals(
+			       KurrentDBClientOperationOptionsEqualityComparer.Instance.Equals(
 				       x.OperationOptions,
 				       y.OperationOptions
 			       ) &&
@@ -475,13 +475,13 @@ public class ConnectionStringTests {
 		public int GetHashCode(KurrentDBClientSettings obj) =>
 			HashCode.Hash
 				.Combine(obj.ConnectionName)
-				.Combine(KurrentClientConnectivitySettingsEqualityComparer.Instance.GetHashCode(obj.ConnectivitySettings))
-				.Combine(KurrentClientOperationOptionsEqualityComparer.Instance.GetHashCode(obj.OperationOptions));
+				.Combine(KurrentDBClientConnectivitySettingsEqualityComparer.Instance.GetHashCode(obj.ConnectivitySettings))
+				.Combine(KurrentDBClientOperationOptionsEqualityComparer.Instance.GetHashCode(obj.OperationOptions));
 	}
 
-	class KurrentClientConnectivitySettingsEqualityComparer
+	class KurrentDBClientConnectivitySettingsEqualityComparer
 		: IEqualityComparer<KurrentDBClientConnectivitySettings> {
-		public static readonly KurrentClientConnectivitySettingsEqualityComparer Instance = new();
+		public static readonly KurrentDBClientConnectivitySettingsEqualityComparer Instance = new();
 
 		public bool Equals(KurrentDBClientConnectivitySettings? x, KurrentDBClientConnectivitySettings? y) {
 			if (ReferenceEquals(x, y))
@@ -522,9 +522,9 @@ public class ConnectionStringTests {
 			);
 	}
 
-	class KurrentClientOperationOptionsEqualityComparer
+	class KurrentDBClientOperationOptionsEqualityComparer
 		: IEqualityComparer<KurrentDBClientOperationOptions> {
-		public static readonly KurrentClientOperationOptionsEqualityComparer Instance = new();
+		public static readonly KurrentDBClientOperationOptionsEqualityComparer Instance = new();
 
 		public bool Equals(KurrentDBClientOperationOptions? x, KurrentDBClientOperationOptions? y) {
 			if (ReferenceEquals(x, y))

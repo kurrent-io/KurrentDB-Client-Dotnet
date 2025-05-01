@@ -21,9 +21,9 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <param name="createHttpMessageHandler"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static IServiceCollection AddKurrentOperationsClient(this IServiceCollection services, Uri address,
+		public static IServiceCollection AddKurrentDBOperationsClient(this IServiceCollection services, Uri address,
 			Func<HttpMessageHandler>? createHttpMessageHandler = null)
-			=> services.AddKurrentOperationsClient(options => {
+			=> services.AddKurrentDBOperationsClient(options => {
 				options.ConnectivitySettings.Address = address;
 				options.CreateHttpMessageHandler = createHttpMessageHandler;
 			});
@@ -35,9 +35,9 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <param name="configureOptions"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static IServiceCollection AddKurrentOperationsClient(this IServiceCollection services,
+		public static IServiceCollection AddKurrentDBOperationsClient(this IServiceCollection services,
 			Action<KurrentDBClientSettings>? configureOptions = null) =>
-			services.AddKurrentOperationsClient(new KurrentDBClientSettings(), configureOptions);
+			services.AddKurrentDBOperationsClient(new KurrentDBClientSettings(), configureOptions);
 
 		/// <summary>
 		/// Adds an <see cref="KurrentDBOperationsClient"/> to the <see cref="IServiceCollection"/>.
@@ -47,11 +47,11 @@ namespace Microsoft.Extensions.DependencyInjection {
 		/// <param name="configureOptions"></param>
 		/// <returns></returns>
 		/// <exception cref="ArgumentNullException"></exception>
-		public static IServiceCollection AddKurrentOperationsClient(this IServiceCollection services,
+		public static IServiceCollection AddKurrentDBOperationsClient(this IServiceCollection services,
 			string connectionString, Action<KurrentDBClientSettings>? configureOptions = null) =>
-			services.AddKurrentOperationsClient(KurrentDBClientSettings.Create(connectionString), configureOptions);
+			services.AddKurrentDBOperationsClient(KurrentDBClientSettings.Create(connectionString), configureOptions);
 
-		private static IServiceCollection AddKurrentOperationsClient(this IServiceCollection services,
+		private static IServiceCollection AddKurrentDBOperationsClient(this IServiceCollection services,
 			KurrentDBClientSettings options, Action<KurrentDBClientSettings>? configureOptions) {
 			if (services == null) {
 				throw new ArgumentNullException(nameof(services));
