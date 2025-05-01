@@ -37,7 +37,7 @@ for (var i = 0; i < eventCount; i++) {
 
 	await client.AppendToStreamAsync(
 		Guid.NewGuid().ToString("N"),
-		StreamRevision.None,
+		StreamState.Any,
 		new List<EventData> { eventData }
 	);
 }

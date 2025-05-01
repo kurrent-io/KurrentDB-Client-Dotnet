@@ -41,7 +41,7 @@ namespace KurrentDB.Client {
 		/// <param name="streamName">The name of the stream to set metadata for.</param>
 		/// <param name="expectedState">The <see cref="StreamState"/> of the stream to append to.</param>
 		/// <param name="metadata">A <see cref="StreamMetadata"/> representing the new metadata.</param>
-		/// <param name="configureOperationOptions">An <see cref="Action{KurrentClientOperationOptions}"/> to configure the operation's options.</param>
+		/// <param name="configureOperationOptions">An <see cref="Action{KurrentDBClientOperationOptions}"/> to configure the operation's options.</param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
 		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
@@ -58,32 +58,6 @@ namespace KurrentDB.Client {
 					StreamIdentifier = SystemStreams.MetastreamOf(streamName)
 				}
 			}.WithAnyStreamRevision(expectedState), options, deadline, userCredentials, cancellationToken);
-		}
-
-		/// <summary>
-		/// Asynchronously sets the metadata for a stream.
-		/// </summary>
-		/// <param name="streamName">The name of the stream to set metadata for.</param>
-		/// <param name="expectedRevision">The <see cref="StreamRevision"/> of the stream to append to.</param>
-		/// <param name="metadata">A <see cref="StreamMetadata"/> representing the new metadata.</param>
-		/// <param name="configureOperationOptions">An <see cref="Action{KurrentClientOperationOptions}"/> to configure the operation's options.</param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public Task<IWriteResult> SetStreamMetadataAsync(string streamName, StreamRevision expectedRevision,
-			StreamMetadata metadata, Action<KurrentDBClientOperationOptions>? configureOperationOptions = null,
-			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
-			var options = Settings.OperationOptions.Clone();
-			configureOperationOptions?.Invoke(options);
-
-			return SetStreamMetadataInternal(metadata, new AppendReq {
-				Options = new AppendReq.Types.Options {
-					StreamIdentifier = SystemStreams.MetastreamOf(streamName),
-					Revision = expectedRevision
-				}
-			}, options, deadline, userCredentials, cancellationToken);
 		}
 
 		private async Task<IWriteResult> SetStreamMetadataInternal(StreamMetadata metadata,

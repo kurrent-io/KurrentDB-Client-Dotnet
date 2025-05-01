@@ -1,5 +1,3 @@
-using System;
-
 namespace KurrentDB.Client {
 	/// <summary>
 	/// An interface representing the result of a write operation.
@@ -18,6 +16,6 @@ namespace KurrentDB.Client {
 		/// <summary>
 		/// The <see cref="StreamRevision"/> the stream is currently at.
 		/// </summary>
-		StreamRevision NextExpectedStreamRevision { get; }
+		StreamState NextExpectedStreamState { get; }
 	}
 }

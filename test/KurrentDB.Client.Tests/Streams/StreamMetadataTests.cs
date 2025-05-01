@@ -1,5 +1,4 @@
 using System.Text.Json;
-using KurrentDB.Client;
 using Grpc.Core;
 
 namespace KurrentDB.Client.Tests.Streams;
@@ -71,7 +70,7 @@ public class StreamMetadataTests(ITestOutputHelper output, KurrentDBPermanentFix
 			TimeSpan.FromSeconds(0xDABACABAD)
 		);
 
-		await Fixture.Streams.SetStreamMetadataAsync(stream, new StreamRevision(0), expected);
+		await Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(0), expected);
 
 		actual = await Fixture.Streams.GetStreamMetadataAsync(stream);
 
@@ -90,7 +89,7 @@ public class StreamMetadataTests(ITestOutputHelper output, KurrentDBPermanentFix
 		var stream = Fixture.GetStreamName();
 		await Assert.ThrowsAsync<WrongExpectedVersionException>(
 			() =>
-				Fixture.Streams.SetStreamMetadataAsync(stream, new StreamRevision(2), new())
+				Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(2), new())
 		);
 	}
 
@@ -100,7 +99,7 @@ public class StreamMetadataTests(ITestOutputHelper output, KurrentDBPermanentFix
 		var writeResult =
 			await Fixture.Streams.SetStreamMetadataAsync(
 				stream,
-				new StreamRevision(2),
+				StreamState.StreamRevision(2),
 				new(),
 				options => { options.ThrowOnAppendFailure = false; }
 			);
@@ -177,7 +176,7 @@ public class StreamMetadataTests(ITestOutputHelper output, KurrentDBPermanentFix
 			() =>
 				Fixture.Streams.SetStreamMetadataAsync(
 					stream,
-					new StreamRevision(0),
+					StreamState.StreamRevision(0),
 					new(),
 					deadline: TimeSpan.Zero
 				)

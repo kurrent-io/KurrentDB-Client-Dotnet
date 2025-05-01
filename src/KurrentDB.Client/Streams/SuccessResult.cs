@@ -1,5 +1,3 @@
-using System;
-
 namespace KurrentDB.Client {
 	/// <summary>
 	/// An <see cref="IWriteResult"/> that indicates a successful append to a stream.
@@ -12,22 +10,22 @@ namespace KurrentDB.Client {
 		public Position LogPosition { get; }
 
 		/// <inheritdoc />
-		public StreamRevision NextExpectedStreamRevision { get; }
+		public StreamState NextExpectedStreamState { get; }
 
 		/// <summary>
 		/// Constructs a new <see cref="SuccessResult"/>.
 		/// </summary>
-		/// <param name="nextExpectedStreamRevision"></param>
+		/// <param name="nextExpectedStreamState"></param>
 		/// <param name="logPosition"></param>
-		public SuccessResult(StreamRevision nextExpectedStreamRevision, Position logPosition) {
-			NextExpectedStreamRevision = nextExpectedStreamRevision;
+		public SuccessResult(StreamState nextExpectedStreamState, Position logPosition) {
+			NextExpectedStreamState = nextExpectedStreamState;
 			LogPosition = logPosition;
-			NextExpectedVersion = nextExpectedStreamRevision.ToInt64();
+			NextExpectedVersion = nextExpectedStreamState.ToInt64();
 		}
 
 		/// <inheritdoc />
 		public bool Equals(SuccessResult other) =>
-			NextExpectedStreamRevision == other.NextExpectedStreamRevision && LogPosition.Equals(other.LogPosition);
+			NextExpectedStreamState == other.NextExpectedStreamState && LogPosition.Equals(other.LogPosition);
 
 		/// <inheritdoc />
 		public override bool Equals(object? obj) => obj is SuccessResult other && Equals(other);
@@ -52,6 +50,6 @@ namespace KurrentDB.Client {
 		public override int GetHashCode() => HashCode.Hash.Combine(NextExpectedVersion).Combine(LogPosition);
 
 		/// <inheritdoc />
-		public override string ToString() => $"{NextExpectedStreamRevision}:{LogPosition}";
+		public override string ToString() => $"{NextExpectedStreamState}:{LogPosition}";
 	}
 }

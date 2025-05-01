@@ -16,51 +16,6 @@ namespace KurrentDB.Client {
 		/// Appends events asynchronously to a stream.
 		/// </summary>
 		/// <param name="streamName">The name of the stream to append events to.</param>
-		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream to append to.</param>
-		/// <param name="eventData">An <see cref="IEnumerable{EventData}"/> to append to the stream.</param>
-		/// <param name="configureOperationOptions">An <see cref="Action{KurrentClientOperationOptions}"/> to configure the operation's options.</param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials">The <see cref="UserCredentials"/> for the operation.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public async Task<IWriteResult> AppendToStreamAsync(
-			string streamName,
-			StreamRevision expectedRevision,
-			IEnumerable<EventData> eventData,
-			Action<KurrentDBClientOperationOptions>? configureOperationOptions = null,
-			TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default
-		) {
-			var options = Settings.OperationOptions.Clone();
-			configureOperationOptions?.Invoke(options);
-
-			_log.LogDebug("Append to stream - {streamName}@{expectedRevision}.", streamName, expectedRevision);
-
-			var task = userCredentials is null && await BatchAppender.IsUsable().ConfigureAwait(false)
-				? BatchAppender.Append(streamName, expectedRevision, eventData, deadline, cancellationToken)
-				: AppendToStreamInternal(
-					await GetChannelInfo(cancellationToken).ConfigureAwait(false),
-					new AppendReq {
-						Options = new() {
-							StreamIdentifier = streamName,
-							Revision         = expectedRevision
-						}
-					},
-					eventData,
-					options,
-					deadline,
-					userCredentials,
-					cancellationToken
-				);
-
-			return (await task.ConfigureAwait(false)).OptionallyThrowWrongExpectedVersionException(options);
-		}
-
-		/// <summary>
-		/// Appends events asynchronously to a stream.
-		/// </summary>
-		/// <param name="streamName">The name of the stream to append events to.</param>
 		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream to append to.</param>
 		/// <param name="eventData">An <see cref="IEnumerable{EventData}"/> to append to the stream.</param>
 		/// <param name="configureOperationOptions">An <see cref="Action{KurrentClientOperationOptions}"/> to configure the operation's options.</param>
@@ -159,8 +114,8 @@ namespace KurrentDB.Client {
 
 		IWriteResult HandleSuccessAppend(AppendResp response, AppendReq header) {
 			var currentRevision = response.Success.CurrentRevisionOptionCase == AppendResp.Types.Success.CurrentRevisionOptionOneofCase.NoStream
-				? StreamRevision.None
-				: new StreamRevision(response.Success.CurrentRevision);
+				? StreamState.NoStream
+				: StreamState.StreamRevision(response.Success.CurrentRevision);
 
 			var position = response.Success.PositionOptionCase == AppendResp.Types.Success.PositionOptionOneofCase.Position
 				? new Position(response.Success.Position.CommitPosition, response.Success.Position.PreparePosition)
@@ -179,14 +134,15 @@ namespace KurrentDB.Client {
 		IWriteResult HandleWrongExpectedRevision(
 			AppendResp response, AppendReq header, KurrentDBClientOperationOptions operationOptions
 		) {
-			var actualStreamRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase == AppendResp.Types.WrongExpectedVersion.CurrentRevisionOptionOneofCase.CurrentRevision
-				? new StreamRevision(response.WrongExpectedVersion.CurrentRevision)
-				: StreamRevision.None;
+			var actualStreamRevision = response.WrongExpectedVersion.CurrentRevisionOptionCase
+			                        == AppendResp.Types.WrongExpectedVersion.CurrentRevisionOptionOneofCase.CurrentRevision
+				? StreamState.StreamRevision(response.WrongExpectedVersion.CurrentRevision)
+				: StreamState.NoStream;
 
 			_log.LogDebug(
 				"Append to stream failed with Wrong Expected Version - {streamName}/{expectedRevision}/{currentRevision}",
 				header.Options.StreamIdentifier,
-				new StreamRevision(header.Options.Revision),
+				StreamState.StreamRevision(header.Options.Revision),
 				actualStreamRevision
 			);
 
@@ -194,7 +150,7 @@ namespace KurrentDB.Client {
 				if (response.WrongExpectedVersion.ExpectedRevisionOptionCase == AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedRevision) {
 					throw new WrongExpectedVersionException(
 						header.Options.StreamIdentifier!,
-						new StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
+						StreamState.StreamRevision(response.WrongExpectedVersion.ExpectedRevision),
 						actualStreamRevision
 					);
 				}
@@ -213,9 +169,10 @@ namespace KurrentDB.Client {
 				);
 			}
 
-			var expectedRevision = response.WrongExpectedVersion.ExpectedRevisionOptionCase == AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedRevision
-				? new StreamRevision(response.WrongExpectedVersion.ExpectedRevision)
-				: StreamRevision.None;
+			var expectedRevision = response.WrongExpectedVersion.ExpectedRevisionOptionCase
+			                    == AppendResp.Types.WrongExpectedVersion.ExpectedRevisionOptionOneofCase.ExpectedRevision
+				? StreamState.StreamRevision(response.WrongExpectedVersion.ExpectedRevision)
+				: StreamState.NoStream;
 
 			return new WrongExpectedVersionResult(
 				header.Options.StreamIdentifier!,
@@ -250,17 +207,6 @@ namespace KurrentDB.Client {
 
 				_ = Task.Run(() => Duplex(channelInfoTask), cancellationToken);
 			}
-
-			public ValueTask<IWriteResult> Append(
-				string streamName, StreamRevision expectedStreamPosition,
-				IEnumerable<EventData> events, TimeSpan? timeoutAfter,
-				CancellationToken cancellationToken = default
-			) =>
-				AppendInternal(
-					BatchAppendReq.Types.Options.Create(streamName, expectedStreamPosition, timeoutAfter),
-					events,
-					cancellationToken
-				);
 
 			public ValueTask<IWriteResult> Append(
 				string streamName, StreamState expectedStreamState,

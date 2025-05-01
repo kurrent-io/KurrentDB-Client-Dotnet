@@ -37,8 +37,8 @@ namespace KurrentDB.Client {
 			),
 			[Constants.Exceptions.WrongExpectedVersion] = ex => new WrongExpectedVersionException(
 				ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!,
-				ex.Trailers.GetStreamRevision(Constants.Exceptions.ExpectedVersion),
-				ex.Trailers.GetStreamRevision(Constants.Exceptions.ActualVersion),
+				ex.Trailers.GetStreamState(Constants.Exceptions.ExpectedVersion),
+				ex.Trailers.GetStreamState(Constants.Exceptions.ActualVersion),
 				ex,
 				ex.Message
 			),

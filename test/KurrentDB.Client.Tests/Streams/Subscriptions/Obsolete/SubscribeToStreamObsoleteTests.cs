@@ -1,3 +1,5 @@
+
+using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests;
@@ -69,14 +71,14 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, SubscribeT
 		var availableEvents = new HashSet<Uuid>(seedEvents.Skip(pageSize).Select(x => x.EventId));
 
 		var writeResult    = await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents.Take(pageSize));
-		var streamPosition = StreamPosition.FromStreamRevision(writeResult.NextExpectedStreamRevision);
+		var streamPosition = StreamPosition.FromInt64(writeResult.NextExpectedStreamState.ToInt64());
 		var checkpoint     = FromStream.After(streamPosition);
 
 		using var subscription = await Fixture.Streams
 			.SubscribeToStreamAsync(streamName, checkpoint, OnReceived, false, OnDropped)
 			.WithTimeout();
 
-		await Fixture.Streams.AppendToStreamAsync(streamName, writeResult.NextExpectedStreamRevision, seedEvents.Skip(pageSize));
+		await Fixture.Streams.AppendToStreamAsync(streamName, writeResult.NextExpectedStreamState, seedEvents.Skip(pageSize));
 
 		await receivedAllEvents.Task.WithTimeout();
 

@@ -7,28 +7,6 @@ namespace KurrentDB.Client {
 		/// Deletes a stream asynchronously.
 		/// </summary>
 		/// <param name="streamName">The name of the stream to delete.</param>
-		/// <param name="expectedRevision">The expected <see cref="StreamRevision"/> of the stream being deleted.</param>
-		/// <param name="deadline">The maximum time to wait before terminating the call.</param>
-		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
-		/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-		/// <returns></returns>
-		public Task<DeleteResult> DeleteAsync(
-			string streamName,
-			StreamRevision expectedRevision,
-			TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) =>
-			DeleteInternal(new DeleteReq {
-				Options = new DeleteReq.Types.Options {
-					StreamIdentifier = streamName,
-					Revision = expectedRevision
-				}
-			}, deadline, userCredentials, cancellationToken);
-
-		/// <summary>
-		/// Deletes a stream asynchronously.
-		/// </summary>
-		/// <param name="streamName">The name of the stream to delete.</param>
 		/// <param name="expectedState">The expected <see cref="StreamState"/> of the stream being deleted.</param>
 		/// <param name="deadline">The maximum time to wait before terminating the call.</param>
 		/// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>

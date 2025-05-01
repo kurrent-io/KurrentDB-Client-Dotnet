@@ -208,7 +208,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 			TestCredentials.Root
 		);
 
-		await Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(9), events.Skip(10));
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(9), events.Skip(10));
 
 		var firstEvent = firstEventSource.Task;
 
@@ -283,7 +283,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 			TestCredentials.Root
 		);
 
-		await Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(9), events.Skip(10));
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(9), events.Skip(10));
 
 		var firstEvent = firstEventSource.Task;
 
@@ -363,7 +363,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 			TestCredentials.Root
 		);
 
-		await Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(9), events.Skip(10));
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(9), events.Skip(10));
 
 		var firstEvent = firstEventSource.Task;
 
@@ -403,7 +403,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 			TestCredentials.Root
 		);
 
-		await Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(9), events.Skip(10));
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(9), events.Skip(10));
 
 		var firstEvent = firstEventSource.Task;
 
@@ -443,7 +443,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 			TestCredentials.Root
 		);
 
-		await Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(10), events.Skip(11));
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(10), events.Skip(11));
 
 		var firstEvent = firstEventSource.Task;
 
@@ -547,7 +547,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 			TestCredentials.Root
 		);
 
-		await Fixture.Streams.AppendToStreamAsync(stream, new StreamRevision(10), events.Skip(11));
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(10), events.Skip(11));
 
 		Task<ResolvedEvent> firstEvent = firstEventSource.Task;
 

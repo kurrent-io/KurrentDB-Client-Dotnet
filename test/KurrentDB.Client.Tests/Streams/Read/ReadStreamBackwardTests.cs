@@ -1,4 +1,3 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 using Grpc.Core;
 
@@ -78,7 +77,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 
 		Assert.True(
 			EventDataComparer.Equal(
-				expected.Reverse().ToArray(),
+				Enumerable.Reverse(expected).ToArray(),
 				actual
 			)
 		);
@@ -190,7 +189,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 	public async Task with_timeout_fails_when_operation_expired() {
 		var stream = Fixture.GetStreamName();
 
-		await Fixture.Streams.AppendToStreamAsync(stream, StreamRevision.None, Fixture.CreateTestEvents());
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents());
 
 		var rpcException = await Assert.ThrowsAsync<RpcException>(
 			() => Fixture.Streams
@@ -212,7 +211,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 	public async Task enumeration_referencing_messages_twice_does_not_throw() {
 		var result = Fixture.Streams.ReadStreamAsync(
 			Direction.Forwards,
-			"$users",
+			"$dbUsers",
 			StreamPosition.Start,
 			32,
 			userCredentials: TestCredentials.Root
@@ -226,7 +225,7 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 	public async Task enumeration_enumerating_messages_twice_throws() {
 		var result = Fixture.Streams.ReadStreamAsync(
 			Direction.Forwards,
-			"$users",
+			"$dbUsers",
 			StreamPosition.Start,
 			32,
 			userCredentials: TestCredentials.Root

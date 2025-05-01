@@ -100,7 +100,7 @@ static async Task AppendWithNoStream(KurrentDBClient client) {
 static async Task AppendWithConcurrencyCheck(KurrentDBClient client) {
 	await client.AppendToStreamAsync(
 		"concurrency-stream",
-		StreamRevision.None,
+		StreamState.Any,
 		new[] { new EventData(Uuid.NewUuid(), "-", ReadOnlyMemory<byte>.Empty) }
 	);
 

@@ -234,9 +234,6 @@ namespace KurrentDB.Client {
 
 #if NET48
 				HttpMessageHandler CreateDefaultHandler() {
-					if (settings.CreateHttpMessageHandler is not null)
-						return settings.CreateHttpMessageHandler.Invoke();
-
 					var handler = new WinHttpHandler {
 						TcpKeepAliveEnabled = true,
 						TcpKeepAliveTime = settings.ConnectivitySettings.KeepAliveTimeout,

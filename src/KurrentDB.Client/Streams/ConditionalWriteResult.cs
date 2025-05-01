@@ -9,7 +9,7 @@ namespace KurrentDB.Client {
 		/// Indicates that the stream the operation is targeting was deleted.
 		/// </summary>
 		public static readonly ConditionalWriteResult StreamDeleted =
-			new ConditionalWriteResult(StreamRevision.None, Position.End, ConditionalWriteStatus.StreamDeleted);
+			new ConditionalWriteResult(StreamState.NoStream, Position.End, ConditionalWriteStatus.StreamDeleted);
 
 		/// <summary>
 		/// The correct expected version to use when writing to the stream next.
@@ -27,33 +27,33 @@ namespace KurrentDB.Client {
 		public ConditionalWriteStatus Status { get; }
 
 		/// <summary>
-		/// The correct <see cref="StreamRevision"/> to use when writing to the stream next.
+		/// The correct <see cref="StreamState"/> to use when writing to the stream next.
 		/// </summary>
-		public StreamRevision NextExpectedStreamRevision { get; }
+		public StreamState NextExpectedStreamState { get; }
 
-		private ConditionalWriteResult(StreamRevision nextExpectedStreamRevision, Position logPosition,
+		private ConditionalWriteResult(StreamState nextExpectedStreamState, Position logPosition,
 			ConditionalWriteStatus status = ConditionalWriteStatus.Succeeded) {
-			NextExpectedStreamRevision = nextExpectedStreamRevision;
-			NextExpectedVersion = nextExpectedStreamRevision.ToInt64();
+			NextExpectedStreamState = nextExpectedStreamState;
+			NextExpectedVersion = nextExpectedStreamState.ToInt64();
 			LogPosition = logPosition;
 			Status = status;
 		}
 
 		internal static ConditionalWriteResult FromWriteResult(IWriteResult writeResult)
 			=> writeResult switch {
-				WrongExpectedVersionResult wrongExpectedVersion => 
-				new ConditionalWriteResult(wrongExpectedVersion.NextExpectedStreamRevision, Position.End,
+				WrongExpectedVersionResult wrongExpectedVersion =>
+				new ConditionalWriteResult(wrongExpectedVersion.NextExpectedStreamState, Position.End,
 					ConditionalWriteStatus.VersionMismatch),
-				_ => new ConditionalWriteResult(writeResult.NextExpectedStreamRevision, writeResult.LogPosition)
+				_ => new ConditionalWriteResult(writeResult.NextExpectedStreamState, writeResult.LogPosition)
 			};
-		
+
 		internal static ConditionalWriteResult FromWrongExpectedVersion(WrongExpectedVersionException ex)
-			=> new ConditionalWriteResult(ex.ExpectedStreamRevision, Position.End,
+			=> new ConditionalWriteResult(ex.ExpectedStreamState, Position.End,
 				ConditionalWriteStatus.VersionMismatch);
 
 		/// <inheritdoc />
 		public bool Equals(ConditionalWriteResult other) =>
-			NextExpectedStreamRevision == other.NextExpectedStreamRevision &&
+			NextExpectedStreamState == other.NextExpectedStreamState &&
 			LogPosition.Equals(other.LogPosition) &&
 			Status == other.Status;
 
