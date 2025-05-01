@@ -1,4 +1,3 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests;
@@ -27,7 +26,7 @@ public class ReadAllEventsFixture : KurrentDBTemporaryFixture {
 			await Streams.AppendToStreamAsync(ExpectedStreamName, StreamState.NoStream, Events);
 
 			ExpectedEvents         = Events.ToBinaryData();
-			ExpectedEventsReversed = ExpectedEvents.Reverse().ToArray();
+			ExpectedEventsReversed = ((IEnumerable<EventBinaryData>)ExpectedEvents).Reverse().ToArray();
 
 			ExpectedFirstEvent = ExpectedEvents.First();
 			ExpectedLastEvent  = ExpectedEvents.Last();

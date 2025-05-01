@@ -22,75 +22,23 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Protobuf
-			ProtoRoot="Core/protos"
-			Include="Core/protos/**/*.proto"
-			Link="Core\protos\%(RecursiveDir)/%(FileName)%(Extension)"
-			GrpcServices="Client"
-			Access="internal"
-		/>
-		<Protobuf Update="Core\protos\code.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\gossip.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\operations.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\persistentsubscriptions.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\projectionmanagement.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\serverfeatures.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\shared.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\status.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\streams.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\usermanagement.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\code.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\gossip.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\operations.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\persistentsubscriptions.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\projectionmanagement.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\status.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\streams.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\usermanagement.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
+        <!-- v1 -->
+        <Protobuf
+                ProtoRoot="proto/kurrentdb/protocol/v1"
+                Include="proto/kurrentdb/protocol/v1/**/*.proto"
+                Link="proto\kurrentdb\protocol\v1\%(RecursiveDir)/%(FileName)%(Extension)"
+                GrpcServices="Client"
+                Access="internal"
+        />
 
-		<!--       -->
-		<!--        <Protobuf-->
-		<!--                Access="internal"-->
-		<!--                Include="..\Kurrent.Client\Common\protos\shared.proto;..\Kurrent.Client\Common\protos\status.proto;..\Kurrent.Client\Core\Common\protos\code.proto;"-->
-		<!--                ProtoRoot="..\Kurrent.Client\Core\Common\protos"-->
-		<!--                GrpcServices="Client"-->
-		<!--        />-->
+        <!-- v2 -->
+        <Protobuf
+                ProtoRoot="proto/kurrentdb/protocol/v2"
+                Include="proto/kurrentdb/protocol/v2/**/*.proto"
+                Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
+                GrpcServices="Client"
+                Access="internal"
+        />
 	</ItemGroup>
 
 	<!--    <ItemGroup Condition="'$(TargetFramework)' == 'net48'">-->
@@ -101,13 +49,19 @@
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
 		<!--        <PackageReference Include="System.Net.Http" Version="4.3.4"/>-->
-		<PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0"/>
-		<PackageReference Include="System.Text.Json" Version="8.0.5"/>
-		<PackageReference Include="System.Threading.Channels" Version="8.0.0"/>
-		<PackageReference Include="BouncyCastle.Cryptography" Version="2.3.1"/>
+		<PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0" />
+		<PackageReference Include="System.Text.Json" Version="8.0.5" />
+		<PackageReference Include="System.Threading.Channels" Version="8.0.0" />
+		<PackageReference Include="BouncyCastle.Cryptography" Version="2.3.1" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Remove="Kurrent.Client.csproj.DotSettings"/>
+		<None Remove="Kurrent.Client.csproj.DotSettings" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Core\Model\V1\" />
+	  <Folder Include="Core\Model\V2\" />
+	  <Folder Include="Modules\" />
 	</ItemGroup>
 </Project>
