@@ -93,7 +93,7 @@ namespace KurrentDB.Client {
 		}
 
 		/// Returns the result of an HTTP Get request based on the client settings.
-		protected async Task<T> HttpGet<T>(
+		protected internal async Task<T> HttpGet<T>(
 			string path, Action onNotFound, ChannelInfo channelInfo,
 			TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken
 		) {

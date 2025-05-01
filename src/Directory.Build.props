@@ -17,6 +17,9 @@
         <Authors>Kurrent, Inc</Authors>
         <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Kurrent, Inc</Copyright>
         <MinVerTagPrefix>v</MinVerTagPrefix>
+
+        <!-- Exclude all .DotSettings files from being included -->
+        <DefaultItemExcludes>$(DefaultItemExcludes);**/*.DotSettings</DefaultItemExcludes>
     </PropertyGroup>
 
     <ItemGroup>

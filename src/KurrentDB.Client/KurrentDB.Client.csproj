@@ -60,8 +60,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Core\Model\V1\" />
-	  <Folder Include="Core\Model\V2\" />
-	  <Folder Include="Modules\" />
+	  <Folder Include="Modules\V2\" />
+	  <Folder Include="Schemas\" />
 	</ItemGroup>
 </Project>
