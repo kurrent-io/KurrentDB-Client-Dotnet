@@ -6,14 +6,14 @@ namespace KurrentDB.Client;
 /// Represents a persistent subscription connection.
 /// </summary>
 public class PersistentSubscription : IDisposable {
-	private readonly KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult        _persistentSubscriptionResult;
-	private readonly IAsyncEnumerator<PersistentSubscriptionMessage>                            _enumerator;
-	private readonly Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> _eventAppeared;
-	private readonly Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>      _subscriptionDropped;
-	private readonly ILogger                                                                    _log;
-	private readonly CancellationTokenSource                                                    _cts;
+	readonly KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult        _persistentSubscriptionResult;
+	readonly IAsyncEnumerator<PersistentSubscriptionMessage>                            _enumerator;
+	readonly Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> _eventAppeared;
+	readonly Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>      _subscriptionDropped;
+	readonly ILogger                                                                    _log;
+	readonly CancellationTokenSource                                                    _cts;
 
-	private int _subscriptionDroppedInvoked;
+	int _subscriptionDroppedInvoked;
 
 	/// <summary>
 	/// The Subscription Id.
@@ -43,7 +43,7 @@ public class PersistentSubscription : IDisposable {
 	}
 
 	// PersistentSubscription takes responsibility for disposing the call and the disposable
-	private PersistentSubscription(
+	PersistentSubscription(
 		KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult persistentSubscriptionResult,
 		IAsyncEnumerator<PersistentSubscriptionMessage> enumerator, string subscriptionId,
 		Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
@@ -115,7 +115,7 @@ public class PersistentSubscription : IDisposable {
 	/// <inheritdoc />
 	public void Dispose() => SubscriptionDropped(SubscriptionDroppedReason.Disposed);
 
-	private async Task Subscribe() {
+	async Task Subscribe() {
 		_log.LogDebug("Persistent Subscription {subscriptionId} confirmed.", SubscriptionId);
 
 		try {
@@ -183,7 +183,7 @@ public class PersistentSubscription : IDisposable {
 		}
 	}
 
-	private void SubscriptionDropped(SubscriptionDroppedReason reason, Exception? ex = null) {
+	void SubscriptionDropped(SubscriptionDroppedReason reason, Exception? ex = null) {
 		if (Interlocked.CompareExchange(ref _subscriptionDroppedInvoked, 1, 0) == 1) {
 			return;
 		}
@@ -196,8 +196,8 @@ public class PersistentSubscription : IDisposable {
 		}
 	}
 
-	private Task AckInternal(params Uuid[] ids) => _persistentSubscriptionResult.Ack(ids);
+	Task AckInternal(params Uuid[] ids) => _persistentSubscriptionResult.Ack(ids);
 
-	private Task NackInternal(Uuid[] ids, PersistentSubscriptionNakEventAction action, string reason) =>
+	Task NackInternal(Uuid[] ids, PersistentSubscriptionNakEventAction action, string reason) =>
 		_persistentSubscriptionResult.Nack(action, reason, ids);
 }

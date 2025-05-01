@@ -1,5 +1,3 @@
-using System;
-
 namespace KurrentDB.Client;
 
 /// <summary>
@@ -48,7 +46,7 @@ public readonly struct DatabaseScavengeResult : IEquatable<DatabaseScavengeResul
 	public static DatabaseScavengeResult Unknown(string scavengeId) =>
 		new DatabaseScavengeResult(scavengeId, ScavengeResult.Unknown);
 
-	private DatabaseScavengeResult(string scavengeId, ScavengeResult result) {
+	DatabaseScavengeResult(string scavengeId, ScavengeResult result) {
 		ScavengeId = scavengeId;
 		Result     = result;
 	}

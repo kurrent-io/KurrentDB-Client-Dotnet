@@ -68,8 +68,8 @@ public partial class KurrentDBProjectionManagementClient {
 		return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
 	}
 
-	private async ValueTask<Value> GetResultInternalAsync(string name, string? partition,
-	                                                      TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
+	async ValueTask<Value> GetResultInternalAsync(string name, string? partition,
+	                                              TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		using var call = new Projections.ProjectionsClient(
 			channelInfo.CallInvoker).ResultAsync(new ResultReq {
@@ -143,8 +143,8 @@ public partial class KurrentDBProjectionManagementClient {
 		return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
 	}
 
-	private async ValueTask<Value> GetStateInternalAsync(string name, string? partition, TimeSpan? deadline,
-	                                                     UserCredentials? userCredentials, CancellationToken cancellationToken) {
+	async ValueTask<Value> GetStateInternalAsync(string name, string? partition, TimeSpan? deadline,
+	                                             UserCredentials? userCredentials, CancellationToken cancellationToken) {
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		using var call = new Projections.ProjectionsClient(
 			channelInfo.CallInvoker).StateAsync(new StateReq {
@@ -158,7 +158,7 @@ public partial class KurrentDBProjectionManagementClient {
 		return response.State;
 	}
 
-	private class ValueSerializer : System.Text.Json.Serialization.JsonConverter<Value> {
+	class ValueSerializer : System.Text.Json.Serialization.JsonConverter<Value> {
 		public override Value Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
 			throw new NotSupportedException();
 

@@ -1,11 +1,9 @@
-using System;
-using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace KurrentDB.Client;
 
-internal class StreamAclJsonConverter : JsonConverter<StreamAcl> {
+class StreamAclJsonConverter : JsonConverter<StreamAcl> {
 	public static readonly StreamAclJsonConverter Instance = new StreamAclJsonConverter();
 
 	public override StreamAcl Read(ref Utf8JsonReader reader, Type typeToConvert,
@@ -50,7 +48,7 @@ internal class StreamAclJsonConverter : JsonConverter<StreamAcl> {
 		return new StreamAcl(read, write, delete, metaRead, metaWrite);
 	}
 
-	private static string[]? ReadRoles(ref Utf8JsonReader reader) {
+	static string[]? ReadRoles(ref Utf8JsonReader reader) {
 		if (!reader.Read()) {
 			throw new InvalidOperationException();
 		}
@@ -60,7 +58,7 @@ internal class StreamAclJsonConverter : JsonConverter<StreamAcl> {
 		}
 
 		if (reader.TokenType == JsonTokenType.String) {
-			return new[] {reader.GetString()!};
+			return [reader.GetString()!];
 		}
 
 		if (reader.TokenType != JsonTokenType.StartArray) {
@@ -71,7 +69,7 @@ internal class StreamAclJsonConverter : JsonConverter<StreamAcl> {
 
 		while (reader.Read()) {
 			if (reader.TokenType == JsonTokenType.EndArray) {
-				return roles.Count == 0 ? Array.Empty<string>() : roles.ToArray();
+				return roles.Count == 0 ? [] : roles.ToArray();
 			}
 
 			if (reader.TokenType != JsonTokenType.String) {
@@ -96,7 +94,7 @@ internal class StreamAclJsonConverter : JsonConverter<StreamAcl> {
 		writer.WriteEndObject();
 	}
 
-	private static void WriteRoles(Utf8JsonWriter writer, string name, string[]? roles) {
+	static void WriteRoles(Utf8JsonWriter writer, string name, string[]? roles) {
 		if (roles == null) {
 			return;
 		}

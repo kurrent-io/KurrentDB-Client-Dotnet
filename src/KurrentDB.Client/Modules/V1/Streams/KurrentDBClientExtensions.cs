@@ -6,7 +6,7 @@ namespace KurrentDB.Client;
 ///  A set of extension methods for an <see cref="KurrentDBClient"/>.
 /// </summary>
 public static class KurrentDBClientExtensions {
-	private static readonly JsonSerializerOptions SystemSettingsJsonSerializerOptions = new JsonSerializerOptions {
+	static readonly JsonSerializerOptions SystemSettingsJsonSerializerOptions = new JsonSerializerOptions {
 		Converters = {
 			SystemSettingsJsonConverter.Instance
 		},
@@ -29,10 +29,10 @@ public static class KurrentDBClientExtensions {
 		CancellationToken cancellationToken = default) {
 		if (dbClient == null) throw new ArgumentNullException(nameof(dbClient));
 		return dbClient.AppendToStreamAsync(SystemStreams.SettingsStream, StreamState.Any,
-			new[] {
-				new EventData(Uuid.NewUuid(), SystemEventTypes.Settings,
+		[
+			new EventData(Uuid.NewUuid(), SystemEventTypes.Settings,
 					JsonSerializer.SerializeToUtf8Bytes(settings, SystemSettingsJsonSerializerOptions))
-			}, deadline: deadline, userCredentials: userCredentials, cancellationToken: cancellationToken);
+		], deadline: deadline, userCredentials: userCredentials, cancellationToken: cancellationToken);
 	}
 
 	/// <summary>

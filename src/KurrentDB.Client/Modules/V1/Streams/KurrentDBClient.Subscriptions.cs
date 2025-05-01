@@ -129,14 +129,14 @@ public partial class KurrentDBClient {
 	/// A class that represents the result of a subscription operation. You may either enumerate this instance directly or <see cref="Messages"/>. Do not enumerate more than once.
 	/// </summary>
 	public class StreamSubscriptionResult : IAsyncEnumerable<ResolvedEvent>, IAsyncDisposable, IDisposable {
-		private readonly ReadReq                             _request;
-		private readonly Channel<StreamMessage>              _channel;
-		private readonly CancellationTokenSource             _cts;
-		private readonly CallOptions                         _callOptions;
-		private readonly KurrentDBClientSettings             _settings;
-		private          AsyncServerStreamingCall<ReadResp>? _call;
+		readonly ReadReq                    _request;
+		readonly Channel<StreamMessage>     _channel;
+		readonly CancellationTokenSource    _cts;
+		readonly CallOptions                _callOptions;
+		readonly KurrentDBClientSettings    _settings;
+		AsyncServerStreamingCall<ReadResp>? _call;
 
-		private int _messagesEnumerated;
+		int _messagesEnumerated;
 
 		/// <summary>
 		/// The server-generated unique identifier for the subscription.

@@ -7,14 +7,14 @@ namespace KurrentDB.Client;
 /// A class representing a <see cref="StreamSubscription"/>.
 /// </summary>
 public class StreamSubscription : IDisposable {
-	private readonly KurrentDBClient.StreamSubscriptionResult                           _subscription;
-	private readonly IAsyncEnumerator<StreamMessage>                                    _messages;
-	private readonly Func<StreamSubscription, ResolvedEvent, CancellationToken, Task>   _eventAppeared;
-	private readonly Func<StreamSubscription, Position, CancellationToken, Task>        _checkpointReached;
-	private readonly Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? _subscriptionDropped;
-	private readonly ILogger                                                            _log;
-	private readonly CancellationTokenSource                                            _cts;
-	private          int                                                                _subscriptionDroppedInvoked;
+	readonly KurrentDBClient.StreamSubscriptionResult                           _subscription;
+	readonly IAsyncEnumerator<StreamMessage>                                    _messages;
+	readonly Func<StreamSubscription, ResolvedEvent, CancellationToken, Task>   _eventAppeared;
+	readonly Func<StreamSubscription, Position, CancellationToken, Task>        _checkpointReached;
+	readonly Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? _subscriptionDropped;
+	readonly ILogger                                                            _log;
+	readonly CancellationTokenSource                                            _cts;
+	int                                                                         _subscriptionDroppedInvoked;
 
 	/// <summary>
 	/// The id of the <see cref="StreamSubscription"/> set by the server.
@@ -49,7 +49,7 @@ public class StreamSubscription : IDisposable {
 		);
 	}
 
-	private StreamSubscription(
+	StreamSubscription(
 		KurrentDBClient.StreamSubscriptionResult subscription,
 		IAsyncEnumerator<StreamMessage> messages, string subscriptionId,
 		Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
@@ -73,7 +73,7 @@ public class StreamSubscription : IDisposable {
 		Task.Run(Subscribe, cancellationToken);
 	}
 
-	private async Task Subscribe() {
+	async Task Subscribe() {
 		using var _ = _cts;
 
 		try {
@@ -150,7 +150,7 @@ public class StreamSubscription : IDisposable {
 	/// <inheritdoc />
 	public void Dispose() => SubscriptionDropped(SubscriptionDroppedReason.Disposed);
 
-	private void SubscriptionDropped(SubscriptionDroppedReason reason, Exception? ex = null) {
+	void SubscriptionDropped(SubscriptionDroppedReason reason, Exception? ex = null) {
 		if (Interlocked.CompareExchange(ref _subscriptionDroppedInvoked, 1, 0) == 1) {
 			return;
 		}

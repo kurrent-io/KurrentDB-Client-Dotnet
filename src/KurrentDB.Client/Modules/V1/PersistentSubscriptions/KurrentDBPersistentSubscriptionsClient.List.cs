@@ -82,9 +82,9 @@ partial class KurrentDBPersistentSubscriptionsClient {
 			throw new NotAuthenticatedException(ex.Message, ex);
 		}
 	}
-		
-	private async Task<IEnumerable<PersistentSubscriptionInfo>> ListGrpcAsync(ListReq req, TimeSpan? deadline,
-	                                                                          UserCredentials? userCredentials, CallInvoker callInvoker, CancellationToken cancellationToken) {
+
+	async Task<IEnumerable<PersistentSubscriptionInfo>> ListGrpcAsync(ListReq req, TimeSpan? deadline,
+	                                                                  UserCredentials? userCredentials, CallInvoker callInvoker, CancellationToken cancellationToken) {
 			
 		using var call = new PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
 			.ListAsync(req, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
@@ -93,9 +93,9 @@ partial class KurrentDBPersistentSubscriptionsClient {
 
 		return response.Subscriptions.Select(PersistentSubscriptionInfo.From);
 	}
-		
-	private async Task<IEnumerable<PersistentSubscriptionInfo>> ListHttpAsync(string streamName,
-	                                                                          ChannelInfo channelInfo, TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
+
+	async Task<IEnumerable<PersistentSubscriptionInfo>> ListHttpAsync(string streamName,
+	                                                                  ChannelInfo channelInfo, TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
 
 		var path = $"/subscriptions/{UrlEncode(streamName)}";
 		var result = await HttpGet<IList<PersistentSubscriptionDto>>(path,

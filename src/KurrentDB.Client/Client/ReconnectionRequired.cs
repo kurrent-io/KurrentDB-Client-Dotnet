@@ -2,7 +2,7 @@ using System.Net;
 
 namespace KurrentDB.Client;
 
-internal abstract record ReconnectionRequired {
+abstract record ReconnectionRequired {
 	public record None : ReconnectionRequired {
 		public static None Instance = new();
 	}

@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
-
 namespace KurrentDB.Client;
 
-internal static class NodePreferenceComparers {
+static class NodePreferenceComparers {
 	public static readonly IComparer<ClusterMessages.VNodeState> Leader = new Comparer(state =>
 		state switch {
 			ClusterMessages.VNodeState.Leader             => 0,
@@ -36,8 +33,8 @@ internal static class NodePreferenceComparers {
 
 	public static readonly IComparer<ClusterMessages.VNodeState> None = new Comparer(_ => 0);
 
-	private class Comparer : IComparer<ClusterMessages.VNodeState> {
-		private readonly Func<ClusterMessages.VNodeState, int> _getPriority;
+	class Comparer : IComparer<ClusterMessages.VNodeState> {
+		readonly Func<ClusterMessages.VNodeState, int> _getPriority;
 
 		public Comparer(Func<ClusterMessages.VNodeState, int> getPriority) {
 			_getPriority = getPriority;

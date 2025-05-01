@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Security.Cryptography.X509Certificates;
 
 namespace KurrentDB.Client;
@@ -8,21 +7,26 @@ namespace KurrentDB.Client;
 /// A class used to describe how to connect to an instance of KurrentDB.
 /// </summary>
 public class KurrentDBClientConnectivitySettings {
-	private const int  DefaultPort = 2113;
-	private       bool _insecure;
-	private       Uri? _address;
+	public static KurrentDBClientConnectivitySettingsBuilder Builder => new();
+
+	/// <summary>
+	/// The default port used for connecting to KurrentDB.
+	/// </summary>
+	public const int DefaultPort = 2113;
+
+	bool _insecure;
 
 	/// <summary>
 	/// The <see cref="Uri"/> of the KurrentDB. Use this when connecting to a single node.
 	/// </summary>
 	public Uri? Address {
-		get => IsSingleNode ? _address : null;
-		set => _address = value;
+		get => IsSingleNode ? field : null;
+		set;
 	}
 
 	internal Uri ResolvedAddressOrDefault => Address ?? DefaultAddress;
 
-	private Uri DefaultAddress =>
+	Uri DefaultAddress =>
 		new UriBuilder {
 			Scheme = _insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps,
 			Port   = DefaultPort
@@ -40,7 +44,7 @@ public class KurrentDBClientConnectivitySettings {
 		((object?)DnsGossipSeeds ?? IpGossipSeeds) switch {
 			DnsEndPoint[] dns => Array.ConvertAll<DnsEndPoint, EndPoint>(dns, x => x),
 			IPEndPoint[] ip   => Array.ConvertAll<IPEndPoint, EndPoint>(ip, x => x),
-			_                 => Array.Empty<EndPoint>()
+			_                 => []
 		};
 
 	/// <summary>
@@ -98,13 +102,13 @@ public class KurrentDBClientConnectivitySettings {
 	}
 
 	/// <summary>
-	/// True if certificates will be validated; otherwise false.
+	/// True if certificates are validated; otherwise false.
 	/// </summary>
 	public bool TlsVerifyCert { get; set; } = true;
 
 	/// <summary>
-	/// Path to a certificate file for secure connection. Not required for enabling secure connection. Useful for self-signed certificate
-	/// that are not installed on the system trust store.
+	/// Path to a certificate file for secure connection. Not required for enabling secure connection.
+	/// Useful for a self-signed certificate not installed on the system trust store.
 	/// </summary>
 	public X509Certificate2? TlsCaFile { get; set; }
 
@@ -116,13 +120,33 @@ public class KurrentDBClientConnectivitySettings {
 	/// <summary>
 	/// The default <see cref="KurrentDBClientConnectivitySettings"/>.
 	/// </summary>
-	public static KurrentDBClientConnectivitySettings Default => new KurrentDBClientConnectivitySettings {
+	public static KurrentDBClientConnectivitySettings Default => new() {
 		MaxDiscoverAttempts = 10,
 		GossipTimeout       = TimeSpan.FromSeconds(5),
 		DiscoveryInterval   = TimeSpan.FromMilliseconds(100),
 		NodePreference      = NodePreference.Leader,
 		KeepAliveInterval   = TimeSpan.FromSeconds(10),
 		KeepAliveTimeout    = TimeSpan.FromSeconds(10),
-		TlsVerifyCert       = true,
+		TlsVerifyCert       = true
+	};
+
+	/// <summary>
+	/// Creates a new instance with the same settings as this instance.
+	/// </summary>
+	/// <returns>A new <see cref="KurrentDBClientConnectivitySettings"/> with the same settings.</returns>
+	public KurrentDBClientConnectivitySettings Clone() => new() {
+		Address             = Address,
+		MaxDiscoverAttempts = MaxDiscoverAttempts,
+		DnsGossipSeeds      = DnsGossipSeeds?.ToArray(),
+		IpGossipSeeds       = IpGossipSeeds?.ToArray(),
+		GossipTimeout       = GossipTimeout,
+		DiscoveryInterval   = DiscoveryInterval,
+		NodePreference      = NodePreference,
+		KeepAliveInterval   = KeepAliveInterval,
+		KeepAliveTimeout    = KeepAliveTimeout,
+		TlsVerifyCert       = TlsVerifyCert,
+		TlsCaFile           = TlsCaFile,
+		ClientCertificate   = ClientCertificate,
+		Insecure            = Insecure
 	};
 }

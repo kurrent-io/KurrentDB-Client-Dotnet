@@ -1,6 +1,5 @@
 // ReSharper disable CheckNamespace
 
-using System;
 using System.Net.Http;
 using KurrentDB.Client;
 using Grpc.Core.Interceptors;
@@ -102,9 +101,9 @@ public static class KurrentDBClientServiceCollectionExtensions {
 		return services.AddKurrentDBClient(provider => KurrentDBClientSettings.Create(connectionStringFactory(provider)), configureSettings);
 	}
 
-	private static IServiceCollection AddKurrentDBClient(this IServiceCollection services,
-	                                                     KurrentDBClientSettings settings,
-	                                                     Action<KurrentDBClientSettings>? configureSettings) {
+	static IServiceCollection AddKurrentDBClient(this IServiceCollection services,
+	                                             KurrentDBClientSettings settings,
+	                                             Action<KurrentDBClientSettings>? configureSettings) {
 		configureSettings?.Invoke(settings);
 
 		services.TryAddSingleton(provider => {
@@ -117,9 +116,9 @@ public static class KurrentDBClientServiceCollectionExtensions {
 		return services;
 	}
 
-	private static IServiceCollection AddKurrentDBClient(this IServiceCollection services,
-	                                                     Func<IServiceProvider, KurrentDBClientSettings> settingsFactory,
-	                                                     Action<KurrentDBClientSettings>? configureSettings = null) {
+	static IServiceCollection AddKurrentDBClient(this IServiceCollection services,
+	                                             Func<IServiceProvider, KurrentDBClientSettings> settingsFactory,
+	                                             Action<KurrentDBClientSettings>? configureSettings = null) {
 
 		services.TryAddSingleton(provider => {
 			var settings = settingsFactory(provider);
@@ -134,9 +133,9 @@ public static class KurrentDBClientServiceCollectionExtensions {
 		return services;
 	}
 
-	private static IServiceCollection AddKurrentDBClient(this IServiceCollection services,
-	                                                     KurrentDBClientSettings settings,
-	                                                     Func<IServiceProvider, Action<KurrentDBClientSettings>> configureSettingsFactory) {
+	static IServiceCollection AddKurrentDBClient(this IServiceCollection services,
+	                                             KurrentDBClientSettings settings,
+	                                             Func<IServiceProvider, Action<KurrentDBClientSettings>> configureSettingsFactory) {
 
 		services.TryAddSingleton(provider => {
 			configureSettingsFactory(provider).Invoke(settings);

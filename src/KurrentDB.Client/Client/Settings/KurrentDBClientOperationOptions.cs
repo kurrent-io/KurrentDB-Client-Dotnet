@@ -17,16 +17,15 @@ public class KurrentDBClientOperationOptions {
 	/// <summary>
 	/// A callback function to extract the authorize header value from the <see cref="UserCredentials"/> used in the operation.
 	/// </summary>
-	public Func<UserCredentials, CancellationToken, ValueTask<string>> GetAuthenticationHeaderValue { get; set; } =
-		null!;
+	public Func<UserCredentials, CancellationToken, ValueTask<string>> GetAuthenticationHeaderValue { get; set; } = null!;
 
 	/// <summary>
 	/// The default <see cref="KurrentDBClientOperationOptions"/>.
 	/// </summary>
 	public static KurrentDBClientOperationOptions Default => new() {
 		ThrowOnAppendFailure         = true,
-		GetAuthenticationHeaderValue = (userCredentials, _) => new ValueTask<string>(userCredentials.ToString()),
-		BatchAppendSize              = 3 * 1024 * 1024
+		GetAuthenticationHeaderValue = (userCredentials, _) => new(userCredentials.ToString()),
+		BatchAppendSize              = 3 * 1024 * 1024 // 3MB
 	};
 
 

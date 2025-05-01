@@ -1,4 +1,3 @@
-using System;
 using KurrentDB.Client;
 
 namespace EventStore.Client.Streams;

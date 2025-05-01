@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -11,7 +9,7 @@ namespace KurrentDB.Client;
 ///The client used to manage projections on the KurrentDB.
 /// </summary>
 public sealed partial class KurrentDBProjectionManagementClient : KurrentDBClientBase {
-	private readonly ILogger _log;
+	readonly ILogger _log;
 
 	/// <summary>
 	/// Constructs a new <see cref="KurrentDBProjectionManagementClient"/>. This method is not intended to be called directly from your code.

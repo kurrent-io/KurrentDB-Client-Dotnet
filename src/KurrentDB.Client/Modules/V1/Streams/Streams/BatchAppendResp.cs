@@ -36,8 +36,8 @@ partial class BatchAppendResp {
 		_ => throw new InvalidOperationException()
 	};
 
-	private static WrongExpectedVersionResult FromWrongExpectedVersion(StreamIdentifier streamIdentifier,
-	                                                                   WrongExpectedVersion wrongExpectedVersion) => new(streamIdentifier!,
+	static WrongExpectedVersionResult FromWrongExpectedVersion(StreamIdentifier streamIdentifier,
+	                                                           WrongExpectedVersion wrongExpectedVersion) => new(streamIdentifier!,
 		wrongExpectedVersion.ExpectedStreamPositionOptionCase switch {
 			ExpectedStreamPosition => wrongExpectedVersion.ExpectedStreamPosition,
 			_                      => StreamState.Any,

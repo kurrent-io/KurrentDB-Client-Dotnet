@@ -1,10 +1,9 @@
-using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace KurrentDB.Client;
 
-internal class SystemSettingsJsonConverter : JsonConverter<SystemSettings> {
+class SystemSettingsJsonConverter : JsonConverter<SystemSettings> {
 	public static readonly SystemSettingsJsonConverter Instance = new SystemSettingsJsonConverter();
 
 	public override SystemSettings Read(ref Utf8JsonReader reader, Type typeToConvert,

@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
@@ -8,19 +5,21 @@ namespace KurrentDB.Client.Interceptors;
 
 // this has become more general than just detecting leader changes.
 // triggers the action on any rpc exception with StatusCode.Unavailable
-internal class ReportLeaderInterceptor : Interceptor {
-	private readonly Action<ReconnectionRequired> _onReconnectionRequired;
+class ReportLeaderInterceptor : Interceptor {
+	readonly Action<ReconnectionRequired> _onReconnectionRequired;
 
-	private const TaskContinuationOptions ContinuationOptions =
+	const TaskContinuationOptions ContinuationOptions =
 		TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted;
 
 	internal ReportLeaderInterceptor(Action<ReconnectionRequired> onReconnectionRequired) {
 		_onReconnectionRequired = onReconnectionRequired;
 	}
 
-	public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request,
-	                                                                              ClientInterceptorContext<TRequest, TResponse> context,
-	                                                                              AsyncUnaryCallContinuation<TRequest, TResponse> continuation) {
+	public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(
+		TRequest request,
+		ClientInterceptorContext<TRequest, TResponse> context,
+		AsyncUnaryCallContinuation<TRequest, TResponse> continuation
+	) {
 		var response = continuation(request, context);
 
 		response.ResponseAsync.ContinueWith(OnReconnectionRequired, ContinuationOptions);
@@ -65,12 +64,12 @@ internal class ReportLeaderInterceptor : Interceptor {
 			response.GetStatus, response.GetTrailers, response.Dispose);
 	}
 
-	private void OnReconnectionRequired(Task task) {
+	void OnReconnectionRequired(Task task) {
 		ReconnectionRequired reconnectionRequired = task.Exception?.InnerException switch {
 			NotLeaderException ex => new ReconnectionRequired.NewLeader(ex.LeaderEndpoint),
 			RpcException {
 				StatusCode: StatusCode.Unavailable
-				// or StatusCode.Unknown or TODO: use RPC exceptions on server 
+				// or StatusCode.Unknown or TODO: use RPC exceptions on server
 			} => ReconnectionRequired.Rediscover.Instance,
 			_ => ReconnectionRequired.None.Instance
 		};
@@ -79,9 +78,9 @@ internal class ReportLeaderInterceptor : Interceptor {
 			_onReconnectionRequired(reconnectionRequired);
 	}
 
-	private class StreamWriter<T> : IClientStreamWriter<T> {
-		private readonly IClientStreamWriter<T> _inner;
-		private readonly Action<Task>           _reportNewLeader;
+	class StreamWriter<T> : IClientStreamWriter<T> {
+		readonly IClientStreamWriter<T> _inner;
+		readonly Action<Task>           _reportNewLeader;
 
 		public StreamWriter(IClientStreamWriter<T> inner, Action<Task> reportNewLeader) {
 			_inner           = inner;
@@ -106,9 +105,9 @@ internal class ReportLeaderInterceptor : Interceptor {
 		}
 	}
 
-	private class StreamReader<T> : IAsyncStreamReader<T> {
-		private readonly IAsyncStreamReader<T> _inner;
-		private readonly Action<Task>          _reportNewLeader;
+	class StreamReader<T> : IAsyncStreamReader<T> {
+		readonly IAsyncStreamReader<T> _inner;
+		readonly Action<Task>          _reportNewLeader;
 
 		public StreamReader(IAsyncStreamReader<T> inner, Action<Task> reportNewLeader) {
 			_inner           = inner;

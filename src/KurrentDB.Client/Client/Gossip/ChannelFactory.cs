@@ -6,8 +6,8 @@ using TChannel = Grpc.Net.Client.GrpcChannel;
 
 namespace KurrentDB.Client;
 
-internal static class ChannelFactory {
-	private const int MaxReceiveMessageLength = 17 * 1024 * 1024;
+static class ChannelFactory {
+	const int MaxReceiveMessageLength = 17 * 1024 * 1024;
 
 	public static TChannel CreateChannel(KurrentDBClientSettings settings, EndPoint endPoint) {
 		var address = endPoint.ToUri(!settings.ConnectivitySettings.Insecure);

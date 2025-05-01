@@ -3,7 +3,7 @@ namespace KurrentDB.Client;
 ///<summary>
 ///Constants for information in stream metadata
 ///</summary>
-internal static class SystemMetadata {
+static class SystemMetadata {
 	///<summary>
 	///The definition of the MaxAge value assigned to stream metadata
 	///Setting this allows all events older than the limit to be deleted

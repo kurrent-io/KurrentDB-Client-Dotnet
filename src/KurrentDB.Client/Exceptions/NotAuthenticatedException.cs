@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace KurrentDB.Client;
+﻿namespace KurrentDB.Client;
 
 /// <summary>
 /// The exception that is thrown when a user is not authenticated.

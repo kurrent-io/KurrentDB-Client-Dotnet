@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
-
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Client;
@@ -11,7 +8,9 @@ namespace KurrentDB.Client;
 /// <summary>
 /// A class that represents the settings to use for operations made from an implementation of <see cref="KurrentDBClientBase"/>.
 /// </summary>
-public partial class KurrentDBClientSettings {
+public class KurrentDBClientSettings {
+	public static KurrentDBClientSettingsBuilder Builder => new();
+
 	/// <summary>
 	/// An optional list of <see cref="Interceptor"/>s to use.
 	/// </summary>
@@ -30,7 +29,7 @@ public partial class KurrentDBClientSettings {
 	/// <summary>
 	/// An optional <see cref="ILoggerFactory"/> to use.
 	/// </summary>
-	public ILoggerFactory? LoggerFactory { get; set; }
+	public ILoggerFactory? LoggerFactory { get; set; } // = NullLoggerFactory.Instance;
 
 	/// <summary>
 	/// The optional <see cref="ChannelCredentials"/> to use when creating the <see cref="ChannelBase"/>.
@@ -58,4 +57,12 @@ public partial class KurrentDBClientSettings {
 	/// The default deadline for calls. Will not be applied to reads or subscriptions.
 	/// </summary>
 	public TimeSpan? DefaultDeadline { get; set; } = TimeSpan.FromSeconds(10);
+
+	/// <summary>
+	/// Creates client settings from a connection string
+	/// </summary>
+	/// <param name="connectionString">The connection string to parse</param>
+	/// <returns>A configured KurrentDBClientSettings instance</returns>
+	public static KurrentDBClientSettings Create(string connectionString) =>
+		KurrentDBConnectionString.Parse(connectionString).ToClientSettings();
 }

@@ -5,8 +5,8 @@ using Grpc.Core;
 
 namespace KurrentDB.Client;
 
-internal class GrpcGossipClient : IGossipClient {
-	private readonly KurrentDBClientSettings _settings;
+class GrpcGossipClient : IGossipClient {
+	readonly KurrentDBClientSettings _settings;
 
 	public GrpcGossipClient(KurrentDBClientSettings settings) {
 		_settings = settings;

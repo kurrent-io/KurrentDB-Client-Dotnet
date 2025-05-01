@@ -1,6 +1,5 @@
 // ReSharper disable CheckNamespace
 
-using System;
 using System.Net.Http;
 using KurrentDB.Client;
 using Grpc.Core.Interceptors;
@@ -42,8 +41,8 @@ public static class KurrentDBPersistentSubscriptionsClientCollectionExtensions {
 		services.AddKurrentDBPersistentSubscriptionsClient(KurrentDBClientSettings.Create(connectionString),
 			configureSettings);
 
-	private static IServiceCollection AddKurrentDBPersistentSubscriptionsClient(this IServiceCollection services,
-	                                                                            KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings) {
+	static IServiceCollection AddKurrentDBPersistentSubscriptionsClient(this IServiceCollection services,
+	                                                                    KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings) {
 		if (services == null) {
 			throw new ArgumentNullException(nameof(services));
 		}

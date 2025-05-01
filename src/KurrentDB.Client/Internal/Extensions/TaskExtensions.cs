@@ -1,9 +1,6 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
+﻿namespace KurrentDB.Client;
 
-namespace KurrentDB.Client;
-
-internal static class TaskExtensions {
+static class TaskExtensions {
 	// To give up waiting for the task, cancel the token.
 	// obvs this wouldn't cancel the task itself.
 	public static async ValueTask<T> WithCancellation<T>(this Task<T> task, CancellationToken cancellationToken) {

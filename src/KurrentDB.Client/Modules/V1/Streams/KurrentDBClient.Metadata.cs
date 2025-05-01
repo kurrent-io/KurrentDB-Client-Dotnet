@@ -61,17 +61,18 @@ public partial class KurrentDBClient {
 		}.WithAnyStreamRevision(expectedState), options, deadline, userCredentials, cancellationToken);
 	}
 
-	private async Task<IWriteResult> SetStreamMetadataInternal(StreamMetadata metadata,
-	                                                           AppendReq appendReq,
-	                                                           KurrentDBClientOperationOptions operationOptions,
-	                                                           TimeSpan? deadline,
-	                                                           UserCredentials? userCredentials,
-	                                                           CancellationToken cancellationToken) {
+	async Task<IWriteResult> SetStreamMetadataInternal(StreamMetadata metadata,
+	                                                   AppendReq appendReq,
+	                                                   KurrentDBClientOperationOptions operationOptions,
+	                                                   TimeSpan? deadline,
+	                                                   UserCredentials? userCredentials,
+	                                                   CancellationToken cancellationToken) {
 
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-		return await AppendToStreamInternal(channelInfo, appendReq, new[] {
+		return await AppendToStreamInternal(channelInfo, appendReq,
+		[
 			new EventData(Uuid.NewUuid(), SystemEventTypes.StreamMetadata,
-				JsonSerializer.SerializeToUtf8Bytes(metadata, StreamMetadataJsonSerializerOptions)),
-		}, operationOptions, deadline, userCredentials, cancellationToken).ConfigureAwait(false);
+				JsonSerializer.SerializeToUtf8Bytes(metadata, StreamMetadataJsonSerializerOptions))
+		], operationOptions, deadline, userCredentials, cancellationToken).ConfigureAwait(false);
 	}
 }

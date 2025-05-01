@@ -14,7 +14,7 @@ public readonly struct EventTypeFilter : IEquatable<EventTypeFilter>, IEventFilt
 	readonly PrefixFilterExpression[] _prefixes;
 
 	/// <inheritdoc />
-	public PrefixFilterExpression[] Prefixes => _prefixes ?? Array.Empty<PrefixFilterExpression>();
+	public PrefixFilterExpression[] Prefixes => _prefixes ?? [];
 
 	/// <inheritdoc />
 	public RegularFilterExpression Regex { get; }
@@ -85,7 +85,7 @@ public readonly struct EventTypeFilter : IEquatable<EventTypeFilter>, IEventFilt
 			);
 
 		Regex           = regex;
-		_prefixes       = Array.Empty<PrefixFilterExpression>();
+		_prefixes       = [];
 		MaxSearchWindow = maxSearchWindow;
 	}
 

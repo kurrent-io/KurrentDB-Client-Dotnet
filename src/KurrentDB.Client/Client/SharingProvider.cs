@@ -1,12 +1,9 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace KurrentDB.Client;
 
-internal class SharingProvider {
+class SharingProvider {
 	protected ILogger Log { get; }
 
 	public SharingProvider(ILoggerFactory? loggerFactory) {
@@ -32,12 +29,12 @@ internal class SharingProvider {
 //
 // This class is thread safe.
 
-internal class SharingProvider<TInput, TOutput> : SharingProvider, IDisposable {
-	private readonly Func<TInput, Action<TInput>, Task<TOutput>> _factory;
-	private readonly TimeSpan                                    _factoryRetryDelay;
-	private readonly TInput                                      _initialInput;
-	private          TaskCompletionSource<TOutput>               _currentBox;
-	private          bool                                        _disposed;
+class SharingProvider<TInput, TOutput> : SharingProvider, IDisposable {
+	readonly Func<TInput, Action<TInput>, Task<TOutput>> _factory;
+	readonly TimeSpan                                    _factoryRetryDelay;
+	readonly TInput                                      _initialInput;
+	TaskCompletionSource<TOutput>                        _currentBox;
+	bool                                                 _disposed;
 
 	public SharingProvider(
 		Func<TInput, Action<TInput>, Task<TOutput>> factory,
@@ -60,7 +57,7 @@ internal class SharingProvider<TInput, TOutput> : SharingProvider, IDisposable {
 
 	// Call this to return a box containing a defective item, or indeed no item at all.
 	// A new box will be produced and filled if necessary.
-	private void OnBroken(TaskCompletionSource<TOutput> brokenBox, TInput input) {
+	void OnBroken(TaskCompletionSource<TOutput> brokenBox, TInput input) {
 		if (!brokenBox.Task.IsCompleted) {
 			// factory is still working on this box. don't create a new box to fill
 			// or we would have to require the factory be thread safe.
@@ -84,7 +81,7 @@ internal class SharingProvider<TInput, TOutput> : SharingProvider, IDisposable {
 		}
 	}
 
-	private async Task FillBoxAsync(TaskCompletionSource<TOutput> box, TInput input) {
+	async Task FillBoxAsync(TaskCompletionSource<TOutput> box, TInput input) {
 		if (_disposed) {
 			Log.LogDebug("{type} will not be produced, factory is closed!", typeof(TOutput).Name);
 			box.TrySetException(new ObjectDisposedException(GetType().ToString()));

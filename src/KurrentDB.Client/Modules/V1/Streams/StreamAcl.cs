@@ -1,6 +1,3 @@
-using System;
-using System.Linq;
-
 namespace KurrentDB.Client;
 
 /// <summary>
@@ -43,11 +40,12 @@ public sealed class StreamAcl {
 	/// <param name="metaWriteRole">Role and user permitted to write stream metadata</param>
 	public StreamAcl(string? readRole = null, string? writeRole = null, string? deleteRole = null,
 	                 string? metaReadRole = null, string? metaWriteRole = null)
-		: this(readRole == null ? null : new[] {readRole},
-			writeRole == null ? null : new[] {writeRole},
-			deleteRole == null ? null : new[] {deleteRole},
-			metaReadRole == null ? null : new[] {metaReadRole},
-			metaWriteRole == null ? null : new[] {metaWriteRole}) {
+		: this(readRole == null ? null : [readRole],
+			writeRole == null ? null : [writeRole],
+			deleteRole == null ? null : [deleteRole],
+			metaReadRole == null ? null : [metaReadRole],
+			metaWriteRole == null ? null : [metaWriteRole]
+		) {
 	}
 
 	/// <summary>
@@ -67,12 +65,12 @@ public sealed class StreamAcl {
 		MetaWriteRoles = metaWriteRoles;
 	}
 
-	private bool Equals(StreamAcl other) =>
-		(ReadRoles ?? Array.Empty<string>()).SequenceEqual(other.ReadRoles ?? Array.Empty<string>()) &&
-		(WriteRoles ?? Array.Empty<string>()).SequenceEqual(other.WriteRoles ?? Array.Empty<string>()) &&
-		(DeleteRoles ?? Array.Empty<string>()).SequenceEqual(other.DeleteRoles ?? Array.Empty<string>()) &&
-		(MetaReadRoles ?? Array.Empty<string>()).SequenceEqual(other.MetaReadRoles ?? Array.Empty<string>()) &&
-		(MetaWriteRoles ?? Array.Empty<string>()).SequenceEqual(other.MetaWriteRoles ?? Array.Empty<string>());
+	bool Equals(StreamAcl other) =>
+		(ReadRoles ?? []).SequenceEqual(other.ReadRoles ?? []) &&
+		(WriteRoles ?? []).SequenceEqual(other.WriteRoles ?? []) &&
+		(DeleteRoles ?? []).SequenceEqual(other.DeleteRoles ?? []) &&
+		(MetaReadRoles ?? []).SequenceEqual(other.MetaReadRoles ?? []) &&
+		(MetaWriteRoles ?? []).SequenceEqual(other.MetaWriteRoles ?? []);
 
 	/// <inheritdoc />
 	public override bool Equals(object? obj) =>

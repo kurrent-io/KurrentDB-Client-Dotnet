@@ -10,13 +10,13 @@ namespace KurrentDB.Client;
 /// The client used to manage persistent subscriptions in the KurrentDB.
 /// </summary>
 public sealed partial class KurrentDBPersistentSubscriptionsClient : KurrentDBClientBase {
-	private static BoundedChannelOptions ReadBoundedChannelOptions = new (1) {
+	static BoundedChannelOptions ReadBoundedChannelOptions = new (1) {
 		SingleReader                  = true,
 		SingleWriter                  = true,
 		AllowSynchronousContinuations = true
 	};
 
-	private readonly ILogger _log;
+	readonly ILogger _log;
 
 	/// <summary>
 	/// Constructs a new <see cref="KurrentDBPersistentSubscriptionsClient"/>.
@@ -39,8 +39,8 @@ public sealed partial class KurrentDBPersistentSubscriptionsClient : KurrentDBCl
 		_log = Settings.LoggerFactory?.CreateLogger<KurrentDBPersistentSubscriptionsClient>()
 		    ?? new NullLogger<KurrentDBPersistentSubscriptionsClient>();
 	}
-		
-	private static string UrlEncode(string s) {
+
+	static string UrlEncode(string s) {
 		return UrlEncoder.Default.Encode(s);
 	}
 }

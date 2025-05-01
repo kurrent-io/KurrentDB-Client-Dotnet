@@ -1,6 +1,5 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
-using static KurrentDB.Client.Constants;
 using static Grpc.Core.StatusCode;
 
 namespace KurrentDB.Client.Interceptors;
@@ -97,21 +96,19 @@ class TypedExceptionInterceptor : Interceptor {
 }
 
 static class RpcExceptionConversionExtensions {
-	public static IAsyncStreamReader<TRequest> Apply<TRequest>(this IAsyncStreamReader<TRequest> reader, Func<RpcException, Exception> convertException) => 
+	public static IAsyncStreamReader<TRequest> Apply<TRequest>(this IAsyncStreamReader<TRequest> reader, Func<RpcException, Exception> convertException) =>
 		new ExceptionConverterStreamReader<TRequest>(reader, convertException);
 
-	public static Task<TResponse> Apply<TResponse>(this Task<TResponse> task, Func<RpcException, Exception> convertException) => 
+	public static Task<TResponse> Apply<TResponse>(this Task<TResponse> task, Func<RpcException, Exception> convertException) =>
 		task.ContinueWith(t => t.Exception?.InnerException is RpcException ex ? throw convertException(ex) : t.Result);
 
-	public static IClientStreamWriter<TRequest> Apply<TRequest>(
-		this IClientStreamWriter<TRequest> writer, Func<RpcException, Exception> convertException
-	) =>
+	public static IClientStreamWriter<TRequest> Apply<TRequest>(this IClientStreamWriter<TRequest> writer, Func<RpcException, Exception> convertException) =>
 		new ExceptionConverterStreamWriter<TRequest>(writer, convertException);
 
 	public static Task Apply(this Task task, Func<RpcException, Exception> convertException) =>
 		task.ContinueWith(t => t.Exception?.InnerException is RpcException ex ? throw convertException(ex) : t);
 
-	public static AccessDeniedException ToAccessDeniedException(this RpcException exception) => 
+	public static AccessDeniedException ToAccessDeniedException(this RpcException exception) =>
 		new(exception.Message, exception);
 
 	public static NotLeaderException ToNotLeaderException(this RpcException exception) {
@@ -119,8 +116,8 @@ static class RpcExceptionConversionExtensions {
 		var port = exception.Trailers.GetIntValueOrDefault(Constants.Exceptions.LeaderEndpointPort);
 		return new NotLeaderException(host, port, exception);
 	}
-	
-	public static NotAuthenticatedException ToNotAuthenticatedException(this RpcException exception) => 
+
+	public static NotAuthenticatedException ToNotAuthenticatedException(this RpcException exception) =>
 		new(exception.Message, exception);
 
 	public static RpcException ToDeadlineExceededRpcException(this RpcException exception) =>
@@ -150,10 +147,7 @@ class ExceptionConverterStreamReader<TResponse>(IAsyncStreamReader<TResponse> re
 	}
 }
 
-class ExceptionConverterStreamWriter<TRequest>(
-	IClientStreamWriter<TRequest> writer,
-	Func<RpcException, Exception> convertException
-)
+class ExceptionConverterStreamWriter<TRequest>(IClientStreamWriter<TRequest> writer, Func<RpcException, Exception> convertException)
 	: IClientStreamWriter<TRequest> {
 	public WriteOptions? WriteOptions {
 		get => writer.WriteOptions;

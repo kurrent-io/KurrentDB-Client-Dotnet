@@ -1,19 +1,15 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace KurrentDB.Client;
 
-// [Obsolete("This class is only used for fallback purposes. It should not be used in production code.")]
-internal class HttpFallback : IDisposable {
-	private readonly HttpClient            _httpClient;
-	private readonly JsonSerializerOptions _jsonSettings;
-	private readonly UserCredentials?      _defaultCredentials;
-	private readonly string                _addressScheme;
+class HttpFallback : IDisposable {
+	readonly HttpClient            _httpClient;
+	readonly JsonSerializerOptions _jsonSettings;
+	readonly UserCredentials?      _defaultCredentials;
+	readonly string                _addressScheme;
 
 	internal HttpFallback(KurrentDBClientSettings settings) {
 		_addressScheme      = settings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme;
@@ -85,8 +81,8 @@ internal class HttpFallback : IDisposable {
 		await HttpSendAsync(request, onNotFound, deadline, cancellationToken).ConfigureAwait(false);
 	}
 
-	private async Task<HttpResponseMessage> HttpSendAsync(HttpRequestMessage request, Action onNotFound,
-	                                                      TimeSpan? deadline, CancellationToken cancellationToken) {
+	async Task<HttpResponseMessage> HttpSendAsync(HttpRequestMessage request, Action onNotFound,
+	                                              TimeSpan? deadline, CancellationToken cancellationToken) {
 
 		if (!deadline.HasValue) {
 			return await HttpSendAsync(request, onNotFound, cancellationToken).ConfigureAwait(false);
@@ -117,11 +113,11 @@ internal class HttpFallback : IDisposable {
 		throw new Exception($"The HTTP request failed with status code: {httpResult.StatusCode}");
 	}
 
-	private HttpRequestMessage CreateRequest(string path, HttpMethod method, ChannelInfo channelInfo,
-	                                         UserCredentials? credentials) => CreateRequest(path, query: "", method, channelInfo, credentials);
+	HttpRequestMessage CreateRequest(string path, HttpMethod method, ChannelInfo channelInfo,
+	                                 UserCredentials? credentials) => CreateRequest(path, query: "", method, channelInfo, credentials);
 
-	private HttpRequestMessage CreateRequest(string path, string query, HttpMethod method, ChannelInfo channelInfo,
-	                                         UserCredentials? credentials) {
+	HttpRequestMessage CreateRequest(string path, string query, HttpMethod method, ChannelInfo channelInfo,
+	                                 UserCredentials? credentials) {
 
 		var uriBuilder = new UriBuilder($"{_addressScheme}://{channelInfo.Channel.Target}") {
 			Path  = path,

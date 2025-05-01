@@ -1,9 +1,7 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using Grpc.Core;
+﻿using Grpc.Core;
 
 namespace KurrentDB.Client;
 
-internal interface IServerCapabilitiesClient {
+interface IServerCapabilitiesClient {
 	public Task<ServerCapabilities> GetAsync(CallInvoker callInvoker, CancellationToken cancellationToken);
 }

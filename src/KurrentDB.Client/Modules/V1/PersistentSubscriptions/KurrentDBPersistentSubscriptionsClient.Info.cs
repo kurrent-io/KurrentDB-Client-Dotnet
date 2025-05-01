@@ -50,9 +50,9 @@ partial class KurrentDBPersistentSubscriptionsClient {
 		return await GetInfoHttpAsync(streamName, groupName, channelInfo, deadline, userCredentials, cancellationToken)
 			.ConfigureAwait(false);
 	}
-		
-	private async Task<PersistentSubscriptionInfo> GetInfoGrpcAsync(GetInfoReq req, TimeSpan? deadline,
-	                                                                UserCredentials? userCredentials, CallInvoker callInvoker, CancellationToken cancellationToken) {
+
+	async Task<PersistentSubscriptionInfo> GetInfoGrpcAsync(GetInfoReq req, TimeSpan? deadline,
+	                                                        UserCredentials? userCredentials, CallInvoker callInvoker, CancellationToken cancellationToken) {
 			
 		var result = await new PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
 			.GetInfoAsync(req, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken))
@@ -61,8 +61,8 @@ partial class KurrentDBPersistentSubscriptionsClient {
 		return PersistentSubscriptionInfo.From(result.SubscriptionInfo);
 	}
 
-	private async Task<PersistentSubscriptionInfo> GetInfoHttpAsync(string streamName, string groupName,
-	                                                                ChannelInfo channelInfo, TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
+	async Task<PersistentSubscriptionInfo> GetInfoHttpAsync(string streamName, string groupName,
+	                                                        ChannelInfo channelInfo, TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
 			
 		var path = $"/subscriptions/{UrlEncode(streamName)}/{UrlEncode(groupName)}/info";
 		var result = await HttpGet<PersistentSubscriptionDto>(path,

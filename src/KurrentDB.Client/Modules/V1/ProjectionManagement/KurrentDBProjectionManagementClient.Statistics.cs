@@ -69,9 +69,9 @@ public partial class KurrentDBProjectionManagementClient {
 			KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken),
 			cancellationToken);
 
-	private async IAsyncEnumerable<ProjectionDetails> ListInternalAsync(StatisticsReq.Types.Options options,
-	                                                                    CallOptions callOptions,
-	                                                                    [EnumeratorCancellation] CancellationToken cancellationToken) {
+	async IAsyncEnumerable<ProjectionDetails> ListInternalAsync(StatisticsReq.Types.Options options,
+	                                                            CallOptions callOptions,
+	                                                            [EnumeratorCancellation] CancellationToken cancellationToken) {
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		using var call = new Projections.ProjectionsClient(
 			channelInfo.CallInvoker).Statistics(new StatisticsReq {
@@ -87,7 +87,7 @@ public partial class KurrentDBProjectionManagementClient {
 		}
 	}
 
-	private static ProjectionDetails ConvertToProjectionDetails(StatisticsResp response) {
+	static ProjectionDetails ConvertToProjectionDetails(StatisticsResp response) {
 		var details = response.Details;
 
 		return new ProjectionDetails(details.CoreProcessingTime, details.Version, details.Epoch,

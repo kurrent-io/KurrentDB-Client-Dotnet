@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace KurrentDB.Client;
+﻿namespace KurrentDB.Client;
 
 /// <summary>
 /// Exception thrown when a required metadata property is missing.

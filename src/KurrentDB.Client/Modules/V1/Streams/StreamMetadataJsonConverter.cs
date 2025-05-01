@@ -1,11 +1,9 @@
-using System;
-using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace KurrentDB.Client;
 
-internal class StreamMetadataJsonConverter : JsonConverter<StreamMetadata> {
+class StreamMetadataJsonConverter : JsonConverter<StreamMetadata> {
 	public static readonly StreamMetadataJsonConverter Instance = new StreamMetadataJsonConverter();
 
 	public override StreamMetadata Read(ref Utf8JsonReader reader, Type typeToConvert,

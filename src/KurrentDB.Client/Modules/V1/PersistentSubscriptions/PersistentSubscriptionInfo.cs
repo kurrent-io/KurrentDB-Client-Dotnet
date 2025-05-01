@@ -129,7 +129,7 @@ public record PersistentSubscriptionInfo(
 		);
 	}
 
-	private static IEnumerable<PersistentSubscriptionConnectionInfo> From(
+	static IEnumerable<PersistentSubscriptionConnectionInfo> From(
 		RepeatedField<SubscriptionInfo.Types.ConnectionInfo> connections
 	) {
 		foreach (var conn in connections) {
@@ -147,7 +147,7 @@ public record PersistentSubscriptionInfo(
 		}
 	}
 
-	private static IDictionary<string, long> From(IEnumerable<SubscriptionInfo.Types.Measurement> measurements) =>
+	static IDictionary<string, long> From(IEnumerable<SubscriptionInfo.Types.Measurement> measurements) =>
 		measurements.ToDictionary(k => k.Key, v => v.Value);
 }
 
@@ -210,7 +210,7 @@ public record PersistentSubscriptionConnectionInfo(
 		}
 	}
 
-	private static PersistentSubscriptionConnectionInfo CreateFrom(PersistentSubscriptionConnectionInfoDto connection) {
+	static PersistentSubscriptionConnectionInfo CreateFrom(PersistentSubscriptionConnectionInfoDto connection) {
 		return new PersistentSubscriptionConnectionInfo(
 			From: connection.From,
 			Username: connection.Username,
@@ -224,11 +224,11 @@ public record PersistentSubscriptionConnectionInfo(
 		);
 	}
 
-	private static IDictionary<string, long> CreateFrom(IEnumerable<PersistentSubscriptionMeasurementInfoDto> extraStatistics) =>
+	static IDictionary<string, long> CreateFrom(IEnumerable<PersistentSubscriptionMeasurementInfoDto> extraStatistics) =>
 		extraStatistics.ToDictionary(k => k.Key, v => v.Value);
 }
 
-internal record PersistentSubscriptionDto(
+record PersistentSubscriptionDto(
 	string EventStreamId,
 	string GroupName,
 	string Status,
@@ -247,7 +247,7 @@ internal record PersistentSubscriptionDto(
 	IEnumerable<PersistentSubscriptionConnectionInfoDto> Connections
 );
 
-internal record PersistentSubscriptionConfig(
+record PersistentSubscriptionConfig(
 	bool ResolveLinktos,
 	ulong StartFrom,
 	string StartPosition,
@@ -264,7 +264,7 @@ internal record PersistentSubscriptionConfig(
 	string NamedConsumerStrategy
 );
 
-internal record PersistentSubscriptionConnectionInfoDto(
+record PersistentSubscriptionConnectionInfoDto(
 	string From,
 	string Username,
 	float AverageItemsPerSecond,
@@ -276,4 +276,4 @@ internal record PersistentSubscriptionConnectionInfoDto(
 	IEnumerable<PersistentSubscriptionMeasurementInfoDto> ExtraStatistics
 );
 
-internal record PersistentSubscriptionMeasurementInfoDto(string Key, long Value);
+record PersistentSubscriptionMeasurementInfoDto(string Key, long Value);

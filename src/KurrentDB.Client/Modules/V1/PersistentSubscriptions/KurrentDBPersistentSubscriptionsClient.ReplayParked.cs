@@ -63,9 +63,9 @@ partial class KurrentDBPersistentSubscriptionsClient {
 		await ReplayParkedHttpAsync(streamName, groupName, stopAt, channelInfo, deadline, userCredentials, cancellationToken)
 			.ConfigureAwait(false);
 	}
-		
-	private async Task ReplayParkedGrpcAsync(ReplayParkedReq req, long? numberOfEvents, TimeSpan? deadline,
-	                                         UserCredentials? userCredentials, CallInvoker callInvoker, CancellationToken cancellationToken) {
+
+	async Task ReplayParkedGrpcAsync(ReplayParkedReq req, long? numberOfEvents, TimeSpan? deadline,
+	                                 UserCredentials? userCredentials, CallInvoker callInvoker, CancellationToken cancellationToken) {
 
 		if (numberOfEvents.HasValue) {
 			req.Options.StopAt = numberOfEvents.Value;
@@ -77,9 +77,9 @@ partial class KurrentDBPersistentSubscriptionsClient {
 			.ReplayParkedAsync(req, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken))
 			.ConfigureAwait(false);
 	}
-		
-	private async Task ReplayParkedHttpAsync(string streamName, string groupName, long? numberOfEvents,
-	                                         ChannelInfo channelInfo, TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
+
+	async Task ReplayParkedHttpAsync(string streamName, string groupName, long? numberOfEvents,
+	                                 ChannelInfo channelInfo, TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
 
 		var path  = $"/subscriptions/{UrlEncode(streamName)}/{UrlEncode(groupName)}/replayParked";
 		var query = numberOfEvents.HasValue ? $"stopAt={numberOfEvents.Value}":"";

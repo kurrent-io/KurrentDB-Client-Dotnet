@@ -1,9 +1,8 @@
-﻿using System;
-using System.Net;
+﻿using System.Net;
 
 namespace KurrentDB.Client;
 
-internal static class EndPointExtensions {
+static class EndPointExtensions {
 	public static string GetHost(this EndPoint endpoint) =>
 		endpoint switch {
 			IPEndPoint ip   => ip.Address.ToString(),
@@ -35,7 +34,7 @@ internal static class EndPointExtensions {
 			_ => null
 		};
 
-	private static string CreateHttpUrl(string schema, string host, int port, string path) {
+	static string CreateHttpUrl(string schema, string host, int port, string path) {
 		return $"{schema}://{host}:{port}/{path}";
 	}
 }

@@ -4,15 +4,15 @@ using EventStore.Client.PersistentSubscriptions;
 namespace KurrentDB.Client;
 
 public partial class KurrentDBPersistentSubscriptionsClient {
-	private static readonly IDictionary<string, UpdateReq.Types.ConsumerStrategy> NamedConsumerStrategyToUpdateProto
+	static readonly IDictionary<string, UpdateReq.Types.ConsumerStrategy> NamedConsumerStrategyToUpdateProto
 		= new Dictionary<string, UpdateReq.Types.ConsumerStrategy> {
 			[SystemConsumerStrategies.DispatchToSingle] = UpdateReq.Types.ConsumerStrategy.DispatchToSingle,
 			[SystemConsumerStrategies.RoundRobin]       = UpdateReq.Types.ConsumerStrategy.RoundRobin,
 			[SystemConsumerStrategies.Pinned]           = UpdateReq.Types.ConsumerStrategy.Pinned,
 		};
 
-	private static UpdateReq.Types.StreamOptions StreamOptionsForUpdateProto(string streamName,
-	                                                                         StreamPosition position) {
+	static UpdateReq.Types.StreamOptions StreamOptionsForUpdateProto(string streamName,
+	                                                                 StreamPosition position) {
 		if (position == StreamPosition.Start) {
 			return new UpdateReq.Types.StreamOptions {
 				StreamIdentifier = streamName,
@@ -33,7 +33,7 @@ public partial class KurrentDBPersistentSubscriptionsClient {
 		};
 	}
 
-	private static UpdateReq.Types.AllOptions AllOptionsForUpdateProto(Position position) {
+	static UpdateReq.Types.AllOptions AllOptionsForUpdateProto(Position position) {
 		if (position == Position.Start) {
 			return new UpdateReq.Types.AllOptions {
 				Start = new Empty()

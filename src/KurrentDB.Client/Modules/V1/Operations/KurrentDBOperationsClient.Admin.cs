@@ -4,7 +4,7 @@ using EventStore.Client.Operations;
 namespace KurrentDB.Client;
 
 public partial class KurrentDBOperationsClient {
-	private static readonly Empty EmptyResult = new Empty();
+	static readonly Empty EmptyResult = new Empty();
 
 	/// <summary>
 	/// Shuts down the KurrentDB node.

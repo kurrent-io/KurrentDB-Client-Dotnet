@@ -8,9 +8,9 @@ namespace KurrentDB.Client;
 /// <summary>
 /// The base class used by clients used to communicate with the KurrentDB.
 /// </summary>
-public abstract class KurrentDBClientBase :
-	IDisposable, // for grpc.net we can dispose synchronously, but not for grpc.core
-	IAsyncDisposable {
+public abstract class KurrentDBClientBase : IDisposable, IAsyncDisposable {
+	// Note: for grpc.net we can dispose synchronously, but not for grpc.core
+
 	readonly ChannelCache                                       _channelCache;
 	readonly SharingProvider<ReconnectionRequired, ChannelInfo> _channelInfoProvider;
 	readonly CancellationTokenSource                            _cts;
@@ -32,8 +32,7 @@ public abstract class KurrentDBClientBase :
 
 		var channelSelector = new ChannelSelector(Settings, _channelCache);
 		_channelInfoProvider = new SharingProvider<ReconnectionRequired, ChannelInfo>(
-			(endPoint, onBroken) =>
-				GetChannelInfoExpensive(endPoint, onBroken, channelSelector, _cts.Token),
+			(endPoint, onBroken) => GetChannelInfoExpensive(endPoint, onBroken, channelSelector, _cts.Token),
 			Settings.ConnectivitySettings.DiscoveryInterval,
 			ReconnectionRequired.Rediscover.Instance,
 			Settings.LoggerFactory

@@ -1,12 +1,9 @@
-using System;
 using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace KurrentDB.Client;
 
-internal class SingleNodeHttpHandler : DelegatingHandler {
-	private readonly KurrentDBClientSettings _settings;
+class SingleNodeHttpHandler : DelegatingHandler {
+	readonly KurrentDBClientSettings _settings;
 
 	public SingleNodeHttpHandler(KurrentDBClientSettings settings) {
 		_settings = settings;

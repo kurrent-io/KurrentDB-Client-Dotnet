@@ -24,7 +24,7 @@ public sealed class SystemSettings {
 		SystemStreamAcl = systemStreamAcl;
 	}
 
-	private bool Equals(SystemSettings other)
+	bool Equals(SystemSettings other)
 		=> Equals(UserStreamAcl, other.UserStreamAcl) && Equals(SystemStreamAcl, other.SystemStreamAcl);
 
 	/// <inheritdoc />

@@ -1,8 +1,4 @@
-using System;
-using System.Linq;
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -10,12 +6,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace KurrentDB.Client;
 
 // Thread safe
-internal class GossipChannelSelector : IChannelSelector {
-	private readonly KurrentDBClientSettings        _settings;
-	private readonly ChannelCache                   _channels;
-	private readonly IGossipClient                  _gossipClient;
-	private readonly ILogger<GossipChannelSelector> _log;
-	private readonly NodeSelector                   _nodeSelector;
+class GossipChannelSelector : IChannelSelector {
+	readonly KurrentDBClientSettings        _settings;
+	readonly ChannelCache                   _channels;
+	readonly IGossipClient                  _gossipClient;
+	readonly ILogger<GossipChannelSelector> _log;
+	readonly NodeSelector                   _nodeSelector;
 
 	public GossipChannelSelector(
 		KurrentDBClientSettings settings,
@@ -42,7 +38,7 @@ internal class GossipChannelSelector : IChannelSelector {
 		return _channels.GetChannelInfo(endPoint);
 	}
 
-	private async Task<DnsEndPoint> DiscoverAsync(CancellationToken cancellationToken) {
+	async Task<DnsEndPoint> DiscoverAsync(CancellationToken cancellationToken) {
 		for (var attempt = 1; attempt <= _settings.ConnectivitySettings.MaxDiscoverAttempts; attempt++) {
 			foreach (var kvp in _channels.GetRandomOrderSnapshot()) {
 				var endPointToGetGossip = kvp.Key;
@@ -88,7 +84,7 @@ internal class GossipChannelSelector : IChannelSelector {
 		throw new DiscoveryException(_settings.ConnectivitySettings.MaxDiscoverAttempts);
 	}
 
-	private LogLevel GetLogLevelForDiscoveryAttempt(int attempt) => attempt switch {
+	LogLevel GetLogLevelForDiscoveryAttempt(int attempt) => attempt switch {
 		_ when attempt == _settings.ConnectivitySettings.MaxDiscoverAttempts =>
 			LogLevel.Error,
 		1 =>

@@ -1,12 +1,10 @@
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core;
 
 namespace KurrentDB.Client;
 
-internal class ChannelSelector : IChannelSelector {
-	private readonly IChannelSelector _inner;
+class ChannelSelector : IChannelSelector {
+	readonly IChannelSelector _inner;
 
 	public ChannelSelector(
 		KurrentDBClientSettings settings,

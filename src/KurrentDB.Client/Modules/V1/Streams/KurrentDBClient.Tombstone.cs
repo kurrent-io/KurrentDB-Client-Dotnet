@@ -24,8 +24,8 @@ public partial class KurrentDBClient {
 		}
 	}.WithAnyStreamRevision(expectedState), deadline, userCredentials, cancellationToken);
 
-	private async Task<DeleteResult> TombstoneInternal(TombstoneReq request, TimeSpan? deadline,
-	                                                   UserCredentials? userCredentials, CancellationToken cancellationToken) {
+	async Task<DeleteResult> TombstoneInternal(TombstoneReq request, TimeSpan? deadline,
+	                                           UserCredentials? userCredentials, CancellationToken cancellationToken) {
 		_log.LogDebug("Tombstoning stream {streamName}.", request.Options.StreamIdentifier);
 
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);

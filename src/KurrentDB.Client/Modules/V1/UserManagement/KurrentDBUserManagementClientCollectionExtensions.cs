@@ -52,8 +52,8 @@ public static class KurrentDBUserManagementClientCollectionExtensions {
 	                                                                  Action<KurrentDBClientSettings>? configureSettings = null) =>
 		services.AddKurrentDBUserManagementClient(new KurrentDBClientSettings(), configureSettings);
 
-	private static IServiceCollection AddKurrentDBUserManagementClient(this IServiceCollection services,
-	                                                                   KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings = null) {
+	static IServiceCollection AddKurrentDBUserManagementClient(this IServiceCollection services,
+	                                                           KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings = null) {
 		configureSettings?.Invoke(settings);
 		if (services == null) {
 			throw new ArgumentNullException(nameof(services));

@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 
 namespace KurrentDB.Client;
 
 // Selects a node to connect to from a ClusterInfo, based on the node preference.
 // Deals with endpoints, no grpc here.
 // Thread safe.
-internal class NodeSelector {
-	private static readonly ClusterMessages.VNodeState[] _notAllowedStates = {
+class NodeSelector {
+	static readonly ClusterMessages.VNodeState[] _notAllowedStates = [
 		ClusterMessages.VNodeState.Manager,
 		ClusterMessages.VNodeState.ShuttingDown,
 		ClusterMessages.VNodeState.Shutdown,
@@ -21,11 +18,11 @@ internal class NodeSelector {
 		ClusterMessages.VNodeState.PreReplica,
 		ClusterMessages.VNodeState.PreReadOnlyReplica,
 		ClusterMessages.VNodeState.Clone,
-		ClusterMessages.VNodeState.DiscoverLeader,
-	};
+		ClusterMessages.VNodeState.DiscoverLeader
+	];
 
-	private readonly Random                                 _random;
-	private readonly IComparer<ClusterMessages.VNodeState>? _nodeStateComparer;
+	readonly Random                                 _random;
+	readonly IComparer<ClusterMessages.VNodeState>? _nodeStateComparer;
 
 	public NodeSelector(KurrentDBClientSettings settings) {
 		_random = new Random(0);
@@ -57,7 +54,7 @@ internal class NodeSelector {
 		}
 	}
 
-	private static bool IsConnectable(ClusterMessages.MemberInfo node) =>
+	static bool IsConnectable(ClusterMessages.MemberInfo node) =>
 		node.IsAlive &&
 		!_notAllowedStates.Contains(node.State);
 }

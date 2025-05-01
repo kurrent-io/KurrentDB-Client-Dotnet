@@ -1,5 +1,3 @@
-using System;
-
 namespace KurrentDB.Client;
 
 /// <summary>
@@ -73,8 +71,8 @@ public struct StreamMetadataResult : IEquatable<StreamMetadataResult> {
 	public static StreamMetadataResult Create(string streamName, StreamPosition revision,
 	                                          StreamMetadata metadata) => new StreamMetadataResult(streamName, revision, metadata);
 
-	private StreamMetadataResult(string streamName, StreamPosition? metastreamRevision = null,
-	                             StreamMetadata metadata = default, bool streamDeleted = false) {
+	StreamMetadataResult(string streamName, StreamPosition? metastreamRevision = null,
+	                     StreamMetadata metadata = default, bool streamDeleted = false) {
 		StreamName         = streamName;
 		StreamDeleted      = streamDeleted;
 		Metadata           = metadata;

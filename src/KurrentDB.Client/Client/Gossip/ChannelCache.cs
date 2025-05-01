@@ -6,14 +6,13 @@ namespace KurrentDB.Client;
 // Maintains Channels keyed by DnsEndPoint so the channels can be reused.
 // Deals with the disposal difference between grpc.net and grpc.core
 // Thread safe.
-internal class ChannelCache :
+class ChannelCache :
 	IAsyncDisposable {
-
-	private readonly KurrentDBClientSettings           _settings;
-	private readonly Random                            _random;
-	private readonly Dictionary<DnsEndPoint, TChannel> _channels;
-	private readonly object                            _lock = new();
-	private          bool                              _disposed;
+	readonly KurrentDBClientSettings           _settings;
+	readonly Random                            _random;
+	readonly Dictionary<DnsEndPoint, TChannel> _channels;
+	readonly object                            _lock = new();
+	bool                                       _disposed;
 
 	public ChannelCache(KurrentDBClientSettings settings) {
 		_settings = settings;
@@ -106,7 +105,7 @@ internal class ChannelCache :
 		await DisposeChannelsAsync(channelsToDispose).ConfigureAwait(false);
 	}
 
-	private void ThrowIfDisposed() {
+	void ThrowIfDisposed() {
 		lock (_lock) {
 			if (_disposed) {
 				throw new ObjectDisposedException(GetType().ToString());
@@ -114,12 +113,12 @@ internal class ChannelCache :
 		}
 	}
 
-	private static async Task DisposeChannelsAsync(IEnumerable<TChannel> channels) {
+	static async Task DisposeChannelsAsync(IEnumerable<TChannel> channels) {
 		foreach (var channel in channels)
 			await channel.DisposeAsync().ConfigureAwait(false);
 	}
 
-	private class DnsEndPointEqualityComparer : IEqualityComparer<DnsEndPoint> {
+	class DnsEndPointEqualityComparer : IEqualityComparer<DnsEndPoint> {
 		public static readonly DnsEndPointEqualityComparer Instance = new();
 
 		public bool Equals(DnsEndPoint? x, DnsEndPoint? y) {

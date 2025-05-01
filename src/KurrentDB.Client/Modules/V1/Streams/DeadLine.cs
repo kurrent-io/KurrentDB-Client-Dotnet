@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace KurrentDB.Client;
+﻿namespace KurrentDB.Client;
 #pragma warning disable CS1591
 public static class DeadLine {
 #pragma warning restore CS1591

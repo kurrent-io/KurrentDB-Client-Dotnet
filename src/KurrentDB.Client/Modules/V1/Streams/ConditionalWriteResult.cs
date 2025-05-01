@@ -1,5 +1,3 @@
-using System;
-
 namespace KurrentDB.Client;
 
 /// <summary>
@@ -32,8 +30,8 @@ public readonly struct ConditionalWriteResult : IEquatable<ConditionalWriteResul
 	/// </summary>
 	public StreamState NextExpectedStreamState { get; }
 
-	private ConditionalWriteResult(StreamState nextExpectedStreamState, Position logPosition,
-	                               ConditionalWriteStatus status = ConditionalWriteStatus.Succeeded) {
+	ConditionalWriteResult(StreamState nextExpectedStreamState, Position logPosition,
+	                       ConditionalWriteStatus status = ConditionalWriteStatus.Succeeded) {
 		NextExpectedStreamState = nextExpectedStreamState;
 		NextExpectedVersion     = nextExpectedStreamState.ToInt64();
 		LogPosition             = logPosition;

@@ -1,16 +1,14 @@
 using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace KurrentDB.Client;
 
-internal class SingleNodeChannelSelector : IChannelSelector {
-	private readonly ILogger      _log;
-	private readonly ChannelCache _channelCache;
-	private readonly DnsEndPoint  _endPoint;
+class SingleNodeChannelSelector : IChannelSelector {
+	readonly ILogger      _log;
+	readonly ChannelCache _channelCache;
+	readonly DnsEndPoint  _endPoint;
 
 	public SingleNodeChannelSelector(
 		KurrentDBClientSettings settings,

@@ -4,14 +4,14 @@ using EventStore.Client.PersistentSubscriptions;
 namespace KurrentDB.Client;
 
 partial class KurrentDBPersistentSubscriptionsClient {
-	private static readonly IDictionary<string, CreateReq.Types.ConsumerStrategy> NamedConsumerStrategyToCreateProto
+	static readonly IDictionary<string, CreateReq.Types.ConsumerStrategy> NamedConsumerStrategyToCreateProto
 		= new Dictionary<string, CreateReq.Types.ConsumerStrategy> {
 			[SystemConsumerStrategies.DispatchToSingle] = CreateReq.Types.ConsumerStrategy.DispatchToSingle,
 			[SystemConsumerStrategies.RoundRobin]       = CreateReq.Types.ConsumerStrategy.RoundRobin,
 			[SystemConsumerStrategies.Pinned]           = CreateReq.Types.ConsumerStrategy.Pinned,
 		};
-			
-	private static CreateReq.Types.StreamOptions StreamOptionsForCreateProto(string streamName, StreamPosition position) {
+
+	static CreateReq.Types.StreamOptions StreamOptionsForCreateProto(string streamName, StreamPosition position) {
 		if (position == StreamPosition.Start) {
 			return new CreateReq.Types.StreamOptions {
 				StreamIdentifier = streamName,
@@ -32,7 +32,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 		};
 	}
 
-	private static CreateReq.Types.AllOptions AllOptionsForCreateProto(Position position, IEventFilter? filter) {
+	static CreateReq.Types.AllOptions AllOptionsForCreateProto(Position position, IEventFilter? filter) {
 		var                        allFilter = GetFilterOptions(filter);
 		CreateReq.Types.AllOptions allOptions;
 		if (position == Position.Start) {
@@ -61,7 +61,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 		return allOptions;
 	}
 
-	private static CreateReq.Types.AllOptions.Types.FilterOptions? GetFilterOptions(IEventFilter? filter) {
+	static CreateReq.Types.AllOptions.Types.FilterOptions? GetFilterOptions(IEventFilter? filter) {
 		if (filter == null) {
 			return null;
 		}
@@ -155,9 +155,9 @@ partial class KurrentDBPersistentSubscriptionsClient {
 				cancellationToken)
 			.ConfigureAwait(false);
 
-	private async Task CreateInternalAsync(string streamName, string groupName, IEventFilter? eventFilter,
-	                                       PersistentSubscriptionSettings settings, TimeSpan? deadline, UserCredentials? userCredentials,
-	                                       CancellationToken cancellationToken) {
+	async Task CreateInternalAsync(string streamName, string groupName, IEventFilter? eventFilter,
+	                               PersistentSubscriptionSettings settings, TimeSpan? deadline, UserCredentials? userCredentials,
+	                               CancellationToken cancellationToken) {
 		if (streamName is null) {
 			throw new ArgumentNullException(nameof(streamName));
 		}

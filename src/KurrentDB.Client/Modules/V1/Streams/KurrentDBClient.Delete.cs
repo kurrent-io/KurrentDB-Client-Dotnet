@@ -24,10 +24,10 @@ public partial class KurrentDBClient {
 		}
 	}.WithAnyStreamRevision(expectedState), deadline, userCredentials, cancellationToken);
 
-	private async Task<DeleteResult> DeleteInternal(DeleteReq request,
-	                                                TimeSpan? deadline,
-	                                                UserCredentials? userCredentials,
-	                                                CancellationToken cancellationToken) {
+	async Task<DeleteResult> DeleteInternal(DeleteReq request,
+	                                        TimeSpan? deadline,
+	                                        UserCredentials? userCredentials,
+	                                        CancellationToken cancellationToken) {
 		_log.LogDebug("Deleting stream {streamName}.", request.Options.StreamIdentifier);
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		using var call = new Streams.StreamsClient(

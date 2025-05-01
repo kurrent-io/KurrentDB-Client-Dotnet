@@ -10,7 +10,7 @@ namespace KurrentDB.Client;
 /// The client used for operations on internal users.
 /// </summary>
 public sealed class KurrentDBUserManagementClient : KurrentDBClientBase {
-	private readonly ILogger _log;
+	readonly ILogger _log;
 
 	/// <summary>
 	/// Constructs a new <see cref="KurrentDBUserManagementClient"/>.
@@ -92,7 +92,7 @@ public sealed class KurrentDBUserManagementClient : KurrentDBClientBase {
 		return ConvertUserDetails(userDetails);
 	}
 
-	private static UserDetails ConvertUserDetails(DetailsResp.Types.UserDetails userDetails) =>
+	static UserDetails ConvertUserDetails(DetailsResp.Types.UserDetails userDetails) =>
 		new UserDetails(userDetails.LoginName, userDetails.FullName, userDetails.Groups.ToArray(),
 			userDetails.Disabled, userDetails.LastUpdated?.TicksSinceEpoch.FromTicksSinceEpoch());
 
@@ -271,7 +271,7 @@ public sealed class KurrentDBUserManagementClient : KurrentDBClientBase {
 		await call.ResponseAsync.ConfigureAwait(false);
 	}
 
-	private static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap =
+	static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap =
 		new Dictionary<string, Func<RpcException, Exception>> {
 			[Constants.Exceptions.UserNotFound] = ex => new UserNotFoundException(
 				ex.Trailers.First(x => x.Key == Constants.Exceptions.LoginName).Value),
