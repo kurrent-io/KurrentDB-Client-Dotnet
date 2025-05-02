@@ -16,8 +16,9 @@ public readonly struct Uuid : IEquatable<Uuid> {
 	/// </remarks>
 	public static readonly Uuid Empty = new(Guid.Empty);
 
-	readonly long _lsb;
-	readonly long _msb;
+	public readonly long LeastSignificantBits;
+
+	public readonly long MostSignificantBits;
 
 	/// <summary>
 	/// Creates a new, randomized <see cref="Uuid"/>.
@@ -77,8 +78,8 @@ public readonly struct Uuid : IEquatable<Uuid> {
 		data.Slice(4, 4).Reverse();
 		data[8..].Reverse();
 
-		_msb = BitConverterToInt64(data);
-		_lsb = BitConverterToInt64(data[8..]);
+		MostSignificantBits = BitConverterToInt64(data);
+		LeastSignificantBits = BitConverterToInt64(data[8..]);
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -97,8 +98,8 @@ public readonly struct Uuid : IEquatable<Uuid> {
 	) { }
 
 	Uuid(long msb, long lsb) {
-		_msb = msb;
-		_lsb = lsb;
+		MostSignificantBits = msb;
+		LeastSignificantBits = lsb;
 	}
 
 	/// <summary>
@@ -108,19 +109,19 @@ public readonly struct Uuid : IEquatable<Uuid> {
 	internal UUID ToDto() =>
 		new() {
 			Structured = new UUID.Types.Structured {
-				LeastSignificantBits = _lsb,
-				MostSignificantBits  = _msb
+				LeastSignificantBits = LeastSignificantBits,
+				MostSignificantBits  = MostSignificantBits
 			}
 		};
 
 	/// <inheritdoc />
-	public bool Equals(Uuid other) => _lsb == other._lsb && _msb == other._msb;
+	public bool Equals(Uuid other) => LeastSignificantBits == other.LeastSignificantBits && MostSignificantBits == other.MostSignificantBits;
 
 	/// <inheritdoc />
 	public override bool Equals(object? obj) => obj is Uuid other && Equals(other);
 
 	/// <inheritdoc />
-	public override int GetHashCode() => HashCode.Hash.Combine(_lsb).Combine(_msb);
+	public override int GetHashCode() => HashCode.Hash.Combine(LeastSignificantBits).Combine(MostSignificantBits);
 
 	/// <summary>
 	/// Compares left and right for equality.
@@ -156,8 +157,8 @@ public readonly struct Uuid : IEquatable<Uuid> {
 		if (!BitConverter.IsLittleEndian) throw new NotSupportedException();
 
 		Span<byte> data = stackalloc byte[16];
-		if (!TryWriteBytes(data, _msb) ||
-		    !TryWriteBytes(data[8..], _lsb))
+		if (!TryWriteBytes(data, MostSignificantBits) ||
+		    !TryWriteBytes(data[8..], LeastSignificantBits))
 			throw new InvalidOperationException();
 
 		data[..8].Reverse();

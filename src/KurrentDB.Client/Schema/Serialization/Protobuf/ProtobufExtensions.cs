@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Text;
 using Google.Protobuf;
 using Google.Protobuf.Reflection;
 
@@ -27,6 +28,30 @@ public static class ProtobufExtensions {
             throw new InvalidOperationException($"Value of type {value!.GetType().Name} is not a Protocol Buffers message");
 
         return message;
+    }
+
+    public static ReadOnlyMemory<byte> ToUtf8JsonBytes(this IMessage message) {
+	    return Encoding.UTF8.GetBytes(
+		    RemoveWhitespacesExceptInQuotes(JsonFormatter.Default.Format(message))
+	    );
+
+	    // simply because protobuf is so stupid that it adds spaces
+	    // between property names and values. absurd...
+	    static string RemoveWhitespacesExceptInQuotes(string json) {
+		    var inQuotes = false;
+
+		    var result = new StringBuilder(json.Length);
+
+		    foreach (var c in json) {
+			    if (c == '\"') {
+				    inQuotes = !inQuotes;
+				    result.Append(c); // Always include the quote characters
+			    } else if (inQuotes || (!inQuotes && !char.IsWhiteSpace(c)))
+				    result.Append(c);
+		    }
+
+		    return result.ToString();
+	    }
     }
 }
 

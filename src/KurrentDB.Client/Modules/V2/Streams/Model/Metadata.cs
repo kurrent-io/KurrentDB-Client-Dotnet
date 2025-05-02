@@ -1,42 +1,43 @@
 using System.Globalization;
-using System.Text.Json;
 using JetBrains.Annotations;
-using KurrentDB.Client.Schema.Serialization;
 
 namespace KurrentDB.Client.Model;
 
-public interface IMetadataSerializer {
-    byte[] Serialize(Metadata evt);
-
-    /// <summary>
-    /// Deserializes the metadata
-    /// </summary>
-    /// <param name="bytes">Serialized metadata as bytes</param>
-    /// <returns>Deserialized metadata object</returns>
-    /// <throws>MetadataDeserializationException if the metadata cannot be deserialized</throws>
-    Metadata Deserialize(ReadOnlyMemory<byte> bytes);
+public interface IMetadataDecoder {
+    Metadata Decode(ReadOnlyMemory<byte> bytes);
 }
 
-[PublicAPI]
-public class DefaultMetadataSerializer(JsonSerializerOptions options) : IMetadataSerializer {
-    public static IMetadataSerializer Instance { get; private set; } = new DefaultMetadataSerializer(new(JsonSerializerDefaults.Web));
+// I need to decode old metadata
+// new metadata is always encoded by us:
+// 1. db supports new contracts - convert to dynamic value map proto
+// 2. db does not support it - use old contracts and serialize to json?
 
-    public static void SetDefaultSerializer(IMetadataSerializer serializer) => Instance = serializer;
+// decoding:
+// 1. db supports new contracts - decode dynamic value map proto
+// 2. db does not support it - decode json
 
-    public byte[] Serialize(Metadata evt) => JsonSerializer.SerializeToUtf8Bytes(evt, options);
 
-    /// <inheritdoc/>
-    public Metadata Deserialize(ReadOnlyMemory<byte> bytes) {
-        try {
-            return JsonSerializer.Deserialize<Metadata>(bytes.Span, options) ??
-				   throw new MetadataDeserializationException(new JsonException("Failed to deserialize metadata"));
-        } catch (JsonException ex) {
-            throw new MetadataDeserializationException(ex);
-        }
-    }
-}
+// [PublicAPI]
+// public class DefaultMetadataDecoder(JsonSerializerOptions options) : IMetadataDecoder {
+//     public static IMetadataDecoder Instance { get; private set; } = new DefaultMetadataDecoder(new(JsonSerializerDefaults.Web));
+//
+//     public static void SetDefaultSerializer(IMetadataDecoder decoder) => Instance = decoder;
+//
+//     public byte[] EncodeAsJson(Metadata metadata) =>
+// 	    JsonFormatter.Default.Format(metadata.MapToDynamicMapField().ToUtf8JsonBytes());
+//
+//     /// <inheritdoc/>
+//     public Metadata Decode(ReadOnlyMemory<byte> bytes) {
+//         try {
+//             return JsonSerializer.Deserialize<Metadata>(bytes.Span, options) ??
+// 				   throw new MetadataDecodingException(new JsonException("Failed to deserialize metadata"));
+//         } catch (JsonException ex) {
+//             throw new MetadataDecodingException(ex);
+//         }
+//     }
+// }
 
-public class MetadataDeserializationException(Exception inner) : Exception("Failed to deserialize metadata", inner);
+public class MetadataDecodingException(Exception inner) : Exception("Failed to decode custom metadata", inner);
 
 /// <summary>
 /// Represents a collection of metadata as key-value pairs with additional helper methods.

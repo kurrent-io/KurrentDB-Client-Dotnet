@@ -5,9 +5,9 @@ using KurrentDB.Client.Schema.Serialization;
 namespace KurrentDB.Client;
 
 
-class LegacyConverters(ISchemaSerializer dataSerializer, IMetadataSerializer metadataSerializer) {
-	ISchemaSerializer   DataSerializer     { get; } = dataSerializer;
-	IMetadataSerializer MetadataSerializer { get; } = metadataSerializer;
+class LegacyProtocolMapper(ISchemaSerializer dataSerializer, IMetadataDecoder metadataDecoder) {
+	ISchemaSerializer DataSerializer  { get; } = dataSerializer;
+	IMetadataDecoder  MetadataDecoder { get; } = metadataDecoder;
 
 	public async IAsyncEnumerable<EventData> ConvertMessagesToEventDataAsync(string stream, IEnumerable<Message> messages, Action<Metadata> prepareMetadata, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
 		foreach (var message in messages) {
@@ -28,9 +28,10 @@ class LegacyConverters(ISchemaSerializer dataSerializer, IMetadataSerializer met
 			.Serialize(message.Value, new(message.Metadata, stream, cancellationToken))
 			.ConfigureAwait(false);
 
-		var metadata = MetadataSerializer.Serialize(message.Metadata);
+		// must be readable json in the end. convert the proto map to json? or the dic to json? as a struct?
+		//var metadata = MetadataDecoder.Serialize(message.Metadata);
 
-		var id     = Uuid.FromGuid(message.RecordId);
+		var id     = Uuid.FromGuid(message.RecordId); // BROKEN
 		var schema = SchemaInfo.FromMetadata(message.Metadata);
 
 		// db features must be checked to see if the schema is supported
@@ -44,13 +45,13 @@ class LegacyConverters(ISchemaSerializer dataSerializer, IMetadataSerializer met
 			eventId: id,
 			type: schema.SchemaName,
 			data: data,
-			metadata: metadata,
+			//metadata: metadata,
 			contentType: compatibleContentType // schema.ContentType
 		);
 	}
 
 	public async ValueTask<Record> ConvertResolvedEventToRecordAsync(ResolvedEvent resolvedEvent, CancellationToken cancellationToken) {
-		var metadata = MetadataSerializer.Deserialize(resolvedEvent.OriginalEvent.Metadata);
+		var metadata = MetadataDecoder.Decode(resolvedEvent.OriginalEvent.Metadata);
 
 		// Handle backwards compatibility with old schema by injecting the legacy schema in the headers.
 		// The legacy schema is generated using the event type and content type from the resolved event.
@@ -65,7 +66,7 @@ class LegacyConverters(ISchemaSerializer dataSerializer, IMetadataSerializer met
 
 		var value = await DataSerializer
 			.Deserialize(data, new(metadata, resolvedEvent.OriginalStreamId, cancellationToken))
-			.ConfigureAwait(false);;
+			.ConfigureAwait(false);
 
 		var record = new Record {
 			Id             = resolvedEvent.OriginalEvent.EventId.ToGuid(),

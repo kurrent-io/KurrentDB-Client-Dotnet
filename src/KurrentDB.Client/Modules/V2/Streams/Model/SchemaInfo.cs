@@ -30,7 +30,7 @@ public record SchemaInfo(string SchemaName, SchemaDataFormat DataFormat) {
 		return this;
 	}
 
-    public SchemaInfo InjectSchemaNameIntoHeaders(Metadata headers) {
+    public SchemaInfo InjectSchemaNameIntoMetadata(Metadata headers) {
         headers.Set(SystemMetadataKeys.SchemaName, SchemaName);
         return this;
     }

@@ -11,6 +11,8 @@
 		<PackageReference Include="Google.Protobuf" Version="3.29.1"/>
 		<PackageReference Include="Grpc.Net.Client" Version="2.67.0"/>
 		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0"/>
+		<PackageReference Include="OneOf" Version="3.0.271" />
+		<PackageReference Include="OneOf.SourceGenerator" Version="3.0.271" />
 		<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.0"/>
 		<PackageReference Include="System.Linq.Async" Version="6.0.1"/>
 		<PackageReference Include="OpenTelemetry.Api" Version="1.12.0"/>
@@ -57,9 +59,5 @@
 
 	<ItemGroup>
 		<None Remove="Kurrent.Client.csproj.DotSettings" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Modules\Shared\" />
 	</ItemGroup>
 </Project>

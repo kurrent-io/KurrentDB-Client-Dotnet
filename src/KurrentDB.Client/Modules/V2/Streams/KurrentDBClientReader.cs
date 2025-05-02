@@ -1,27 +1,9 @@
 using System.Runtime.CompilerServices;
 using KurrentDB.Client.Model;
+using KurrentDB.Client.Schema.Serialization;
 
 namespace KurrentDB.Client;
 
-public record LegacyAppendOptions {
-	/// <summary>
-	/// Whether or not to immediately throw a <see cref="WrongExpectedVersionException"/> when an append fails.
-	/// </summary>
-	public bool ThrowOnAppendFailure { get; init; }
-
-	/// <summary>
-	/// The batch size, in bytes.
-	/// </summary>
-	public int BatchAppendSize { get; init; }
-
-	/// <summary>
-	/// A callback function to extract the authorize header value from the <see cref="UserCredentials"/> used in the operation.
-	/// </summary>
-	public Func<UserCredentials, CancellationToken, ValueTask<string>> GetAuthenticationHeaderValue { get; init; } = null!;
-
-	public TimeSpan?        Deadline        { get; init; } = null;
-	public UserCredentials? UserCredentials { get; init; } = null;
-}
 
 public record LegacyReadOptions {
 	/// <summary>
@@ -33,49 +15,12 @@ public record LegacyReadOptions {
 	public UserCredentials? UserCredentials { get; init; } = null;
 }
 
-public static partial class KurrentDBClientExtensions {
-	static LegacyConverters LegacyConverters { get; set; } = null!;
 
-	#region . Append Operations .
-
-	public record AppendStreamResult {
-		public long Position       { get; set; }
-		public long StreamRevision { get; set; }
-	}
-
-	public static async Task<AppendStreamResult> AppendStream(
-		this KurrentDBClient client,
-		string streamName,
-		StreamState expectedState,
-		IEnumerable<Message> messages,
-		Func<LegacyAppendOptions, LegacyAppendOptions>? configureOptions = null,
-		CancellationToken cancellationToken = default
-	) {
-		var legacyOptions = configureOptions?.Invoke(new LegacyAppendOptions());
-
-		var eventData = await LegacyConverters.ConvertMessagesToEventDataAsync(
-			streamName,
-			messages,
-			metadata => {
-				// metadata.Set(HeaderKeys.ProducerId, "");
-				// metadata.Set(HeaderKeys.ProducerRequestId, "");
-			},
-			cancellationToken
-		).ToArrayAsync(cancellationToken);
-
-		var result = await client
-			.AppendToStreamAsync(streamName, expectedState, eventData, cancellationToken: cancellationToken)
-			.ConfigureAwait(false);
-
-		return new AppendStreamResult {
-			Position       = (long)result.LogPosition.CommitPosition,
-			StreamRevision = result.NextExpectedStreamState.ToInt64()
-		};
-	}
-
-	#endregion
-
-	#region . Read Operations .
+#pragma warning disable CS8509
+public static class KurrentDBClientReader {
+	static LegacyProtocolMapper LegacyMapper { get; set; } = null!;
+	static ISchemaSerializer        SchemaSerializer { get; set; } = null!;
+	static IMetadataDecoder         MetadataDecoder  { get; set; } = null!;
 
 	public static async IAsyncEnumerable<Record> ReadAllStream(
 		this KurrentDBClient client,
@@ -102,7 +47,7 @@ public static partial class KurrentDBClientExtensions {
 
 			//TODO SS: what to do with the other possible messages?
 
-			var record = await LegacyConverters
+			var record = await LegacyMapper
 				.ConvertResolvedEventToRecordAsync(evt.ResolvedEvent, cancellationToken)
 				.ConfigureAwait(false);
 
@@ -136,7 +81,7 @@ public static partial class KurrentDBClientExtensions {
 
 			//TODO SS: what to do with the other possible messages?
 
-			var record = await LegacyConverters
+			var record = await LegacyMapper
 				.ConvertResolvedEventToRecordAsync(evt.ResolvedEvent, cancellationToken)
 				.ConfigureAwait(false);
 
@@ -160,7 +105,7 @@ public static partial class KurrentDBClientExtensions {
 				.ConfigureAwait(false);
 
 			return re?.Event != null
-				? await LegacyConverters
+				? await LegacyMapper
 					.ConvertResolvedEventToRecordAsync(re.Value, cancellationToken)
 					.ConfigureAwait(false)
 				: Record.None;
@@ -189,7 +134,7 @@ public static partial class KurrentDBClientExtensions {
 				.ConfigureAwait(false);
 
 			return re?.Event is not null
-				? await LegacyConverters
+				? await LegacyMapper
 					.ConvertResolvedEventToRecordAsync(re.Value, cancellationToken)
 					.ConfigureAwait(false)
 				: Record.None;
@@ -209,7 +154,7 @@ public static partial class KurrentDBClientExtensions {
 				.FirstOrDefaultAsync(cancellationToken);
 
 			return re?.Event is not null
-				? await LegacyConverters
+				? await LegacyMapper
 					.ConvertResolvedEventToRecordAsync(re.Value, cancellationToken)
 					.ConfigureAwait(false)
 				: Record.None;
@@ -239,40 +184,4 @@ public static partial class KurrentDBClientExtensions {
 			return null;
 		}
 	}
-
-	#endregion
-
-	#region . Consume Operations .
-
-	public static async ValueTask<ResolvedEvent> Consume(
-		this KurrentDBClient client,
-		Position startPosition,
-		ConsumeFilter filter,
-		CancellationToken cancellationToken = default
-	) {
-		//var filterOptions = filter.IsEmptyFilter ? null : new SubscriptionFilterOptions(filter.ToEventFilter());
-
-		await using var result = client.SubscribeToAll(
-			FromAll.After(startPosition),
-			filterOptions: filter.ToFilterOptions(),
-			cancellationToken: cancellationToken
-		);
-
-		await foreach (var msg in result.Messages.WithCancellation(cancellationToken)) {
-			if (cancellationToken.IsCancellationRequested)
-				break;
-
-			if (msg is StreamMessage.LastAllStreamPosition)
-				break;
-
-			if (msg is not StreamMessage.Event evt)
-				continue;
-
-			return evt.ResolvedEvent;
-		}
-
-		return default;
-	}
-
-	#endregion
 }
