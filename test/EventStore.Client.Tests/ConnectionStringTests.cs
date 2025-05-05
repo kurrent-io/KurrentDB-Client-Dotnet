@@ -94,6 +94,23 @@ public class ConnectionStringTests {
 		static string MockingTone(string key) => new(key.Select((c, i) => i % 2 == 0 ? char.ToUpper(c) : char.ToLower(c)).ToArray());
 	}
 
+	[Fact]
+	public void connection_string_should_create_valid_http_handler() {
+		// Arrange
+		var settings = EventStoreClientSettings.Create("esdb://localhost:2113?tls=false");
+
+		// Act
+		var handler = settings.CreateHttpMessageHandler?.Invoke();
+
+		// Assert
+		Assert.NotNull(handler);
+#if NET48
+		Assert.IsType<WinHttpHandler>(handler);
+#else
+		Assert.IsType<SocketsHttpHandler>(handler);
+#endif
+	}
+
 	[Theory]
 	[MemberData(nameof(ValidCases))]
 	public void valid_connection_string(string connectionString, EventStoreClientSettings expected) {
