@@ -31,7 +31,6 @@
         <PackageTags>eventstore client grpc</PackageTags>
         <Authors>Event Store Ltd</Authors>
 			  <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Event Store Ltd</Copyright>
-        <MinVerTagPrefix>v</MinVerTagPrefix>
     </PropertyGroup>
 
     <ItemGroup>
@@ -48,7 +47,6 @@
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="MinVer" Version="3.0.0" PrivateAssets="All" />
     </ItemGroup>
     
     <ItemGroup>
