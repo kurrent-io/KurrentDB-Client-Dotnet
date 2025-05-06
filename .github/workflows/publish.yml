@@ -198,7 +198,7 @@ jobs:
         if: ${{ github.event.inputs.dry_run != 'true' }}
         run: |
           dotnet tool restore
-          find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.github_token }} --source https://nuget.pkg.github.com/kurrent/index.json --skip-duplicate
+          find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.github_token }} --source https://nuget.pkg.github.com/kurrent-io/index.json --skip-duplicate
 
       - name: Dotnet Push to Nuget.org
         shell: bash
