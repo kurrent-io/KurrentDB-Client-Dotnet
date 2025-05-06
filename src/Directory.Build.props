@@ -16,7 +16,7 @@
         <PackageTags>KurrentDB Client gRPC</PackageTags>
         <Authors>Kurrent, Inc</Authors>
         <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Kurrent, Inc</Copyright>
-        <!-- <MinVerTagPrefix>v</MinVerTagPrefix> -->
+        <MinVerTagPrefix>v</MinVerTagPrefix>
     </PropertyGroup>
 
     <ItemGroup>
