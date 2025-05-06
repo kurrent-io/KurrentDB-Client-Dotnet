@@ -42,8 +42,11 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 	public KurrentDBFixtureOptions Options { get; }
 	public Faker                 Faker   { get; } = new Faker();
 
-	public Version EventStoreVersion               { get; private set; } = null!;
-	public bool    EventStoreHasLastStreamPosition { get; private set; }
+	public Version EventStoreVersion { get; private set; } = null!;
+
+	public bool IsKdb => EventStoreVersion.Major >= 25;
+
+	public bool EventStoreHasLastStreamPosition { get; private set; }
 
 	public KurrentDBClient                        Streams       { get; private set; } = null!;
 	public KurrentDBUserManagementClient          DBUsers         { get; private set; } = null!;
@@ -127,7 +130,8 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 		}
 
 		static Version GetKurrentVersion() {
-			const string versionPrefix = "EventStoreDB version";
+			const string versionPrefix     = "KurrentDB version";
+			const string esdbVersionPrefix = "EventStoreDB version";
 
 			using var cancellator = new CancellationTokenSource(FromSeconds(30));
 			using var eventstore = new Builder()
@@ -139,13 +143,15 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 
 			using var log = eventstore.Logs(true, cancellator.Token);
 			foreach (var line in log.ReadToEnd()) {
-				Logger.Information("EventStoreDB: {Line}", line);
+				Logger.Information("KurrentDB: {Line}", line);
 				if (line.StartsWith(versionPrefix) &&
-				    Version.TryParse(
-					    new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()),
-					    out var version
-				    )) {
+				    Version.TryParse(new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()), out var version)) {
 					return version;
+				}
+				
+				if (line.StartsWith(esdbVersionPrefix) &&
+				    Version.TryParse(new string(ReadVersion(line[(esdbVersionPrefix.Length + 1)..]).ToArray()), out var esdbVersion)) {
+					return esdbVersion;
 				}
 			}
 

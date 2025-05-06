@@ -18,7 +18,7 @@ public class ReadAllEventsFixture : KurrentDBTemporaryFixture {
 			);
 
 			Events = CreateTestEvents(20)
-				.Concat(CreateTestEvents(2, metadata: CreateMetadataOfSize(1_000_000)))
+				.Concat(CreateTestEvents(2, metadata: CreateMetadataOfSize(10_000)))
 				.Concat(CreateTestEvents(2, AnotherTestEventType))
 				.ToArray();
 

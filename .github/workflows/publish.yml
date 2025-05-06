@@ -1,39 +1,23 @@
 name: Publish
 
-# on:
-#   pull_request:
-#   push:
-#     branches:
-#       - master
-#     tags:
-#       - kurrent@*
-#   workflow_dispatch:
-#     inputs:
-#       ref:
-#         description: "Git reference (branch, tag, or commit SHA)"
-#         required: true
-#         default: "master"
-#       publish_to_nuget:
-#         description: "Publish to NuGet.org"
-#         required: true
-#         type: boolean
-#         default: false
-
-
 on:
+  pull_request:
+  push:
+    branches:
+      - master
+    tags:
+      - kurrent@*
   workflow_dispatch:
     inputs:
-      sha:
-        description: "Commit SHA to use for the release"
+      ref:
+        description: 'Git reference (branch, tag, or commit SHA)'
         required: true
-      version:
-        description: "Version to use for the release (e.g., 0.1.0)"
+        default: 'master'
+      publish_to_nuget:
+        description: 'Publish to NuGet.org'
         required: true
-      dry_run:
-        description: "Run without publishing the packages (true/false)"
-        required: false
-        default: "false"
-
+        type: boolean
+        default: false
 
 jobs:
   vulnerability-scan:
@@ -41,21 +25,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [net8.0, net9.0]
-        os: [ubuntu-latest, windows-latest]
+        framework: [ net8.0, net9.0 ]
+        os: [ ubuntu-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     name: scan-vulnerabilities/${{ matrix.os }}/${{ matrix.framework }}
     steps:
-      # - name: Checkout
-      #   uses: actions/checkout@v3
-      #   with:
-      #     ref: ${{ github.event.inputs.ref || github.ref }}
-
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.inputs.sha }}
-
+          ref: ${{ github.event.inputs.ref || github.ref }}
       - name: Install dotnet SDKs
         uses: actions/setup-dotnet@v3
         with:
@@ -78,10 +56,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [net8.0, net9.0]
+        framework: [ net8.0, net9.0 ]
     services:
       esdb:
-        image: docker.kurrent.io/eventstore-ce/eventstoredb-ce:lts
+        image: docker.kurrent.io/eventstore/eventstoredb-ee:lts
         env:
           EVENTSTORE_INSECURE: true
           EVENTSTORE_MEM_DB: false
@@ -91,16 +69,10 @@ jobs:
           - 2113:2113
         options: --health-cmd "exit 0"
     steps:
-      # - name: Checkout
-      #   uses: actions/checkout@v3
-      #   with:
-      #     ref: ${{ github.event.inputs.ref || github.ref }}
-
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.inputs.sha }}
-
+          ref: ${{ github.event.inputs.ref || github.ref }}
       - name: Install dotnet SDKs
         uses: actions/setup-dotnet@v3
         with:
@@ -119,32 +91,24 @@ jobs:
   generate-certificates:
     runs-on: ubuntu-latest
     steps:
-      # - name: Checkout code
-      #   uses: actions/checkout@v4
-      #   with:
-      #     ref: ${{ github.event.inputs.ref || github.ref }}
-
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.inputs.sha }}
-
-      - name: Generate certificates
-        run: |
-          mkdir -p certs
-          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-ca -out /tmp/ca
-          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-node -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/node -ip-addresses 127.0.0.1 -dns-names localhost
-          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-user -username admin -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/user-admin
-          docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-user -username invalid -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/user-invalid
-      - name: Set permissions on certificates
-        run: |
-          sudo chown -R $USER:$USER certs
-          sudo chmod -R 755 certs
-      - name: Upload certificates
-        uses: actions/upload-artifact@v4
-        with:
-          name: certs
-          path: certs
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Generate certificates
+      run: |
+        mkdir -p certs
+        docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-ca -out /tmp/ca
+        docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-node -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/node -ip-addresses 127.0.0.1 -dns-names localhost
+        docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-user -username admin -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/user-admin
+        docker run --rm --user root --volume "$PWD/certs:/tmp" docker.kurrent.io/eventstore-utils/es-gencert-cli:latest create-user -username invalid -ca-certificate /tmp/ca/ca.crt -ca-key /tmp/ca/ca.key -out /tmp/user-invalid
+    - name: Set permissions on certificates
+      run: |
+        sudo chown -R $USER:$USER certs
+        sudo chmod -R 755 certs
+    - name: Upload certificates
+      uses: actions/upload-artifact@v4
+      with:
+        name: certs
+        path: certs
 
   test:
     needs: generate-certificates
@@ -152,31 +116,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [net8.0, net9.0]
-        os: [ubuntu-latest]
-        configuration: [release]
-        test:
-          [
-            Streams,
-            PersistentSubscriptions,
-            Operations,
-            ProjectionManagement,
-            UserManagement,
-            Security,
-            Misc,
-          ]
+        framework: [ net8.0, net9.0 ]
+        os: [ ubuntu-latest ]
+        configuration: [ release ]
+        test: [ Streams, PersistentSubscriptions, Operations, ProjectionManagement, UserManagement, Security, Misc ]
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.test }} (${{ matrix.os }}, ${{ matrix.framework }})
     steps:
-      # - name: Checkout
-      #   uses: actions/checkout@v3
-      #   with:
-      #     ref: ${{ github.event.inputs.ref || github.ref }}
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.inputs.sha }}
-
+          ref: ${{ github.event.inputs.ref || github.ref }}
       - name: Login to Cloudsmith
         uses: docker/login-action@v3
         with:
@@ -232,91 +182,53 @@ jobs:
 
   publish:
     timeout-minutes: 5
-    needs: [vulnerability-scan, test, build-samples]
+    needs: [ vulnerability-scan, test, build-samples ]
     runs-on: ubuntu-latest
     name: publish
     steps:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.inputs.sha }}
-
-      # - name: Checkout
-      #   uses: actions/checkout@v3
-      #   with:
-      #     ref: ${{ github.event.inputs.ref || github.ref }}
-      #     fetch-depth: 0
-
-      # - name: Get Version
-      #   id: get_version
-      #   run: |
-      #     echo "branch=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      #     dotnet nuget list source
-      #     dotnet tool restore
-      #     version=$(dotnet tool run minver -- --tag-prefix='kurrent@' --minimum-major-minor=1.0)
-      #     echo "version=${version}" >> $GITHUB_OUTPUT
-
+          ref: ${{ github.event.inputs.ref || github.ref }}
+          fetch-depth: 0
+      - name: Get Version
+        id: get_version
+        run: |
+          echo "branch=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+          dotnet nuget list source
+          dotnet tool restore
+          version=$(dotnet tool run minver -- --tag-prefix='kurrent@' --minimum-major-minor=1.0)
+          echo "version=${version}" >> $GITHUB_OUTPUT
       - name: Install dotnet SDKs
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: |
             8.0.x
             9.0.x
-
-      # - name: Dotnet Pack
-      #   shell: bash
-      #   run: |
-      #     mkdir -p packages
-      #     dotnet pack /p:Version=${{ steps.get_version.outputs.version }} --configuration=Release \
-      #       /p:PublishDir=./packages \
-      #       /p:NoWarn=NU5105 \
-      #       /p:RepositoryUrl=https://github.com/kurrent-io/EventStore-Client-Dotnet \
-      #       /p:RepositoryType=git
-
       - name: Dotnet Pack
         shell: bash
         run: |
           mkdir -p packages
-          dotnet pack --configuration=Release \
-            /p:Version=${{ github.event.inputs.version }} \
+          dotnet pack /p:Version=${{ steps.get_version.outputs.version }} --configuration=Release \
             /p:PublishDir=./packages \
             /p:NoWarn=NU5105 \
             /p:RepositoryUrl=https://github.com/kurrent-io/EventStore-Client-Dotnet \
             /p:RepositoryType=git
-
       - name: Publish Artifacts
         uses: actions/upload-artifact@v4
         with:
           path: packages
           name: nuget-packages
-
       - name: Dotnet Push to Github Packages
         shell: bash
-        if: ${{ github.event.inputs.dry_run != 'true' }}
-        # if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         run: |
           dotnet tool restore
           find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.github_token }} --source https://nuget.pkg.github.com/kurrent-io/index.json --skip-duplicate
-
       - name: Dotnet Push to Nuget.org
         shell: bash
-        if: ${{ github.event.inputs.dry_run != 'true' }}
+        if: (contains(steps.get_version.outputs.branch, 'kurrent@') && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_to_nuget == 'true')
         run: |
           dotnet nuget list source
           dotnet tool restore
-          find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.NUGET_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
-
-      - name: Dry Run Notice
-        if: ${{ github.event.inputs.dry_run == 'true' }}
-        run: |
-          echo "This is a dry run. The following packages would be published:"
-          find . -name "*.nupkg"
-
-
-      # - name: Dotnet Push to Nuget.org
-      #   shell: bash
-      #   if: (contains(steps.get_version.outputs.branch, 'kurrent@') && github.event_name == 'push') || (github.event_name == 'workflow_dispatch' && github.event.inputs.publish_to_nuget == 'true')
-      #   run: |
-      #     dotnet nuget list source
-      #     dotnet tool restore
-      #     find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.kurrent_nuget_key }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+          find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.kurrent_nuget_key }} --source https://api.nuget.org/v3/index.json --skip-duplicate
