@@ -4,7 +4,7 @@
 		<PackageId>KurrentDB.Client</PackageId>
 		<Description>The base GRPC client library for the Kurrent Platform. Get the open source or commercial versions of KurrentDB from https://kurrent.io/</Description>
 		<PackageId>KurrentDB.Client</PackageId>
-		<RootNamespace>KurrentDB.Client</RootNamespace>
+		<IsPackable>true</IsPackable>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -108,6 +108,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Remove="Kurrent.Client.csproj.DotSettings"/>
+		<None Remove="KurrentDB.Client.csproj.DotSettings"/>
 	</ItemGroup>
 </Project>
