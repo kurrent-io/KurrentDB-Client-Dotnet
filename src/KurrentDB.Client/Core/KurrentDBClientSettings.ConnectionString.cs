@@ -14,38 +14,45 @@ namespace KurrentDB.Client {
 		public static KurrentDBClientSettings Create(string connectionString) =>
 			ConnectionStringParser.Parse(connectionString);
 
-		private static class ConnectionStringParser {
-			private const string SchemeSeparator   = "://";
-			private const string UserInfoSeparator = "@";
-			private const string Colon             = ":";
-			private const string Slash             = "/";
-			private const string Comma             = ",";
-			private const string Ampersand         = "&";
-			private const string Equal             = "=";
-			private const string QuestionMark      = "?";
+		static class ConnectionStringParser {
+			const string SchemeSeparator   = "://";
+			const string UserInfoSeparator = "@";
+			const string Colon             = ":";
+			const string Slash             = "/";
+			const string Comma             = ",";
+			const string Ampersand         = "&";
+			const string Equal             = "=";
+			const string QuestionMark      = "?";
 
-			private const string Tls                  = nameof(Tls);
-			private const string ConnectionName       = nameof(ConnectionName);
-			private const string MaxDiscoverAttempts  = nameof(MaxDiscoverAttempts);
-			private const string DiscoveryInterval    = nameof(DiscoveryInterval);
-			private const string GossipTimeout        = nameof(GossipTimeout);
-			private const string NodePreference       = nameof(NodePreference);
-			private const string TlsVerifyCert        = nameof(TlsVerifyCert);
-			private const string TlsCaFile            = nameof(TlsCaFile);
-			private const string DefaultDeadline      = nameof(DefaultDeadline);
-			private const string ThrowOnAppendFailure = nameof(ThrowOnAppendFailure);
-			private const string KeepAliveInterval    = nameof(KeepAliveInterval);
-			private const string KeepAliveTimeout     = nameof(KeepAliveTimeout);
-			private const string UserCertFile         = nameof(UserCertFile);
-			private const string UserKeyFile          = nameof(UserKeyFile);
+			const string Tls                  = nameof(Tls);
+			const string ConnectionName       = nameof(ConnectionName);
+			const string MaxDiscoverAttempts  = nameof(MaxDiscoverAttempts);
+			const string DiscoveryInterval    = nameof(DiscoveryInterval);
+			const string GossipTimeout        = nameof(GossipTimeout);
+			const string NodePreference       = nameof(NodePreference);
+			const string TlsVerifyCert        = nameof(TlsVerifyCert);
+			const string TlsCaFile            = nameof(TlsCaFile);
+			const string DefaultDeadline      = nameof(DefaultDeadline);
+			const string ThrowOnAppendFailure = nameof(ThrowOnAppendFailure);
+			const string KeepAliveInterval    = nameof(KeepAliveInterval);
+			const string KeepAliveTimeout     = nameof(KeepAliveTimeout);
+			const string UserCertFile         = nameof(UserCertFile);
+			const string UserKeyFile          = nameof(UserKeyFile);
 
-			private const string UriSchemeDiscover = "esdb+discover";
+			static readonly string[] Schemes = [
+				"esdb",
+				"esdb+discover",
+				"kdb",
+				"kdb+discover",
+				"kurrent",
+				"kurrent+discover",
+				"kurrentdb",
+				"kurrentdb+discover"
+			];
+			static readonly int      DefaultPort   = KurrentDBClientConnectivitySettings.Default.ResolvedAddressOrDefault.Port;
+			static readonly bool     DefaultUseTls = true;
 
-			private static readonly string[] Schemes       = { "esdb", UriSchemeDiscover };
-			private static readonly int      DefaultPort   = KurrentDBClientConnectivitySettings.Default.ResolvedAddressOrDefault.Port;
-			private static readonly bool     DefaultUseTls = true;
-
-			private static readonly Dictionary<string, Type> SettingsType =
+			static readonly Dictionary<string, Type> SettingsType =
 				new(StringComparer.InvariantCultureIgnoreCase) {
 					{ ConnectionName, typeof(string) },
 					{ MaxDiscoverAttempts, typeof(int) },
@@ -112,7 +119,7 @@ namespace KurrentDB.Client {
 				return CreateSettings(scheme, userInfo, hosts, options);
 			}
 
-			private static KurrentDBClientSettings CreateSettings(
+			static KurrentDBClientSettings CreateSettings(
 				string scheme, (string user, string pass)? userInfo,
 				EndPoint[] hosts, Dictionary<string, string> options
 			) {
@@ -195,7 +202,9 @@ namespace KurrentDB.Client {
 
 				settings.ConnectivitySettings.Insecure = !useTls;
 
-				if (hosts.Length == 1 && scheme != UriSchemeDiscover) {
+				bool isDiscoverScheme = Schemes.Any(x => x.EndsWith("+discover") && x.Equals(scheme));
+
+				if (hosts.Length == 1 && !isDiscoverScheme) {
 					settings.ConnectivitySettings.Address = hosts[0].ToUri(useTls);
 				} else {
 					if (hosts.Any(x => x is DnsEndPoint))
@@ -324,17 +333,17 @@ namespace KurrentDB.Client {
 				string GetOptionValueAsString(string key) => options.TryGetValue(key, out var value) ? (string)value : "";
 			}
 
-			private static string ParseScheme(string s) =>
-				!Schemes.Contains(s) ? throw new InvalidSchemeException(s, Schemes) : s;
+			static string ParseScheme(string s) =>
+				Schemes.Contains(s, StringComparer.InvariantCultureIgnoreCase) ? s : throw new InvalidSchemeException(s, Schemes);
 
-			private static (string, string) ParseUserInfo(string s) {
+			static (string, string) ParseUserInfo(string s) {
 				var tokens = s.Split(Colon[0]);
 				if (tokens.Length != 2) throw new InvalidUserCredentialsException(s);
 
 				return (tokens[0], tokens[1]);
 			}
 
-			private static EndPoint[] ParseHosts(string s) {
+			static EndPoint[] ParseHosts(string s) {
 				var hostsTokens = s.Split(Comma[0]);
 				var hosts       = new List<EndPoint>();
 				foreach (var hostToken in hostsTokens) {
@@ -373,7 +382,7 @@ namespace KurrentDB.Client {
 				return hosts.ToArray();
 			}
 
-			private static Dictionary<string, string> ParseKeyValuePairs(string s) {
+			static Dictionary<string, string> ParseKeyValuePairs(string s) {
 				var options       = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
 				var optionsTokens = s.Split(Ampersand[0]);
 				foreach (var optionToken in optionsTokens) {
@@ -388,7 +397,7 @@ namespace KurrentDB.Client {
 				return options;
 			}
 
-			private static (string, string) ParseKeyValuePair(string s) {
+			static (string, string) ParseKeyValuePair(string s) {
 				var keyValueToken = s.Split(Equal[0]);
 				if (keyValueToken.Length != 2) {
 					throw new InvalidKeyValuePairException(s);
