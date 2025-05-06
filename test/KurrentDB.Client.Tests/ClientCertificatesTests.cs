@@ -1,10 +1,8 @@
 using Humanizer;
 using KurrentDB.Client.Tests.TestNode;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests;
 
-[Trait("Category", "Target:Misc")]
 [Trait("Category", "Target:Plugins")]
 [Trait("Category", "Type:UserCertificate")]
 public class ClientCertificateTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)

@@ -80,7 +80,7 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 			["EVENTSTORE_RUN_PROJECTIONS"]                  = "All",
 			["EVENTSTORE_CHUNK_SIZE"]                       = (1024 * 1024 * 1024).ToString(),
 			["EVENTSTORE_MAX_APPEND_SIZE"]                  = 100.Kilobytes().Bytes.ToString(CultureInfo.InvariantCulture),
-			["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}"
+			["EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}"
 		};
 
 		if (GlobalEnvironment.DockerImage.Contains("commercial")) {
@@ -99,7 +99,8 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 	}
 
 	static Version GetVersion() {
-		const string versionPrefix = "EventStoreDB version";
+		const string versionPrefix     = "KurrentDB version";
+		const string esdbVersionPrefix = "EventStoreDB version";
 
 		using var cts = new CancellationTokenSource(FromSeconds(30));
 		using var eventstore = new Builder().UseContainer()
@@ -113,6 +114,11 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 			if (line.StartsWith(versionPrefix) &&
 			    Version.TryParse(new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()), out var version)) {
 				return version;
+			}
+			
+			if (line.StartsWith(esdbVersionPrefix) &&
+			    Version.TryParse(new string(ReadVersion(line[(esdbVersionPrefix.Length + 1)..]).ToArray()), out var esdbVersion)) {
+				return esdbVersion;
 			}
 		}
 

@@ -2,12 +2,14 @@ namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:UserManagement")]
 public class ListUserTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
+	readonly string _userFullNamePrefix = fixture.IsKdb ? "KurrentDB" : "Event Store";
+
 	[Fact]
 	public async Task returns_all_created_users() {
 		var seed = await Fixture.CreateTestUsers();
 
-		var admin = new UserDetails("admin", "Event Store Administrator", new[] { "$admins" }, false, default);
-		var ops   = new UserDetails("ops", "Event Store Operations", new[] { "$ops" }, false, default);
+		var admin = new UserDetails("admin", $"{_userFullNamePrefix} Administrator", new[] { "$admins" }, false, default);
+		var ops   = new UserDetails("ops", $"{_userFullNamePrefix} Operations", new[] { "$ops" }, false, default);
 
 		var expected = new[] { admin, ops }
 			.Concat(seed.Select(user => user.Details))
@@ -23,8 +25,8 @@ public class ListUserTests(ITestOutputHelper output, KurrentDBPermanentFixture f
 
 	[Fact]
 	public async Task returns_all_system_users() {
-		var admin = new UserDetails("admin", "Event Store Administrator", new[] { "$admins" }, false, default);
-		var ops   = new UserDetails("ops", "Event Store Operations", new[] { "$ops" }, false, default);
+		var admin = new UserDetails("admin", $"{_userFullNamePrefix} Administrator", new[] { "$admins" }, false, default);
+		var ops   = new UserDetails("ops", $"{_userFullNamePrefix} Operations", new[] { "$ops" }, false, default);
 
 		var expected = new[] { admin, ops };
 

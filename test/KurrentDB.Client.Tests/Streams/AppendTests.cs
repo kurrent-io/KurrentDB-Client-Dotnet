@@ -484,7 +484,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		var stream        = Fixture.GetStreamName();
 
 		// Act
-		var (events, size) = Fixture.CreateTestEventsUpToMaxSize(maxAppendSize - 1);
+		var (events, size) = Fixture.CreateTestEventsUpToMaxSize(maxAppendSize);
 
 		// Assert
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
@@ -495,7 +495,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		// Arrange
 		var maxAppendSize    = (uint)100.Kilobytes().Bytes;
 		var stream           = Fixture.GetStreamName();
-		var eventsAppendSize = maxAppendSize * 2;
+		var eventsAppendSize = (uint)10.Megabytes().Bytes;
 
 		// Act
 		var (events, size) = Fixture.CreateTestEventsUpToMaxSize(eventsAppendSize);

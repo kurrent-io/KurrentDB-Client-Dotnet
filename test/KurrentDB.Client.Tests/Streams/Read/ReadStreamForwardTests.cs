@@ -60,7 +60,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 
 	[Theory]
 	[InlineData("small_events", 10, 1)]
-	[InlineData("large_events", 2, 1_000_000)]
+	[InlineData("large_events", 2, 10_000)]
 	public async Task returns_events_in_order(string suffix, int count, int metadataSize) {
 		var stream = $"{Fixture.GetStreamName()}_{suffix}";
 
