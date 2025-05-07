@@ -1,6 +1,6 @@
 syntax = "proto3";
 package event_store.client.persistent_subscriptions;
-option java_package = "io.kurrent.dbclient.proto.persistentsubscriptions";
+option java_package = "io.kurrent.client.persistentsubscriptions";
 
 import "shared.proto";
 

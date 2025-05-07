@@ -1,20 +1,20 @@
 
 namespace KurrentDB.Client.Canvas.triage;
 
-public interface IMessageTypeNamingStrategy {
-	string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext);
-
-	bool TryResolveClrTypeName(EventRecord record, out string? clrTypeName);
-
-	bool TryResolveClrMetadataTypeName(EventRecord record, out string? clrTypeName);
-}
-
-public record MessageTypeNamingResolutionContext(string CategoryName) {
+// public interface IMessageTypeNamingStrategy {
+// 	string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext);
+//
+// 	bool TryResolveClrTypeName(EventRecord record, out string? clrTypeName);
+//
+// 	bool TryResolveClrMetadataTypeName(EventRecord record, out string? clrTypeName);
+// }
+//
+record MessageTypeNamingResolutionContext(string CategoryName) {
 	public static MessageTypeNamingResolutionContext FromStreamName(string streamName) =>
 		new(streamName.Split('-').FirstOrDefault() ?? "no_stream_category");
 }
 
-public class DefaultMessageTypeNamingStrategy(Type? defaultMetadataType) : IMessageTypeNamingStrategy {
+class DefaultMessageTypeNamingStrategy(Type? defaultMetadataType) {
 	readonly Type _defaultMetadataType = defaultMetadataType!;  // typeof(TracingMetadata);
 
 	public string ResolveTypeName(Type messageType, MessageTypeNamingResolutionContext resolutionContext) =>

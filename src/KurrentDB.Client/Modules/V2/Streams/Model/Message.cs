@@ -15,7 +15,7 @@ public readonly record struct Message() {
 	/// The message metadata.
 	/// </summary>
 	public Metadata Metadata { get; init; } = new Metadata {
-        [SystemMetadataKeys.SchemaDataFormat] = nameof(SchemaDataFormat.Json).ToLower()
+        // [SystemMetadataKeys.SchemaDataFormat] = nameof(SchemaDataFormat.Json).ToLower()
     };
 
 	/// <summary>
@@ -23,8 +23,15 @@ public readonly record struct Message() {
 	/// </summary>
 	public Guid RecordId { get; init; } = Guid.NewGuid();
 
-    /// <summary>
-    /// The schema info of the message.
-    /// </summary>
-    public SchemaInfo Schema { get; init; } = new("", SchemaDataFormat.Json);
+	/// <summary>
+	/// Specifies the format of the schema associated with the message.
+	/// </summary>
+	public SchemaDataFormat DataFormat { get; init; } = SchemaDataFormat.Json;
+
+
+	   //
+    // /// <summary>
+    // /// The schema info of the message.
+    // /// </summary>
+    // public SchemaInfo Schema { get; init; } = new(SchemaName: "", DataFormat: SchemaDataFormat.Json);
 }

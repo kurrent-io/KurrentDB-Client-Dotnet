@@ -4,8 +4,7 @@ using KurrentDB.Client.Schema.Serialization;
 
 namespace KurrentDB.Client;
 
-
-class LegacyProtocolMapper(ISchemaSerializer dataSerializer, IMetadataDecoder metadataDecoder) {
+public class LegacyProtocolMapper(ISchemaSerializer dataSerializer, IMetadataDecoder metadataDecoder) {
 	ISchemaSerializer DataSerializer  { get; } = dataSerializer;
 	IMetadataDecoder  MetadataDecoder { get; } = metadataDecoder;
 

@@ -28,7 +28,6 @@ public class KurrentDBClientOperationOptions {
 		BatchAppendSize              = 3 * 1024 * 1024 // 3MB
 	};
 
-
 	/// <summary>
 	/// Clones a copy of the current <see cref="KurrentDBClientOperationOptions"/>.
 	/// </summary>

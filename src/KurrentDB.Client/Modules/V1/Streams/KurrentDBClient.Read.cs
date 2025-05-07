@@ -157,16 +157,18 @@ public partial class KurrentDBClient {
 
 			if (request.Options.FilterOptionCase == ReadReq.Types.Options.FilterOptionOneofCase.None)
 				request.Options.NoFilter = new();
-				
+
 			_ = PumpMessages();
 
 			return;
 
 			async Task PumpMessages() {
 				try {
-					var       callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
-					var       client      = new Streams.StreamsClient(callInvoker);
-					using var call        = client.Read(request, callOptions);
+					var callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
+
+					var client      = new Streams.StreamsClient(callInvoker);
+
+					using var call = client.Read(request, callOptions);
 					await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken)
 						               .ConfigureAwait(false)) {
 						await _channel.Writer.WriteAsync(
@@ -216,7 +218,7 @@ public partial class KurrentDBClient {
 
 	/// <summary>
 	/// Asynchronously reads all the events from a stream.
-	/// 
+	///
 	/// The result could also be inspected as a means to avoid handling exceptions as the <see cref="ReadState"/> would indicate whether or not the stream is readable./>
 	/// </summary>
 	/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
@@ -286,12 +288,12 @@ public partial class KurrentDBClient {
 		public string StreamName { get; }
 
 		/// <summary>
-		/// The <see cref="StreamPosition"/> of the first message in this stream. Will only be filled once <see cref="Messages"/> has been enumerated. 
+		/// The <see cref="StreamPosition"/> of the first message in this stream. Will only be filled once <see cref="Messages"/> has been enumerated.
 		/// </summary>
 		public StreamPosition? FirstStreamPosition { get; private set; }
 
 		/// <summary>
-		/// The <see cref="StreamPosition"/> of the last message in this stream. Will only be filled once <see cref="Messages"/> has been enumerated. 
+		/// The <see cref="StreamPosition"/> of the last message in this stream. Will only be filled once <see cref="Messages"/> has been enumerated.
 		/// </summary>
 		public StreamPosition? LastStreamPosition { get; private set; }
 

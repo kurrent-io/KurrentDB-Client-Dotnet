@@ -10,13 +10,15 @@ namespace KurrentDB.Client;
 /// The client used to manage persistent subscriptions in the KurrentDB.
 /// </summary>
 public sealed partial class KurrentDBPersistentSubscriptionsClient : KurrentDBClientBase {
-	static BoundedChannelOptions ReadBoundedChannelOptions = new (1) {
+	static readonly BoundedChannelOptions ReadBoundedChannelOptions = new (capacity: 1) {
 		SingleReader                  = true,
 		SingleWriter                  = true,
 		AllowSynchronousContinuations = true
 	};
 
 	readonly ILogger _log;
+
+	readonly Lazy<HttpFallback> _httpFallback;
 
 	/// <summary>
 	/// Constructs a new <see cref="KurrentDBPersistentSubscriptionsClient"/>.
@@ -38,9 +40,32 @@ public sealed partial class KurrentDBPersistentSubscriptionsClient : KurrentDBCl
 		}) {
 		_log = Settings.LoggerFactory?.CreateLogger<KurrentDBPersistentSubscriptionsClient>()
 		    ?? new NullLogger<KurrentDBPersistentSubscriptionsClient>();
+
+		_httpFallback = new Lazy<HttpFallback>(() => new HttpFallback(Settings));
 	}
 
-	static string UrlEncode(string s) {
-		return UrlEncoder.Default.Encode(s);
+	/// Returns the result of an HTTP Get request based on the client settings.
+	Task<T> HttpGet<T>(
+		string path, Action onNotFound, ChannelInfo channelInfo,
+		TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken
+	) => _httpFallback.Value
+			.HttpGetAsync<T>(path, channelInfo, deadline, userCredentials, onNotFound, cancellationToken);
+
+	/// Executes an HTTP Post request based on the client settings.
+	Task HttpPost(
+		string path, string query, Action onNotFound, ChannelInfo channelInfo,
+		TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken
+	) => _httpFallback.Value.HttpPostAsync(path, query, channelInfo, deadline, userCredentials, onNotFound, cancellationToken);
+
+	public override async ValueTask DisposeAsync() {
+		await base.DisposeAsync().ConfigureAwait(false);
+		if (_httpFallback.IsValueCreated) _httpFallback.Value.Dispose();
 	}
+
+	public override void Dispose() {
+		base.Dispose();
+		if (_httpFallback.IsValueCreated) _httpFallback.Value.Dispose();
+	}
+
+	static string UrlEncode(string value) => UrlEncoder.Default.Encode(value);
 }

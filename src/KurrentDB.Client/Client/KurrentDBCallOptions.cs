@@ -38,8 +38,8 @@ static class KurrentDBCallOptions {
 	static CallOptions Create(
 		KurrentDBClientSettings settings, TimeSpan? deadline,
 		UserCredentials? userCredentials, CancellationToken cancellationToken
-	) =>
-		new(
+	) {
+		return new(
 			cancellationToken: cancellationToken,
 			deadline: DeadlineAfter(deadline),
 			headers: new() {
@@ -52,8 +52,7 @@ static class KurrentDBCallOptions {
 			},
 			credentials: (userCredentials ?? settings.DefaultCredentials) == null
 				? null
-				: CallCredentials.FromInterceptor(
-					async (_, metadata) => {
+				: CallCredentials.FromInterceptor(async (_, metadata) => {
 						var credentials = userCredentials ?? settings.DefaultCredentials;
 
 						var authorizationHeader = await settings.OperationOptions
@@ -65,10 +64,11 @@ static class KurrentDBCallOptions {
 				)
 		);
 
-	static DateTime? DeadlineAfter(TimeSpan? timeoutAfter) =>
-		!timeoutAfter.HasValue
-			? new DateTime?()
-			: timeoutAfter.Value == TimeSpan.MaxValue || timeoutAfter.Value == InfiniteTimeSpan
-				? DateTime.MaxValue
-				: DateTime.UtcNow.Add(timeoutAfter.Value);
+		static DateTime? DeadlineAfter(TimeSpan? timeoutAfter) =>
+			!timeoutAfter.HasValue
+				? new DateTime?()
+				: timeoutAfter.Value == TimeSpan.MaxValue || timeoutAfter.Value == InfiniteTimeSpan
+					? DateTime.MaxValue
+					: DateTime.UtcNow.Add(timeoutAfter.Value);
+	}
 }

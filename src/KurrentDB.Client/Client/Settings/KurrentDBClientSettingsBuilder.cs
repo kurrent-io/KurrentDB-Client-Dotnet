@@ -144,6 +144,37 @@ public class KurrentDBClientSettingsBuilder {
 	}
 
 	/// <summary>
+	/// Configures retry settings.
+	/// </summary>
+	/// <param name="retrySettings">The retry settings to use.</param>
+	/// <returns>The builder for method chaining.</returns>
+	public KurrentDBClientSettingsBuilder WithRetrySettings(KurrentDBClientRetrySettings retrySettings) {
+		_settings.RetrySettings = retrySettings;
+		return this;
+	}
+
+	/// <summary>
+	/// Disables retries for gRPC operations.
+	/// </summary>
+	/// <returns>The builder for method chaining.</returns>
+	public KurrentDBClientSettingsBuilder WithNoRetry() {
+		_settings.RetrySettings = KurrentDBClientRetrySettings.NoRetry;
+		return this;
+	}
+
+	/// <summary>
+	/// Configures a custom retry policy.
+	/// </summary>
+	/// <param name="configure">Action to configure retry settings.</param>
+	/// <returns>The builder for method chaining.</returns>
+	public KurrentDBClientSettingsBuilder WithRetry(Action<KurrentDBClientRetrySettings> configure) {
+		var settings = new KurrentDBClientRetrySettings();
+		configure(settings);
+		_settings.RetrySettings = settings;
+		return this;
+	}
+
+	/// <summary>
 	/// Builds the <see cref="KurrentDBClientSettings"/> instance.
 	/// </summary>
 	/// <returns>The configured settings instance.</returns>

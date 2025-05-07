@@ -28,11 +28,18 @@ public class AppendStreamFailures : List<AppendStreamFailure> {
 	public AppendStreamFailures(IEnumerable<AppendStreamFailure> input) : base(input) { }
 }
 
+// [PublicAPI]
+// public record AppendStreamRequest {
+// 	public string        Stream           { get; init; } = "";
+// 	public List<Message> Messages         { get; init; } = [];
+// 	public long?         ExpectedRevision { get; init; }
+// }
+
 [PublicAPI]
 public record AppendStreamRequest {
-	public string        Stream           { get; set; } = "";
-	public List<Message> Messages         { get; set; } = [];
-	public long          ExpectedRevision { get; set; }
+	public string        Stream        { get; init; } = "";
+	public List<Message> Messages      { get; init; } = [];
+	public StreamState   ExpectedState { get; init; }
 }
 
 [PublicAPI]

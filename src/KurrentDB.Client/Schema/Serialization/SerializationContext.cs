@@ -7,28 +7,34 @@ namespace KurrentDB.Client.Schema.Serialization;
 /// Allows the serialization operations to be autonomous.
 /// </summary>
 [PublicAPI]
-public readonly record struct SerializationContext(Metadata Metadata, string Stream, CancellationToken CancellationToken = default) {
-    /// <summary>
+public readonly record struct SerializationContext {
+	public SerializationContext(Metadata metadata, string stream, CancellationToken cancellationToken = default) {
+		Metadata          = metadata;
+		Stream            = stream;
+		CancellationToken = cancellationToken;
+		SchemaInfo        = SchemaInfo.FromMetadata(Metadata);
+	}
+
+	/// <summary>
     /// The metadata present in the record.
     /// </summary>
-    public Metadata Metadata { get; } = Metadata;
+    public Metadata Metadata { get; }
 
     /// <summary>
     /// The stream that the record belongs to.
     /// </summary>
-    public string Stream { get; } = Stream;
+    public string Stream { get; }
 
     /// <summary>
     /// The token used to propagate cancellation notifications in the serialization context.
     /// </summary>
-    public CancellationToken CancellationToken { get; } = CancellationToken;
+    public CancellationToken CancellationToken { get; }
 
     /// <summary>
     /// The schema information extracted from the headers.
     /// If the headers do not contain schema information, it will return an undefined schema information.
     /// </summary>
-    public SchemaInfo SchemaInfo => SchemaInfo.FromMetadata(Metadata);
-
+    public SchemaInfo SchemaInfo { get; }
 
     // /// <summary>
     // /// Creates a new instance of the <see cref="SerializationContext"/> record struct with the provided headers.
@@ -43,4 +49,9 @@ public readonly record struct SerializationContext(Metadata Metadata, string Str
     // /// <param name="schemaInfo">The schema information to be included in the serialization context.</param>
     // public static SerializationContext From(SchemaInfo schemaInfo) =>
     //     From(new Metadata().WithSchemaInfo(schemaInfo));
+    public void Deconstruct(out Metadata metadata, out string stream, out CancellationToken cancellationToken) {
+	    metadata          = Metadata;
+	    stream            = Stream;
+	    cancellationToken = CancellationToken;
+    }
 }

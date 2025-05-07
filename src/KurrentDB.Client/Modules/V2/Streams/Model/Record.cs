@@ -14,7 +14,7 @@ public readonly record struct Record() {
 	public Position Position { get; init; } = Position.End;
 
 	/// <summary>
-	/// Represents the stream identifier associated with the record.
+	/// Represents the stream associated with the record.
 	/// </summary>
 	public string Stream { get; init; } = "";
 

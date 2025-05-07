@@ -14,24 +14,14 @@ namespace KurrentDB.Client;
 /// </summary>
 public sealed partial class KurrentDBClient : KurrentDBClientBase {
 	static readonly JsonSerializerOptions StreamMetadataJsonSerializerOptions = new() {
-		Converters = {
-			StreamMetadataJsonConverter.Instance
-		},
+		Converters = { StreamMetadataJsonConverter.Instance },
 	};
 
-	static readonly BoundedChannelOptions ReadBoundedChannelOptions = new(1) {
+	static readonly BoundedChannelOptions ReadBoundedChannelOptions = new(capacity: 1) {
 		SingleReader                  = true,
 		SingleWriter                  = true,
 		AllowSynchronousContinuations = true
 	};
-
-	readonly ILogger<KurrentDBClient> _log;
-	readonly CancellationTokenSource  _disposedTokenSource;
-
-	Lazy<StreamAppender> _batchAppenderLazy;
-
-	StreamAppender BatchAppender => _batchAppenderLazy.Value;
-
 
 	static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
 		[Constants.Exceptions.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),
@@ -60,6 +50,13 @@ public sealed partial class KurrentDBClient : KurrentDBClientBase {
 		),
 	};
 
+	readonly ILogger<KurrentDBClient> _log;
+	readonly CancellationTokenSource  _disposedTokenSource;
+
+	Lazy<StreamAppender> _batchAppenderLazy;
+
+	StreamAppender BatchAppender => _batchAppenderLazy.Value;
+
 	/// <summary>
 	/// Constructs a new <see cref="KurrentDBClient"/>. This is not intended to be called directly from your code.
 	/// </summary>
@@ -74,11 +71,13 @@ public sealed partial class KurrentDBClient : KurrentDBClientBase {
 		_log                 = Settings.LoggerFactory?.CreateLogger<KurrentDBClient>() ?? new NullLogger<KurrentDBClient>();
 		_disposedTokenSource = new CancellationTokenSource();
 		_batchAppenderLazy   = new Lazy<StreamAppender>(CreateStreamAppender);
+		LegacyMapper         = new LegacyProtocolMapper(SerializationManager, Settings.MetadataDecoder);
 	}
 
+	internal LegacyProtocolMapper LegacyMapper { get; }
+
 	void SwapStreamAppender(Exception ex) =>
-		Interlocked.Exchange(ref _batchAppenderLazy, new Lazy<StreamAppender>(CreateStreamAppender)).Value
-			.Dispose();
+		Interlocked.Exchange(ref _batchAppenderLazy, new Lazy<StreamAppender>(CreateStreamAppender)).Value.Dispose();
 
 	// todo: might be nice to have two different kinds of appenders and we decide which to instantiate according to the server caps.
 	StreamAppender CreateStreamAppender() => new StreamAppender(
@@ -88,9 +87,7 @@ public sealed partial class KurrentDBClient : KurrentDBClientBase {
 		SwapStreamAppender
 	);
 
-	static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(
-		IEventFilter? filter, uint checkpointInterval = 0
-	) {
+	static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(IEventFilter? filter, uint checkpointInterval = 0) {
 		if (filter == null
 		 || filter.Equals(StreamFilter.None)
 		 || filter.Equals(EventTypeFilter.None))
@@ -145,10 +142,11 @@ public sealed partial class KurrentDBClient : KurrentDBClientBase {
 		return options;
 	}
 
-	static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(
-		SubscriptionFilterOptions? filterOptions
-	)
-		=> filterOptions == null ? null : GetFilterOptions(filterOptions.Filter, filterOptions.CheckpointInterval);
+	static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(SubscriptionFilterOptions? filterOptions) =>
+		filterOptions == null ? null : GetFilterOptions(filterOptions.Filter, filterOptions.CheckpointInterval);
+
+	static InvalidOperationException InvalidOption<T>(T option) where T : Enum =>
+		new InvalidOperationException($"The {typeof(T).Name} {option:x} was not valid.");
 
 	/// <inheritdoc />
 	public override void Dispose() {

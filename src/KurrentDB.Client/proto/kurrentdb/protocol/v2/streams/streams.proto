@@ -24,12 +24,8 @@ service StreamsService {
   // maintaining the same transactional guarantees.
   rpc MultiStreamAppendSession(stream AppendStreamRequest) returns (MultiStreamAppendResponse);
 
-//  // Appends records to a specific stream.
-//  rpc AppendStream(AppendStreamRequest) returns (AppendStreamResponse);
-//
-//  // This method is not transactional and opens a channel for streaming append requests.
-//  // The server will respond with the results of each append operation as they are processed.
-//  rpc AppendStreamSession(stream AppendStreamRequest) returns (stream AppendStreamResponse);
+  // Appends records to a specific stream.
+  rpc AppendStream(AppendStreamRequest) returns (AppendStreamResponse);
 }
 
 // Record to be appended to a stream.

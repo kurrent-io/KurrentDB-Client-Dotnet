@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Client", "src\Kur
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Client.Tests.Common", "test\KurrentDB.Client.Tests.Common\KurrentDB.Client.Tests.Common.csproj", "{47BF715B-A0BF-4044-B335-717E56422550}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.LoadBalancer", "src\KurrentDB.LoadBalancer\KurrentDB.LoadBalancer.csproj", "{52632219-4407-4DE0-A32D-A49D9ADC1F52}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -30,6 +32,10 @@ Global
 		{47BF715B-A0BF-4044-B335-717E56422550}.Debug|x64.Build.0 = Debug|Any CPU
 		{47BF715B-A0BF-4044-B335-717E56422550}.Release|x64.ActiveCfg = Release|Any CPU
 		{47BF715B-A0BF-4044-B335-717E56422550}.Release|x64.Build.0 = Release|Any CPU
+		{52632219-4407-4DE0-A32D-A49D9ADC1F52}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{52632219-4407-4DE0-A32D-A49D9ADC1F52}.Debug|x64.Build.0 = Debug|Any CPU
+		{52632219-4407-4DE0-A32D-A49D9ADC1F52}.Release|x64.ActiveCfg = Release|Any CPU
+		{52632219-4407-4DE0-A32D-A49D9ADC1F52}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection

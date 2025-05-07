@@ -1,9 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<RootNamespace>KurrentDB.Client.Tests</RootNamespace>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
 	</PropertyGroup>
 
-	<ItemGroup>
+    <ItemGroup>
 		<ProjectReference Include="..\..\src\KurrentDB.Client\KurrentDB.Client.csproj" />
 	</ItemGroup>
 

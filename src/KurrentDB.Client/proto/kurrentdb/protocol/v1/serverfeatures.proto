@@ -1,6 +1,6 @@
 syntax = "proto3";
 package event_store.client.server_features;
-option java_package = "io.kurrent.dbclient.proto.serverfeatures";
+option java_package = "io.kurrent.client.serverfeatures";
 import "shared.proto";
 
 service ServerFeatures {

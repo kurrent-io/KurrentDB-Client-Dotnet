@@ -9,8 +9,15 @@ namespace KurrentDB.Client;
 /// authorization to perform operations on the KurrentDB.
 /// </summary>
 public class UserCredentials {
+	public static readonly UserCredentials Empty = new UserCredentials {
+		Username = null,
+		Password = null
+	};
+
 	// ReSharper disable once InconsistentNaming
 	static readonly UTF8Encoding UTF8NoBom = new(false);
+
+	UserCredentials() { }
 
 	/// <summary>
 	/// Constructs a new <see cref="UserCredentials"/>.
@@ -28,25 +35,28 @@ public class UserCredentials {
 	/// <summary>
 	/// Constructs a new <see cref="UserCredentials"/>.
 	/// </summary>
-	public UserCredentials(string bearerToken) => Authorization = new(Constants.Headers.BearerScheme, bearerToken);
+	public UserCredentials(string bearerToken) =>
+		Authorization = new(Constants.Headers.BearerScheme, bearerToken);
 
-	AuthenticationHeaderValue Authorization { get; }
+	AuthenticationHeaderValue Authorization { get; init; } = null!;
 
 	/// <summary>
 	/// The username
 	/// </summary>
-	public string? Username { get; }
+	public string? Username { get; private init; }
 
 	/// <summary>
 	/// The password
 	/// </summary>
-	public string? Password { get; }
+	public string? Password { get; private init; }
 
 	/// <inheritdoc />
-	public override string ToString() => Authorization.ToString();
+	public override string ToString() =>
+		Authorization.ToString();
 
 	/// <summary>
 	/// Implicitly convert a <see cref="UserCredentials"/> to a <see cref="string"/>.
 	/// </summary>
-	public static implicit operator string(UserCredentials self) => self.ToString();
+	public static implicit operator string(UserCredentials self) =>
+		self.ToString();
 }

@@ -21,7 +21,7 @@ static class ChannelFactory {
 			address,
 			new GrpcChannelOptions {
 #if NET48
-					HttpHandler = CreateHandler(settings),
+				HttpHandler = CreateHandler(settings),
 #else
 				HttpClient = new HttpClient(CreateHandler(settings), true) {
 					Timeout               = System.Threading.Timeout.InfiniteTimeSpan,
@@ -91,7 +91,7 @@ static class ChannelFactory {
 				true when settings.ConnectivitySettings.TlsCaFile is not null => (sender, certificate, chain, errors) => {
 					if (certificate is not X509Certificate2 peerCertificate || chain is null) return false;
 
-					chain.ChainPolicy.TrustMode                   = X509ChainTrustMode.CustomRootTrust;
+					chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
 					chain.ChainPolicy.CustomTrustStore.Add(settings.ConnectivitySettings.TlsCaFile);
 					return chain.Build(peerCertificate);
 				},

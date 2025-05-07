@@ -3,7 +3,7 @@ using KurrentDB.Client.Model;
 
 namespace KurrentDB.Client.Schema.Serialization.Protobuf;
 
-public class ProtobufSchemaSerializer(KurrentSchemaControl schemaControl) : SerializerBase(schemaControl) {
+public class ProtobufSchemaSerializer(IKurrentSchemaManager schemaManager) : SerializerBase(schemaManager) {
     public override SchemaDataFormat DataFormat => SchemaDataFormat.Protobuf;
 
     protected override ValueTask<ReadOnlyMemory<byte>> Serialize(object? value, SerializationContext context) =>

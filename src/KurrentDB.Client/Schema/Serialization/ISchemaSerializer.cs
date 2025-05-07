@@ -25,13 +25,7 @@ public interface ISchemaSerializer {
     /// <param name="context">The context providing additional information for the deserialization process.</param>
     public ValueTask<object?> Deserialize(ReadOnlyMemory<byte> data, SerializationContext context);
 
-    // /// <summary>
-    // /// Deserializes the given stream of data into an object of the specified type using the provided context.
-    // /// </summary>
-    // /// <param name="data">The stream containing the serialized data to be deserialized.</param>
-    // /// <param name="type">The type of the object to deserialize into.</param>
-    // /// <param name="context">The context providing additional information for the deserialization process.</param>
-    // public ValueTask<object?> Deserialize(Stream data, Type type, SerializationContext context);
+    public ValueTask<ReadOnlyMemory<byte>> Serialize(Message message, CancellationToken cancellationToken);
 }
 
 /// <summary>

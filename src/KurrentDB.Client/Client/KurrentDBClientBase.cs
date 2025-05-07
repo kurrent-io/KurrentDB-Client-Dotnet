@@ -1,6 +1,10 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using KurrentDB.Client.Interceptors;
+using KurrentDB.Client.Model;
+using KurrentDB.Client.Schema;
+using KurrentDB.Client.Schema.Serialization.Json;
+using KurrentDB.Client.Schema.Serialization.Protobuf;
 using Enum = System.Enum;
 
 namespace KurrentDB.Client;
@@ -15,28 +19,33 @@ public abstract class KurrentDBClientBase : IDisposable, IAsyncDisposable {
 	readonly SharingProvider<ReconnectionRequired, ChannelInfo> _channelInfoProvider;
 	readonly CancellationTokenSource                            _cts;
 	readonly Dictionary<string, Func<RpcException, Exception>>  _exceptionMap;
-	readonly Lazy<HttpFallback>                                 _httpFallback;
 
 	/// Constructs a new <see cref="KurrentDBClientBase"/>.
-	protected KurrentDBClientBase(
-		KurrentDBClientSettings? settings,
-		Dictionary<string, Func<RpcException, Exception>> exceptionMap
-	) {
+	protected KurrentDBClientBase(KurrentDBClientSettings? settings, Dictionary<string, Func<RpcException, Exception>> exceptionMap) {
 		Settings      = settings ?? new KurrentDBClientSettings();
 		_exceptionMap = exceptionMap;
 		_cts          = new CancellationTokenSource();
 		_channelCache = new(Settings);
-		_httpFallback = new Lazy<HttpFallback>(() => new HttpFallback(Settings));
 
 		ConnectionName = Settings.ConnectionName ?? $"ES-{Guid.NewGuid()}";
 
 		var channelSelector = new ChannelSelector(Settings, _channelCache);
+
 		_channelInfoProvider = new SharingProvider<ReconnectionRequired, ChannelInfo>(
 			(endPoint, onBroken) => GetChannelInfoExpensive(endPoint, onBroken, channelSelector, _cts.Token),
 			Settings.ConnectivitySettings.DiscoveryInterval,
 			ReconnectionRequired.Rediscover.Instance,
 			Settings.LoggerFactory
 		);
+
+		ClientFactory = new LegacyClientFactory(ct => _channelInfoProvider.CurrentAsync.WithCancellation(ct));
+
+		SchemaManager = new LegacyKurrentSchemaManager(Settings, ClientFactory);
+
+		SerializationManager = new KurrentSerializationManager([
+			new SystemJsonSchemaSerializer(schemaManager: SchemaManager),
+			new ProtobufSchemaSerializer(schemaManager: SchemaManager)
+		]);
 	}
 
 	/// The name of the connection.
@@ -45,14 +54,21 @@ public abstract class KurrentDBClientBase : IDisposable, IAsyncDisposable {
 	/// The <see cref="KurrentDBClientSettings"/>.
 	protected KurrentDBClientSettings Settings { get; }
 
+	/// A factory used to create gRPC clients utilizing the existing legacy load balancing and discovery mechanism.
+	protected internal LegacyClientFactory ClientFactory { get; }
+
+	/// The manager responsible for handling schema-related operations within KurrentDB.
+	protected internal IKurrentSchemaManager SchemaManager { get; }
+
+	/// The manager responsible for handling serialization operations for interacting with KurrentDB schemas.
+	protected internal IKurrentSerializationManager SerializationManager { get; }
+
 	/// <inheritdoc />
 	public virtual async ValueTask DisposeAsync() {
 		_channelInfoProvider.Dispose();
 		_cts.Cancel();
 		_cts.Dispose();
 		await _channelCache.DisposeAsync().ConfigureAwait(false);
-
-		if (_httpFallback.IsValueCreated) _httpFallback.Value.Dispose();
 	}
 
 	/// <inheritdoc />
@@ -61,8 +77,6 @@ public abstract class KurrentDBClientBase : IDisposable, IAsyncDisposable {
 		_cts.Cancel();
 		_cts.Dispose();
 		_channelCache.Dispose();
-
-		if (_httpFallback.IsValueCreated) _httpFallback.Value.Dispose();
 	}
 
 	// Select a channel and query its capabilities. This is an expensive call that
@@ -109,35 +123,4 @@ public abstract class KurrentDBClientBase : IDisposable, IAsyncDisposable {
 		_channelInfoProvider.Reset();
 		return Task.CompletedTask;
 	}
-
-	/// Returns the result of an HTTP Get request based on the client settings.
-	protected async Task<T> HttpGet<T>(
-		string path, Action onNotFound, ChannelInfo channelInfo,
-		TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken
-	) =>
-		await _httpFallback.Value
-			.HttpGetAsync<T>(path, channelInfo, deadline, userCredentials, onNotFound, cancellationToken)
-			.ConfigureAwait(false);
-
-	/// Executes an HTTP Post request based on the client settings.
-	protected async Task HttpPost(
-		string path, string query, Action onNotFound, ChannelInfo channelInfo,
-		TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken
-	) {
-		await _httpFallback.Value
-			.HttpPostAsync(
-				path,
-				query,
-				channelInfo,
-				deadline,
-				userCredentials,
-				onNotFound,
-				cancellationToken
-			)
-			.ConfigureAwait(false);
-	}
-
-	/// Returns an InvalidOperation exception.
-	protected Exception InvalidOption<T>(T option) where T : Enum =>
-		new InvalidOperationException($"The {typeof(T).Name} {option:x} was not valid.");
 }

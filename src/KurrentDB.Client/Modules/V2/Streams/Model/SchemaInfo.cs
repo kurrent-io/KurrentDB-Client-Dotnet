@@ -42,7 +42,7 @@ public record SchemaInfo(string SchemaName, SchemaDataFormat DataFormat) {
             headers.Get<string>(SystemMetadataKeys.SchemaName) ?? "";
 
         static SchemaDataFormat ExtractSchemaDataFormat(Metadata headers) =>
-            headers.GetEnum(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Unspecified);
+            headers.Get(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Unspecified);
     }
 
 	/// <summary>

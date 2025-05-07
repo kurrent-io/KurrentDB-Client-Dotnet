@@ -212,20 +212,37 @@ public partial class KurrentDBClient {
 								FirstStreamPosition => new StreamMessage.FirstStreamPosition(new StreamPosition(response.FirstStreamPosition)),
 								LastStreamPosition  => new StreamMessage.LastStreamPosition(new StreamPosition(response.LastStreamPosition)),
 								LastAllStreamPosition => new StreamMessage.LastAllStreamPosition(
-									new Position(
-										response.LastAllStreamPosition.CommitPosition,
-										response.LastAllStreamPosition.PreparePosition
-									)
+									new Position(response.LastAllStreamPosition.CommitPosition, response.LastAllStreamPosition.PreparePosition)
 								),
 								Checkpoint => new StreamMessage.AllStreamCheckpointReached(
 									new Position(
 										response.Checkpoint.CommitPosition,
 										response.Checkpoint.PreparePosition
-									)
+									),
+									response.Checkpoint.Timestamp is { Seconds: 0, Nanos: 0 }
+										? DateTimeOffset.UtcNow : response.FellBehind.Timestamp.ToDateTimeOffset()
 								),
-								CaughtUp   => StreamMessage.CaughtUp.Instance,
-								FellBehind => StreamMessage.FellBehind.Instance,
-								_          => StreamMessage.Unknown.Instance
+								CaughtUp => new StreamMessage.CaughtUp(
+									response.CaughtUp.Position.CommitPosition == 0 && response.CaughtUp.Position.PreparePosition == 0
+										? null : new Position(
+											response.CaughtUp.Position.CommitPosition,
+											response.CaughtUp.Position.PreparePosition
+										),
+									response.CaughtUp.HasStreamRevision ? response.CaughtUp.StreamRevision : null,
+									response.CaughtUp.Timestamp is { Seconds: 0, Nanos: 0 }
+										? DateTimeOffset.UtcNow : response.CaughtUp.Timestamp.ToDateTimeOffset()
+								),
+								FellBehind => new StreamMessage.FellBehind(
+									response.FellBehind.Position.CommitPosition == 0 && response.FellBehind.Position.PreparePosition == 0
+										? null : new Position(
+											response.FellBehind.Position.CommitPosition,
+											response.FellBehind.Position.PreparePosition
+										),
+									response.FellBehind.HasStreamRevision ? response.FellBehind.StreamRevision : null,
+									response.FellBehind.Timestamp is { Seconds: 0, Nanos: 0 }
+										? DateTimeOffset.UtcNow : response.FellBehind.Timestamp.ToDateTimeOffset()
+								),
+								_ => StreamMessage.Unknown.Instance
 							};
 
 						if (subscriptionMessage is StreamMessage.Event evt)

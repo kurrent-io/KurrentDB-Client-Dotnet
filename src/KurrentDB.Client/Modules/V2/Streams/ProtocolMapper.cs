@@ -31,14 +31,10 @@ static class ProtocolMapper {
 			DateTimeOffset x => new() { TimestampValue = x.ToTimestamp() },
 			TimeSpan x       => new() { DurationValue  = x.ToDuration() },
 
-			// JsonElement x  => new() { StructValue = Struct.Parser.ParseJson(x.ToString()) },
-			// JsonNode x     => new() { StructValue = Struct.Parser.ParseJson(x.ToString()) },
-			// JsonDocument x => new() { StructValue = Struct.Parser.ParseJson(x.RootElement.ToString()) },
-
 			byte[] x               => new() { BytesValue = ByteString.CopyFrom(x) },
 			ReadOnlyMemory<byte> x => new() { BytesValue = ByteString.CopyFrom(x.Span) },
 
-			_ => throw new NotSupportedException($"Unsupported value type: {source.GetType()}")
+			_ => new() { StringValue = source.ToString() } // any other type is converted to string
 		};
 	}
 
@@ -61,7 +57,6 @@ static class ProtocolMapper {
 			DynamicValue.KindOneofCase.TimestampValue => source.TimestampValue.ToDateTimeOffset(), // always datetime offset?
 			DynamicValue.KindOneofCase.DurationValue  => source.DurationValue.ToTimeSpan(),
 			DynamicValue.KindOneofCase.BytesValue     => (ReadOnlyMemory<byte>) source.BytesValue.ToByteArray(),
-			// DynamicValue.KindOneofCase.StructValue    => JsonSerializer.Deserialize<JsonElement>(source.StructValue.ToString()), // always json element?
 			_                                         => throw new NotSupportedException($"Unsupported value type: {source.KindCase}")
 		};
 	}
