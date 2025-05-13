@@ -230,8 +230,16 @@ jobs:
       - name: Dotnet Pack
         shell: bash
         run: |
+          echo "version=${{ steps.get_version.outputs.version }}"
           mkdir -p packages
-          dotnet pack /p:Version=${{ steps.get_version.outputs.version }} --configuration=Release \
+
+          extra_minver_flag=""
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            extra_minver_flag="/p:MinVerSkip=true"
+          fi
+
+          dotnet pack /p:Version=${{ steps.get_version.outputs.version }} $extra_minver_flag \
+            --configuration=Release \
             /p:PublishDir=./packages \
             /p:NoWarn=NU5105 \
             /p:RepositoryUrl=https://github.com/kurrent-io/EventStore-Client-Dotnet \
@@ -245,14 +253,14 @@ jobs:
 
       - name: Dotnet Push to Github Packages
         shell: bash
-        if: github.event_name == 'push' && (github.event.inputs.dry_run != 'true')
+        if: github.event.inputs.dry_run != 'true' || github.event_name == 'push'
         run: |
           dotnet tool restore
           find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/kurrent-io/index.json --skip-duplicate
 
       - name: Dotnet Push to Nuget.org
         shell: bash
-        if: contains(steps.get_version.outputs.branch, 'v') && (github.event.inputs.dry_run != 'true')
+        if: github.event.inputs.dry_run != 'true' || github.event_name == 'push'
         run: |
           dotnet nuget list source
           dotnet tool restore
