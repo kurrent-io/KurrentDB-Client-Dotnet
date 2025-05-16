@@ -1,5 +1,4 @@
 using AutoFixture;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests;
 

@@ -92,7 +92,7 @@ public class SubscribeToAllFilterTests(ITestOutputHelper output, KurrentDBTempor
 			await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}_{Guid.NewGuid():n}",
 				StreamState.NoStream,
-				new[] { e }
+				[e]
 			);
 		}
 
@@ -100,7 +100,7 @@ public class SubscribeToAllFilterTests(ITestOutputHelper output, KurrentDBTempor
 			var result = await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}_{Guid.NewGuid():n}",
 				StreamState.NoStream,
-				new[] { e }
+				[e]
 			);
 
 			eventToCaptureResult ??= result;

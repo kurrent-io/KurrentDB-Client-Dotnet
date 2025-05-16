@@ -1,6 +1,5 @@
 // ReSharper disable InconsistentNaming
 
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
@@ -25,7 +24,7 @@ public class SubscribeToStreamGetInfoTests(SubscribeToStreamGetInfoTests.CustomF
 	);
 
 	public static IEnumerable<object[]> AllowedUsers() {
-		yield return new object[] { TestCredentials.Root };
+		yield return [TestCredentials.Root];
 	}
 
 	[Theory]

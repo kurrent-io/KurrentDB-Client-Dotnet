@@ -1,5 +1,4 @@
 using System.Collections;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests;
 
@@ -7,9 +6,9 @@ public abstract record InvalidCredentialsTestCase(TestUser User, Type ExpectedEx
 
 public class InvalidCredentialsTestCases : IEnumerable<object?[]> {
 	public IEnumerator<object?[]> GetEnumerator() {
-		yield return new object?[] { new MissingCredentials() };
-		yield return new object?[] { new WrongUsername() };
-		yield return new object?[] { new WrongPassword() };
+		yield return [new MissingCredentials()];
+		yield return [new WrongUsername()];
+		yield return [new WrongPassword()];
 	}
 
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

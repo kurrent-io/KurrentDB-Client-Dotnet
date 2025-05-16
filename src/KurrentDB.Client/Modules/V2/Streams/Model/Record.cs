@@ -2,6 +2,26 @@ using JetBrains.Annotations;
 
 namespace KurrentDB.Client.Model;
 
+/// <summary>
+/// Represents information about the schema of a record, including its name, format, and version identifier.
+/// </summary>
+/// <param name="SchemaName">
+/// The name of the schema for the record.
+/// </param>
+/// <param name="DataFormat">
+/// The data format of the schema, such as JSON, Protobuf, Avro, Bytes, or Unspecified.
+/// </param>
+/// <param name="SchemaVersionId">
+/// The unique identifier for the version of the schema.
+/// </param>
+public record RecordSchemaInfo(string SchemaName, SchemaDataFormat DataFormat, Guid SchemaVersionId) {
+	public static readonly RecordSchemaInfo None = new(string.Empty, SchemaDataFormat.Unspecified, Guid.Empty);
+
+	public bool HasSchemaVersionId => SchemaVersionId != Guid.Empty;
+
+	public override string ToString() => $"{SchemaName} {DataFormat} {SchemaVersionId}";
+}
+
 [PublicAPI]
 public readonly record struct Record() {
 	public static readonly Record None = new();
@@ -11,7 +31,7 @@ public readonly record struct Record() {
 	/// <summary>
 	/// The position of the record in the stream.
 	/// </summary>
-	public Position Position { get; init; } = Position.End;
+	public ulong Position { get; init; } = ulong.MaxValue;
 
 	/// <summary>
 	/// Represents the stream associated with the record.
@@ -27,11 +47,6 @@ public readonly record struct Record() {
 	/// When the record was created in the database.
 	/// </summary>
 	public DateTime Timestamp { get; init; } = default;
-
-	/// <summary>
-	/// Represents metadata about the schema associated with a record, including schema name and data format.
-	/// </summary>
-	public SchemaInfo SchemaInfo { get; init; } = SchemaInfo.None;
 
 	/// <summary>
 	/// The metadata associated with the record, represented as a collection of key-value pairs.
@@ -54,7 +69,14 @@ public readonly record struct Record() {
 	/// </summary>
 	public ReadOnlyMemory<byte> Data { get; init; } = ReadOnlyMemory<byte>.Empty;
 
-	public bool HasValue => Value is not null;
+	/// <summary>
+	/// The schema information associated with the record.
+	/// </summary>
+	public RecordSchemaInfo Schema => new RecordSchemaInfo(
+		Metadata.Get<string>(SystemMetadataKeys.SchemaName)!,
+		Metadata.Get<SchemaDataFormat>(SystemMetadataKeys.SchemaDataFormat),
+		Metadata.Get<Guid>(SystemMetadataKeys.SchemaVersionId)
+	);
 
 	public bool IsDecoded => Value is not null
 	                      && !Data.IsEmpty
@@ -63,5 +85,5 @@ public readonly record struct Record() {
 	                      && ValueType != typeof(Memory<byte>);
 
 
-	public override string ToString() => $"{Id} {Position} {SchemaInfo.SchemaName}";
+	public override string ToString() => $"{Id} {Position} {Schema.DataFormat}";
 }

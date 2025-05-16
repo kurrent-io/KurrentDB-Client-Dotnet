@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package kurrentdb.protocol.registry.v2;
+package kurrentdb.protocol.v2;
 
 option csharp_namespace    = "KurrentDB.Protocol.Registry.V2";
 option java_package        = "io.kurrentdb.protocol.registry.v2";
@@ -13,7 +13,7 @@ import "registry/shared.proto";
 import "core.proto";
 
 message SchemaDetails {
-  SchemaDataFormat        data_format   = 1;
+  SchemaDataFormat    data_format   = 1;
   CompatibilityMode   compatibility = 2;
   optional string     description   = 3;
   map<string, string> tags          = 4;
@@ -121,7 +121,7 @@ message SchemaVersion {
   string                    schema_version_id = 1;
   int32                     version_number    = 2;
   bytes                     schema_definition = 3;
-  SchemaDataFormat              data_format       = 4;
+  SchemaDataFormat          data_format       = 4;
   google.protobuf.Timestamp registered_at     = 5;
 }
 
@@ -157,7 +157,7 @@ message RegisteredSchema {
   string                    schema_version_id = 2;
   int32                     version_number    = 3;
   bytes                     schema_definition = 4;
-  SchemaDataFormat              data_format       = 5;
+  SchemaDataFormat          data_format       = 5;
   CompatibilityMode         compatibility     = 6;
   map<string, string>       tags              = 7;
   google.protobuf.Timestamp registered_at     = 8;

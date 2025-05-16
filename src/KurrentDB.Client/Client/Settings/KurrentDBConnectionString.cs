@@ -18,7 +18,7 @@ record KurrentDBConnectionString {
 	const string Equal             = "=";
 	const string QuestionMark      = "?";
 
-	const string UriSchemeDiscover = "esdb+discover";
+	const string UriSchemeDiscover = "kurrentdb+discover";
 
 	const string Tls                  = nameof(Tls);
 	const string ConnectionName       = nameof(ConnectionName);
@@ -35,7 +35,7 @@ record KurrentDBConnectionString {
 	const string UserCertFile         = nameof(UserCertFile);
 	const string UserKeyFile          = nameof(UserKeyFile);
 
-	static readonly string[] Schemes           = ["esdb", UriSchemeDiscover];
+	static readonly string[] Schemes           = ["kurrentdb", UriSchemeDiscover];
 	static readonly int      DefaultPort       = KurrentDBClientConnectivitySettings.Default.ResolvedAddressOrDefault.Port;
 	static readonly bool     DefaultUseTls     = true;
 
@@ -89,7 +89,9 @@ record KurrentDBConnectionString {
 		var scheme = ParseScheme(connectionString.Substring(0, schemeIndex));
 
 		currentIndex = schemeIndex + SchemeSeparator.Length;
-		var                         userInfoIndex = connectionString.IndexOf(UserInfoSeparator, currentIndex, StringComparison.Ordinal);
+
+		var userInfoIndex = connectionString.IndexOf(UserInfoSeparator, currentIndex, StringComparison.Ordinal);
+
 		(string user, string pass)? userInfo      = null;
 		if (userInfoIndex != -1) {
 			userInfo     = ParseUserInfo(connectionString.Substring(currentIndex, userInfoIndex - currentIndex));

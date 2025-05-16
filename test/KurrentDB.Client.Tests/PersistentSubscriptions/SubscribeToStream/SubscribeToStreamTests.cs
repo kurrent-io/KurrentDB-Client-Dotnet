@@ -561,7 +561,7 @@ public class SubscribeToStreamTests(ITestOutputHelper output, KurrentDBPermanent
 		var events = Fixture.CreateTestEvents(eventWriteCount).ToArray();
 
 		foreach (var e in events)
-			await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, new[] { e });
+			await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, [e]);
 
 		await Fixture.Subscriptions.CreateToStreamAsync(
 			stream,

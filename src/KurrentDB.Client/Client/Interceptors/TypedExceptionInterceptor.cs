@@ -1,13 +1,14 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
+using static KurrentDB.Client.Constants;
 using static Grpc.Core.StatusCode;
 
 namespace KurrentDB.Client.Interceptors;
 
 class TypedExceptionInterceptor : Interceptor {
 	static readonly Dictionary<string, Func<RpcException, Exception>> DefaultExceptionMap = new() {
-		[Constants.Exceptions.AccessDenied] = ex => ex.ToAccessDeniedException(),
-		[Constants.Exceptions.NotLeader]    = ex => ex.ToNotLeaderException(),
+		[Exceptions.AccessDenied] = ex => ex.ToAccessDeniedException(),
+		[Exceptions.NotLeader]    = ex => ex.ToNotLeaderException(),
 	};
 
 	public TypedExceptionInterceptor(Dictionary<string, Func<RpcException, Exception>> customExceptionMap) {
@@ -102,7 +103,9 @@ static class RpcExceptionConversionExtensions {
 	public static Task<TResponse> Apply<TResponse>(this Task<TResponse> task, Func<RpcException, Exception> convertException) =>
 		task.ContinueWith(t => t.Exception?.InnerException is RpcException ex ? throw convertException(ex) : t.Result);
 
-	public static IClientStreamWriter<TRequest> Apply<TRequest>(this IClientStreamWriter<TRequest> writer, Func<RpcException, Exception> convertException) =>
+	public static IClientStreamWriter<TRequest> Apply<TRequest>(
+		this IClientStreamWriter<TRequest> writer, Func<RpcException, Exception> convertException
+	) =>
 		new ExceptionConverterStreamWriter<TRequest>(writer, convertException);
 
 	public static Task Apply(this Task task, Func<RpcException, Exception> convertException) =>
@@ -112,8 +115,8 @@ static class RpcExceptionConversionExtensions {
 		new(exception.Message, exception);
 
 	public static NotLeaderException ToNotLeaderException(this RpcException exception) {
-		var host = exception.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.LeaderEndpointHost)?.Value!;
-		var port = exception.Trailers.GetIntValueOrDefault(Constants.Exceptions.LeaderEndpointPort);
+		var host = exception.Trailers.FirstOrDefault(x => x.Key == Exceptions.LeaderEndpointHost)?.Value!;
+		var port = exception.Trailers.GetIntValueOrDefault(Exceptions.LeaderEndpointPort);
 		return new NotLeaderException(host, port, exception);
 	}
 
@@ -124,7 +127,7 @@ static class RpcExceptionConversionExtensions {
 		new(new Status(DeadlineExceeded, exception.Status.Detail, exception.Status.DebugException));
 
 	public static bool TryMapException(this RpcException exception, Dictionary<string, Func<RpcException, Exception>> map, out Exception createdException) {
-		if (exception.Trailers.TryGetValue(Constants.Exceptions.ExceptionKey, out var key) && map.TryGetValue(key!, out var factory)) {
+		if (exception.Trailers.TryGetValue(Exceptions.ExceptionKey, out var key) && map.TryGetValue(key!, out var factory)) {
 			createdException = factory.Invoke(exception);
 			return true;
 		}

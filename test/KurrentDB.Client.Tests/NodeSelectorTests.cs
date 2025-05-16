@@ -1,11 +1,10 @@
 ﻿using System.Net;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:Misc")]
 public class NodeSelectorTests {
-	static readonly ClusterMessages.VNodeState[] NotAllowedStates = {
+	static readonly ClusterMessages.VNodeState[] NotAllowedStates = [
 		ClusterMessages.VNodeState.Manager,
 		ClusterMessages.VNodeState.ShuttingDown,
 		ClusterMessages.VNodeState.Shutdown,
@@ -18,7 +17,7 @@ public class NodeSelectorTests {
 		ClusterMessages.VNodeState.PreReadOnlyReplica,
 		ClusterMessages.VNodeState.Clone,
 		ClusterMessages.VNodeState.DiscoverLeader
-	};
+	];
 
 	public static IEnumerable<object?[]> InvalidStatesCases() {
 		foreach (var state in NotAllowedStates) {
@@ -30,21 +29,21 @@ public class NodeSelectorTests {
 
 			var settings = new KurrentDBClientSettings {
 				ConnectivitySettings = {
-					DnsGossipSeeds = new[] { allowedNode, notAllowedNode },
+					DnsGossipSeeds = [allowedNode, notAllowedNode],
 					Insecure       = true
 				}
 			};
 
-			yield return new object?[] {
+			yield return [
 				new ClusterMessages.ClusterInfo(
-					new ClusterMessages.MemberInfo[] {
+					[
 						new(allowedNodeId, ClusterMessages.VNodeState.Leader, true, allowedNode),
 						new(notAllowedNodeId, state, true, notAllowedNode)
-					}
+					]
 				),
 				settings,
 				allowedNode
-			};
+			];
 		}
 	}
 
@@ -55,7 +54,7 @@ public class NodeSelectorTests {
 		KurrentDBClientSettings settings,
 		DnsEndPoint allowedNode
 	) {
-		var sut          = new NodeSelector(settings);
+		var sut          = new NodeSelector(settings.ConnectivitySettings.NodePreference);
 		var selectedNode = sut.SelectNode(clusterInfo);
 
 		Assert.Equal(allowedNode.Host, selectedNode.Host);
@@ -72,19 +71,19 @@ public class NodeSelectorTests {
 
 		var settings = new KurrentDBClientSettings {
 			ConnectivitySettings = {
-				DnsGossipSeeds = new[] { allowedNode, notAllowedNode },
+				DnsGossipSeeds = [allowedNode, notAllowedNode],
 				Insecure       = true
 			}
 		};
 
-		var sut = new NodeSelector(settings);
+		var sut = new NodeSelector(settings.ConnectivitySettings.NodePreference);
 
 		var selectedNode = sut.SelectNode(
 			new(
-				new ClusterMessages.MemberInfo[] {
+				[
 					new(allowedNodeId, ClusterMessages.VNodeState.Follower, true, allowedNode),
 					new(notAllowedNodeId, ClusterMessages.VNodeState.Leader, false, notAllowedNode)
-				}
+				]
 			)
 		);
 
@@ -104,15 +103,15 @@ public class NodeSelectorTests {
 			}
 		};
 
-		var sut = new NodeSelector(settings);
+		var sut = new NodeSelector(settings.ConnectivitySettings.NodePreference);
 		var selectedNode = sut.SelectNode(
 			new(
-				new ClusterMessages.MemberInfo[] {
+				[
 					new(Uuid.NewUuid(), ClusterMessages.VNodeState.Follower, false, new("follower1", 2113)),
 					new(Uuid.NewUuid(), ClusterMessages.VNodeState.Leader, true, new("leader", 2113)),
 					new(Uuid.NewUuid(), ClusterMessages.VNodeState.Follower, true, new("follower2", 2113)),
 					new(Uuid.NewUuid(), ClusterMessages.VNodeState.ReadOnlyReplica, true, new("readOnlyReplica", 2113))
-				}
+				]
 			)
 		);
 

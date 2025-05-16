@@ -3,6 +3,9 @@ using JetBrains.Annotations;
 
 namespace KurrentDB.Client.Model;
 
+/// <summary>
+/// Provides functionality to decode metadata from serialized formats.
+/// </summary>
 public interface IMetadataDecoder {
     Metadata Decode(ReadOnlyMemory<byte> bytes);
 }
@@ -90,11 +93,6 @@ public class Metadata : Dictionary<string, object?> {
         this[key] = value;
         return this;
     }
-
-    public Metadata WithSchemaInfo(SchemaInfo schemaInfo) {
-        schemaInfo.InjectIntoMetadata(this);
-        return this;
-    }
 }
 
 /// <summary>
@@ -109,7 +107,7 @@ public static class MetadataExtensions {
 	/// <param name="metadata">The metadata object.</param>
 	/// <param name="key">The key to retrieve.</param>
 	public static T? Get<T>(this Metadata metadata, string key) =>
-		metadata.TryGetValue(key, out var value) && value is T typedObject ? typedObject : default;
+		metadata.TryGet<T>(key, out var value)  ? value : default;
 
 	/// <summary>
 	/// Gets a typed value from the metadata, with automatic type conversion where appropriate.

@@ -38,18 +38,18 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 
 	public ILogger Log => Logger;
 
-	public ITestService          Service { get; }
+	public ITestService            Service { get; }
 	public KurrentDBFixtureOptions Options { get; }
-	public Faker                 Faker   { get; } = new Faker();
+	public Faker                   Faker   { get; } = new Faker();
 
 	public Version EventStoreVersion               { get; private set; } = null!;
 	public bool    EventStoreHasLastStreamPosition { get; private set; }
 
 	public KurrentDBClient                        Streams       { get; private set; } = null!;
-	public KurrentDBUserManagementClient          DBUsers         { get; private set; } = null!;
-	public KurrentDBProjectionManagementClient    DBProjections   { get; private set; } = null!;
+	public KurrentDBUserManagementClient          DBUsers       { get; private set; } = null!;
+	public KurrentDBProjectionManagementClient    DBProjections { get; private set; } = null!;
 	public KurrentDBPersistentSubscriptionsClient Subscriptions { get; private set; } = null!;
-	public KurrentDBOperationsClient              DBOperations    { get; private set; } = null!;
+	public KurrentDBOperationsClient              DBOperations  { get; private set; } = null!;
 
 	public bool SkipPsWarmUp { get; set; }
 
@@ -98,7 +98,7 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 					InitClient<KurrentDBClient>(async x => Streams = await Task.FromResult(x)),
 					InitClient<KurrentDBProjectionManagementClient>(
 						async x => DBProjections = await Task.FromResult(x),
-						Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None"
+						Options.Environment["KURRENTDB_RUN_PROJECTIONS"] != "None"
 					),
 					InitClient<KurrentDBPersistentSubscriptionsClient>(async x => Subscriptions = SkipPsWarmUp ? x : await Task.FromResult(x)),
 					InitClient<KurrentDBOperationsClient>(async x => DBOperations = await Task.FromResult(x))
@@ -127,7 +127,7 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 		}
 
 		static Version GetKurrentVersion() {
-			const string versionPrefix = "EventStoreDB version";
+			const string versionPrefix = "KurrentDB version";
 
 			using var cancellator = new CancellationTokenSource(FromSeconds(30));
 			using var eventstore = new Builder()
@@ -139,7 +139,7 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 
 			using var log = eventstore.Logs(true, cancellator.Token);
 			foreach (var line in log.ReadToEnd()) {
-				Logger.Information("EventStoreDB: {Line}", line);
+				Logger.Information("KurrentDB: {Line}", line);
 				if (line.StartsWith(versionPrefix) &&
 				    Version.TryParse(
 					    new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()),

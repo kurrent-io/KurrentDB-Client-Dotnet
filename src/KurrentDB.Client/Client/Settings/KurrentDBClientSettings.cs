@@ -4,40 +4,41 @@ using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
 using Grpc.Net.Client.Configuration;
 using KurrentDB.Client.Model;
-using KurrentDB.Client.Schema;
+using KurrentDB.Client.SchemaRegistry;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace KurrentDB.Client;
 
-/// <summary>
-/// Defines reconnection configuration for gRPC channel-level connections.
-/// </summary>
-public class KurrentDBChannelReconnectionSettings {
-	/// <summary>
-	/// Gets or sets the initial backoff delay for reconnection attempts.
-	/// </summary>
-	public TimeSpan InitialReconnectBackoff { get; set; } = TimeSpan.FromMilliseconds(500);
-
-	/// <summary>
-	/// Gets or sets the maximum backoff delay for reconnection attempts.
-	/// </summary>
-	public TimeSpan MaxReconnectBackoff { get; set; } = TimeSpan.FromSeconds(30);
-
-	/// <summary>
-	/// Gets or sets the minimum connection timeout.
-	/// </summary>
-	public TimeSpan MinConnectionTimeout { get; set; } = TimeSpan.FromSeconds(5);
-
-	/// <summary>
-	/// Gets or sets the maximum connection attempts. Set to null for unlimited attempts.
-	/// </summary>
-	public int? MaxAttempts { get; set; } = null; // Unlimited reconnection attempts for long-lived connections
-
-	/// <summary>
-	/// Default reconnection settings with the default values.
-	/// </summary>
-	public static KurrentDBChannelReconnectionSettings Default => new();
-}
+// /// <summary>
+// /// Defines reconnection configuration for gRPC channel-level connections.
+// /// </summary>
+// public class KurrentDBChannelReconnectionSettings {
+// 	/// <summary>
+// 	/// Gets or sets the initial backoff delay for reconnection attempts.
+// 	/// </summary>
+// 	public TimeSpan InitialReconnectBackoff { get; set; } = TimeSpan.FromMilliseconds(500);
+//
+// 	/// <summary>
+// 	/// Gets or sets the maximum backoff delay for reconnection attempts.
+// 	/// </summary>
+// 	public TimeSpan MaxReconnectBackoff { get; set; } = TimeSpan.FromSeconds(30);
+//
+// 	/// <summary>
+// 	/// Gets or sets the minimum connection timeout.
+// 	/// </summary>
+// 	public TimeSpan MinConnectionTimeout { get; set; } = TimeSpan.FromSeconds(5);
+//
+// 	/// <summary>
+// 	/// Gets or sets the maximum connection attempts. Set to null for unlimited attempts.
+// 	/// </summary>
+// 	public int? MaxAttempts { get; set; } = null; // Unlimited reconnection attempts for long-lived connections
+//
+// 	/// <summary>
+// 	/// Default reconnection settings with the default values.
+// 	/// </summary>
+// 	public static KurrentDBChannelReconnectionSettings Default => new();
+// }
 
 /// <summary>
 /// Defines retry configuration for gRPC operations.
@@ -87,16 +88,34 @@ public record KurrentDBClientRetrySettings {
 	/// Retry settings with retry disabled.
 	/// </summary>
 	public static KurrentDBClientRetrySettings NoRetry => new() { IsEnabled = false };
+
+	internal MethodConfig GetRetryMethodConfig() {
+		var retryPolicy = new RetryPolicy {
+			MaxAttempts       = MaxAttempts,
+			InitialBackoff    = InitialBackoff,
+			MaxBackoff        = MaxBackoff,
+			BackoffMultiplier = BackoffMultiplier
+		};
+
+		foreach (var statusCode in RetryableStatusCodes)
+			retryPolicy.RetryableStatusCodes.Add(statusCode);
+
+		return new() {
+			Names       = { MethodName.Default },
+			RetryPolicy = retryPolicy
+		};
+	}
 }
 
 /// <summary>
 /// Defines schema settings for a KurrentDB client, including naming strategies and auto-registration.
 /// </summary>
-public record KurrentDBClientSchemaSettings {
+public record KurrentDBClientSchemaRegistrySettings {
 	public ISchemaNameStrategy NameStrategy { get; init; } = new MessageSchemaNameStrategy();
 	public bool                AutoRegister { get; init; } = true;
+	public bool                Validate     { get; init; } = true;
 
-	public static KurrentDBClientSchemaSettings Default => new();
+	public static KurrentDBClientSchemaRegistrySettings Default => new();
 }
 
 /// <summary>
@@ -123,7 +142,7 @@ public class KurrentDBClientSettings {
 	/// <summary>
 	/// An optional <see cref="ILoggerFactory"/> to use.
 	/// </summary>
-	public ILoggerFactory? LoggerFactory { get; set; } // = NullLoggerFactory.Instance;
+	public ILoggerFactory? LoggerFactory { get; set; }
 
 	/// <summary>
 	/// The optional <see cref="ChannelCredentials"/> to use when creating the <see cref="ChannelBase"/>.
@@ -152,7 +171,7 @@ public class KurrentDBClientSettings {
 	/// </summary>
 	public TimeSpan? DefaultDeadline { get; set; } = TimeSpan.FromSeconds(10);
 
-	public KurrentDBClientSchemaSettings Schema { get; set; } = null!;
+	public KurrentDBClientSchemaRegistrySettings SchemaRegistry { get; set; } = null!;
 
 	public IMessageTypeResolver MessageTypeResolver { get; set; } = null!;
 
@@ -161,7 +180,7 @@ public class KurrentDBClientSettings {
 	/// <summary>
 	/// The retry settings to use for gRPC operations.
 	/// </summary>
-	public KurrentDBClientRetrySettings RetrySettings { get; set; } = KurrentDBClientRetrySettings.Default;
+	public KurrentDBClientRetrySettings RetrySettings { get; set; } = KurrentDBClientRetrySettings.NoRetry;
 
 	/// <summary>
 	/// Creates client settings from a connection string

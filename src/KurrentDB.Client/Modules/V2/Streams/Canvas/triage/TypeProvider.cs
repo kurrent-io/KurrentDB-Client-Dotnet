@@ -1,4 +1,4 @@
-namespace KurrentDB.Client.Schema.triage;
+namespace KurrentDB.Client.Canvas.triage;
 
 static class TypeProvider {
 	public static Type? GetTypeByFullName(string fullName) =>
@@ -6,7 +6,7 @@ static class TypeProvider {
 
 	static Type? GetFirstMatchingTypeFromCurrentDomainAssembly(string fullName) {
 		var firstNamespacePart = fullName.Split('.')[0];
-		
+
 		return AppDomain.CurrentDomain.GetAssemblies()
 			.OrderByDescending(assembly => assembly.FullName?.StartsWith(firstNamespacePart) == true)
 			.Select(assembly => assembly.GetType(fullName))

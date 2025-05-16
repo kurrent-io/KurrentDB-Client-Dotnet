@@ -5,7 +5,8 @@ using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using ReadReq = EventStore.Client.Streams.ReadReq;
+
+using static EventStore.Client.Streams.ReadReq.Types.Options.Types;
 
 namespace KurrentDB.Client;
 
@@ -68,13 +69,10 @@ public sealed partial class KurrentDBClient : KurrentDBClientBase {
 	/// </summary>
 	/// <param name="settings"></param>
 	public KurrentDBClient(KurrentDBClientSettings? settings = null) : base(settings, ExceptionMap) {
-		_log                 = Settings.LoggerFactory?.CreateLogger<KurrentDBClient>() ?? new NullLogger<KurrentDBClient>();
+		_log                 = Settings.LoggerFactory?.CreateLogger<KurrentDBClient>() ?? NullLogger<KurrentDBClient>.Instance;
 		_disposedTokenSource = new CancellationTokenSource();
 		_batchAppenderLazy   = new Lazy<StreamAppender>(CreateStreamAppender);
-		LegacyMapper         = new LegacyProtocolMapper(SerializationManager, Settings.MetadataDecoder);
 	}
-
-	internal LegacyProtocolMapper LegacyMapper { get; }
 
 	void SwapStreamAppender(Exception ex) =>
 		Interlocked.Exchange(ref _batchAppenderLazy, new Lazy<StreamAppender>(CreateStreamAppender)).Value.Dispose();
@@ -82,54 +80,37 @@ public sealed partial class KurrentDBClient : KurrentDBClientBase {
 	// todo: might be nice to have two different kinds of appenders and we decide which to instantiate according to the server caps.
 	StreamAppender CreateStreamAppender() => new StreamAppender(
 		Settings,
-		GetChannelInfo(_disposedTokenSource.Token),
+		//GetChannelInfo(_disposedTokenSource.Token),
+		new(ChannelInfo),
 		_disposedTokenSource.Token,
 		SwapStreamAppender
 	);
 
-	static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(IEventFilter? filter, uint checkpointInterval = 0) {
+	static FilterOptions? GetFilterOptions(IEventFilter? filter, uint checkpointInterval = 0) {
 		if (filter == null
 		 || filter.Equals(StreamFilter.None)
 		 || filter.Equals(EventTypeFilter.None))
 			return null;
 
 		var options = filter switch {
-			StreamFilter => new ReadReq.Types.Options.Types.FilterOptions {
+			StreamFilter => new FilterOptions {
 				StreamIdentifier = (filter.Prefixes, filter.Regex) switch {
-					(_, _)
-						when (filter.Prefixes?.Length ?? 0) == 0 &&
-						     filter.Regex != RegularFilterExpression.None =>
-						new ReadReq.Types.Options.Types.FilterOptions.Types.Expression
-							{ Regex = filter.Regex },
-					(_, _)
-						when (filter.Prefixes?.Length ?? 0) != 0 &&
-						     filter.Regex == RegularFilterExpression.None =>
-						new ReadReq.Types.Options.Types.FilterOptions.Types.Expression {
-							Prefix = { Array.ConvertAll(filter.Prefixes!, e => e.ToString()) }
-						},
+					(_, _) when (filter.Prefixes?.Length ?? 0) == 0 && filter.Regex != RegularFilterExpression.None => new FilterOptions.Types.Expression { Regex = filter.Regex },
+					(_, _) when (filter.Prefixes?.Length ?? 0) != 0 && filter.Regex == RegularFilterExpression.None => new FilterOptions.Types.Expression { Prefix = { Array.ConvertAll(filter.Prefixes!, e => e.ToString()) } },
 					_ => throw new InvalidOperationException()
 				}
 			},
-			EventTypeFilter => new ReadReq.Types.Options.Types.FilterOptions {
+			EventTypeFilter => new FilterOptions {
 				EventType = (filter.Prefixes, filter.Regex) switch {
-					(_, _)
-						when (filter.Prefixes?.Length ?? 0) == 0 &&
-						     filter.Regex != RegularFilterExpression.None =>
-						new ReadReq.Types.Options.Types.FilterOptions.Types.Expression
-							{ Regex = filter.Regex },
-					(_, _)
-						when (filter.Prefixes?.Length ?? 0) != 0 &&
-						     filter.Regex == RegularFilterExpression.None =>
-						new ReadReq.Types.Options.Types.FilterOptions.Types.Expression {
-							Prefix = { Array.ConvertAll(filter.Prefixes!, e => e.ToString()) }
-						},
+					(_, _) when (filter.Prefixes?.Length ?? 0) == 0 && filter.Regex != RegularFilterExpression.None => new FilterOptions.Types.Expression { Regex = filter.Regex },
+					(_, _) when (filter.Prefixes?.Length ?? 0) != 0 && filter.Regex == RegularFilterExpression.None => new FilterOptions.Types.Expression { Prefix = { Array.ConvertAll(filter.Prefixes!, e => e.ToString()) } },
 					_ => throw new InvalidOperationException()
 				}
 			},
 			_ => null
 		};
 
-		if (options == null)
+		if (options is null)
 			return null;
 
 		if (filter.MaxSearchWindow.HasValue)
@@ -142,27 +123,17 @@ public sealed partial class KurrentDBClient : KurrentDBClientBase {
 		return options;
 	}
 
-	static ReadReq.Types.Options.Types.FilterOptions? GetFilterOptions(SubscriptionFilterOptions? filterOptions) =>
+	static FilterOptions? GetFilterOptions(SubscriptionFilterOptions? filterOptions) =>
 		filterOptions == null ? null : GetFilterOptions(filterOptions.Filter, filterOptions.CheckpointInterval);
 
 	static InvalidOperationException InvalidOption<T>(T option) where T : Enum =>
 		new InvalidOperationException($"The {typeof(T).Name} {option:x} was not valid.");
 
-	/// <inheritdoc />
-	public override void Dispose() {
+	protected override async ValueTask DisposeAsyncCore() {
 		if (_batchAppenderLazy.IsValueCreated)
 			_batchAppenderLazy.Value.Dispose();
 
 		_disposedTokenSource.Dispose();
-		base.Dispose();
-	}
-
-	/// <inheritdoc />
-	public override async ValueTask DisposeAsync() {
-		if (_batchAppenderLazy.IsValueCreated)
-			_batchAppenderLazy.Value.Dispose();
-
-		_disposedTokenSource.Dispose();
-		await base.DisposeAsync().ConfigureAwait(false);
+		await DisposeAsync().ConfigureAwait(false);
 	}
 }

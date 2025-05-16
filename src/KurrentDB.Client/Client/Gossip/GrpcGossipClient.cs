@@ -5,25 +5,24 @@ using Grpc.Core;
 
 namespace KurrentDB.Client;
 
-class GrpcGossipClient : IGossipClient {
-	readonly KurrentDBClientSettings _settings;
-
-	public GrpcGossipClient(KurrentDBClientSettings settings) {
-		_settings = settings;
-	}
-
+class GrpcGossipClient(KurrentDBClientSettings settings) : IGossipClient {
 	public async ValueTask<ClusterMessages.ClusterInfo> GetAsync(ChannelBase channel, CancellationToken ct) {
 		var client = new Gossip.GossipClient(channel);
-		using var call = client.ReadAsync(
-			new Empty(),
-			KurrentDBCallOptions.CreateNonStreaming(_settings, ct));
+
+		using var call = client.ReadAsync(new Empty(), settings.CreateNonStreaming(ct));
+
 		var result = await call.ResponseAsync.ConfigureAwait(false);
 
-		return new(result.Members.Select(x =>
-			new ClusterMessages.MemberInfo(
-				Uuid.FromDto(x.InstanceId),
-				(ClusterMessages.VNodeState)x.State,
-				x.IsAlive,
-				new DnsEndPoint(x.HttpEndPoint.Address, (int)x.HttpEndPoint.Port))).ToArray());
+		return new(
+			result.Members
+				.Select(x =>
+					new ClusterMessages.MemberInfo(
+						Uuid.FromDto(x.InstanceId),
+						(ClusterMessages.VNodeState)x.State,
+						x.IsAlive,
+						new DnsEndPoint(x.HttpEndPoint.Address, (int)x.HttpEndPoint.Port)
+					)
+				).ToArray()
+		);
 	}
 }

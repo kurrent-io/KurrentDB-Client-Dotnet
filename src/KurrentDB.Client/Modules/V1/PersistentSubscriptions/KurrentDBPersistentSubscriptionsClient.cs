@@ -16,8 +16,7 @@ public sealed partial class KurrentDBPersistentSubscriptionsClient : KurrentDBCl
 		AllowSynchronousContinuations = true
 	};
 
-	readonly ILogger _log;
-
+	readonly ILogger            _log;
 	readonly Lazy<HttpFallback> _httpFallback;
 
 	/// <summary>
@@ -48,8 +47,7 @@ public sealed partial class KurrentDBPersistentSubscriptionsClient : KurrentDBCl
 	Task<T> HttpGet<T>(
 		string path, Action onNotFound, ChannelInfo channelInfo,
 		TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken
-	) => _httpFallback.Value
-			.HttpGetAsync<T>(path, channelInfo, deadline, userCredentials, onNotFound, cancellationToken);
+	) => _httpFallback.Value.HttpGetAsync<T>(path, channelInfo, deadline, userCredentials, onNotFound, cancellationToken);
 
 	/// Executes an HTTP Post request based on the client settings.
 	Task HttpPost(
@@ -57,13 +55,8 @@ public sealed partial class KurrentDBPersistentSubscriptionsClient : KurrentDBCl
 		TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken
 	) => _httpFallback.Value.HttpPostAsync(path, query, channelInfo, deadline, userCredentials, onNotFound, cancellationToken);
 
-	public override async ValueTask DisposeAsync() {
-		await base.DisposeAsync().ConfigureAwait(false);
-		if (_httpFallback.IsValueCreated) _httpFallback.Value.Dispose();
-	}
-
-	public override void Dispose() {
-		base.Dispose();
+	protected override async ValueTask DisposeAsyncCore() {
+		await DisposeAsync().ConfigureAwait(false);
 		if (_httpFallback.IsValueCreated) _httpFallback.Value.Dispose();
 	}
 

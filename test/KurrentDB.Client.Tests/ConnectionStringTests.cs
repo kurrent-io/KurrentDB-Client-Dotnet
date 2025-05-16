@@ -1,11 +1,7 @@
 using System.Net;
-using System.Net.Http;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using AutoFixture;
-using Grpc.Net.Client;
-using KurrentDB.Client;
-using HashCode = KurrentDB.Client.HashCode;
 
 namespace KurrentDB.Client.Tests;
 
@@ -62,15 +58,15 @@ public class ConnectionStringTests {
 					Scheme = settings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme
 				}.Uri;
 
-			yield return new object?[] {
+			yield return [
 				GetConnectionString(settings),
 				settings
-			};
+			];
 
-			yield return new object?[] {
+			yield return [
 				GetConnectionString(settings, MockingTone),
 				settings
-			};
+			];
 
 			var ipGossipSettings = new KurrentDBClientSettings {
 				ConnectionName       = fixture.Create<string>(),
@@ -85,15 +81,15 @@ public class ConnectionStringTests {
 
 			ipGossipSettings.ConnectivitySettings.DnsGossipSeeds = null;
 
-			yield return new object?[] {
+			yield return [
 				GetConnectionString(ipGossipSettings),
 				ipGossipSettings
-			};
+			];
 
-			yield return new object?[] {
+			yield return [
 				GetConnectionString(ipGossipSettings, MockingTone),
 				ipGossipSettings
-			};
+			];
 
 			var singleNodeSettings = new KurrentDBClientSettings {
 				ConnectionName       = fixture.Create<string>(),
@@ -107,15 +103,15 @@ public class ConnectionStringTests {
 				Scheme = singleNodeSettings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme
 			}.Uri;
 
-			yield return new object?[] {
+			yield return [
 				GetConnectionString(singleNodeSettings),
 				singleNodeSettings
-			};
+			];
 
-			yield return new object?[] {
+			yield return [
 				GetConnectionString(singleNodeSettings, MockingTone),
 				singleNodeSettings
-			};
+			];
 		}
 
 		static string MockingTone(string key) => new(key.Select((c, i) => i % 2 == 0 ? char.ToUpper(c) : char.ToLower(c)).ToArray());
@@ -175,8 +171,8 @@ public class ConnectionStringTests {
 #endif
 
 	public static IEnumerable<object?[]> InvalidTlsCertificates() {
-		yield return new object?[] { Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "path", "not", "found") };
-		yield return new object?[] { Assembly.GetExecutingAssembly().Location };
+		yield return [Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "path", "not", "found")];
+		yield return [Assembly.GetExecutingAssembly().Location];
 	}
 
 	[Theory]

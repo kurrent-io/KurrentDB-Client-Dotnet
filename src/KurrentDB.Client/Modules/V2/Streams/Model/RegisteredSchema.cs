@@ -9,6 +9,4 @@ public record RegisteredSchema {
     public string           Definition      { get; init; } = null!;
     public int              VersionNumber   { get; init; }
     public DateTimeOffset   CreatedAt       { get; init; }
-
-    public SchemaInfo ToSchemaInfo() => new(SchemaName, DataFormat);
 }

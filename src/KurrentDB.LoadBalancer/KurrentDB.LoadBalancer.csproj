@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+        <LangVersion>preview</LangVersion>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>KurrentDB.LoadBalancer</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" Version="3.29.1"/>
+        <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
+        <PackageReference Include="Grpc.Tools" Version="2.68.1">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- v1 -->
+        <Protobuf
+                ProtoRoot="proto/kurrentdb/protocol/v1"
+                Include="proto/kurrentdb/protocol/v1/**/*.proto"
+                Link="proto\kurrentdb\protocol\v1\%(RecursiveDir)/%(FileName)%(Extension)"
+                GrpcServices="Client"
+                Access="internal"
+        />
+
+        <!-- v2 -->
+        <Protobuf
+                ProtoRoot="proto/kurrentdb/protocol/v2"
+                Include="proto/kurrentdb/protocol/v2/**/*.proto"
+                Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
+                GrpcServices="Client"
+                Access="internal"
+        />
+    </ItemGroup>
+</Project>

@@ -19,14 +19,14 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, SubscribeToAl
 		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
 
 		foreach (var evt in seedEvents.Take(pageSize))
-			await Fixture.Streams.AppendToStreamAsync($"stream-{evt.EventId.ToGuid():N}", StreamState.NoStream, new[] { evt });
+			await Fixture.Streams.AppendToStreamAsync($"stream-{evt.EventId.ToGuid():N}", StreamState.NoStream, [evt]);
 
 		using var subscription = await Fixture.Streams
 			.SubscribeToAllAsync(FromAll.Start, OnReceived, false, OnDropped)
 			.WithTimeout();
 
 		foreach (var evt in seedEvents.Skip(pageSize))
-			await Fixture.Streams.AppendToStreamAsync($"stream-{evt.EventId.ToGuid():N}", StreamState.NoStream, new[] { evt });
+			await Fixture.Streams.AppendToStreamAsync($"stream-{evt.EventId.ToGuid():N}", StreamState.NoStream, [evt]);
 
 		await receivedAllEvents.Task.WithTimeout();
 
@@ -71,7 +71,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, SubscribeToAl
 
 		// add the events we want to receive after we start the subscription
 		foreach (var evt in seedEvents)
-			await Fixture.Streams.AppendToStreamAsync($"stream-{evt.EventId.ToGuid():N}", StreamState.NoStream, new[] { evt });
+			await Fixture.Streams.AppendToStreamAsync($"stream-{evt.EventId.ToGuid():N}", StreamState.NoStream, [evt]);
 
 		await receivedAllEvents.Task.WithTimeout();
 
@@ -114,7 +114,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, SubscribeToAl
 
 		IWriteResult writeResult = new SuccessResult();
 		foreach (var evt in seedEvents.Take(pageSize))
-			writeResult = await Fixture.Streams.AppendToStreamAsync($"stream-{evt.EventId.ToGuid():N}", StreamState.NoStream, new[] { evt });
+			writeResult = await Fixture.Streams.AppendToStreamAsync($"stream-{evt.EventId.ToGuid():N}", StreamState.NoStream, [evt]);
 
 		var position = FromAll.After(writeResult.LogPosition);
 
@@ -123,7 +123,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, SubscribeToAl
 			.WithTimeout();
 
 		foreach (var evt in seedEvents.Skip(pageSize))
-			await Fixture.Streams.AppendToStreamAsync($"stream-{evt.EventId.ToGuid():N}", StreamState.NoStream, new[] { evt });
+			await Fixture.Streams.AppendToStreamAsync($"stream-{evt.EventId.ToGuid():N}", StreamState.NoStream, [evt]);
 
 		await receivedAllEvents.Task.WithTimeout();
 
@@ -232,7 +232,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, SubscribeToAl
 
 		// add some of the events we want to see before we start the subscription
 		foreach (var evt in seedEvents.Take(pageSize))
-			await Fixture.Streams.AppendToStreamAsync($"{streamPrefix}-{evt.EventId.ToGuid():N}", StreamState.NoStream, new[] { evt });
+			await Fixture.Streams.AppendToStreamAsync($"{streamPrefix}-{evt.EventId.ToGuid():N}", StreamState.NoStream, [evt]);
 
 		var filterOptions = new SubscriptionFilterOptions(filter.Create(streamPrefix), 1, CheckpointReached);
 
@@ -242,7 +242,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, SubscribeToAl
 
 		// add some of the events we want to see after we start the subscription
 		foreach (var evt in seedEvents.Skip(pageSize))
-			await Fixture.Streams.AppendToStreamAsync($"{streamPrefix}-{evt.EventId.ToGuid():N}", StreamState.NoStream, new[] { evt });
+			await Fixture.Streams.AppendToStreamAsync($"{streamPrefix}-{evt.EventId.ToGuid():N}", StreamState.NoStream, [evt]);
 
 		// wait until all events were received and at least one checkpoint was reached?
 		await receivedAllEvents.Task.WithTimeout();
@@ -331,7 +331,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, SubscribeToAl
 
 		// add some of the events that are a match to the filter but will not be received
 		foreach (var evt in seedEvents.Take(pageSize))
-			await Fixture.Streams.AppendToStreamAsync($"{streamPrefix}-{evt.EventId.ToGuid():N}", StreamState.NoStream, new[] { evt });
+			await Fixture.Streams.AppendToStreamAsync($"{streamPrefix}-{evt.EventId.ToGuid():N}", StreamState.NoStream, [evt]);
 
 		var filterOptions = new SubscriptionFilterOptions(filter.Create(streamPrefix), 1, CheckpointReached);
 
@@ -341,7 +341,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, SubscribeToAl
 
 		// add the events we want to receive after we start the subscription
 		foreach (var evt in seedEvents.Skip(pageSize))
-			await Fixture.Streams.AppendToStreamAsync($"{streamPrefix}-{evt.EventId.ToGuid():N}", StreamState.NoStream, new[] { evt });
+			await Fixture.Streams.AppendToStreamAsync($"{streamPrefix}-{evt.EventId.ToGuid():N}", StreamState.NoStream, [evt]);
 
 		// wait until all events were received and at least one checkpoint was reached?
 		await receivedAllEvents.Task.WithTimeout();
@@ -431,7 +431,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, SubscribeToAl
 		// add some of the events that are a match to the filter but will not be received
 		IWriteResult writeResult = new SuccessResult();
 		foreach (var evt in seedEvents.Take(pageSize))
-			writeResult = await Fixture.Streams.AppendToStreamAsync($"{streamPrefix}-{evt.EventId.ToGuid():N}", StreamState.NoStream, new[] { evt });
+			writeResult = await Fixture.Streams.AppendToStreamAsync($"{streamPrefix}-{evt.EventId.ToGuid():N}", StreamState.NoStream, [evt]);
 
 		var position = FromAll.After(writeResult.LogPosition);
 
@@ -443,7 +443,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, SubscribeToAl
 
 		// add the events we want to receive after we start the subscription
 		foreach (var evt in seedEvents.Skip(pageSize))
-			await Fixture.Streams.AppendToStreamAsync($"{streamPrefix}-{evt.EventId.ToGuid():N}", StreamState.NoStream, new[] { evt });
+			await Fixture.Streams.AppendToStreamAsync($"{streamPrefix}-{evt.EventId.ToGuid():N}", StreamState.NoStream, [evt]);
 
 		// wait until all events were received and at least one checkpoint was reached?
 		await receivedAllEvents.Task.WithTimeout();

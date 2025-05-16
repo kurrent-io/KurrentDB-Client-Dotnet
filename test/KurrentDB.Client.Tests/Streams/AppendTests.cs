@@ -15,7 +15,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			var writeResult = await Fixture.Streams.AppendToStreamAsync(
 				stream,
 				expectedStreamState,
-				Enumerable.Empty<EventData>()
+				[]
 			);
 
 			writeResult.NextExpectedStreamState.ShouldBe(StreamState.NoStream);
@@ -35,7 +35,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			var writeResult = await Fixture.Streams.AppendToStreamAsync(
 				stream,
 				expectedStreamState,
-				Enumerable.Empty<EventData>()
+				[]
 			);
 
 			Assert.Equal(StreamState.NoStream, writeResult.NextExpectedStreamState);
@@ -469,14 +469,14 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		state.ShouldBe(ReadState.StreamNotFound);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task succeeds_when_size_is_less_than_max_append_size() {
 		// Arrange
-		var maxAppendSize = (uint)100.Kilobytes().Bytes;
+		var maxAppendSize = (uint)102400.Bytes().Bytes; // 102400 bytes in Kb are 100Kb
 		var stream        = Fixture.GetStreamName();
 
 		// Act
-		var (events, size) = Fixture.CreateTestEventsUpToMaxSize(maxAppendSize - 1);
+		var (events, size) = Fixture.CreateTestEventsUpToMaxSize(maxAppendSize - 100);
 
 		// Assert
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);

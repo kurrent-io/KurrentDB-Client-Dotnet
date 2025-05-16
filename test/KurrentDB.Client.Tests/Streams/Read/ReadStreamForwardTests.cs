@@ -1,5 +1,3 @@
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:Streams")]

@@ -9,6 +9,7 @@ using KurrentDB.Diagnostics;
 using KurrentDB.Diagnostics.Telemetry;
 using KurrentDB.Diagnostics.Tracing;
 using KurrentDB.Client.Diagnostics;
+using KurrentDB.Protocol.Streams.V2;
 
 namespace KurrentDB.Client;
 
@@ -38,8 +39,7 @@ public partial class KurrentDBClient {
 
 		_log.LogDebug("Append to stream - {streamName}@{expectedState}.", streamName, expectedState);
 
-		var task =
-			userCredentials == null && await BatchAppender.IsUsable().ConfigureAwait(false)
+		var task = userCredentials == null && await BatchAppender.IsUsable().ConfigureAwait(false)
 				? BatchAppender.Append(streamName, expectedState, eventData, deadline, cancellationToken)
 				: AppendToStreamInternal(
 					await GetChannelInfo(cancellationToken).ConfigureAwait(false),

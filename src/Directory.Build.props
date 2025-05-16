@@ -8,6 +8,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
+        <ProductName>KurrentDB .NET Client</ProductName>
         <PackageIcon>ouro.png</PackageIcon>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageProjectUrl>https://kurrent.io</PackageProjectUrl>

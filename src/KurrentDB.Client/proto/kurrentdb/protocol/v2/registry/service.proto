@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package kurrentdb.protocol.registry.v2;
+package kurrentdb.protocol.v2;
 
 option csharp_namespace    = "KurrentDB.Protocol.Registry.V2";
 option java_package        = "io.kurrentdb.protocol.registry.v2";

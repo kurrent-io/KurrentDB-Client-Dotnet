@@ -58,5 +58,8 @@ static class Constants {
 
 		public const string ConnectionName = "connection-name";
 		public const string RequiresLeader = "requires-leader";
+
+		public const string ClientName    = "client-name";
+		public const string ClientVersion = "client-version";
 	}
 }

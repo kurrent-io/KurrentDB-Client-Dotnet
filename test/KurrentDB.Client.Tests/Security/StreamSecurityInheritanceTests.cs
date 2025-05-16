@@ -1,6 +1,4 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
-using KurrentDB.Client.Tests;
 
 namespace KurrentDB.Client.Tests;
 
@@ -125,14 +123,14 @@ public class StreamSecurityInheritanceTests(ITestOutputHelper output, StreamSecu
 			await Streams.SetStreamMetadataAsync(
 				"user-w-multiple",
 				StreamState.NoStream,
-				new(acl: new(writeRoles: new[] { "user1", "user2" })),
+				new(acl: new(writeRoles: ["user1", "user2"])),
 				userCredentials: TestCredentials.TestAdmin
 			);
 
 			await Streams.SetStreamMetadataAsync(
 				"user-w-restricted",
 				StreamState.NoStream,
-				new(acl: new(writeRoles: Array.Empty<string>())),
+				new(acl: new(writeRoles: [])),
 				userCredentials: TestCredentials.TestAdmin
 			);
 
@@ -167,14 +165,14 @@ public class StreamSecurityInheritanceTests(ITestOutputHelper output, StreamSecu
 			await Streams.SetStreamMetadataAsync(
 				"$sys-w-multiple",
 				StreamState.NoStream,
-				new(acl: new(writeRoles: new[] { "user1", "user2" })),
+				new(acl: new(writeRoles: ["user1", "user2"])),
 				userCredentials: TestCredentials.TestAdmin
 			);
 
 			await Streams.SetStreamMetadataAsync(
 				"$sys-w-restricted",
 				StreamState.NoStream,
-				new(acl: new(writeRoles: Array.Empty<string>())),
+				new(acl: new(writeRoles: [])),
 				userCredentials: TestCredentials.TestAdmin
 			);
 

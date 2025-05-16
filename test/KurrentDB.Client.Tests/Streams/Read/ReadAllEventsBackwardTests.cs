@@ -1,4 +1,3 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 using Grpc.Core;
 

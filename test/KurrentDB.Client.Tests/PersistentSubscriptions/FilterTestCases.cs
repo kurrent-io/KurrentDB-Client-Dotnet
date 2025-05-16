@@ -1,5 +1,4 @@
 using System.Reflection;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 

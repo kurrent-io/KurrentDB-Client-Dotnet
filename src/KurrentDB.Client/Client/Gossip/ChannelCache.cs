@@ -1,42 +1,31 @@
 ﻿using System.Net;
-using TChannel = Grpc.Net.Client.GrpcChannel;
+using Grpc.Core;
+using Grpc.Net.Client;
 
 namespace KurrentDB.Client;
 
 // Maintains Channels keyed by DnsEndPoint so the channels can be reused.
 // Deals with the disposal difference between grpc.net and grpc.core
 // Thread safe.
-class ChannelCache :
-	IAsyncDisposable {
-	readonly KurrentDBClientSettings           _settings;
-	readonly Random                            _random;
-	readonly Dictionary<DnsEndPoint, TChannel> _channels;
-	readonly object                            _lock = new();
-	bool                                       _disposed;
+class ChannelCache(KurrentDBClientSettings settings) : IAsyncDisposable {
+	readonly Random                               _random   = new(0);
+	readonly Dictionary<DnsEndPoint, GrpcChannel> _channels = new(DnsEndPointEqualityComparer.Instance);
+	readonly object                               _lock     = new();
+	bool                                          _disposed;
 
-	public ChannelCache(KurrentDBClientSettings settings) {
-		_settings = settings;
-		_random   = new Random(0);
-		_channels = new Dictionary<DnsEndPoint, TChannel>(
-			DnsEndPointEqualityComparer.Instance);
-	}
-
-	public TChannel GetChannelInfo(DnsEndPoint endPoint) {
+	public GrpcChannel CreateChannel(DnsEndPoint endPoint) {
 		lock (_lock) {
 			ThrowIfDisposed();
 
-			if (!_channels.TryGetValue(endPoint, out var channel)) {
-				channel = ChannelFactory.CreateChannel(
-					settings: _settings, 
-					endPoint: endPoint);
-				_channels[endPoint] = channel;
-			}
+			if (_channels.TryGetValue(endPoint, out var channel)) return channel;
 
-			return channel;
+			channel = settings.CreateChannel(endPoint);
+
+			return _channels[endPoint] = channel;
 		}
 	}
 
-	public KeyValuePair<DnsEndPoint, TChannel>[] GetRandomOrderSnapshot() {
+	public KeyValuePair<DnsEndPoint, GrpcChannel>[] GetRandomOrderSnapshot() {
 		lock (_lock) {
 			ThrowIfDisposed();
 
@@ -47,58 +36,43 @@ class ChannelCache :
 	}
 
 	// Update the cache to contain channels for exactly these endpoints
-	public void UpdateCache(IEnumerable<DnsEndPoint> endPoints) {
+	public void UpdateCache(DnsEndPoint[] endPoints) {
 		lock (_lock) {
 			ThrowIfDisposed();
 
-			// remove
-			var endPointsToDiscard = _channels.Keys
-				.Except(endPoints, DnsEndPointEqualityComparer.Instance)
-				.ToArray();
+			// Create a HashSet for efficient lookups
+			var endPointSet       = new HashSet<DnsEndPoint>(endPoints, DnsEndPointEqualityComparer.Instance);
+			var channelsToDispose = new List<GrpcChannel>();
 
-			var channelsToDispose = new List<TChannel>(endPointsToDiscard.Length);
-
-			foreach (var endPoint in endPointsToDiscard) {
-				if (!_channels.TryGetValue(endPoint, out var channel))
-					continue;
-
-				_channels.Remove(endPoint);
-				channelsToDispose.Add(channel);
+			// Remove entries not in the new set (single pass)
+			foreach (var kvp in _channels.Where(kvp => !endPointSet.Contains(kvp.Key))) {
+				_channels.Remove(kvp.Key);
+				channelsToDispose.Add(kvp.Value);
 			}
 
-			_ = DisposeChannelsAsync(channelsToDispose);
+			// Dispose removed channels
+			if (channelsToDispose.Count > 0)
+				_ = DisposeChannelsAsync(channelsToDispose);
 
-			// add
+			// Add new endpoints (avoiding duplication)
 			foreach (var endPoint in endPoints) {
-				GetChannelInfo(endPoint);
+				if (!_channels.ContainsKey(endPoint))
+					CreateChannel(endPoint);
 			}
-		}
-	}
-
-	public void Dispose() {
-		lock (_lock) {
-			if (_disposed)
-				return;
-
-			_disposed = true;
-
-			foreach (var channel in _channels.Values) {
-				channel.Dispose();
-			}
-
-			_channels.Clear();
 		}
 	}
 
 	public async ValueTask DisposeAsync() {
-		var channelsToDispose = Array.Empty<TChannel>();
+		GrpcChannel[] channelsToDispose;
 
 		lock (_lock) {
 			if (_disposed)
 				return;
+
 			_disposed = true;
 
 			channelsToDispose = _channels.Values.ToArray();
+
 			_channels.Clear();
 		}
 
@@ -107,15 +81,18 @@ class ChannelCache :
 
 	void ThrowIfDisposed() {
 		lock (_lock) {
-			if (_disposed) {
+			if (_disposed)
 				throw new ObjectDisposedException(GetType().ToString());
-			}
 		}
 	}
 
-	static async Task DisposeChannelsAsync(IEnumerable<TChannel> channels) {
-		foreach (var channel in channels)
-			await channel.DisposeAsync().ConfigureAwait(false);
+	static Task DisposeChannelsAsync(IEnumerable<GrpcChannel> channels) {
+		return Task.WhenAll(channels.Select(channel => DisposeAsync(channel).AsTask()));
+
+		static async ValueTask DisposeAsync( ChannelBase channel) {
+			await channel.ShutdownAsync().ConfigureAwait(false);
+			(channel as IDisposable)?.Dispose();
+		}
 	}
 
 	class DnsEndPointEqualityComparer : IEqualityComparer<DnsEndPoint> {

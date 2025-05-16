@@ -1,6 +1,6 @@
 // ReSharper disable InconsistentNaming
 
-using KurrentDB.Client;
+using Grpc.Core;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
@@ -33,7 +33,7 @@ public class SubscribeToAllGetInfoObsoleteTests(SubscribeToAllGetInfoObsoleteTes
 		);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task throws_with_no_credentials() {
 		var group = $"NonExisting-{fixture.GetGroupName()}";
 

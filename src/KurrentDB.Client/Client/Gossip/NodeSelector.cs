@@ -5,8 +5,8 @@ namespace KurrentDB.Client;
 // Selects a node to connect to from a ClusterInfo, based on the node preference.
 // Deals with endpoints, no grpc here.
 // Thread safe.
-class NodeSelector {
-	static readonly ClusterMessages.VNodeState[] _notAllowedStates = [
+class NodeSelector(NodePreference nodePreference) {
+	static readonly ClusterMessages.VNodeState[] NotAllowedStates = [
 		ClusterMessages.VNodeState.Manager,
 		ClusterMessages.VNodeState.ShuttingDown,
 		ClusterMessages.VNodeState.Shutdown,
@@ -21,23 +21,18 @@ class NodeSelector {
 		ClusterMessages.VNodeState.DiscoverLeader
 	];
 
-	readonly Random                                 _random;
-	readonly IComparer<ClusterMessages.VNodeState>? _nodeStateComparer;
+	readonly Random _random = new(0);
 
-	public NodeSelector(KurrentDBClientSettings settings) {
-		_random = new Random(0);
-		_nodeStateComparer = settings.ConnectivitySettings.NodePreference switch {
-			NodePreference.Leader          => NodePreferenceComparers.Leader,
-			NodePreference.Follower        => NodePreferenceComparers.Follower,
-			NodePreference.ReadOnlyReplica => NodePreferenceComparers.ReadOnlyReplica,
-			_                              => NodePreferenceComparers.None
-		};
-	}
+	readonly IComparer<ClusterMessages.VNodeState>? _nodeStateComparer = nodePreference switch {
+		NodePreference.Leader          => NodePreferenceComparers.Leader,
+		NodePreference.Follower        => NodePreferenceComparers.Follower,
+		NodePreference.ReadOnlyReplica => NodePreferenceComparers.ReadOnlyReplica,
+		_                              => NodePreferenceComparers.None
+	};
 
 	public DnsEndPoint SelectNode(ClusterMessages.ClusterInfo clusterInfo) {
-		if (clusterInfo.Members.Length == 0) {
+		if (clusterInfo.Members.Length == 0)
 			throw new Exception("No nodes in cluster info.");
-		}
 
 		lock (_random) {
 			var node = clusterInfo.Members
@@ -46,15 +41,13 @@ class NodeSelector {
 				.ThenBy(_ => _random.Next())
 				.FirstOrDefault();
 
-			if (node is null) {
+			if (node is null)
 				throw new Exception("No nodes are in a connectable state.");
-			}
 
 			return node.EndPoint;
 		}
-	}
 
-	static bool IsConnectable(ClusterMessages.MemberInfo node) =>
-		node.IsAlive &&
-		!_notAllowedStates.Contains(node.State);
+		static bool IsConnectable(ClusterMessages.MemberInfo node) =>
+			node.IsAlive && !NotAllowedStates.Contains(node.State);
+	}
 }

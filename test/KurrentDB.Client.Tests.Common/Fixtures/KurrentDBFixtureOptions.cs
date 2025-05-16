@@ -15,8 +15,8 @@ public record KurrentDBFixtureOptions(
 		this with {
 			Environment = Environment.With(
 				x => {
-					x["EVENTSTORE_START_STANDARD_PROJECTIONS"] = runProjections.ToString();
-					x["EVENTSTORE_RUN_PROJECTIONS"]            = runProjections ? "All" : "None";
+					x["KURRENTDB_START_STANDARD_PROJECTIONS"] = runProjections.ToString();
+					x["KURRENTDB_RUN_PROJECTIONS"]            = runProjections ? "All" : "None";
 				}
 			)
 		};

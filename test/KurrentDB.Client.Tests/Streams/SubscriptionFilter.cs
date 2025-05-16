@@ -1,7 +1,5 @@
 // ReSharper disable InconsistentNaming
 
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Tests.Streams;
 
 public record SubscriptionFilter(string Name, Func<string, IEventFilter> Create, Func<string, EventData, EventData> PrepareEvent) {
@@ -13,12 +11,12 @@ public record SubscriptionFilter(string Name, Func<string, IEventFilter> Create,
 	static readonly SubscriptionFilter EventTypeRegex   = new(nameof(EventTypeRegex), f => EventTypeFilter.RegularExpression(f), (term, evt) => new(evt.EventId, term, evt.Data, evt.Metadata, evt.ContentType));
 
 	static SubscriptionFilter() {
-		All = new[] {
+		All = [
 			StreamNamePrefix,
 			StreamNameRegex,
 			EventTypePrefix,
 			EventTypeRegex
-		};
+		];
 
 		TestCases = All.Select(x => new object[] { x });
 	}
