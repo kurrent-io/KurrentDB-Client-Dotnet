@@ -76,7 +76,8 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 			["KURRENTDB_DISABLE_LOG_FILE"]                 = "true",
 			["KURRENTDB_START_STANDARD_PROJECTIONS"]       = "true",
 			["KURRENTDB_RUN_PROJECTIONS"]                  = "All",
-			["KURRENTDB_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}"
+			["KURRENTDB_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}",
+			["KURRENTDB_MAX_APPEND_SIZE"]                  = "4194304"  // Sets the limit to 4MB
 		};
 
 		if (GlobalEnvironment.DockerImage.Contains("commercial")) {

@@ -117,8 +117,8 @@ class SharingProvider<TInput, TOutput> : SharingProvider, IDisposable {
 		try {
 			Logger.LogDebug("{type} being produced...", typeof(TOutput).Name);
 			var item = await _factory(input, x => OnBroken(box, x)).ConfigureAwait(false);
-			box.TrySetResult(item);
 			_onRefresh(item);
+			box.TrySetResult(item);
 			Logger.LogDebug("{type} produced!", typeof(TOutput).Name);
 		} catch (Exception ex) {
 			await Task.Yield(); // avoid risk of stack overflow

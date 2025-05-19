@@ -6,8 +6,8 @@ namespace KurrentDB.Client.SchemaRegistry.Serialization.Json;
 /// A serializer class that supports serialization and deserialization of objects
 /// with optional use of a protobuf-based formatter.
 /// </summary>
-public class JsonSchemaSerializer(JsonSchemaSerializerOptions options, KurrentRegistryClient schemaRegistry, MessageTypeRegistry typeRegistry, ISchemaExporter schemaExporter)
-	: SchemaSerializer(options, schemaRegistry, typeRegistry, schemaExporter) {
+public class JsonSchemaSerializer(JsonSchemaSerializerOptions options,  SchemaManager schemaManager, MessageTypeRegistry typeRegistry, ITypeResolver typeResolver)
+	: SchemaSerializer(options, schemaManager, typeRegistry, typeResolver) {
 	JsonSerializer Serializer { get; } = new(options.JsonSerializerOptions, options.UseProtobufFormatter);
 
 	public override SchemaDataFormat DataFormat => SchemaDataFormat.Json;

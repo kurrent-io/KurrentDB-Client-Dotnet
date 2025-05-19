@@ -28,18 +28,32 @@ public class AppendStreamFailures : List<AppendStreamFailure> {
 	public AppendStreamFailures(IEnumerable<AppendStreamFailure> input) : base(input) { }
 }
 
+// [PublicAPI]
+// public record AppendStreamRequest() {
+// 	public AppendStreamRequest(string stream, StreamState expectedState, IEnumerable<Message> messages) : this() {
+// 		Stream        = stream;
+// 		ExpectedState = expectedState;
+// 		Messages      = messages;
+// 	}
+//
+// 	public string               Stream        { get; init; } = "";
+// 	public IEnumerable<Message> Messages      { get; init; } = [];
+// 	public StreamState          ExpectedState { get; init; } = StreamState.Any;
+// }
+
 [PublicAPI]
 public record AppendStreamRequest() {
-	public AppendStreamRequest(string stream, StreamState expectedState, IEnumerable<Message> messages) : this() {
+	public AppendStreamRequest(string stream, StreamState expectedState, IAsyncEnumerable<Message> messages) : this() {
 		Stream        = stream;
 		ExpectedState = expectedState;
 		Messages      = messages;
 	}
 
-	public string               Stream        { get; init; } = "";
-	public IEnumerable<Message> Messages      { get; init; } = [];
-	public StreamState          ExpectedState { get; init; } = StreamState.Any;
+	public string                    Stream        { get; init; } = "";
+	public StreamState               ExpectedState { get; init; } = StreamState.Any;
+	public IAsyncEnumerable<Message> Messages      { get; init; } = AsyncEnumerable.Empty<Message>();
 }
+
 
 [PublicAPI]
 [GenerateOneOf]

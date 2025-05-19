@@ -5,6 +5,51 @@ using KurrentDB.Client.SchemaRegistry.Serialization;
 
 namespace KurrentDB.Client;
 
+public class LegacyDataConverter(ISchemaSerializerProvider serializerProvider, IMetadataDecoder metadataDecoder) {
+
+	public async IAsyncEnumerable<EventData> ConvertToEventData(
+		string stream,
+		IEnumerable<Message> messages,
+		[EnumeratorCancellation] CancellationToken ct
+	) {
+		foreach (var message in messages)
+			yield return await ConvertToEventData(message, serializerProvider.GetSerializer(message.DataFormat), ct).ConfigureAwait(false);
+	}
+
+	static async ValueTask<EventData> ConvertToEventData(Message message, ISchemaSerializer serializer, CancellationToken ct) {
+		var data = await serializer
+			.Serialize(message, new SchemaSerializationContext(), ct)
+			.ConfigureAwait(false);
+
+		// we need to remove the schema name from the
+		// metadata as it is not required in the end.
+		message.Metadata.Remove(SystemMetadataKeys.SchemaName);
+
+		// must be readable json in the end. convert the proto map to json? or the dic to json? as a struct?
+		//var metadata = MetadataDecoder.Serialize(message.Metadata);
+
+		var id          = Uuid.FromGuid(message.RecordId); // BROKEN
+		var schemaName  = message.Metadata.Get<string>(SystemMetadataKeys.SchemaName)!;
+		var contentType = message.DataFormat.GetContentType();
+
+		// // db features must be checked to see if the schema is supported
+		// // if it is we can send the correct content type.
+		// var compatibleContentType = schema.DataFormat switch {
+		// 	SchemaDataFormat.Json => schema.ContentType,
+		// 	_                     => "application/octet-stream"
+		// };
+
+		return new EventData(
+			eventId: id,
+			type: schemaName,
+			data: data,
+			metadata: JsonSerializer.SerializeToUtf8Bytes(message.Metadata),
+			contentType: contentType
+		);
+	}
+
+}
+
 public static class LegacyMapping {
 	public static async IAsyncEnumerable<EventData> ToEventDataAsync(
 		this IEnumerable<Message> messages,

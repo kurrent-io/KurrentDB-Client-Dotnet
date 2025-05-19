@@ -13,10 +13,10 @@ namespace KurrentDB.Client;
 /// <typeparam name="TValue">The type of the values.</typeparam>
 public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>, IDisposable
 	where TKey : notnull where TValue : notnull {
+	readonly ReaderWriterLockSlim _lock = new(LockRecursionPolicy.NoRecursion);
 
 	readonly ConcurrentDictionary<TKey, TValue> _forward;
 	readonly IEqualityComparer<TKey>            _keyComparer;
-	readonly ReaderWriterLockSlim               _lock = new(LockRecursionPolicy.NoRecursion);
 	readonly ConcurrentDictionary<TValue, TKey> _reverse;
 	readonly IEqualityComparer<TValue>          _valueComparer;
 

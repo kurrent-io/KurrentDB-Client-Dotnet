@@ -138,11 +138,11 @@ partial class ClusterInfoRefreshInterceptor(ILegacyClusterClient clusterClient, 
 		try {
 			if (ex?.InnerException is NotLeaderException notLeaderEx) {
 				LogLeaderChanged(notLeaderEx.LeaderEndpoint.Host, notLeaderEx.LeaderEndpoint.Port);
-				await clusterClient.ForceReconnect(notLeaderEx.LeaderEndpoint);
+				await clusterClient.ForceReconnect(notLeaderEx.LeaderEndpoint).ConfigureAwait(false);
 			}
 			else if (ex is RpcException { StatusCode: StatusCode.Unavailable } rpcEx) {
 				LogUnavailable(rpcEx);
-				await clusterClient.ForceReconnect();
+				await clusterClient.ForceReconnect().ConfigureAwait(false);
 			}
 		}
 		catch (Exception refreshEx) {

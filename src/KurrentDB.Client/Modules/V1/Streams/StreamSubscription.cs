@@ -93,8 +93,8 @@ public class StreamSubscription : IDisposable {
 							await _eventAppeared(this, resolvedEvent, _cts.Token).ConfigureAwait(false);
 							break;
 
-						// case StreamMessage.AllStreamCheckpointReached(var position, var timestamp):
 						case StreamMessage.AllStreamCheckpointReached(var position):
+						// case StreamMessage.AllStreamCheckpointReached(var position):
 							await _checkpointReached(this, position, _cts.Token)
 								.ConfigureAwait(false);
 

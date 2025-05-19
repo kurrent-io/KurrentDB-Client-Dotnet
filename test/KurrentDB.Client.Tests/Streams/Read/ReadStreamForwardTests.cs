@@ -59,7 +59,9 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 
 	[Theory]
 	[InlineData("small_events", 10, 1)]
-	[InlineData("large_events", 2, 1_000_000)]
+	[InlineData("large_events", 1, 1_000_000)] // max is 1_048_576
+	[InlineData("large_events", 2, 500_000)]
+	[InlineData("large_events", 4, 250_000)]
 	public async Task returns_events_in_order(string suffix, int count, int metadataSize) {
 		var stream = $"{Fixture.GetStreamName()}_{suffix}";
 

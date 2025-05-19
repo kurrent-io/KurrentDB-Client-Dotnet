@@ -173,7 +173,7 @@ public class KurrentDBClientSettings {
 
 	public KurrentDBClientSchemaRegistrySettings SchemaRegistry { get; set; } = null!;
 
-	public IMessageTypeResolver MessageTypeResolver { get; set; } = null!;
+	public ITypeResolver MessageTypeResolver { get; set; } = null!;
 
 	public IMetadataDecoder MetadataDecoder { get; set; } = null!;
 

@@ -2,16 +2,40 @@ using KurrentDB.Client.Model;
 
 namespace KurrentDB.Client.SchemaRegistry.Serialization;
 
-public class SerializationException(string message, Exception? innerException = null) : Exception(message, innerException);
+/// <summary>
+/// Base exception for all schema serialization related errors.
+/// </summary>
+public abstract class SchemaSerializationException(string message, SchemaDataFormat dataFormat, SchemaName schemaName, Exception? innerException = null)
+	: Exception(message, innerException) {
+	public SchemaDataFormat DataFormat { get; } = dataFormat;
+	public SchemaName       SchemaName { get; } = schemaName;
+}
 
-public class SerializationFailedException(SchemaDataFormat expectedSchemaType, string schemaName, Exception? innerException = null)
-	: SerializationException($"{expectedSchemaType} failed to serialize {schemaName}", innerException);
+/// <summary>
+/// Exception thrown when serialization of an object fails.
+/// </summary>
+public class SerializationFailedException(SchemaDataFormat dataFormat, SchemaName schemaName, Exception? innerException = null)
+	: SchemaSerializationException($"Failed to serialize object with schema '{schemaName}' using {dataFormat} format.", dataFormat, schemaName, innerException);
 
-public class DeserializationFailedException(SchemaDataFormat expectedSchemaType, string schemaName, Exception? innerException = null)
-	: SerializationException($"{expectedSchemaType} failed to deserialize {schemaName}", innerException);
+/// <summary>
+/// Exception thrown when deserialization of data fails.
+/// </summary>
+public class DeserializationFailedException(SchemaDataFormat dataFormat, SchemaName schemaName, Exception? innerException = null)
+	: SchemaSerializationException($"Failed to deserialize data with schema '{schemaName}' using {dataFormat} format.", dataFormat, schemaName, innerException);
 
-public class UnsupportedSchemaException(SchemaDataFormat expectedSchemaType, SchemaDataFormat schemaType)
-	: SerializationException($"Unsupported schema {schemaType} expected {expectedSchemaType}");
+/// <summary>
+/// Exception thrown when a schema format is not supported by the serializer.
+/// </summary>
+public class UnsupportedSchemaDataFormatException(SchemaDataFormat expectedFormat, SchemaDataFormat actualFormat)
+	: SchemaSerializationException($"Unsupported schema format. Expected {expectedFormat}, but got {actualFormat}.", actualFormat, SchemaName.None) {
+	public SchemaDataFormat ExpectedFormat { get; } = expectedFormat;
+	public SchemaDataFormat ActualFormat   { get; } = actualFormat;
+}
 
-public class SerializerNotFoundException(SchemaDataFormat schemaType, params SchemaDataFormat[] supportedSchemaTypes)
-	: SerializationException($"Unsupported schema {schemaType} expected one of {string.Join(", ", supportedSchemaTypes)}");
+/// <summary>
+/// Exception thrown when schema auto-registration is disabled but required.
+/// </summary>
+public class AutoRegistrationDisabledException(SchemaDataFormat dataFormat, SchemaName schemaName, Type messageType)
+	: SchemaSerializationException($"The message '{messageType.FullName}' is not registered and auto-registration is disabled.", dataFormat, schemaName) {
+	public Type MessageType { get; } = messageType;
+}

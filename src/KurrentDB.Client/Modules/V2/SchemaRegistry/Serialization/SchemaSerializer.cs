@@ -1,8 +1,9 @@
 using KurrentDB.Client.Model;
+using SchemaDataFormat = KurrentDB.Client.Model.SchemaDataFormat;
 
 namespace KurrentDB.Client.SchemaRegistry.Serialization;
 
-public record struct SchemaSerializationContext(string Stream, Metadata Metadata, SchemaDataFormat DataFormat);
+public record struct SchemaSerializationContext(string Stream, Metadata Metadata);
 
 public interface ISchemaSerializer {
 	SchemaDataFormat DataFormat { get; }
@@ -45,108 +46,87 @@ public abstract record SchemaSerializerOptions {
 	public ISchemaNameStrategy SchemaNameStrategy { get; init; } = new MessageSchemaNameStrategy();
 }
 
-public abstract class SchemaSerializer(SchemaSerializerOptions options, KurrentRegistryClient schemaRegistry, MessageTypeRegistry typeRegistry, ISchemaExporter schemaExporter) : ISchemaSerializer {
-	SchemaSerializerOptions Options        { get; } = options;
-	KurrentRegistryClient   SchemaRegistry { get; } = schemaRegistry;
-	MessageTypeRegistry     TypeRegistry   { get; } = typeRegistry;
-	ISchemaExporter         SchemaExporter { get; } = schemaExporter;
+public abstract class SchemaSerializer(SchemaSerializerOptions options, SchemaManager schemaManager, MessageTypeRegistry typeRegistry, ITypeResolver typeResolver) : ISchemaSerializer {
+	SchemaSerializerOptions Options       { get; } = options;
+	SchemaManager           SchemaManager { get; } = schemaManager;
+	MessageTypeRegistry     TypeRegistry  { get; } = typeRegistry;
+	ITypeResolver           TypeResolver  { get; } = typeResolver;
 
 	public abstract SchemaDataFormat DataFormat { get; }
 
 	async ValueTask<ReadOnlyMemory<byte>> ISchemaSerializer.Serialize(object? value, SchemaSerializationContext context, CancellationToken cancellationToken) {
+		// TODO SS: should we? or just blow up?
 		if (value is null)
-			return null;
-
-		// we don't really care about verifying or registering the schema
-		// for bytes because we gave control to the developer/user
-		// the schema name must always be set when passing bytes
-		if (value is ReadOnlyMemory<byte> or Memory<byte> or byte[])
-			return (dynamic)value;
+			return ReadOnlyMemory<byte>.Empty;
 
 		var messageType = value.GetType();
-		var schemaName  = SchemaName.From(Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream));
-		var definition  = SchemaExporter.ExportSchemaDefinition(messageType);
+
+		// TODO SS: this should be in the BytesPassthroughSerializer
+		// we don't really care about verifying or registering the schema
+		// for raw bytes because we gave control to the developer/user
+		// the schema name should be already set? or should we generate it here?
+		if (value is ReadOnlyMemory<byte> or Memory<byte> or byte[])
+			return HandleBytes(value);
+
+		// if (value is ReadOnlyMemory<byte> readOnlyMemoryBytes) {
+		// 	context.Metadata
+		// 		.TrySet(SystemMetadataKeys.SchemaName, TypeRegistry
+		// 			.GetSchemaNameOrDefault(messageType, SchemaName.From(Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream))))
+		// 		.Set(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Bytes);
+		//
+		// 	return readOnlyMemoryBytes;
+		// }
+		//
+		// if (value is Memory<byte> memoryBytes) {
+		// 	context.Metadata
+		// 		.TrySet(SystemMetadataKeys.SchemaName, TypeRegistry
+		// 			.GetSchemaNameOrDefault(messageType, SchemaName.From(Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream))))
+		// 		.Set(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Bytes);
+		//
+		// 	return memoryBytes;
+		// }
+		//
+		// if (value is byte[] byteArray) {
+		// 	context.Metadata
+		// 		.TrySet(SystemMetadataKeys.SchemaName, TypeRegistry
+		// 			.GetSchemaNameOrDefault(messageType, SchemaName.From(Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream))))
+		// 		.Set(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Bytes);
+		//
+		// 	return byteArray;
+		// }
+
+		var dataFormat = context.Metadata.Get<SchemaDataFormat>(SystemMetadataKeys.SchemaDataFormat);
+		var schemaName = TypeRegistry.GetSchemaNameOrDefault(messageType, SchemaName.From(Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream)));
 
 		if (Options.AutoRegister) {
-			if (TypeRegistry.TryGetMessageType(schemaName, out var registeredType)) {
-				if (registeredType != messageType)
-					throw new Exception($"Message schema '{schemaName}' is already registered with a different type: {registeredType}");
-			}
-			else {
-				// var getOrRegisterSchemaResult = await SchemaRegistry
-				// 	.GetOrRegisterSchema(schemaName, definition, DataFormat, cancellationToken)
-				// 	.ConfigureAwait(false);
-				//
-				// getOrRegisterSchemaResult.Switch(
-				// 	schema => {
-				// 		context.Metadata.Set(SystemMetadataKeys.SchemaVersionId, schema.SchemaVersionId);
-				// 		TypeRegistry.Register(schemaName, messageType);
-				// 	},
-				// 	error  => throw new Exception($"Failed to auto register schema: {schemaName}", error.Value)
-				// );
-			}
+			var versionInfo = await SchemaManager
+				.TryRegisterSchema(schemaName, messageType, dataFormat, cancellationToken)
+				.ConfigureAwait(false);
+
+	sd
+
+			context.Metadata
+				.Set(SystemMetadataKeys.SchemaName, schemaName)
+				.Set(SystemMetadataKeys.SchemaVersionId, versionInfo.VersionId);
 		}
 		else {
-			throw new Exception($"The message schema for {messageType.FullName} is not registered and auto registration is disabled.");
+			context.Metadata
+				.Set(SystemMetadataKeys.SchemaName, schemaName);
 
-			// var validateSchemaResult = await SchemaRegistry
-			// 	.CheckSchemaCompatibility(schemaName, definition, context.DataFormat, cancellationToken)
-			// 	.ConfigureAwait(false);
-			//
-			// validateSchemaResult.Switch(
-			// 	versionId  => {
-			// 		context.Metadata.Set(SystemMetadataKeys.SchemaVersionId, versionId);
-			// 		TypeRegistry.TryRegister(schemaName, messageType);
-			// 	},
-			// 	errors   => throw new Exception($"Invalid schema: {schemaName} - {errors.Select(x => x.ToString()).ToArray()}"),
-			// 	notfound => throw new Exception($"Schema not found: {schemaName}")
-			// );
-		}
-
-		if (Options.Validate) {
-			if (Options.AutoRegister) {
-				if (TypeRegistry.TryGetMessageType(schemaName, out var registeredType)) {
-					if (registeredType != messageType)
-						throw new Exception($"Schema name '{schemaName}' is already registered with a different type: {registeredType}");
-				}
-				else {
-
-
-					// var getOrRegisterSchemaResult = await SchemaRegistry
-					// 	.GetOrRegisterSchema(schemaName, definition, DataFormat, cancellationToken)
-					// 	.ConfigureAwait(false);
-					//
-					// getOrRegisterSchemaResult.Switch(
-					// 	schema => {
-					// 		context.Metadata.Set(SystemMetadataKeys.SchemaVersionId, schema.SchemaVersionId);
-					// 		TypeRegistry.Register(schemaName, messageType);
-					// 	},
-					// 	error  => throw new Exception($"Failed to auto register schema: {schemaName}", error.Value)
-					// );
-				}
-			}
-			else {
-				var validateSchemaResult = await SchemaRegistry
-					.CheckSchemaCompatibility(schemaName, definition, context.DataFormat, cancellationToken)
+			if (Options.Validate) {
+				var lastSchemaVersionId = await SchemaManager
+					.EnsureSchemaCompatibility(schemaName, messageType, dataFormat, cancellationToken)
 					.ConfigureAwait(false);
 
-				validateSchemaResult.Switch(
-					versionId  => {
-						context.Metadata.Set(SystemMetadataKeys.SchemaVersionId, versionId);
-						TypeRegistry.TryRegister(schemaName, messageType);
-					},
-					errors   => throw new Exception($"Invalid schema: {schemaName} - {errors.Select(x => x.ToString()).ToArray()}"),
-					notfound => throw new Exception($"Schema not found: {schemaName}")
-				);
+				context.Metadata.Set(SystemMetadataKeys.SchemaVersionId, lastSchemaVersionId);
+			}
+			else {
+				// TODO SS: if its not on the registry throw
+				if(!TypeRegistry.TryGetSchemaName(messageType, out var schemaNameFound))
+					// TODO SS: fix the exception to use the message type
+					throw new AutoRegistrationDisabledException(DataFormat, schemaNameFound, messageType);
 			}
 		}
-		else
-			TypeRegistry.TryRegister(schemaName, messageType);
-
-		// enrich the metadata with schema name and data format
-		context.Metadata
-			.Set(SystemMetadataKeys.SchemaName, schemaName)
-			.Set(SystemMetadataKeys.SchemaDataFormat, DataFormat);
 
 		try {
 			return Serialize(value);
@@ -154,12 +134,17 @@ public abstract class SchemaSerializer(SchemaSerializerOptions options, KurrentR
 		catch (Exception ex) {
 			throw new SerializationFailedException(DataFormat, schemaName,  ex);
 		}
+
+		ReadOnlyMemory<byte> HandleBytes(dynamic bytes) {
+			context.Metadata
+				.TrySet(SystemMetadataKeys.SchemaName, TypeRegistry.GetSchemaNameOrDefault(messageType, Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream)))
+				.Set(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Bytes);
+
+			return bytes;
+		}
 	}
 
 	async ValueTask<object?> ISchemaSerializer.Deserialize(ReadOnlyMemory<byte> data, SchemaSerializationContext context, CancellationToken cancellationToken) {
-		if (context.DataFormat != DataFormat)
-			throw new UnsupportedSchemaException(DataFormat, context.DataFormat);
-
 		if (data.IsEmpty)
 			return null;
 
@@ -167,53 +152,54 @@ public abstract class SchemaSerializer(SchemaSerializerOptions options, KurrentR
 		if (dataFormat == SchemaDataFormat.Bytes)
 			return data;
 
+		// debug assert cause we should never get here since the provider will give us the proper serializer.
+		// if (dataFormat != DataFormat)
+		// 	throw new UnsupportedSchemaDataFormatException(DataFormat, dataFormat);
+
 		var schemaName = SchemaName.From(
 			context.Metadata.Get<string>(SystemMetadataKeys.SchemaName)
-		 ?? throw new Exception("Schema name is missing in the metadata"));
+			// this is more of a debug assert again because the converters will always add a schema name for backwards compatibility
+		 ?? throw new Exception("Schema name is missing in the metadata")
+		);
 
 		if (TypeRegistry.TryGetMessageType(schemaName, out var messageType)) {
-			// try resolve directly like magic
-			// must use component or helper to resolve the type,
-			// so it can load the assemblies
-			messageType = Type.GetType(schemaName);
-
-			if (messageType is null)
-				throw new Exception($"Schema name '{schemaName}' is not registered and message type could not be resolved");
-
 			if (Options.Validate) {
-				// because the type was indeed found,
-				// we must validate the schema against the registry
-				var definition = SchemaExporter.ExportSchemaDefinition(messageType);
+				// if a schema version id is present it means the new client was used
+				if (context.Metadata.TryGet<string>(SystemMetadataKeys.SchemaVersionId, out var schemaVersionIdValue)) {
+					var schemaVersionId = SchemaVersionId.From(schemaVersionIdValue!);
 
-				var validateSchemaResult = await SchemaRegistry
-					.CheckSchemaCompatibility(schemaName, definition, context.DataFormat, cancellationToken)
-					.ConfigureAwait(false);
+					await SchemaManager
+						.EnsureSchemaCompatibility(schemaVersionId, messageType, dataFormat, cancellationToken)
+						.ConfigureAwait(false);
+				}
+				else {
+					// fallback behaviour to handle validation of messages
+					// that were not appended using the new client
 
-				validateSchemaResult.Switch(
-					versionId => context.Metadata.Set(SystemMetadataKeys.SchemaVersionId, versionId),
-					errors    => throw new Exception($"Invalid schema: {schemaName} - {errors.Select(x => x.ToString()).ToArray()}"),
-					notfound  => throw new Exception($"Schema not found: {schemaName}")
-				);
+					var lastSchemaVersionId = await SchemaManager
+						.EnsureSchemaCompatibility(schemaName, messageType, dataFormat, cancellationToken)
+						.ConfigureAwait(false);
+
+					context.Metadata.Set(SystemMetadataKeys.SchemaVersionId, lastSchemaVersionId);
+				}
 			}
-
-			TypeRegistry.TryRegister(schemaName, messageType);
 		}
 		else {
-			if (Options.Validate) {
-				// because the type was indeed found,
-				// we must validate the schema against the registry
-				var definition = SchemaExporter.ExportSchemaDefinition(messageType);
+			// try to resolve/discover the clr type directly like magic
+			// it will only work if the schema name (old event type name)
+			// is the full clr type name
+			if (!TypeResolver.TryResolveType(schemaName, out var foundType))
+				throw new Exception("Schema name does not match any known type");
 
-				var validateSchemaResult = await SchemaRegistry
-					.CheckSchemaCompatibility(schemaName, definition, context.DataFormat, cancellationToken)
+			if (Options.Validate) {
+				var lastSchemaVersionId = await SchemaManager
+					.EnsureSchemaCompatibility(schemaName, messageType, dataFormat, cancellationToken)
 					.ConfigureAwait(false);
 
-				validateSchemaResult.Switch(
-					success  => context.Metadata.Set(SystemMetadataKeys.SchemaVersionId, success.Value),
-					failure  => throw new Exception($"Invalid schema: {schemaName} - {failure.Errors.Select(x => x.ToString()).ToArray()}"),
-					notfound => throw new Exception($"Schema not found: {schemaName}")
-				);
+				context.Metadata.Set(SystemMetadataKeys.SchemaVersionId, lastSchemaVersionId);
 			}
+
+			TypeRegistry.TryRegister(schemaName, foundType);
 		}
 
 		try {
@@ -227,73 +213,4 @@ public abstract class SchemaSerializer(SchemaSerializerOptions options, KurrentR
 	protected abstract ReadOnlyMemory<byte> Serialize(object? value);
 
 	protected abstract object Deserialize(ReadOnlyMemory<byte> data, Type resolvedType);
-
-
-	// async ValueTask<ReadOnlyMemory<byte>> SerializeOnly(object? value, SchemaSerializationContext context, CancellationToken cancellationToken) {
-	// 	if (value is null)
-	// 		return null;
-	//
-	// 	// we don't really care about verifying or registering the schema
-	// 	// for bytes because we gave control to the developer/user
-	// 	// the schema name must always be set when passing bytes
-	// 	if (value is ReadOnlyMemory<byte> or Memory<byte> or byte[])
-	// 		return (dynamic)value;
-	//
-	// 	var messageType = value.GetType();
-	// 	var schemaName  = SchemaName.From(Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream));
-	// 	var definition  = SchemaExporter.ExportSchemaDefinition(messageType);
-	//
-	// 	if (Options.Validate) {
-	// 		if (Options.AutoRegister) {
-	// 			if (TypeRegistry.GetClrType(schemaName) is { } type) {
-	// 				if (type != messageType)
-	// 					throw new Exception($"Schema name '{schemaName}' is already registered with a different type: {type}");
-	// 			}
-	// 			else {
-	//
-	//
-	// 				// var getOrRegisterSchemaResult = await SchemaRegistry
-	// 				// 	.GetOrRegisterSchema(schemaName, definition, DataFormat, cancellationToken)
-	// 				// 	.ConfigureAwait(false);
-	// 				//
-	// 				// getOrRegisterSchemaResult.Switch(
-	// 				// 	schema => {
-	// 				// 		context.Metadata.Set(SystemMetadataKeys.SchemaVersionId, schema.SchemaVersionId);
-	// 				// 		TypeRegistry.Register(schemaName, messageType);
-	// 				// 	},
-	// 				// 	error  => throw new Exception($"Failed to auto register schema: {schemaName}", error.Value)
-	// 				// );
-	// 			}
-	// 		}
-	// 		else {
-	// 			var validateSchemaResult = await SchemaRegistry
-	// 				.CheckSchemaCompatibility(schemaName, definition, context.DataFormat, cancellationToken)
-	// 				.ConfigureAwait(false);
-	//
-	// 			validateSchemaResult.Switch(
-	// 				versionId  => {
-	// 					context.Metadata.Set(SystemMetadataKeys.SchemaVersionId, versionId);
-	// 					TypeRegistry.Register(schemaName, messageType);
-	// 				},
-	// 				errors   => throw new Exception($"Invalid schema: {schemaName} - {errors.Select(x => x.ToString()).ToArray()}"),
-	// 				notfound => throw new Exception($"Schema not found: {schemaName}")
-	// 			);
-	// 		}
-	// 	}
-	// 	else
-	// 		TypeRegistry.Register(schemaName, messageType);
-	//
-	// 	// enrich the metadata with schema name and data format
-	// 	context.Metadata
-	// 		.Set(SystemMetadataKeys.SchemaName, schemaName)
-	// 		.Set(SystemMetadataKeys.SchemaDataFormat, DataFormat);
-	//
-	// 	try {
-	// 		return Serialize(value);
-	// 	}
-	// 	catch (Exception ex) {
-	// 		throw new SerializationFailedException(DataFormat, schemaName,  ex);
-	// 	}
-	// }
-
 }

@@ -7,6 +7,8 @@ using EventStore.Client.Users;
 using Grpc.Core;
 using KurrentDB.Client.Model;
 using KurrentDB.Client.SchemaRegistry.Serialization;
+using KurrentDB.Client.SchemaRegistry.Serialization.Json;
+using KurrentDB.Client.SchemaRegistry.Serialization.Protobuf;
 using KurrentDB.Protocol.Registry.V2;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -28,7 +30,8 @@ public abstract class KurrentDBClientBase : IAsyncDisposable {
 		Settings.ConnectionName ??= $"conn-{Guid.NewGuid():D}";
 		Settings.LoggerFactory  ??= NullLoggerFactory.Instance;
 
-		_legacyClusterClient = new LegacyClusterClient(Settings,
+		_legacyClusterClient = new LegacyClusterClient(
+			Settings,
 			channelInfo => {
 				lock (_locker) {
 					ChannelInfo                          = channelInfo;
@@ -45,10 +48,10 @@ public abstract class KurrentDBClientBase : IAsyncDisposable {
 		// besides using some lazy async that is not even net48 compatible ffs.
 		_legacyClusterClient.Connect().AsTask().GetAwaiter().GetResult();
 
-		// SerializationManager = new KurrentSerializationManager([
-		// 	new SystemJsonSchemaSerializer(schemaManager: SchemaManager),
-		// 	new ProtobufSchemaSerializer(schemaManager: SchemaManager)
-		// ]);
+		SerializerProvider = new SchemaSerializerProvider([
+			new JsonSchemaSerializer(schemaManager: SchemaManager),
+			new ProtobufSchemaSerializer(schemaManager: SchemaManager)
+		]);
 	}
 
 	internal Streams.StreamsClient                                 StreamsServiceClient                 { get; private set; } = null!;

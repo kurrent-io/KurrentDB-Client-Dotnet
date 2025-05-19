@@ -5,11 +5,10 @@ using AutoFixture;
 
 namespace KurrentDB.Client.Tests;
 
-
-public class MyTests {
+public class RagingConnectionStringTests {
 	[Fact]
-	public void RagingTest() {
-		var connString = "esdb://admin:changeit@localhost:2113/?tls=true&maxDiscoverAttempts=5";
+	public void RagingConnectionStringTest() {
+		var connString = "kurrentdb://admin:changeit@localhost:2113/?tls=true&maxDiscoverAttempts=5";
 
 		var connectionString = KurrentDBConnectionString.Parse(connString);
 
@@ -138,7 +137,7 @@ public class ConnectionStringTests {
 	[InlineData(false)]
 	[InlineData(true)]
 	public void tls_verify_cert(bool tlsVerifyCert) {
-		var       connectionString = $"esdb://localhost:2113/?tlsVerifyCert={tlsVerifyCert}";
+		var       connectionString = $"kurrentdb://localhost:2113/?tlsVerifyCert={tlsVerifyCert}";
 		var       result           = KurrentDBClientSettings.Create(connectionString);
 		using var handler          = result.CreateHttpMessageHandler?.Invoke();
 #if NET
@@ -179,7 +178,7 @@ public class ConnectionStringTests {
 	[MemberData(nameof(InvalidTlsCertificates))]
 	public void connection_string_with_invalid_tls_certificate_should_throw(string clientCertificatePath) {
 		Assert.Throws<InvalidClientCertificateException>(
-			() => KurrentDBClientSettings.Create($"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&tlsCAFile={clientCertificatePath}")
+			() => KurrentDBClientSettings.Create($"kurrentdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&tlsCAFile={clientCertificatePath}")
 		);
 	}
 
@@ -195,14 +194,14 @@ public class ConnectionStringTests {
 	public void connection_string_with_invalid_client_certificate_should_throw(string userCertFile, string userKeyFile) {
 		Assert.Throws<InvalidClientCertificateException>(
 			() => KurrentDBClientSettings.Create(
-				$"esdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}"
+				$"kurrentdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}"
 			)
 		);
 	}
 
 	[RetryFact]
 	public void infinite_grpc_timeouts() {
-		var result = KurrentDBClientSettings.Create("esdb://localhost:2113?keepAliveInterval=-1&keepAliveTimeout=-1");
+		var result = KurrentDBClientSettings.Create("kurrentdb://localhost:2113?keepAliveInterval=-1&keepAliveTimeout=-1");
 
 		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveInterval);
 		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, result.ConnectivitySettings.KeepAliveTimeout);
@@ -231,69 +230,69 @@ public class ConnectionStringTests {
 		Assert.Throws<InvalidSchemeException>(() => KurrentDBClientSettings.Create(connectionString));
 
 	[Theory]
-	[InlineData("esdb://userpass@127.0.0.1/")]
-	[InlineData("esdb://user:pa:ss@127.0.0.1/")]
-	[InlineData("esdb://us:er:pa:ss@127.0.0.1/")]
+	[InlineData("kurrentdb://userpass@127.0.0.1/")]
+	[InlineData("kurrentdb://user:pa:ss@127.0.0.1/")]
+	[InlineData("kurrentdb://us:er:pa:ss@127.0.0.1/")]
 	public void connection_string_with_invalid_userinfo_should_throw(string connectionString) =>
 		Assert.Throws<InvalidUserCredentialsException>(() => KurrentDBClientSettings.Create(connectionString));
 
 	[Theory]
-	[InlineData("esdb://user:pass@127.0.0.1:abc")]
-	[InlineData("esdb://user:pass@127.0.0.1:abc/")]
-	[InlineData("esdb://user:pass@127.0.0.1:1234,127.0.0.2:abc,127.0.0.3:4321")]
-	[InlineData("esdb://user:pass@127.0.0.1:1234,127.0.0.2:abc,127.0.0.3:4321/")]
-	[InlineData("esdb://user:pass@127.0.0.1:abc:def")]
-	[InlineData("esdb://user:pass@127.0.0.1:abc:def/")]
-	[InlineData("esdb://user:pass@localhost:1234,127.0.0.2:abc:def,127.0.0.3:4321")]
-	[InlineData("esdb://user:pass@localhost:1234,127.0.0.2:abc:def,127.0.0.3:4321/")]
-	[InlineData("esdb://user:pass@localhost:1234,,127.0.0.3:4321")]
-	[InlineData("esdb://user:pass@localhost:1234,,127.0.0.3:4321/")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1:abc")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1:abc/")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1:1234,127.0.0.2:abc,127.0.0.3:4321")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1:1234,127.0.0.2:abc,127.0.0.3:4321/")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1:abc:def")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1:abc:def/")]
+	[InlineData("kurrentdb://user:pass@localhost:1234,127.0.0.2:abc:def,127.0.0.3:4321")]
+	[InlineData("kurrentdb://user:pass@localhost:1234,127.0.0.2:abc:def,127.0.0.3:4321/")]
+	[InlineData("kurrentdb://user:pass@localhost:1234,,127.0.0.3:4321")]
+	[InlineData("kurrentdb://user:pass@localhost:1234,,127.0.0.3:4321/")]
 	public void connection_string_with_invalid_host_should_throw(string connectionString) =>
 		Assert.Throws<InvalidHostException>(() => KurrentDBClientSettings.Create(connectionString));
 
 	[Theory]
-	[InlineData("esdb://user:pass@127.0.0.1/test")]
-	[InlineData("esdb://user:pass@127.0.0.1/maxDiscoverAttempts=10")]
-	[InlineData("esdb://user:pass@127.0.0.1/hello?maxDiscoverAttempts=10")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/test")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/maxDiscoverAttempts=10")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/hello?maxDiscoverAttempts=10")]
 	public void connection_string_with_non_empty_path_should_throw(string connectionString) =>
 		Assert.Throws<ConnectionStringParseException>(() => KurrentDBClientSettings.Create(connectionString));
 
 	[Theory]
-	[InlineData("esdb://user:pass@127.0.0.1")]
-	[InlineData("esdb://user:pass@127.0.0.1/")]
-	[InlineData("esdb+discover://user:pass@127.0.0.1")]
-	[InlineData("esdb+discover://user:pass@127.0.0.1/")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/")]
+	[InlineData("kurrentdb+discover://user:pass@127.0.0.1")]
+	[InlineData("kurrentdb+discover://user:pass@127.0.0.1/")]
 	public void connection_string_with_no_key_value_pairs_specified_should_not_throw(string connectionString) =>
 		KurrentDBClientSettings.Create(connectionString);
 
 	[Theory]
-	[InlineData("esdb://user:pass@127.0.0.1/?maxDiscoverAttempts=12=34")]
-	[InlineData("esdb://user:pass@127.0.0.1/?maxDiscoverAttempts1234")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/?maxDiscoverAttempts=12=34")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/?maxDiscoverAttempts1234")]
 	public void connection_string_with_invalid_key_value_pair_should_throw(string connectionString) =>
 		Assert.Throws<InvalidKeyValuePairException>(() => KurrentDBClientSettings.Create(connectionString));
 
 	[Theory]
-	[InlineData("esdb://user:pass@127.0.0.1/?maxDiscoverAttempts=1234&MaxDiscoverAttempts=10")]
-	[InlineData("esdb://user:pass@127.0.0.1/?gossipTimeout=10&gossipTimeout=30")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/?maxDiscoverAttempts=1234&MaxDiscoverAttempts=10")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/?gossipTimeout=10&gossipTimeout=30")]
 	public void connection_string_with_duplicate_key_should_throw(string connectionString) =>
 		Assert.Throws<DuplicateKeyException>(() => KurrentDBClientSettings.Create(connectionString));
 
 	[Theory]
-	[InlineData("esdb://user:pass@127.0.0.1/?unknown=1234")]
-	[InlineData("esdb://user:pass@127.0.0.1/?maxDiscoverAttempts=1234&hello=test")]
-	[InlineData("esdb://user:pass@127.0.0.1/?maxDiscoverAttempts=abcd")]
-	[InlineData("esdb://user:pass@127.0.0.1/?discoveryInterval=abcd")]
-	[InlineData("esdb://user:pass@127.0.0.1/?gossipTimeout=defg")]
-	[InlineData("esdb://user:pass@127.0.0.1/?tlsVerifyCert=truee")]
-	[InlineData("esdb://user:pass@127.0.0.1/?nodePreference=blabla")]
-	[InlineData("esdb://user:pass@127.0.0.1/?keepAliveInterval=-2")]
-	[InlineData("esdb://user:pass@127.0.0.1/?keepAliveTimeout=-2")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/?unknown=1234")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/?maxDiscoverAttempts=1234&hello=test")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/?maxDiscoverAttempts=abcd")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/?discoveryInterval=abcd")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/?gossipTimeout=defg")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/?tlsVerifyCert=truee")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/?nodePreference=blabla")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/?keepAliveInterval=-2")]
+	[InlineData("kurrentdb://user:pass@127.0.0.1/?keepAliveTimeout=-2")]
 	public void connection_string_with_invalid_settings_should_throw(string connectionString) =>
 		Assert.Throws<InvalidSettingException>(() => KurrentDBClientSettings.Create(connectionString));
 
 	[RetryFact]
 	public void with_default_settings() {
-		var settings = KurrentDBClientSettings.Create("esdb://hostname:4321/");
+		var settings = KurrentDBClientSettings.Create("kurrentdb://hostname:4321/");
 
 		Assert.Null(settings.ConnectionName);
 		Assert.Equal(
@@ -347,12 +346,12 @@ public class ConnectionStringTests {
 	}
 
 	[Theory]
-	[InlineData("esdb://localhost", true)]
-	[InlineData("esdb://localhost/?tls=false", false)]
-	[InlineData("esdb://localhost/?tls=true", true)]
-	[InlineData("esdb://localhost1,localhost2,localhost3", true)]
-	[InlineData("esdb://localhost1,localhost2,localhost3/?tls=false", false)]
-	[InlineData("esdb://localhost1,localhost2,localhost3/?tls=true", true)]
+	[InlineData("kurrentdb://localhost", true)]
+	[InlineData("kurrentdb://localhost/?tls=false", false)]
+	[InlineData("kurrentdb://localhost/?tls=true", true)]
+	[InlineData("kurrentdb://localhost1,localhost2,localhost3", true)]
+	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=false", false)]
+	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=true", true)]
 	public void use_tls(string connectionString, bool expectedUseTls) {
 		var result         = KurrentDBClientSettings.Create(connectionString);
 		var expectedScheme = expectedUseTls ? "https" : "http";
@@ -361,24 +360,24 @@ public class ConnectionStringTests {
 	}
 
 	[Theory]
-	[InlineData("esdb://localhost", null, true)]
-	[InlineData("esdb://localhost", true, false)]
-	[InlineData("esdb://localhost", false, true)]
-	[InlineData("esdb://localhost/?tls=true", null, true)]
-	[InlineData("esdb://localhost/?tls=true", true, false)]
-	[InlineData("esdb://localhost/?tls=true", false, true)]
-	[InlineData("esdb://localhost/?tls=false", null, false)]
-	[InlineData("esdb://localhost/?tls=false", true, false)]
-	[InlineData("esdb://localhost/?tls=false", false, true)]
-	[InlineData("esdb://localhost1,localhost2,localhost3", null, true)]
-	[InlineData("esdb://localhost1,localhost2,localhost3", true, true)]
-	[InlineData("esdb://localhost1,localhost2,localhost3", false, true)]
-	[InlineData("esdb://localhost1,localhost2,localhost3/?tls=true", null, true)]
-	[InlineData("esdb://localhost1,localhost2,localhost3/?tls=true", true, true)]
-	[InlineData("esdb://localhost1,localhost2,localhost3/?tls=true", false, true)]
-	[InlineData("esdb://localhost1,localhost2,localhost3/?tls=false", null, false)]
-	[InlineData("esdb://localhost1,localhost2,localhost3/?tls=false", true, false)]
-	[InlineData("esdb://localhost1,localhost2,localhost3/?tls=false", false, false)]
+	[InlineData("kurrentdb://localhost", null, true)]
+	[InlineData("kurrentdb://localhost", true, false)]
+	[InlineData("kurrentdb://localhost", false, true)]
+	[InlineData("kurrentdb://localhost/?tls=true", null, true)]
+	[InlineData("kurrentdb://localhost/?tls=true", true, false)]
+	[InlineData("kurrentdb://localhost/?tls=true", false, true)]
+	[InlineData("kurrentdb://localhost/?tls=false", null, false)]
+	[InlineData("kurrentdb://localhost/?tls=false", true, false)]
+	[InlineData("kurrentdb://localhost/?tls=false", false, true)]
+	[InlineData("kurrentdb://localhost1,localhost2,localhost3", null, true)]
+	[InlineData("kurrentdb://localhost1,localhost2,localhost3", true, true)]
+	[InlineData("kurrentdb://localhost1,localhost2,localhost3", false, true)]
+	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=true", null, true)]
+	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=true", true, true)]
+	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=true", false, true)]
+	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=false", null, false)]
+	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=false", true, false)]
+	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=false", false, false)]
 	public void allow_tls_override_for_single_node(string connectionString, bool? insecureOverride, bool expectedUseTls) {
 		var result   = KurrentDBClientSettings.Create(connectionString);
 		var settings = result.ConnectivitySettings;
@@ -394,10 +393,10 @@ public class ConnectionStringTests {
 	}
 
 	[Theory]
-	[InlineData("esdb://localhost:1234", "localhost", 1234)]
-	[InlineData("esdb://localhost:1234,localhost:4567", null, null)]
-	[InlineData("esdb+discover://localhost:1234", null, null)]
-	[InlineData("esdb+discover://localhost:1234,localhost:4567", null, null)]
+	[InlineData("kurrentdb://localhost:1234", "localhost", 1234)]
+	[InlineData("kurrentdb://localhost:1234,localhost:4567", null, null)]
+	[InlineData("kurrentdb+discover://localhost:1234", null, null)]
+	[InlineData("kurrentdb+discover://localhost:1234,localhost:4567", null, null)]
 	public void connection_string_with_custom_ports(string connectionString, string? expectedHost, int? expectedPort) {
 		var result               = KurrentDBClientSettings.Create(connectionString);
 		var connectivitySettings = result.ConnectivitySettings;
@@ -414,8 +413,8 @@ public class ConnectionStringTests {
 
 	static string GetScheme(KurrentDBClientSettings settings) =>
 		settings.ConnectivitySettings.IsSingleNode
-			? "esdb://"
-			: "esdb+discover://";
+			? "kurrentdb://"
+			: "kurrentdb+discover://";
 
 	static string GetAuthority(KurrentDBClientSettings settings) =>
 		settings.ConnectivitySettings.IsSingleNode

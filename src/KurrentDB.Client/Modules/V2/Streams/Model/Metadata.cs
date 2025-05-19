@@ -93,6 +93,13 @@ public class Metadata : Dictionary<string, object?> {
         this[key] = value;
         return this;
     }
+
+    public Metadata TrySet<T>(string key, T? value) {
+	    if (!ContainsKey(key))
+		    this[key] = value;
+
+	    return this;
+    }
 }
 
 /// <summary>

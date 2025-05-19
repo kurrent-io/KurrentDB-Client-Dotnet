@@ -20,5 +20,8 @@ public sealed class SchemaSerializerProvider : ISchemaSerializerProvider {
 	public ISchemaSerializer GetSerializer(SchemaDataFormat dataFormat) =>
 		Serializers.TryGetValue(dataFormat, out var serializer)
 			? serializer
-			: throw new SerializerNotFoundException(dataFormat, Serializers.Keys.ToArray());
+			: throw new SchemaSerializerNotFoundException(dataFormat, Serializers.Keys.ToArray());
 }
+
+public class SchemaSerializerNotFoundException(SchemaDataFormat dataFormat, params SchemaDataFormat[] supportedSchemaDataFormats)
+	: Exception($"Unsupported schema data format. Expected one of {string.Join(", ", supportedSchemaDataFormats)} but got {dataFormat}.");

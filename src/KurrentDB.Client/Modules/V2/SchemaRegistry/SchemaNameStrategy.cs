@@ -21,7 +21,7 @@ public interface ISchemaNameStrategy {
 	/// <returns>The generated schema name as a string, formatted according to the specified schema name format.</returns>
 	/// <exception cref="ArgumentNullException">Thrown when the provided message type is null.</exception>
 	/// <exception cref="ArgumentOutOfRangeException">Thrown when the schema name format is unsupported.</exception>
-	string GenerateSchemaName(Type messageType, string? stream = null);
+	SchemaName GenerateSchemaName(Type messageType, string? stream = null);
 
 	// /// <summary>
 	// /// Resolves the fully qualified type name based on the provided schema name, stream name, and associated properties.
@@ -65,7 +65,7 @@ public abstract class SchemaNameStrategy(SchemaNameOutputFormat format) : ISchem
 	/// <returns>The generated schema name as a string, formatted according to the specified schema name format.</returns>
 	/// <exception cref="ArgumentNullException">Thrown when the provided message type is null.</exception>
 	/// <exception cref="ArgumentOutOfRangeException">Thrown when the schema name format is unsupported.</exception>
-	public string GenerateSchemaName(Type messageType, string? stream = null) {
+	public SchemaName GenerateSchemaName(Type messageType, string? stream = null) {
 		if (messageType is null || messageType == Type.Missing.GetType())
 			throw new ArgumentNullException(nameof(messageType));
 

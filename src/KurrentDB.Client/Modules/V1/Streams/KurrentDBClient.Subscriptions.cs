@@ -222,6 +222,8 @@ public partial class KurrentDBClient {
 								),
 								CaughtUp   => StreamMessage.CaughtUp.Instance,
 								FellBehind => StreamMessage.FellBehind.Instance,
+
+								//TODO SS: Must check with William and finish the implementation
 								// Checkpoint => new StreamMessage.AllStreamCheckpointReached(
 								// 	new Position(
 								// 		response.Checkpoint.CommitPosition,

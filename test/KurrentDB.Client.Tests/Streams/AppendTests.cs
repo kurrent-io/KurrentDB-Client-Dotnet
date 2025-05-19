@@ -485,9 +485,9 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 	[RetryFact]
 	public async Task fails_when_size_exceeds_max_append_size() {
 		// Arrange
-		var maxAppendSize    = (uint)100.Kilobytes().Bytes;
+		var maxAppendSize    = 4194304u;
 		var stream           = Fixture.GetStreamName();
-		var eventsAppendSize = maxAppendSize * 2;
+		var eventsAppendSize = maxAppendSize + 1;
 
 		// Act
 		var (events, size) = Fixture.CreateTestEventsUpToMaxSize(eventsAppendSize);

@@ -60,22 +60,6 @@ public abstract record StreamMessage {
 	/// <param name="StreamPosition">The <see cref="StreamPosition" />.</param>
 	public record StreamCheckpointReached(StreamPosition StreamPosition) : StreamMessage;
 
-	// /// <summary>
-	// /// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that a checkpoint has been reached.
-	// /// </summary>
-	// /// <param name="StreamPosition">The <see cref="StreamPosition" />.</param>
-	// public record StreamCheckpointReached(StreamPosition StreamPosition, Position? Position, DateTimeOffset Timestamp) : StreamMessage {
-	// 	public bool HasPosition => Position.HasValue;
-	// }
-	//
-	// /// <summary>
-	// /// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that a checkpoint has been reached.
-	// /// </summary>
-	// /// <param name="StreamPosition">The <see cref="StreamPosition" />.</param>
-	// public record StreamCheckpointReached(StreamPosition StreamPosition, Position? Position, DateTimeOffset Timestamp) : Checkpoint() {
-	// 	public bool HasPosition => Position.HasValue;
-	// }
-
 	/// <summary>
 	/// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that the subscription is live.
 	/// </summary>
@@ -96,6 +80,19 @@ public abstract record StreamMessage {
 	public record Unknown : StreamMessage {
 		internal static readonly Unknown Instance = new();
 	}
+
+	//TODO SS: Must check with William and finish the implementation
+	// /// <summary>
+	// /// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that a checkpoint has been reached.
+	// /// </summary>
+	// /// <param name="Position">The <see cref="Position" />.</param>
+	// public record AllStreamCheckpointReached(Position Position, DateTimeOffset? Timestamp) : StreamMessage;
+	//
+	// /// <summary>
+	// /// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that a checkpoint has been reached.
+	// /// </summary>
+	// /// <param name="StreamPosition">The <see cref="StreamPosition" />.</param>
+	// public record StreamCheckpointReached(StreamPosition StreamPosition, DateTimeOffset? Timestamp) : StreamMessage;
 
 	// public record Checkpoint(Position? Position, long? StreamRevision, DateTimeOffset? Timestamp) : StreamMessage {
 	// 	public bool HasPosition       => Position.HasValue;

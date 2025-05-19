@@ -75,7 +75,8 @@ public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null)
 			["KURRENTDB_ENABLE_ATOM_PUB_OVER_HTTP"]        = "true",
 			["KURRENTDB_LOG_LEVEL"]                        = "Default", // required to use serilog settings
 			["KURRENTDB_DISABLE_LOG_FILE"]                 = "true",
-			["KURRENTDB_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}"
+			["KURRENTDB_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}",
+			["KURRENTDB_MAX_APPEND_SIZE"]                  = "4194304"  // Sets the limit to 4MB
 		};
 
 		if (GlobalEnvironment.DockerImage.Contains("commercial")) {
