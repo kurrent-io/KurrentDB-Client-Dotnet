@@ -5,7 +5,7 @@ var cancellationToken = tokenSource.Token;
 
 #region createClient
 
-const string connectionString = "esdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false";
+const string connectionString = "kurrentdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false";
 
 var settings = KurrentDBClientSettings.Create(connectionString);
 
