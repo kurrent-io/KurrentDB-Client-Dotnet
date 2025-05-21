@@ -110,7 +110,8 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 			.Start();
 
 		using var log = eventstore.Logs(true, cts.Token);
-		foreach (var line in log.ReadToEnd()) {
+		var logs = log.ReadToEnd();
+		foreach (var line in logs) {
 			if (line.StartsWith(versionPrefix) &&
 			    Version.TryParse(new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()), out var version)) {
 				return version;
@@ -122,7 +123,7 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 			}
 		}
 
-		throw new InvalidOperationException("Could not determine server version.");
+		throw new InvalidOperationException($"Could not determine server version from logs: {string.Join(Environment.NewLine, logs)}");
 
 		IEnumerable<char> ReadVersion(string s) {
 			foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) {
