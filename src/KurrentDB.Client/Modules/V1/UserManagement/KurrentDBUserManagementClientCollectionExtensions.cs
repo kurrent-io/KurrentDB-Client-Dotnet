@@ -2,9 +2,9 @@
 
 using System.Net.Http;
 using KurrentDB.Client;
-using Grpc.Core.Interceptors;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -20,9 +20,8 @@ public static class KurrentDBUserManagementClientCollectionExtensions {
 	/// <param name="createHttpMessageHandler"></param>
 	/// <returns></returns>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBUserManagementClient(this IServiceCollection services,
-	                                                                  Uri address, Func<HttpMessageHandler>? createHttpMessageHandler = null)
-		=> services.AddKurrentDBUserManagementClient(options => {
+	public static IServiceCollection AddKurrentDBUserManagementClient(this IServiceCollection services, Uri address, Func<HttpMessageHandler>? createHttpMessageHandler = null) =>
+		services.AddKurrentDBUserManagementClient(options => {
 			options.ConnectivitySettings.Address = address;
 			options.CreateHttpMessageHandler     = createHttpMessageHandler;
 		});
@@ -35,11 +34,8 @@ public static class KurrentDBUserManagementClientCollectionExtensions {
 	/// <param name="configureSettings"></param>
 	/// <returns></returns>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBUserManagementClient(this IServiceCollection services,
-	                                                                  string connectionString, Action<KurrentDBClientSettings>? configureSettings = null)
-		=> services.AddKurrentDBUserManagementClient(KurrentDBClientSettings.Create(connectionString),
-			configureSettings);
-
+	public static IServiceCollection AddKurrentDBUserManagementClient(this IServiceCollection services, string connectionString, Action<KurrentDBClientSettings>? configureSettings = null) =>
+		services.AddKurrentDBUserManagementClient(KurrentDBClientSettings.Create(connectionString), configureSettings);
 
 	/// <summary>
 	/// Adds an <see cref="KurrentDBUserManagementClient"/> to the <see cref="IServiceCollection"/>.
@@ -48,23 +44,20 @@ public static class KurrentDBUserManagementClientCollectionExtensions {
 	/// <param name="configureSettings"></param>
 	/// <returns></returns>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBUserManagementClient(this IServiceCollection services,
-	                                                                  Action<KurrentDBClientSettings>? configureSettings = null) =>
+	public static IServiceCollection AddKurrentDBUserManagementClient(this IServiceCollection services, Action<KurrentDBClientSettings>? configureSettings = null) =>
 		services.AddKurrentDBUserManagementClient(new KurrentDBClientSettings(), configureSettings);
 
-	static IServiceCollection AddKurrentDBUserManagementClient(this IServiceCollection services,
-	                                                           KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings = null) {
+	static IServiceCollection AddKurrentDBUserManagementClient(this IServiceCollection services, KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings = null) {
 		configureSettings?.Invoke(settings);
-		if (services == null) {
-			throw new ArgumentNullException(nameof(services));
-		}
 
 		services.TryAddSingleton(provider => {
-			settings.LoggerFactory ??= provider.GetService<ILoggerFactory>();
-			settings.Interceptors  ??= provider.GetServices<Interceptor>();
+				settings.LoggerFactory = settings.LoggerFactory == NullLoggerFactory.Instance
+					? provider.GetService<ILoggerFactory>() ?? NullLoggerFactory.Instance
+					: settings.LoggerFactory;
 
-			return new KurrentDBUserManagementClient(settings);
-		});
+				return new KurrentDBUserManagementClient(settings);
+			}
+		);
 
 		return services;
 	}

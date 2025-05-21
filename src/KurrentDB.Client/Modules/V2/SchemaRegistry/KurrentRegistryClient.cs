@@ -63,7 +63,7 @@ public class KurrentRegistryClient(KurrentDBClientSettings? settings) : KurrentD
 		};
 
 		try {
-			var response = await SchemaRegistryServiceClient
+			var response = await ServiceClients.SchemaRegistry
 				.CreateSchemaAsync(request, new CallOptions(cancellationToken: cancellationToken))
 				.ConfigureAwait(false);
 
@@ -127,7 +127,7 @@ public class KurrentRegistryClient(KurrentDBClientSettings? settings) : KurrentD
 		};
 
 		try {
-			var response = await SchemaRegistryServiceClient
+			var response = await ServiceClients.SchemaRegistry
 				.GetSchemaAsync(request, new CallOptions(cancellationToken: cancellationToken))
 				.ConfigureAwait(false);
 
@@ -168,7 +168,7 @@ public class KurrentRegistryClient(KurrentDBClientSettings? settings) : KurrentD
 			request.VersionNumber = versionNumber.Value;
 
 		try {
-			var response = await SchemaRegistryServiceClient
+			var response = await ServiceClients.SchemaRegistry
 				.GetSchemaVersionAsync(request, new CallOptions(cancellationToken: cancellationToken))
 				.ConfigureAwait(false);
 
@@ -201,7 +201,7 @@ public class KurrentRegistryClient(KurrentDBClientSettings? settings) : KurrentD
 		};
 
 		try {
-			var response = await SchemaRegistryServiceClient
+			var response = await ServiceClients.SchemaRegistry
 				.GetSchemaVersionByIdAsync(request, new CallOptions(cancellationToken: cancellationToken))
 				.ConfigureAwait(false);
 
@@ -234,7 +234,7 @@ public class KurrentRegistryClient(KurrentDBClientSettings? settings) : KurrentD
 		};
 
 		try {
-			await SchemaRegistryServiceClient
+			await ServiceClients.SchemaRegistry
 				.DeleteSchemaAsync(request, new CallOptions(cancellationToken: cancellationToken))
 				.ConfigureAwait(false);
 
@@ -280,7 +280,7 @@ public class KurrentRegistryClient(KurrentDBClientSettings? settings) : KurrentD
 		request.DataFormat = (Contracts.SchemaDataFormat)dataFormat;
 
 		try {
-			var response = await SchemaRegistryServiceClient
+			var response = await ServiceClients.SchemaRegistry
 				.CheckSchemaCompatibilityAsync(request, new CallOptions(cancellationToken: cancellationToken))
 				.ConfigureAwait(false);
 

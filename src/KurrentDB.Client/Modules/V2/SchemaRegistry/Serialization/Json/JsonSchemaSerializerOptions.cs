@@ -6,7 +6,9 @@ namespace KurrentDB.Client.SchemaRegistry.Serialization.Json;
 
 [PublicAPI]
 public record JsonSchemaSerializerOptions : SchemaSerializerOptions {
-	public static readonly JsonSerializerOptions Default = new(JsonSerializerOptions.Default) {
+	public static readonly JsonSchemaSerializerOptions Default = new();
+
+	public static readonly JsonSerializerOptions DefaultJsonSerializerOptions = new(JsonSerializerOptions.Default) {
 		PropertyNamingPolicy        = JsonNamingPolicy.CamelCase,
 		DictionaryKeyPolicy         = JsonNamingPolicy.CamelCase,
 		PropertyNameCaseInsensitive = false,
@@ -19,6 +21,6 @@ public record JsonSchemaSerializerOptions : SchemaSerializerOptions {
 		}
 	};
 
-	public JsonSerializerOptions JsonSerializerOptions { get; init; } = Default;
+	public JsonSerializerOptions JsonSerializerOptions { get; init; } = DefaultJsonSerializerOptions;
 	public bool                  UseProtobufFormatter  { get; init; } = true;
 }

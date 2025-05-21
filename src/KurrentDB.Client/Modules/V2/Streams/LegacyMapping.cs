@@ -108,7 +108,7 @@ public static class LegacyMapping {
 
 		var value = await serializerProvider
 			.GetSerializer(dataFormat)
-			.Deserialize(re.OriginalEvent.Data, new SchemaSerializationContext("", metadata, dataFormat), ct)
+			.Deserialize(re.OriginalEvent.Data, new SchemaSerializationContext("", metadata), ct)
 			.ConfigureAwait(false);
 
 		// if null we want to skip it

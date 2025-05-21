@@ -80,7 +80,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 			return versionInfo;
 		}
 		else {
-			var definition = SchemaExporter.ExportSchemaDefinition(messageType);
+			var definition = SchemaExporter.Export(messageType, dataFormat);
 
 			var createSchemaResult = await SchemaRegistry
 				.CreateSchema(schemaName, definition, dataFormat, cancellationToken)
@@ -115,7 +115,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 		if (TryGetLastSchemaVersion(schemaVersionId, out var foundSchemaVersion))
 			return foundSchemaVersion.VersionId;
 
-		var definition = SchemaExporter.ExportSchemaDefinition(messageType);
+		var definition = SchemaExporter.Export(messageType, dataFormat);
 
 		var result = await SchemaRegistry
 			.CheckSchemaCompatibility(schemaVersionId, definition, dataFormat, cancellationToken)
@@ -143,7 +143,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 				return lastSchemaVersionId;
 			},
 			errors   => throw new SchemaValidationException(dataFormat, schemaVersionId, messageType, errors.Errors),
-			notfound => throw new SchemaNotFoundException(schemaVersionId)
+			notFound => throw new SchemaNotFoundException(schemaVersionId)
 		);
 	}
 
@@ -159,7 +159,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 		if (CompatibleVersions.TryGetValue(messageType, out var versions))
 			return versions.Last().VersionId;
 
-		var definition = SchemaExporter.ExportSchemaDefinition(messageType);
+		var definition = SchemaExporter.Export(messageType, dataFormat);
 
 		var result = await SchemaRegistry
 			.CheckSchemaCompatibility(schemaName, definition, dataFormat, cancellationToken)
@@ -172,7 +172,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 				return schemaVersionId;
 			},
 			errors   => throw new SchemaValidationException(dataFormat, schemaName, messageType, errors.Errors),
-			notfound => throw new SchemaNotFoundException(schemaName)
+			notFound => throw new SchemaNotFoundException(schemaName)
 		);
 	}
 

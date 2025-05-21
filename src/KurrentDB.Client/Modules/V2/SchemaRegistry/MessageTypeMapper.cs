@@ -2,13 +2,28 @@ using JetBrains.Annotations;
 
 namespace KurrentDB.Client.SchemaRegistry;
 
-[PublicAPI]
-public class MessageTypeRegistry {
+/// <summary>
+/// Responsible for mapping message types to schema names and managing the bidirectional mapping
+/// between schemas and message types. Provides methods for registering, retrieving, and verifying
+/// mappings between schema names and message types.
+/// </summary>
+public class MessageTypeMapper {
 	public static readonly Type Missing = Type.Missing.GetType();
 
 	ConcurrentBidirectionalDictionary<string, Type> TypeMap { get; } = new();
 
-	public Type GetOrRegister(SchemaName schemaName, Type messageType) {
+	/// <summary>
+	/// Retrieves the message type associated with the specified schema name, or maps the given schema name
+	/// to the provided message type if no mapping exists. If a mapping already exists for the schema name
+	/// and it conflicts with the given message type, a <see cref="MessageTypeConflictException"/> is thrown.
+	/// </summary>
+	/// <param name="schemaName">The schema name to retrieve or map to the specified message type.</param>
+	/// <param name="messageType">The message type to map to the given schema name, if no mapping exists.</param>
+	/// <returns>The message type associated with the specified schema name.</returns>
+	/// <exception cref="MessageTypeConflictException">
+	/// Thrown when the schema name is already mapped to a different message type than the one provided.
+	/// </exception>
+	public Type GetOrMap(SchemaName schemaName, Type messageType) {
 		if (TypeMap.TryAdd(schemaName, messageType))
 			return messageType;
 
@@ -19,7 +34,7 @@ public class MessageTypeRegistry {
 		return registeredType;
 	}
 
-	public bool TryRegister(SchemaName schemaName, Type messageType) =>
+	public bool TryMap(SchemaName schemaName, Type messageType) =>
 		TypeMap.TryAdd(schemaName, messageType);
 
 	public bool TryGetMessageType(SchemaName schemaName, out Type messageType) {
@@ -42,8 +57,8 @@ public class MessageTypeRegistry {
 		return false;
 	}
 
-	public Type GetOrRegister<T>(string schemaName) =>
-		GetOrRegister(schemaName, typeof(T));
+	public Type GetOrMap<T>(string schemaName) =>
+		GetOrMap(schemaName, typeof(T));
 
 	public Type GetMessageType(string schemaName, bool throwWhenMissing = true) {
 		return TypeMap.TryGetValue(schemaName, out var messageType)
@@ -64,15 +79,11 @@ public class MessageTypeRegistry {
 	public SchemaName GetSchemaNameOrDefault(Type messageType, SchemaName defaultSchemaName) =>
 		TypeMap.TryGetKey(messageType, out var schemaName) ? schemaName : defaultSchemaName;
 
-	public bool IsMessageTypeRegistered(Type messageType) =>
+	public bool IsMessageTypeMapped(Type messageType) =>
 		TypeMap.ContainsValue(messageType);
 
-	public bool IsSchemaNameRegistered(SchemaName schemaName) =>
+	public bool IsMessageTypeMapped(SchemaName schemaName) =>
 		TypeMap.ContainsKey(schemaName);
-
-	public void TryRegister(Dictionary<string, Type> typeMap) {
-		foreach (var map in typeMap) TryRegister(map.Key, map.Value);
-	}
 }
 
 /// <summary>

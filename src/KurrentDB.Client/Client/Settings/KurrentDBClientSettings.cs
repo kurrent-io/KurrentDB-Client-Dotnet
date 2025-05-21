@@ -4,7 +4,6 @@ using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
 using Grpc.Net.Client.Configuration;
 using KurrentDB.Client.Model;
-using KurrentDB.Client.SchemaRegistry;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -41,84 +40,6 @@ namespace KurrentDB.Client;
 // }
 
 /// <summary>
-/// Defines retry configuration for gRPC operations.
-/// </summary>
-public record KurrentDBClientRetrySettings {
-	/// <summary>
-	/// Gets or sets whether retry is enabled.
-	/// </summary>
-	public bool IsEnabled { get; init; } = true;
-
-	/// <summary>
-	/// Gets or sets the maximum number of retry attempts.
-	/// </summary>
-	public int MaxAttempts { get; init; } = 3;
-
-	/// <summary>
-	/// Gets or sets the initial backoff delay.
-	/// </summary>
-	public TimeSpan InitialBackoff { get; init; } = TimeSpan.FromSeconds(250);
-
-	/// <summary>
-	/// Gets or sets the maximum backoff delay.
-	/// </summary>
-	public TimeSpan MaxBackoff { get; init; } = TimeSpan.FromSeconds(10);
-
-	/// <summary>
-	/// Gets or sets the backoff multiplier. Each successive backoff increases by this multiplier.
-	/// </summary>
-	public double BackoffMultiplier { get; init; } = 2.0;
-
-	/// <summary>
-	/// Gets or sets the gRPC status codes that should trigger a retry.
-	/// </summary>
-	public StatusCode[] RetryableStatusCodes { get; init; } = [
-		StatusCode.Unavailable,       // Server temporarily unavailable
-		StatusCode.Unknown,           // Unknown error (often network issues)
-		StatusCode.DeadlineExceeded,  // Server took too long to respond
-		StatusCode.ResourceExhausted, // Server overloaded
-	];
-
-	/// <summary>
-	/// Default retry settings with the default values.
-	/// </summary>
-	public static KurrentDBClientRetrySettings Default => new();
-
-	/// <summary>
-	/// Retry settings with retry disabled.
-	/// </summary>
-	public static KurrentDBClientRetrySettings NoRetry => new() { IsEnabled = false };
-
-	internal MethodConfig GetRetryMethodConfig() {
-		var retryPolicy = new RetryPolicy {
-			MaxAttempts       = MaxAttempts,
-			InitialBackoff    = InitialBackoff,
-			MaxBackoff        = MaxBackoff,
-			BackoffMultiplier = BackoffMultiplier
-		};
-
-		foreach (var statusCode in RetryableStatusCodes)
-			retryPolicy.RetryableStatusCodes.Add(statusCode);
-
-		return new() {
-			Names       = { MethodName.Default },
-			RetryPolicy = retryPolicy
-		};
-	}
-}
-
-/// <summary>
-/// Defines schema settings for a KurrentDB client, including naming strategies and auto-registration.
-/// </summary>
-public record KurrentDBClientSchemaRegistrySettings {
-	public ISchemaNameStrategy NameStrategy { get; init; } = new MessageSchemaNameStrategy();
-	public bool                AutoRegister { get; init; } = true;
-	public bool                Validate     { get; init; } = true;
-
-	public static KurrentDBClientSchemaRegistrySettings Default => new();
-}
-
-/// <summary>
 /// A class that represents the settings to use for operations made from an implementation of <see cref="KurrentDBClientBase"/>.
 /// </summary>
 public class KurrentDBClientSettings {
@@ -132,7 +53,7 @@ public class KurrentDBClientSettings {
 	/// <summary>
 	/// An optional list of <see cref="Interceptor"/>s to use.
 	/// </summary>
-	public IEnumerable<Interceptor>? Interceptors { get; set; }
+	public IEnumerable<Interceptor> Interceptors { get; set; } = [];
 
 	/// <summary>
 	/// An optional <see cref="HttpMessageHandler"/> factory.
@@ -142,7 +63,7 @@ public class KurrentDBClientSettings {
 	/// <summary>
 	/// An optional <see cref="ILoggerFactory"/> to use.
 	/// </summary>
-	public ILoggerFactory? LoggerFactory { get; set; }
+	public ILoggerFactory LoggerFactory { get; set; } = NullLoggerFactory.Instance;
 
 	/// <summary>
 	/// The optional <see cref="ChannelCredentials"/> to use when creating the <see cref="ChannelBase"/>.
@@ -164,23 +85,21 @@ public class KurrentDBClientSettings {
 	/// <summary>
 	/// The optional <see cref="UserCredentials"/> to use if none have been supplied to the operation.
 	/// </summary>
-	public UserCredentials? DefaultCredentials { get; set; }
+	public UserCredentials? DefaultCredentials { get; set; } //= UserCredentials.Empty;
 
 	/// <summary>
 	/// The default deadline for calls. Will not be applied to reads or subscriptions.
 	/// </summary>
 	public TimeSpan? DefaultDeadline { get; set; } = TimeSpan.FromSeconds(10);
 
-	public KurrentDBClientSchemaRegistrySettings SchemaRegistry { get; set; } = null!;
-
-	public ITypeResolver MessageTypeResolver { get; set; } = null!;
-
-	public IMetadataDecoder MetadataDecoder { get; set; } = null!;
-
 	/// <summary>
 	/// The retry settings to use for gRPC operations.
 	/// </summary>
 	public KurrentDBClientRetrySettings RetrySettings { get; set; } = KurrentDBClientRetrySettings.NoRetry;
+
+	public KurrentDBClientSchemaRegistrySettings SchemaRegistry { get; set; } = KurrentDBClientSchemaRegistrySettings.Default;
+
+	public IMetadataDecoder MetadataDecoder { get; set; } = null!;
 
 	/// <summary>
 	/// Creates client settings from a connection string

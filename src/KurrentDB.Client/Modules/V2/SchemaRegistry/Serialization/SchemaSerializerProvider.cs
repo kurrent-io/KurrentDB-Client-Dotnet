@@ -2,9 +2,25 @@ using KurrentDB.Client.Model;
 
 namespace KurrentDB.Client.SchemaRegistry.Serialization;
 
+/// <summary>
+/// Defines functionality to provide schema serializers for specified data formats.
+/// </summary>
 public interface ISchemaSerializerProvider {
+	/// <summary>
+	/// Determines whether the specified schema data format is supported by the serializer provider.
+	/// </summary>
+	/// <param name="dataFormat">The schema data format to check for support.</param>
+	/// <returns><c>true</c> if the specified schema data format is supported; otherwise, <c>false</c>.</returns>
 	bool SupportsDataFormat(SchemaDataFormat dataFormat);
 
+	/// <summary>
+	/// Retrieves the serializer instance corresponding to the specified schema data format.
+	/// </summary>
+	/// <param name="dataFormat">The schema data format for which the serializer is required.</param>
+	/// <returns>An instance of <see cref="ISchemaSerializer"/> corresponding to the specified schema data format.</returns>
+	/// <exception cref="SchemaSerializerNotFoundException">
+	/// Thrown when a serializer for the specified data format is not found.
+	/// </exception>
 	ISchemaSerializer GetSerializer(SchemaDataFormat dataFormat);
 }
 

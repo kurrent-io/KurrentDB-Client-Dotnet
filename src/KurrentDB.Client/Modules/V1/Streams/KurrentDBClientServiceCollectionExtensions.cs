@@ -2,9 +2,9 @@
 
 using System.Net.Http;
 using KurrentDB.Client;
-using Grpc.Core.Interceptors;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -20,9 +20,8 @@ public static class KurrentDBClientServiceCollectionExtensions {
 	/// <param name="createHttpMessageHandler"></param>
 	/// <returns></returns>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBClient(this IServiceCollection services, Uri address,
-	                                                    Func<HttpMessageHandler>? createHttpMessageHandler = null)
-		=> services.AddKurrentDBClient(options => {
+	public static IServiceCollection AddKurrentDBClient(this IServiceCollection services, Uri address, Func<HttpMessageHandler>? createHttpMessageHandler = null) =>
+		services.AddKurrentDBClient(options => {
 			options.ConnectivitySettings.Address = address;
 			options.CreateHttpMessageHandler     = createHttpMessageHandler;
 		});
@@ -35,10 +34,8 @@ public static class KurrentDBClientServiceCollectionExtensions {
 	/// <param name="createHttpMessageHandler"></param>
 	/// <returns></returns>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBClient(this IServiceCollection services,
-	                                                    Func<IServiceProvider, Uri> addressFactory,
-	                                                    Func<HttpMessageHandler>? createHttpMessageHandler = null)
-		=> services.AddKurrentDBClient(provider => options => {
+	public static IServiceCollection AddKurrentDBClient(this IServiceCollection services, Func<IServiceProvider, Uri> addressFactory, Func<HttpMessageHandler>? createHttpMessageHandler = null) =>
+		services.AddKurrentDBClient(provider => options => {
 			options.ConnectivitySettings.Address = addressFactory(provider);
 			options.CreateHttpMessageHandler     = createHttpMessageHandler;
 		});
@@ -50,8 +47,7 @@ public static class KurrentDBClientServiceCollectionExtensions {
 	/// <param name="configureSettings"></param>
 	/// <returns></returns>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBClient(this IServiceCollection services,
-	                                                    Action<KurrentDBClientSettings>? configureSettings = null) =>
+	public static IServiceCollection AddKurrentDBClient(this IServiceCollection services, Action<KurrentDBClientSettings>? configureSettings = null) =>
 		services.AddKurrentDBClient(new KurrentDBClientSettings(), configureSettings);
 
 	/// <summary>
@@ -61,10 +57,8 @@ public static class KurrentDBClientServiceCollectionExtensions {
 	/// <param name="configureSettings"></param>
 	/// <returns></returns>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBClient(this IServiceCollection services,
-	                                                    Func<IServiceProvider, Action<KurrentDBClientSettings>> configureSettings) =>
-		services.AddKurrentDBClient(new KurrentDBClientSettings(),
-			configureSettings);
+	public static IServiceCollection AddKurrentDBClient(this IServiceCollection services, Func<IServiceProvider, Action<KurrentDBClientSettings>> configureSettings) =>
+		services.AddKurrentDBClient(new KurrentDBClientSettings(), configureSettings);
 
 	/// <summary>
 	/// Adds an <see cref="KurrentDBClient"/> to the <see cref="IServiceCollection"/>.
@@ -74,14 +68,8 @@ public static class KurrentDBClientServiceCollectionExtensions {
 	/// <param name="configureSettings"></param>
 	/// <returns></returns>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBClient(this IServiceCollection services,
-	                                                    string connectionString, Action<KurrentDBClientSettings>? configureSettings = null) {
-		if (services == null) {
-			throw new ArgumentNullException(nameof(services));
-		}
-
-		return services.AddKurrentDBClient(KurrentDBClientSettings.Create(connectionString), configureSettings);
-	}
+	public static IServiceCollection AddKurrentDBClient(this IServiceCollection services, string connectionString, Action<KurrentDBClientSettings>? configureSettings = null) =>
+		services.AddKurrentDBClient(KurrentDBClientSettings.Create(connectionString), configureSettings);
 
 	/// <summary>
 	/// Adds an <see cref="KurrentDBClient"/> to the <see cref="IServiceCollection"/>.
@@ -91,24 +79,16 @@ public static class KurrentDBClientServiceCollectionExtensions {
 	/// <param name="configureSettings"></param>
 	/// <returns></returns>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBClient(this IServiceCollection services,
-	                                                    Func<IServiceProvider, string> connectionStringFactory,
-	                                                    Action<KurrentDBClientSettings>? configureSettings = null) {
-		if (services == null) {
-			throw new ArgumentNullException(nameof(services));
-		}
+	public static IServiceCollection AddKurrentDBClient(this IServiceCollection services, Func<IServiceProvider, string> connectionStringFactory, Action<KurrentDBClientSettings>? configureSettings = null) =>
+		services.AddKurrentDBClient(provider => KurrentDBClientSettings.Create(connectionStringFactory(provider)), configureSettings);
 
-		return services.AddKurrentDBClient(provider => KurrentDBClientSettings.Create(connectionStringFactory(provider)), configureSettings);
-	}
-
-	static IServiceCollection AddKurrentDBClient(this IServiceCollection services,
-	                                             KurrentDBClientSettings settings,
-	                                             Action<KurrentDBClientSettings>? configureSettings) {
+	static IServiceCollection AddKurrentDBClient(this IServiceCollection services, KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings) {
 		configureSettings?.Invoke(settings);
 
 		services.TryAddSingleton(provider => {
-			settings.LoggerFactory ??= provider.GetService<ILoggerFactory>();
-			settings.Interceptors  ??= provider.GetServices<Interceptor>();
+			settings.LoggerFactory = settings.LoggerFactory == NullLoggerFactory.Instance
+				? provider.GetService<ILoggerFactory>() ?? NullLoggerFactory.Instance
+				: settings.LoggerFactory;
 
 			return new KurrentDBClient(settings);
 		});
@@ -116,16 +96,14 @@ public static class KurrentDBClientServiceCollectionExtensions {
 		return services;
 	}
 
-	static IServiceCollection AddKurrentDBClient(this IServiceCollection services,
-	                                             Func<IServiceProvider, KurrentDBClientSettings> settingsFactory,
-	                                             Action<KurrentDBClientSettings>? configureSettings = null) {
-
+	static IServiceCollection AddKurrentDBClient(this IServiceCollection services, Func<IServiceProvider, KurrentDBClientSettings> settingsFactory, Action<KurrentDBClientSettings>? configureSettings = null) {
 		services.TryAddSingleton(provider => {
 			var settings = settingsFactory(provider);
 			configureSettings?.Invoke(settings);
 
-			settings.LoggerFactory ??= provider.GetService<ILoggerFactory>();
-			settings.Interceptors  ??= provider.GetServices<Interceptor>();
+			settings.LoggerFactory = settings.LoggerFactory == NullLoggerFactory.Instance
+				? provider.GetService<ILoggerFactory>() ?? NullLoggerFactory.Instance
+				: settings.LoggerFactory;
 
 			return new KurrentDBClient(settings);
 		});
@@ -133,15 +111,13 @@ public static class KurrentDBClientServiceCollectionExtensions {
 		return services;
 	}
 
-	static IServiceCollection AddKurrentDBClient(this IServiceCollection services,
-	                                             KurrentDBClientSettings settings,
-	                                             Func<IServiceProvider, Action<KurrentDBClientSettings>> configureSettingsFactory) {
-
+	static IServiceCollection AddKurrentDBClient(this IServiceCollection services, KurrentDBClientSettings settings, Func<IServiceProvider, Action<KurrentDBClientSettings>> configureSettingsFactory) {
 		services.TryAddSingleton(provider => {
 			configureSettingsFactory(provider).Invoke(settings);
 
-			settings.LoggerFactory ??= provider.GetService<ILoggerFactory>();
-			settings.Interceptors  ??= provider.GetServices<Interceptor>();
+			settings.LoggerFactory = settings.LoggerFactory == NullLoggerFactory.Instance
+				? provider.GetService<ILoggerFactory>() ?? NullLoggerFactory.Instance
+				: settings.LoggerFactory;
 
 			return new KurrentDBClient(settings);
 		});

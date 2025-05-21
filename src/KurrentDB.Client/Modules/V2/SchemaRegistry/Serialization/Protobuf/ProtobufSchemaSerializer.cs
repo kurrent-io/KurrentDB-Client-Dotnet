@@ -3,8 +3,12 @@ using KurrentDB.Client.Model;
 
 namespace KurrentDB.Client.SchemaRegistry.Serialization.Protobuf;
 
-public class ProtobufSchemaSerializer(SchemaSerializerOptions options, SchemaManager schemaManager, MessageTypeRegistry typeRegistry, ITypeResolver typeResolver)
-	: SchemaSerializer(options, schemaManager, typeRegistry, typeResolver) {
+public record ProtobufSchemaSerializerOptions : SchemaSerializerOptions {
+	public static readonly ProtobufSchemaSerializerOptions Default = new();
+}
+
+public class ProtobufSchemaSerializer(ProtobufSchemaSerializerOptions options, SchemaManager schemaManager, MessageTypeMapper typeMapper)
+	: SchemaSerializer(options, schemaManager, typeMapper) {
 	public override SchemaDataFormat DataFormat => SchemaDataFormat.Protobuf;
 
 	protected override ReadOnlyMemory<byte> Serialize(object? value) =>

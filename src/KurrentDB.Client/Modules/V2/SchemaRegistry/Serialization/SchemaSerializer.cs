@@ -13,12 +13,13 @@ public interface ISchemaSerializer {
 	ValueTask<object?> Deserialize(ReadOnlyMemory<byte> data, SchemaSerializationContext context, CancellationToken cancellationToken);
 }
 
-public abstract record SchemaSerializerOptions {
+public record SchemaSerializerOptions {
 	/// <summary>
-	/// Indicates whether schemas should be automatically registered when they are encountered during
-	/// the serialization or deserialization process. When set to <c>true</c>, any new schemas not
-	/// already registered in the schema registry will be automatically registered. Disabling it
-	/// prevents auto-registration and assumes that all required schemas are explicitly pre-registered.
+	/// Indicates whether schemas should be automatically registered when they are encountered
+	/// during the serialization process. When set to <c>true</c>, any new schemas not
+	/// already registered in the schema registry will be automatically registered.
+	/// Disabling it prevents auto-registration and assumes that all required schemas
+	/// are explicitly pre-registered.
 	/// </summary>
 	public bool AutoRegister { get; init; } = true;
 
@@ -32,13 +33,6 @@ public abstract record SchemaSerializerOptions {
 	public bool Validate { get; init; } = true;
 
 	/// <summary>
-	/// Indicates whether <c>StrictMode</c> is enabled in the schema serializer options.
-	/// When set to <c>true</c>, the serializer enforces stricter validation rules, ensuring schemas and data comply with
-	/// defined specifications. Disabling it allows more leniency during serialization and deserialization processes.
-	/// </summary>
-	public bool StrictMode { get; init; } = false;
-
-	/// <summary>
 	/// Specifies the strategy used for generating schema names during serialization and deserialization.
 	/// The schema naming strategy determines how the name of a schema is derived based on the message type
 	/// and other possible context, ensuring consistent and clear identification of schemas across different systems.
@@ -46,11 +40,10 @@ public abstract record SchemaSerializerOptions {
 	public ISchemaNameStrategy SchemaNameStrategy { get; init; } = new MessageSchemaNameStrategy();
 }
 
-public abstract class SchemaSerializer(SchemaSerializerOptions options, SchemaManager schemaManager, MessageTypeRegistry typeRegistry, ITypeResolver typeResolver) : ISchemaSerializer {
+public abstract class SchemaSerializer(SchemaSerializerOptions options, SchemaManager schemaManager, MessageTypeMapper typeMapper) : ISchemaSerializer {
 	SchemaSerializerOptions Options       { get; } = options;
 	SchemaManager           SchemaManager { get; } = schemaManager;
-	MessageTypeRegistry     TypeRegistry  { get; } = typeRegistry;
-	ITypeResolver           TypeResolver  { get; } = typeResolver;
+	MessageTypeMapper     TypeMapper  { get; } = typeMapper;
 
 	public abstract SchemaDataFormat DataFormat { get; }
 
@@ -96,14 +89,12 @@ public abstract class SchemaSerializer(SchemaSerializerOptions options, SchemaMa
 		// }
 
 		var dataFormat = context.Metadata.Get<SchemaDataFormat>(SystemMetadataKeys.SchemaDataFormat);
-		var schemaName = TypeRegistry.GetSchemaNameOrDefault(messageType, SchemaName.From(Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream)));
+		var schemaName = TypeMapper.GetSchemaNameOrDefault(messageType, SchemaName.From(Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream)));
 
 		if (Options.AutoRegister) {
 			var versionInfo = await SchemaManager
 				.TryRegisterSchema(schemaName, messageType, dataFormat, cancellationToken)
 				.ConfigureAwait(false);
-
-	sd
 
 			context.Metadata
 				.Set(SystemMetadataKeys.SchemaName, schemaName)
@@ -122,7 +113,7 @@ public abstract class SchemaSerializer(SchemaSerializerOptions options, SchemaMa
 			}
 			else {
 				// TODO SS: if its not on the registry throw
-				if(!TypeRegistry.TryGetSchemaName(messageType, out var schemaNameFound))
+				if(!TypeMapper.TryGetSchemaName(messageType, out var schemaNameFound))
 					// TODO SS: fix the exception to use the message type
 					throw new AutoRegistrationDisabledException(DataFormat, schemaNameFound, messageType);
 			}
@@ -137,7 +128,7 @@ public abstract class SchemaSerializer(SchemaSerializerOptions options, SchemaMa
 
 		ReadOnlyMemory<byte> HandleBytes(dynamic bytes) {
 			context.Metadata
-				.TrySet(SystemMetadataKeys.SchemaName, TypeRegistry.GetSchemaNameOrDefault(messageType, Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream)))
+				.TrySet(SystemMetadataKeys.SchemaName, TypeMapper.GetSchemaNameOrDefault(messageType, Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream)))
 				.Set(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Bytes);
 
 			return bytes;
@@ -162,7 +153,7 @@ public abstract class SchemaSerializer(SchemaSerializerOptions options, SchemaMa
 		 ?? throw new Exception("Schema name is missing in the metadata")
 		);
 
-		if (TypeRegistry.TryGetMessageType(schemaName, out var messageType)) {
+		if (TypeMapper.TryGetMessageType(schemaName, out var messageType)) {
 			if (Options.Validate) {
 				// if a schema version id is present it means the new client was used
 				if (context.Metadata.TryGet<string>(SystemMetadataKeys.SchemaVersionId, out var schemaVersionIdValue)) {
@@ -199,7 +190,7 @@ public abstract class SchemaSerializer(SchemaSerializerOptions options, SchemaMa
 				context.Metadata.Set(SystemMetadataKeys.SchemaVersionId, lastSchemaVersionId);
 			}
 
-			TypeRegistry.TryRegister(schemaName, foundType);
+			TypeMapper.TryMap(schemaName, foundType);
 		}
 
 		try {

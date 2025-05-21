@@ -6,7 +6,9 @@ using EventStore.Client.Streams;
 using EventStore.Client.Users;
 using Grpc.Core;
 using KurrentDB.Client.Model;
+using KurrentDB.Client.SchemaRegistry;
 using KurrentDB.Client.SchemaRegistry.Serialization;
+using KurrentDB.Client.SchemaRegistry.Serialization.Bytes;
 using KurrentDB.Client.SchemaRegistry.Serialization.Json;
 using KurrentDB.Client.SchemaRegistry.Serialization.Protobuf;
 using KurrentDB.Protocol.Registry.V2;
@@ -28,45 +30,66 @@ public abstract class KurrentDBClientBase : IAsyncDisposable {
 		Settings = settings ?? new();
 
 		Settings.ConnectionName ??= $"conn-{Guid.NewGuid():D}";
-		Settings.LoggerFactory  ??= NullLoggerFactory.Instance;
 
-		_legacyClusterClient = new LegacyClusterClient(
+		_legacyClusterClient = new(
 			Settings,
 			channelInfo => {
 				lock (_locker) {
-					ChannelInfo                          = channelInfo;
-					SchemaRegistryServiceClient          = new SchemaRegistryService.SchemaRegistryServiceClient(channelInfo.CallInvoker);
-					OperationsServiceClient              = new Operations.OperationsClient(channelInfo.CallInvoker);
-					ProjectionsServiceClient             = new Projections.ProjectionsClient(channelInfo.CallInvoker);
-					PersistentSubscriptionsServiceClient = new PersistentSubscriptions.PersistentSubscriptionsClient(channelInfo.CallInvoker);
-					UsersServiceClient                   = new Users.UsersClient(channelInfo.CallInvoker);
+					ChannelInfo    = channelInfo;
+					ServiceClients = new(channelInfo);
 				}
 			},
-			exceptionMap);
+			exceptionMap ?? new()
+		);
 
 		// trigger the initial connection here as it is our only choice
 		// besides using some lazy async that is not even net48 compatible ffs.
 		_legacyClusterClient.Connect().AsTask().GetAwaiter().GetResult();
 
+		var messageTypeRegistry = new MessageTypeMapper();
+		var schemaExporter      = new SchemaExporter();
+
+		var schemaManager = new SchemaManager(new KurrentRegistryClient(Settings), schemaExporter);
+
 		SerializerProvider = new SchemaSerializerProvider([
-			new JsonSchemaSerializer(schemaManager: SchemaManager),
-			new ProtobufSchemaSerializer(schemaManager: SchemaManager)
+			new BytesSerializer(),
+			new JsonSchemaSerializer(
+				new() {
+					AutoRegister       = Settings.SchemaRegistry.AutoRegister,
+					Validate           = Settings.SchemaRegistry.Validate,
+					SchemaNameStrategy = Settings.SchemaRegistry.NameStrategy
+				},
+				schemaManager: schemaManager,
+				typeMapper: messageTypeRegistry
+			),
+			new ProtobufSchemaSerializer(
+				new() {
+					AutoRegister       = Settings.SchemaRegistry.AutoRegister,
+					Validate           = Settings.SchemaRegistry.Validate,
+					SchemaNameStrategy = Settings.SchemaRegistry.NameStrategy
+				},
+				schemaManager: schemaManager,
+				typeMapper: messageTypeRegistry
+			)
 		]);
 	}
 
-	internal Streams.StreamsClient                                 StreamsServiceClient                 { get; private set; } = null!;
-	internal SchemaRegistryService.SchemaRegistryServiceClient     SchemaRegistryServiceClient          { get; private set; } = null!;
-	internal Operations.OperationsClient                           OperationsServiceClient              { get; private set; } = null!;
-	internal Projections.ProjectionsClient                         ProjectionsServiceClient             { get; private set; } = null!;
-	internal PersistentSubscriptions.PersistentSubscriptionsClient PersistentSubscriptionsServiceClient { get; private set; } = null!;
-	internal Users.UsersClient                                     UsersServiceClient                   { get; private set; } = null!;
+	internal class GrpcServiceClients(ChannelInfo channelInfo) {
+		internal Streams.StreamsClient                                 Streams                 { get; private set; } = new(channelInfo.CallInvoker);
+		internal SchemaRegistryService.SchemaRegistryServiceClient     SchemaRegistry          { get; private set; } = new(channelInfo.CallInvoker);
+		internal Operations.OperationsClient                           Operations              { get; private set; } = new(channelInfo.CallInvoker);
+		internal Projections.ProjectionsClient                         Projections             { get; private set; } = new(channelInfo.CallInvoker);
+		internal PersistentSubscriptions.PersistentSubscriptionsClient PersistentSubscriptions { get; private set; } = new(channelInfo.CallInvoker);
+		internal Users.UsersClient                                     Users                   { get; private set; } = new(channelInfo.CallInvoker);
+	}
 
-	protected ServerCapabilities ServerCapabilities => ChannelInfo.ServerCapabilities;
+	internal KurrentDBClientSettings Settings       { get; }
+	internal GrpcServiceClients      ServiceClients { get; private set; } = null!;
 
-	protected KurrentDBClientSettings Settings { get; }
-
-	protected internal ISchemaSerializerProvider SerializerProvider { get; } = null!;
+	protected internal ISchemaSerializerProvider SerializerProvider { get; }
 	protected internal IMetadataDecoder          MetadataDecoder    { get; } = null!;
+
+	internal ServerCapabilities ServerCapabilities => ChannelInfo.ServerCapabilities;
 
 	#region . Legacy Stuff .
 
@@ -94,135 +117,3 @@ public abstract class KurrentDBClientBase : IAsyncDisposable {
 		GC.SuppressFinalize(this);
 	}
 }
-
-
-
-// /// <summary>
-// /// The base class used by clients used to communicate with the KurrentDB.
-// /// </summary>
-// public abstract class KurrentDBClientBase : IDisposable, IAsyncDisposable {
-// 	// Note: for grpc.net we can dispose synchronously, but not for grpc.core
-//
-// 	readonly ChannelCache                                       _channelCache;
-// 	readonly SharingProvider<ReconnectionRequired, ChannelInfo> _channelInfoProvider;
-// 	readonly CancellationTokenSource                            _cts;
-// 	readonly Dictionary<string, Func<RpcException, Exception>>  _exceptionMap;
-//
-// 	/// Constructs a new <see cref="KurrentDBClientBase"/>.
-// 	protected KurrentDBClientBase(KurrentDBClientSettings? settings, Dictionary<string, Func<RpcException, Exception>> exceptionMap) {
-// 		Settings      = settings ?? new KurrentDBClientSettings();
-// 		_exceptionMap = exceptionMap;
-// 		_cts          = new CancellationTokenSource();
-// 		_channelCache = new(Settings);
-//
-// 		ConnectionName = Settings.ConnectionName ?? $"conn-{Guid.NewGuid():D}";
-//
-// 		var channelSelector = new ChannelSelector(Settings, _channelCache);
-//
-// 		_channelInfoProvider = new SharingProvider<ReconnectionRequired, ChannelInfo>(
-// 			(endPoint, onBroken) => GetChannelInfoExpensive(endPoint, onBroken, channelSelector, _cts.Token),
-// 			Settings.ConnectivitySettings.DiscoveryInterval,
-// 			ReconnectionRequired.Rediscover.Instance,
-// 			Settings.LoggerFactory
-// 		);
-//
-// 		ClientFactory = new LegacyClientFactory(ct => _channelInfoProvider.CurrentAsync.WithCancellation(ct));
-//
-// 		GetCallOptions = ct => KurrentDBCallOptions.CreateNonStreaming(Settings, ct);
-//
-// 		// SchemaManager = new LegacyKurrentSchemaManager(Settings, ClientFactory);
-// 		//
-// 		// SerializationManager = new KurrentSerializationManager([
-// 		// 	new SystemJsonSchemaSerializer(schemaManager: SchemaManager),
-// 		// 	new ProtobufSchemaSerializer(schemaManager: SchemaManager)
-// 		// ]);
-// 	}
-//
-// 	/// The name of the connection.
-// 	public string ConnectionName { get; }
-//
-// 	/// The name of the client.
-// 	public string ClientName { get; } = AppVersionInfo.Current.ProductName ?? "KurrentDB .NET Client";
-//
-// 	/// The version of the client.
-// 	public string ClientVersion { get; } = AppVersionInfo.Current.ProductVersion ?? AppVersionInfo.Current.FileVersion ?? "0.0.0";
-//
-// 	/// The <see cref="KurrentDBClientSettings"/>.
-// 	protected internal KurrentDBClientSettings Settings { get; }
-//
-// 	/// A factory used to create gRPC clients utilizing the existing legacy load balancing and discovery mechanism.
-// 	protected internal LegacyClientFactory ClientFactory { get; }
-//
-// 	protected internal Func<CancellationToken, CallOptions> GetCallOptions { get; }
-//
-// 	/// The manager responsible for handling schema-related operations within KurrentDB.
-// 	protected internal IKurrentSchemaManager SchemaManager { get; }
-//
-// 	protected internal ISchemaSerializerProvider SerializerProvider { get; }
-//
-// 	protected internal IMetadataDecoder MetadataDecoder { get; }
-//
-// 	/// <inheritdoc />
-// 	public virtual async ValueTask DisposeAsync() {
-// 		_channelInfoProvider.Dispose();
-// 		_cts.Cancel();
-// 		_cts.Dispose();
-// 		await _channelCache.DisposeAsync().ConfigureAwait(false);
-// 	}
-//
-// 	/// <inheritdoc />
-// 	public virtual void Dispose() {
-// 		_channelInfoProvider.Dispose();
-// 		_cts.Cancel();
-// 		_cts.Dispose();
-// 		_channelCache.Dispose();
-// 	}
-//
-// 	// Select a channel and query its capabilities. This is an expensive call that
-// 	// we don't want to do often.
-// 	async Task<ChannelInfo> GetChannelInfoExpensive(
-// 		ReconnectionRequired reconnectionRequired,
-// 		Action<ReconnectionRequired> onReconnectionRequired,
-// 		IChannelSelector channelSelector,
-// 		CancellationToken cancellationToken
-// 	) {
-// 		var channel = await SelectChannelAsync();
-//
-// 		var invoker = channel.CreateCallInvoker()
-// 			.Intercept(new TypedExceptionInterceptor(_exceptionMap))
-// 			.Intercept(new ConnectionNameInterceptor(ConnectionName))
-// 			.Intercept(new ReportLeaderInterceptor(onReconnectionRequired));
-//
-// 		if (Settings.Interceptors is not null)
-// 			foreach (var interceptor in Settings.Interceptors)
-// 				invoker = invoker.Intercept(interceptor);
-//
-// 		var capabilities = await new GrpcServerCapabilitiesClient(Settings)
-// 			.GetAsync(invoker, cancellationToken)
-// 			.ConfigureAwait(false);
-//
-// 		return new(channel, capabilities, invoker);
-//
-// 		async Task<ChannelBase> SelectChannelAsync() {
-// 			return reconnectionRequired switch {
-// 				ReconnectionRequired.Rediscover               => await channelSelector.SelectChannelAsync(cancellationToken).ConfigureAwait(false),
-// 				ReconnectionRequired.NewLeader (var endPoint) => channelSelector.SelectChannel(endPoint),
-// 				_                                             => throw new ArgumentException(null, nameof(reconnectionRequired))
-// 			};
-// 		}
-// 	}
-//
-// 	/// Gets the current channel info.
-// 	protected async ValueTask<ChannelInfo> GetChannelInfo(CancellationToken cancellationToken) =>
-// 		await _channelInfoProvider.CurrentAsync.WithCancellation(cancellationToken).ConfigureAwait(false);
-//
-// 	/// <summary>
-// 	/// Only exists so that we can manually trigger rediscovery in the tests
-// 	/// in cases where the server doesn't yet let the client know that it needs to.
-// 	/// note if rediscovery is already in progress it will continue, not restart.
-// 	/// </summary>
-// 	internal Task RediscoverAsync() {
-// 		_channelInfoProvider.Reset();
-// 		return Task.CompletedTask;
-// 	}
-// }

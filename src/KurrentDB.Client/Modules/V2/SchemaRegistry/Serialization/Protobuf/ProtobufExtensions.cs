@@ -6,29 +6,23 @@ using Google.Protobuf.Reflection;
 
 namespace KurrentDB.Client.SchemaRegistry.Serialization.Protobuf;
 
-public static class ProtobufExtensions {
+static class ProtobufExtensions {
     public static MessageParser GetProtoMessageParser(this Type messageType) =>
         ProtobufMessages.System.GetParser(messageType);
 
     public static MessageDescriptor GetProtoMessageDescriptor(this Type messageType) =>
         ProtobufMessages.System.GetDescriptor(messageType);
 
-    public static Type EnsureTypeIsProtoMessage(this Type messageType) {
-        if (!typeof(IMessage).IsAssignableFrom(messageType))
-            throw new InvalidCastException($"Type {messageType.Name} is not a Protocol Buffers message");
-
-        return messageType;
-    }
+    public static Type EnsureTypeIsProtoMessage(this Type messageType) =>
+	    !typeof(IMessage).IsAssignableFrom(messageType)
+		    ? throw new InvalidCastException($"Type {messageType.Name} is not a Protocol Buffers message")
+		    : messageType;
 
     public static bool IsProtoMessage(this Type messageType) =>
         typeof(IMessage).IsAssignableFrom(messageType);
 
-    public static IMessage EnsureValueIsProtoMessage(this object? value) {
-        if (value is not IMessage message)
-            throw new InvalidOperationException($"Value of type {value!.GetType().Name} is not a Protocol Buffers message");
-
-        return message;
-    }
+    public static IMessage EnsureValueIsProtoMessage(this object? value) =>
+	    value as IMessage ?? throw new InvalidOperationException($"Value of type {value!.GetType().Name} is not a Protocol Buffers message");
 
     public static ReadOnlyMemory<byte> ToUtf8JsonBytes(this IMessage message) {
 	    return Encoding.UTF8.GetBytes(

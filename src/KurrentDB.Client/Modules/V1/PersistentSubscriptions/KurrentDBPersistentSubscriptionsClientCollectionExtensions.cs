@@ -2,9 +2,9 @@
 
 using System.Net.Http;
 using KurrentDB.Client;
-using Grpc.Core.Interceptors;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -16,44 +16,53 @@ public static class KurrentDBPersistentSubscriptionsClientCollectionExtensions {
 	/// Adds an <see cref="KurrentDBPersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 	/// </summary>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBPersistentSubscriptionsClient(this IServiceCollection services,
-	                                                                           Uri address, Func<HttpMessageHandler>? createHttpMessageHandler = null)
-		=> services.AddKurrentDBPersistentSubscriptionsClient(options => {
-			options.ConnectivitySettings.Address = address;
-			options.CreateHttpMessageHandler     = createHttpMessageHandler;
-		});
+	public static IServiceCollection AddKurrentDBPersistentSubscriptionsClient(
+		this IServiceCollection services, Uri address, Func<HttpMessageHandler>? createHttpMessageHandler = null
+	) =>
+		services.AddKurrentDBPersistentSubscriptionsClient(options => {
+				options.ConnectivitySettings.Address = address;
+				options.CreateHttpMessageHandler     = createHttpMessageHandler;
+			}
+		);
 
 	/// <summary>
 	/// Adds an <see cref="KurrentDBPersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 	/// </summary>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBPersistentSubscriptionsClient(this IServiceCollection services,
-	                                                                           Action<KurrentDBClientSettings>? configureSettings = null) =>
-		services.AddKurrentDBPersistentSubscriptionsClient(new KurrentDBClientSettings(),
-			configureSettings);
+	public static IServiceCollection AddKurrentDBPersistentSubscriptionsClient(this IServiceCollection services, Action<KurrentDBClientSettings>? configureSettings = null) =>
+		services.AddKurrentDBPersistentSubscriptionsClient(
+			new KurrentDBClientSettings(),
+			configureSettings
+		);
 
 	/// <summary>
 	/// Adds an <see cref="KurrentDBPersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 	/// </summary>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBPersistentSubscriptionsClient(this IServiceCollection services,
-	                                                                           string connectionString, Action<KurrentDBClientSettings>? configureSettings = null) =>
-		services.AddKurrentDBPersistentSubscriptionsClient(KurrentDBClientSettings.Create(connectionString),
-			configureSettings);
+	public static IServiceCollection AddKurrentDBPersistentSubscriptionsClient(
+		this IServiceCollection services, string connectionString, Action<KurrentDBClientSettings>? configureSettings = null
+	) =>
+		services.AddKurrentDBPersistentSubscriptionsClient(
+			KurrentDBClientSettings.Create(connectionString),
+			configureSettings
+		);
 
-	static IServiceCollection AddKurrentDBPersistentSubscriptionsClient(this IServiceCollection services,
-	                                                                    KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings) {
-		if (services == null) {
+	static IServiceCollection AddKurrentDBPersistentSubscriptionsClient(
+		this IServiceCollection services, KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings
+	) {
+		if (services is null)
 			throw new ArgumentNullException(nameof(services));
-		}
 
 		configureSettings?.Invoke(settings);
 		services.TryAddSingleton(provider => {
-			settings.LoggerFactory ??= provider.GetService<ILoggerFactory>();
-			settings.Interceptors  ??= provider.GetServices<Interceptor>();
+				settings.LoggerFactory = settings.LoggerFactory == NullLoggerFactory.Instance
+					? provider.GetService<ILoggerFactory>() ?? NullLoggerFactory.Instance
+					: settings.LoggerFactory;
 
-			return new KurrentDBPersistentSubscriptionsClient(settings);
-		});
+				return new KurrentDBPersistentSubscriptionsClient(settings);
+			}
+		);
+
 		return services;
 	}
 }

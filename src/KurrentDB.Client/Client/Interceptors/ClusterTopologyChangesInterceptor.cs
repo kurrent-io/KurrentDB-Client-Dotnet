@@ -8,7 +8,7 @@ namespace KurrentDB.Client.Interceptors;
 /// <summary>
 /// An interceptor that handles detecting connection failures and refreshing cluster info.
 /// </summary>
-partial class ClusterInfoRefreshInterceptor(ILegacyClusterClient clusterClient, ILogger logger) : Interceptor {
+partial class ClusterTopologyChangesInterceptor(ILegacyClusterClient clusterClient, ILogger logger) : Interceptor {
 	public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(
 		TRequest request,
 		ClientInterceptorContext<TRequest, TResponse> context,

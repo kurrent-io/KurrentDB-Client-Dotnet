@@ -2,9 +2,9 @@
 
 using System.Net.Http;
 using KurrentDB.Client;
-using Grpc.Core.Interceptors;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -20,10 +20,8 @@ public static class KurrentDBProjectionManagementClientCollectionExtensions {
 	/// <param name="createHttpMessageHandler"></param>
 	/// <returns></returns>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBProjectionManagementClient(this IServiceCollection services,
-	                                                                        Uri address,
-	                                                                        Func<HttpMessageHandler>? createHttpMessageHandler = null)
-		=> services.AddKurrentDBProjectionManagementClient(options => {
+	public static IServiceCollection AddKurrentDBProjectionManagementClient(this IServiceCollection services, Uri address, Func<HttpMessageHandler>? createHttpMessageHandler = null) =>
+		services.AddKurrentDBProjectionManagementClient(options => {
 			options.ConnectivitySettings.Address = address;
 			options.CreateHttpMessageHandler     = createHttpMessageHandler;
 		});
@@ -35,8 +33,7 @@ public static class KurrentDBProjectionManagementClientCollectionExtensions {
 	/// <param name="configureSettings"></param>
 	/// <returns></returns>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBProjectionManagementClient(this IServiceCollection services,
-	                                                                        Action<KurrentDBClientSettings>? configureSettings = null) =>
+	public static IServiceCollection AddKurrentDBProjectionManagementClient(this IServiceCollection services, Action<KurrentDBClientSettings>? configureSettings = null) =>
 		services.AddKurrentDBProjectionManagementClient(new KurrentDBClientSettings(), configureSettings);
 
 	/// <summary>
@@ -47,22 +44,16 @@ public static class KurrentDBProjectionManagementClientCollectionExtensions {
 	/// <param name="configureSettings"></param>
 	/// <returns></returns>
 	/// <exception cref="ArgumentNullException"></exception>
-	public static IServiceCollection AddKurrentDBProjectionManagementClient(this IServiceCollection services,
-	                                                                        string connectionString, Action<KurrentDBClientSettings>? configureSettings = null) =>
-		services.AddKurrentDBProjectionManagementClient(KurrentDBClientSettings.Create(connectionString),
-			configureSettings);
+	public static IServiceCollection AddKurrentDBProjectionManagementClient(this IServiceCollection services, string connectionString, Action<KurrentDBClientSettings>? configureSettings = null) =>
+		services.AddKurrentDBProjectionManagementClient(KurrentDBClientSettings.Create(connectionString), configureSettings);
 
-	static IServiceCollection AddKurrentDBProjectionManagementClient(this IServiceCollection services,
-	                                                                 KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings) {
-		if (services == null) {
-			throw new ArgumentNullException(nameof(services));
-		}
-
+	static IServiceCollection AddKurrentDBProjectionManagementClient(this IServiceCollection services, KurrentDBClientSettings settings, Action<KurrentDBClientSettings>? configureSettings) {
 		configureSettings?.Invoke(settings);
 
 		services.TryAddSingleton(provider => {
-			settings.LoggerFactory ??= provider.GetService<ILoggerFactory>();
-			settings.Interceptors  ??= provider.GetServices<Interceptor>();
+			settings.LoggerFactory = settings.LoggerFactory == NullLoggerFactory.Instance
+				? provider.GetService<ILoggerFactory>() ?? NullLoggerFactory.Instance
+				: settings.LoggerFactory;
 
 			return new KurrentDBProjectionManagementClient(settings);
 		});

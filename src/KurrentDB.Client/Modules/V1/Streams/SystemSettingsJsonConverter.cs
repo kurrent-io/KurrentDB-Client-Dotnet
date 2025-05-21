@@ -6,11 +6,9 @@ namespace KurrentDB.Client;
 class SystemSettingsJsonConverter : JsonConverter<SystemSettings> {
 	public static readonly SystemSettingsJsonConverter Instance = new SystemSettingsJsonConverter();
 
-	public override SystemSettings Read(ref Utf8JsonReader reader, Type typeToConvert,
-	                                    JsonSerializerOptions options) {
-		if (reader.TokenType != JsonTokenType.StartObject) {
+	public override SystemSettings Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+		if (reader.TokenType != JsonTokenType.StartObject)
 			throw new InvalidOperationException();
-		}
 
 		StreamAcl? system = null, user = null;
 
