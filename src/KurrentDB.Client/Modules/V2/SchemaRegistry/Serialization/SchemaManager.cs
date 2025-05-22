@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using JetBrains.Annotations;
 using KurrentDB.Client.Model;
 
@@ -46,6 +45,89 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 	MessageTypeMapper     TypeMapper     { get; } = typeMapper;
 
 	ConcurrentDictionary<Type, List<SchemaVersionDescriptor>> CompatibleVersions { get; } = new();
+
+	#region Serialize
+
+	public async ValueTask<(SchemaName SchemaName, SchemaVersionId SchemaVersionId)> RegisterOrValidateSchema(Type messageType, ResolvedSchemaRegistryPolicy policy, CancellationToken ct) {
+		if (policy is { AutoRegisterSchemas: true, DataFormat: SchemaDataFormat.Json })
+			return await HandleServerRegistration(messageType, policy, ct);
+
+		if (policy is { ValidateSchemas: true, DataFormat: SchemaDataFormat.Json })
+			return await HandleServerValidation(messageType, policy, ct);
+
+		return HandleLocalRegistration(messageType, policy);
+	}
+
+	async ValueTask<(SchemaName SchemaName, SchemaVersionId SchemaVersionId)> HandleServerRegistration(Type messageType,  ResolvedSchemaRegistryPolicy policy, CancellationToken ct) {
+		var mapped = TypeMapper.TryGetSchemaName(messageType, out var schemaName);
+
+		if (!mapped)
+			schemaName = policy.GetSchemaName(messageType);
+
+		var versionInfo = await TryRegisterSchema(schemaName, messageType, policy.DataFormat, ct)
+			.ConfigureAwait(false);
+
+		if (!mapped)
+			TypeMapper.TryMap(schemaName, messageType);
+
+		return (schemaName, versionInfo.VersionId);
+	}
+
+	async ValueTask<(SchemaName schemaName, SchemaVersionId lastSchemaVersionId)> HandleServerValidation(Type messageType, ResolvedSchemaRegistryPolicy policy, CancellationToken ct) {
+		var mapped = TypeMapper.TryGetSchemaName(messageType, out var schemaName);
+
+		if (!mapped)
+			schemaName = policy.GetSchemaName(messageType);
+
+		var lastSchemaVersionId = await EnsureSchemaCompatibility(schemaName, messageType, policy.DataFormat, ct)
+			.ConfigureAwait(false);
+
+		if (!mapped)
+			TypeMapper.TryMap(schemaName, messageType);
+
+		return (schemaName, lastSchemaVersionId);
+	}
+
+	(SchemaName schemaName, SchemaVersionId lastSchemaVersionId) HandleLocalRegistration(Type messageType, ResolvedSchemaRegistryPolicy policy) {
+		if (policy.AutoMapMessages) {
+			var mapped = TypeMapper.TryGetSchemaName(messageType, out var schemaName);
+			if (!mapped) {
+				schemaName = policy.GetSchemaName(messageType);
+				TypeMapper.TryMap(schemaName, messageType);
+			}
+
+			return (schemaName, SchemaVersionId.None);
+		}
+		else if (TypeMapper.TryGetSchemaName(messageType, out var schemaName))
+			return (schemaName, SchemaVersionId.None);
+		else
+			throw new AutoRegistrationDisabledException(policy.DataFormat, messageType);
+	}
+
+	#endregion
+
+	#region Deserialize
+
+	public async ValueTask<(Type MessageType, SchemaVersionId SchemaVersionId)> ValidateAndEnsureSchemaCompatibility(RecordSchemaInfo schemaInfo, ResolvedSchemaRegistryPolicy policy, CancellationToken ct) {
+		var messageType = TypeMapper.GetOrResolveMessageType(schemaInfo.SchemaName);
+
+		if (!policy.ValidateSchemas)
+			return (messageType, SchemaVersionId.None);
+
+		if (schemaInfo.HasSchemaVersionId) {
+			await EnsureSchemaCompatibility(schemaInfo.SchemaVersionId, messageType, schemaInfo.DataFormat, ct).ConfigureAwait(false);
+
+			// it was already set so we don't need to do anything and dont return the version id
+			return (messageType, SchemaVersionId.None);
+		}
+
+		// fallback behaviour for backwards compatibility
+		var lastSchemaVersionId = await EnsureSchemaCompatibility(schemaInfo.SchemaName, messageType, schemaInfo.DataFormat, ct).ConfigureAwait(false);
+
+		return (messageType, lastSchemaVersionId);
+	}
+
+	#endregion
 
 	/// <summary>
 	/// Attempts to register a schema for the specified schema name and message type in the schema registry.
@@ -188,89 +270,4 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 			_ => throw new SchemaNotFoundException(schemaName)
 		);
 	}
-
-	// public async ValueTask<(Type MessageType, SchemaVersionId SchemaVersionId)> HandleSchemaValidation(RecordSchemaInfo schemaInfo, bool validate, CancellationToken cancellationToken) {
-	// 	// check if the message type was mapped or try to resolve it "magically"
-	// 	if (!TypeMapper.TryGetMessageType(schemaInfo.SchemaName, out var messageType)) {
-	// 		// it will only work if the name strategy was used was MessageSchemaNameStrategy
-	// 		// (or the old event type property contains the full clr type name)
-	// 		if (!SystemTypes.TryResolveType(schemaInfo.SchemaName, out messageType))
-	// 			throw new Exception($"Schema name '{schemaInfo.SchemaName}' not mapped and does not match any known type");
-	// 	}
-	//
-	// 	if (!validate)
-	// 		return (messageType, SchemaVersionId.None);
-	//
-	// 	if (schemaInfo.HasSchemaVersionId) {
-	// 		await EnsureSchemaCompatibility(schemaInfo.SchemaVersionId, messageType, schemaInfo.DataFormat, cancellationToken);
-	// 		return (messageType, SchemaVersionId.None);
-	// 	}
-	//
-	// 	// fallback behaviour for backwards compatibility
-	// 	var lastSchemaVersionId = await EnsureSchemaCompatibility(schemaInfo.SchemaName, messageType, schemaInfo.DataFormat, cancellationToken);
-	//
-	// 	// return the schema version id so we can set it in the metadata
-	// 	return (messageType, lastSchemaVersionId);
-	// }
-
-	// public async ValueTask EnforceSchemaRegistration(Type messageType, SchemaRegistrationPolicies policies, SchemaSerializationContext schemaSerializationContext, CancellationToken cancellationToken) {
-	// 	if (policies.MustBeEnforced)
-	// 		await HandleWithSchemaRegistry(messageType, schemaSerializationContext, policies, cancellationToken).ConfigureAwait(false);
-	// 	else
-	// 		HandleWithoutSchemaRegistry(messageType, schemaSerializationContext);
-	// }
-	//
-	// async ValueTask HandleWithSchemaRegistry(Type messageType, SchemaDataFormat dataFormat, SchemaSerializationContext context, SchemaRegistrationPolicies policies, CancellationToken cancellationToken) {
-	// 	context.ServerConfiguration.EnsureDataFormatAllowed(dataFormat);
-	//
-	// 	var schemaName = Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream);
-	//
-	// 	if (policies.EnforceAutoRegistration)
-	// 		await RegisterProducerSchema();
-	//
-	// 	if (policies.EnforceValidation)
-	// 		await ValidateProducerSchema();
-	//
-	// 	return;
-	//
-	// 	async ValueTask RegisterProducerSchema() {
-	// 		var versionInfo = await TryRegisterSchema(schemaName, messageType, dataFormat, cancellationToken)
-	// 			.ConfigureAwait(false);
-	//
-	// 		TypeMapper.TryMap(schemaName, messageType);
-	//
-	// 		context.Metadata
-	// 			.Set(SystemMetadataKeys.SchemaName, schemaName)
-	// 			.Set(SystemMetadataKeys.SchemaVersionId, versionInfo.VersionId)
-	// 			.Set(SystemMetadataKeys.SchemaDataFormat, dataFormat);
-	// 	}
-	//
-	// 	async ValueTask ValidateProducerSchema() {
-	// 		var lastSchemaVersionId = await EnsureSchemaCompatibility(schemaName, messageType, dataFormat, cancellationToken)
-	// 			.ConfigureAwait(false);
-	//
-	// 		context.Metadata
-	// 			.Set(SystemMetadataKeys.SchemaName, schemaName)
-	// 			.Set(SystemMetadataKeys.SchemaVersionId, lastSchemaVersionId)
-	// 			.Set(SystemMetadataKeys.SchemaDataFormat, dataFormat);
-	// 	}
-	// }
-	//
-	// void HandleWithoutSchemaRegistry(Type messageType, SchemaSerializationContext context) {
-	// 	if (Options.AutoRegister) {
-	// 		var schemaName = TypeMapper
-	// 			.GetOrMap(Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream), messageType);
-	//
-	// 		context.Metadata
-	// 			.Set(SystemMetadataKeys.SchemaName, schemaName)
-	// 			.Set(SystemMetadataKeys.SchemaDataFormat, DataFormat);
-	// 	}
-	// 	else if (TypeMapper.TryGetSchemaName(messageType, out var schemaName)) {
-	// 		context.Metadata
-	// 			.Set(SystemMetadataKeys.SchemaName, schemaName)
-	// 			.Set(SystemMetadataKeys.SchemaDataFormat, DataFormat);
-	// 	}
-	// 	else
-	// 		throw new InvalidOperationException($"The message type '{messageType.FullName}' is not mapped and auto-registration is disabled.");
-	// }
 }
