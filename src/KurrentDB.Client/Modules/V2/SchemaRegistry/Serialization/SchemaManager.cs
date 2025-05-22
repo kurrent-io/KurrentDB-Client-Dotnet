@@ -1,48 +1,16 @@
 using System.Collections.Concurrent;
 using JetBrains.Annotations;
 using KurrentDB.Client.Model;
+using KurrentDB.Protocol.Registry.V2;
+using SchemaDataFormat = KurrentDB.Client.Model.SchemaDataFormat;
 
 namespace KurrentDB.Client.SchemaRegistry.Serialization;
 
-/// <summary>
-/// Exception thrown when a schema validation fails.
-/// </summary>
-public class SchemaValidationException(SchemaDataFormat dataFormat, SchemaIdentifier schemaIdentifier, Type messageType, IReadOnlyList<SchemaCompatibilityError> validationErrors)
-	: Exception(FormatMessage(messageType, schemaIdentifier, validationErrors)) {
-	public SchemaDataFormat                        DataFormat       { get; } = dataFormat;
-	public Type                                    MessageType      { get; } = messageType;
-	public SchemaIdentifier                        SchemaIdentifier { get; } = schemaIdentifier;
-	public IReadOnlyList<SchemaCompatibilityError> ValidationErrors { get; } = validationErrors;
-
-	static string FormatMessage(Type messageType, SchemaIdentifier schemaIdentifier, IReadOnlyList<SchemaCompatibilityError> validationErrors) {
-		var schemaIdentifierText = schemaIdentifier.Match(
-			schemaName => $"schema '{schemaName}'",
-			schemaVersionId => $"schema version '{schemaVersionId}'"
-		);
-
-		return $"Schema validation failed for message type '{messageType.FullName}' with {schemaIdentifierText}."
-		     + $"Found {validationErrors.Count} errors:{Environment.NewLine}{string.Join(Environment.NewLine, validationErrors.Select(error => $" - {error}"))}";
-	}
-}
-
-/// <summary>
-/// Exception thrown when a schema cannot be found in the registry.
-/// </summary>
-public class SchemaNotFoundException(SchemaIdentifier schemaIdentifier) : Exception(FormatMessage(schemaIdentifier)) {
-	public SchemaIdentifier SchemaIdentifier { get; } = schemaIdentifier;
-
-	static string FormatMessage(SchemaIdentifier schemaIdentifier) =>
-		schemaIdentifier.Match(
-			schemaName      => $"Schema '{schemaName}' was not found in the registry.",
-			schemaVersionId => $"Schema version '{schemaVersionId}' was not found in the registry."
-		);
-}
-
 [PublicAPI]
-public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter schemaExporter, MessageTypeMapper typeMapper) {
-	KurrentRegistryClient SchemaRegistry { get; } = schemaRegistry;
-	ISchemaExporter       SchemaExporter { get; } = schemaExporter;
-	MessageTypeMapper     TypeMapper     { get; } = typeMapper;
+public class SchemaManager(KurrentRegistryClient schemaRegistryClient, ISchemaExporter schemaExporter, MessageTypeMapper typeMapper) {
+	KurrentRegistryClient SchemaRegistryClient { get; } = schemaRegistryClient;
+	ISchemaExporter       SchemaExporter       { get; } = schemaExporter;
+	MessageTypeMapper     TypeMapper           { get; } = typeMapper;
 
 	ConcurrentDictionary<Type, List<SchemaVersionDescriptor>> CompatibleVersions { get; } = new();
 
@@ -151,7 +119,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 		if (CompatibleVersions.TryGetValue(messageType, out var versions))
 			return versions.Last();
 
-		var getSchemaVersionResult = await SchemaRegistry
+		var getSchemaVersionResult = await SchemaRegistryClient
 			.GetSchemaVersion(schemaName, null, cancellationToken)
 			.ConfigureAwait(false);
 
@@ -163,7 +131,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 		else {
 			var definition = SchemaExporter.Export(messageType, dataFormat);
 
-			var createSchemaResult = await SchemaRegistry
+			var createSchemaResult = await SchemaRegistryClient
 				.CreateSchema(schemaName, definition, dataFormat, cancellationToken)
 				.ConfigureAwait(false);
 
@@ -198,7 +166,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 
 		var definition = SchemaExporter.Export(messageType, dataFormat);
 
-		var result = await SchemaRegistry
+		var result = await SchemaRegistryClient
 			.CheckSchemaCompatibility(schemaVersionId, definition, dataFormat, cancellationToken)
 			.ConfigureAwait(false);
 
@@ -256,7 +224,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 
 		var definition = SchemaExporter.Export(messageType, SchemaDataFormat.Json);
 
-		var result = await SchemaRegistry
+		var result = await SchemaRegistryClient
 			.CheckSchemaCompatibility(schemaName, definition, dataFormat, cancellationToken)
 			.ConfigureAwait(false);
 
@@ -270,4 +238,38 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 			_ => throw new SchemaNotFoundException(schemaName)
 		);
 	}
+}
+
+/// <summary>
+/// Exception thrown when a schema validation fails.
+/// </summary>
+public class SchemaValidationException(SchemaDataFormat dataFormat, SchemaIdentifier schemaIdentifier, Type messageType, IReadOnlyList<SchemaCompatibilityError> validationErrors)
+	: Exception(FormatMessage(messageType, schemaIdentifier, validationErrors)) {
+	public SchemaDataFormat                        DataFormat       { get; } = dataFormat;
+	public Type                                    MessageType      { get; } = messageType;
+	public SchemaIdentifier                        SchemaIdentifier { get; } = schemaIdentifier;
+	public IReadOnlyList<SchemaCompatibilityError> ValidationErrors { get; } = validationErrors;
+
+	static string FormatMessage(Type messageType, SchemaIdentifier schemaIdentifier, IReadOnlyList<SchemaCompatibilityError> validationErrors) {
+		var schemaIdentifierText = schemaIdentifier.Match(
+			schemaName => $"schema '{schemaName}'",
+			schemaVersionId => $"schema version '{schemaVersionId}'"
+		);
+
+		return $"Schema validation failed for message type '{messageType.FullName}' with {schemaIdentifierText}."
+		     + $"Found {validationErrors.Count} errors:{Environment.NewLine}{string.Join(Environment.NewLine, validationErrors.Select(error => $" - {error}"))}";
+	}
+}
+
+/// <summary>
+/// Exception thrown when a schema cannot be found in the registry.
+/// </summary>
+public class SchemaNotFoundException(SchemaIdentifier schemaIdentifier) : Exception(FormatMessage(schemaIdentifier)) {
+	public SchemaIdentifier SchemaIdentifier { get; } = schemaIdentifier;
+
+	static string FormatMessage(SchemaIdentifier schemaIdentifier) =>
+		schemaIdentifier.Match(
+			schemaName      => $"Schema '{schemaName}' was not found in the registry.",
+			schemaVersionId => $"Schema version '{schemaVersionId}' was not found in the registry."
+		);
 }

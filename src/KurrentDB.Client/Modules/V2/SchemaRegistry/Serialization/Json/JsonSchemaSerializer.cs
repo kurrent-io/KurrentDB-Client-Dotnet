@@ -7,7 +7,7 @@ namespace KurrentDB.Client.SchemaRegistry.Serialization.Json;
 /// with optional use of a protobuf-based formatter.
 /// </summary>
 public class JsonSchemaSerializer(JsonSchemaSerializerOptions options, SchemaManager schemaManager)
-	: SchemaSerializer(options, schemaManager) {
+	: SchemaSerializerBase(options, schemaManager) {
 	JsonSerializer Serializer { get; } = new(options.JsonSerializerOptions, options.UseProtobufFormatter);
 
 	public override SchemaDataFormat DataFormat => SchemaDataFormat.Json;

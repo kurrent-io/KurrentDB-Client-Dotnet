@@ -5,16 +5,6 @@ using KurrentDB.Client.Model;
 
 namespace KurrentDB.Client.SchemaRegistry.Serialization;
 
-public record struct SchemaSerializationContext(string Stream, Metadata Metadata, SchemaRegistryPolicy SchemaRegistryPolicy, CancellationToken CancellationToken);
-
-public interface ISchemaSerializer {
-	SchemaDataFormat DataFormat { get; }
-
-	ValueTask<ReadOnlyMemory<byte>> Serialize(object? value, SchemaSerializationContext context);
-
-	ValueTask<object?> Deserialize(ReadOnlyMemory<byte> data, SchemaSerializationContext context);
-}
-
 public record SchemaSerializerOptions {
 	/// <summary>
 	/// Configuration options for schema registration, validation, and type mapping behaviors.
@@ -29,7 +19,7 @@ public record SchemaSerializerOptions {
 	public bool ConsumeMappedOnly { get; set; } = true;
 }
 
-public abstract class SchemaSerializer(SchemaSerializerOptions options, SchemaManager schemaManager) : ISchemaSerializer {
+public abstract class SchemaSerializerBase(SchemaSerializerOptions options, SchemaManager schemaManager) : ISchemaSerializer {
 	SchemaSerializerOptions Options       { get; } = options;
 	SchemaManager           SchemaManager { get; } = schemaManager;
 
@@ -105,7 +95,18 @@ public abstract class SchemaSerializer(SchemaSerializerOptions options, SchemaMa
 		}
 	}
 
+	/// <summary>
+	/// Serializes the given object to a byte array representation.
+	/// </summary>
+	/// <param name="value">The object to be serialized. Can be null.</param>
+	/// <returns>A read-only memory containing the serialized byte array of the object.</returns>
 	protected abstract ReadOnlyMemory<byte> Serialize(object? value);
 
+	/// <summary>
+	/// Deserializes the given byte array representation to an object of the specified type.
+	/// </summary>
+	/// <param name="data">The memory segment containing the serialized byte array of the object.</param>
+	/// <param name="resolvedType">The target type to which the byte array should be deserialized.</param>
+	/// <returns>The deserialized object of the specified type.</returns>
 	protected abstract object Deserialize(ReadOnlyMemory<byte> data, Type resolvedType);
 }

@@ -39,5 +39,8 @@ public sealed class SchemaSerializerProvider : ISchemaSerializerProvider {
 			: throw new SchemaSerializerNotFoundException(dataFormat, Serializers.Keys.ToArray());
 }
 
+/// <summary>
+/// Exception thrown when a schema serializer for a specified data format cannot be found.
+/// </summary>
 public class SchemaSerializerNotFoundException(SchemaDataFormat dataFormat, params SchemaDataFormat[] supportedSchemaDataFormats)
 	: Exception($"Unsupported schema data format. Expected one of {string.Join(", ", supportedSchemaDataFormats)} but got {dataFormat}.");

@@ -8,7 +8,7 @@ public record ProtobufSchemaSerializerOptions : SchemaSerializerOptions {
 }
 
 public class ProtobufSchemaSerializer(ProtobufSchemaSerializerOptions options, SchemaManager schemaManager)
-	: SchemaSerializer(options, schemaManager) {
+	: SchemaSerializerBase(options, schemaManager) {
 	public override SchemaDataFormat DataFormat => SchemaDataFormat.Protobuf;
 
 	protected override ReadOnlyMemory<byte> Serialize(object? value) =>
