@@ -4,26 +4,12 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 #pragma warning disable SYSLIB0057
 
-#if NET48
-using Org.BouncyCastle.Crypto;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.OpenSsl;
-using Org.BouncyCastle.Security;
-#endif
-
 namespace KurrentDB.Client;
 
 static class X509Certificates {
 	public static X509Certificate2 CreateFromPemFile(string certPemFilePath, string keyPemFilePath) {
 		try {
-#if NET8_0_OR_GREATER
 			using var certificate = X509Certificate2.CreateFromPemFile(certPemFilePath, keyPemFilePath);
-#else
-			using var publicCert = new X509Certificate2(certPemFilePath);
-			using var privateKey = RSA.Create().ImportPrivateKeyFromFile(keyPemFilePath);
-			using var certificate = publicCert.CopyWithPrivateKey(privateKey);
-#endif
-
 			return new X509Certificate2(certificate.Export(X509ContentType.Pfx));
 		} catch (Exception ex) {
 			throw new CryptographicException($"Failed to load private key: {ex.Message}");
@@ -32,23 +18,6 @@ static class X509Certificates {
 }
 
 public static class RsaExtensions {
-#if NET48
-	public static RSA ImportPrivateKeyFromFile(this RSA rsa, string privateKeyPath) {
-		var (content, label) = LoadPemKeyFile(privateKeyPath);
-
-		using var reader = new PemReader(new StringReader(string.Join(Environment.NewLine, content)));
-
-		var keyParameters = reader.ReadObject() switch {
-			RsaPrivateCrtKeyParameters parameters => parameters,
-			AsymmetricCipherKeyPair keyPair       => keyPair.Private as RsaPrivateCrtKeyParameters,
-			_                                     => throw new NotSupportedException($"Invalid private key format: {label}")
-		};
-
-		rsa.ImportParameters(DotNetUtilities.ToRSAParameters(keyParameters));
-
-		return rsa;
-	}
-#else
 	public static RSA ImportPrivateKeyFromFile(this RSA rsa, string privateKeyPath) {
 		var (content, label) = LoadPemKeyFile(privateKeyPath);
 
@@ -62,7 +31,6 @@ public static class RsaExtensions {
 
 		return rsa;
 	}
-#endif
 
 	static (string[] Content, string Label) LoadPemKeyFile(string privateKeyPath) {
 		var content = File.ReadAllLines(privateKeyPath);

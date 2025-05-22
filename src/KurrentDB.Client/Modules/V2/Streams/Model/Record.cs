@@ -1,4 +1,3 @@
-using JetBrains.Annotations;
 using KurrentDB.Client.SchemaRegistry;
 
 namespace KurrentDB.Client.Model;

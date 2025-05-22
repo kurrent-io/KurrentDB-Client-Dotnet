@@ -1,5 +1,3 @@
-using System.Net.Http;
-
 namespace KurrentDB.Client;
 
 class SingleNodeHttpHandler : DelegatingHandler {

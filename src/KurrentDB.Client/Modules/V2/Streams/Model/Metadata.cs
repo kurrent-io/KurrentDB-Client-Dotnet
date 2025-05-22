@@ -1,5 +1,4 @@
 using System.Globalization;
-using JetBrains.Annotations;
 using KurrentDB.Client.SchemaRegistry;
 
 namespace KurrentDB.Client.Model;
@@ -317,8 +316,6 @@ public static partial class MetadataExtensions {
 		    return true;
 	    }
 
-	    #if NET8_0_OR_GREATER
-
 	    if (targetType == typeof(DateOnly) && DateOnly.TryParse(stringValue, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dateOnlyValue)) {
 		    value = (T)(object)dateOnlyValue;
 		    return true;
@@ -328,8 +325,6 @@ public static partial class MetadataExtensions {
 		    value = (T)(object)timeOnlyValue;
 		    return true;
 	    }
-
-		#endif
 
 	    if (targetType == typeof(Uri) && Uri.TryCreate(stringValue, UriKind.RelativeOrAbsolute, out var uriValue)) {
 		    value = (T)(object)uriValue;

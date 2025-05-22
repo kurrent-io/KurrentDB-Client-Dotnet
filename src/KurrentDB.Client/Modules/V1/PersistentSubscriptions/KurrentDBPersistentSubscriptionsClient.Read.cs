@@ -170,7 +170,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 	/// <inheritdoc />
 	public class PersistentSubscriptionResult : IAsyncEnumerable<ResolvedEvent>, IAsyncDisposable, IDisposable {
 		const int MaxEventIdLength = 2000;
-            
+
 		readonly ReadReq                                _request;
 		readonly Channel<PersistentSubscriptionMessage> _channel;
 		readonly CancellationTokenSource                _cts;
@@ -207,7 +207,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 				async IAsyncEnumerable<PersistentSubscriptionMessage> GetMessages() {
 					try {
 						await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)) {
-							if (message is PersistentSubscriptionMessage.SubscriptionConfirmation(var subscriptionId)) 
+							if (message is PersistentSubscriptionMessage.SubscriptionConfirmation(var subscriptionId))
 								SubscriptionId = subscriptionId;
 
 							yield return message;
@@ -283,22 +283,6 @@ partial class KurrentDBPersistentSubscriptionsClient {
 
 					_channel.Writer.TryComplete();
 				} catch (Exception ex) {
-#if NET48
-					switch (ex) {
-						// The gRPC client for .NET 48 uses WinHttpHandler under the hood for sending HTTP requests.
-						// In certain scenarios, this can lead to exceptions of type WinHttpException being thrown.
-						// One such scenario is when the server abruptly closes the connection, which results in a WinHttpException with the error code 12030.
-						// Additionally, there are cases where the server response does not include the 'grpc-status' header.
-						// The absence of this header leads to an RpcException with the status code 'Cancelled' and the message "No grpc-status found on response".
-						// The switch statement below handles these specific exceptions and translates them into the appropriate
-						// PersistentSubscriptionDroppedByServerException exception.
-						case RpcException { StatusCode: StatusCode.Unavailable } rex1 when rex1.Status.Detail.Contains("WinHttpException: Error 12030"):
-						case RpcException { StatusCode: StatusCode.Cancelled } rex2
-							when rex2.Status.Detail.Contains("No grpc-status found on response"):
-							ex = new PersistentSubscriptionDroppedByServerException(StreamName, GroupName, ex);
-							break;
-					}
-#endif
 					if (ex is PersistentSubscriptionNotFoundException) {
 						await _channel.Writer
 							.WriteAsync(PersistentSubscriptionMessage.NotFound.Instance, cancellationToken)
@@ -360,7 +344,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 		/// <param name="reason">A reason given.</param>
 		/// <param name="resolvedEvents">The <see cref="ResolvedEvent" />s to nak. There should not be more than 2000 to nak at a time.</param>
 		/// <exception cref="ArgumentException">The number of resolvedEvents exceeded the limit of 2000.</exception>
-		public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params ResolvedEvent[] resolvedEvents) => 
+		public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params ResolvedEvent[] resolvedEvents) =>
 			Nack(action, reason, Array.ConvertAll(resolvedEvents, re => re.OriginalEvent.EventId));
 
 		static ResolvedEvent ConvertToResolvedEvent(ReadResp response) => new(

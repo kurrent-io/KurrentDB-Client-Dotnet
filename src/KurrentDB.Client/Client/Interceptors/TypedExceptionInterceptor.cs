@@ -12,11 +12,8 @@ class TypedExceptionInterceptor : Interceptor {
 	};
 
 	public TypedExceptionInterceptor(Dictionary<string, Func<RpcException, Exception>> customExceptionMap) {
-#if NET48
-		var map = new Dictionary<string, Func<RpcException, Exception>>(DefaultExceptionMap.Concat(customExceptionMap).ToDictionary(x => x.Key, x => x.Value));
-#else
 		var map = new Dictionary<string, Func<RpcException, Exception>>(DefaultExceptionMap.Concat(customExceptionMap));
-#endif
+
 		ConvertRpcException = rpcEx => {
 			if (rpcEx.TryMapException(map, out var ex))
 				throw ex;

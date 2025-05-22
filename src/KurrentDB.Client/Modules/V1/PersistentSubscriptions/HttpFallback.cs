@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 
@@ -28,12 +27,9 @@ class HttpFallback : IDisposable {
 					if (certificate is null || chain is null) return false;
 
 					chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
-#if NET48
-					chain.ChainPolicy.ExtraStore.Add(settings.ConnectivitySettings.TlsCaFile);
-#else
 					chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
 					chain.ChainPolicy.CustomTrustStore.Add(settings.ConnectivitySettings.TlsCaFile);
-#endif
+
 					return chain.Build(certificate);
 				},
 				_ => null

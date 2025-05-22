@@ -45,12 +45,7 @@ public class JsonSerializer(JsonSerializerOptions? options = null, bool useProto
 
 		static async Task<string> DeserializeToJson(Stream stream, CancellationToken cancellationToken) {
 			using var reader = new StreamReader(stream, Encoding.UTF8);
-
-#if NET48
-	        return await reader.ReadToEndAsync().ConfigureAwait(false);
-#else
 			return await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-#endif
 		}
 	}
 }

@@ -2,7 +2,6 @@
 
 using Google.Protobuf;
 using Grpc.Core;
-using JetBrains.Annotations;
 using KurrentDB.Client.Model;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 using KurrentDB.Client.SchemaRegistry;

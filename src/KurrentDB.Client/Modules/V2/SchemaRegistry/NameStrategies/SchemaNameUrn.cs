@@ -1,7 +1,5 @@
 // using Humanizer;
 
-using JetBrains.Annotations;
-
 namespace KurrentDB.Client.SchemaRegistry;
 
 /// <summary>

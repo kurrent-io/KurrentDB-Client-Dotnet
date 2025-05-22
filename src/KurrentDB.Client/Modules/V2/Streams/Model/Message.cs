@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
-using JetBrains.Annotations;
+using KurrentDB.Client.SchemaRegistry;
 using KurrentDB.Client.SchemaRegistry.Serialization;
 
 namespace KurrentDB.Client.Model;
@@ -230,7 +230,7 @@ public class MessageBuilder(ISchemaSerializerProvider serializerProvider) {
 		// metadata is enriched with schema name, data format
 		// and schema version id if autoregistration is enabled.
 		var data = await serializer
-			.Serialize(_value, new SchemaSerializationContext(stream, _metadata), ct)
+			.Serialize(_value, new SchemaSerializationContext(stream, _metadata, new SchemaRegistryPolicy(), ct))
 			.ConfigureAwait(false);
 
 		return new Message {
@@ -258,7 +258,7 @@ public class MessageBuilder(ISchemaSerializerProvider serializerProvider) {
 		_metadata.Set(SystemMetadataKeys.SchemaDataFormat, _dataFormat);
 
 		var data = await serializer
-			.Serialize(_value, new(stream, _metadata), ct)
+			.Serialize(_value, new(stream, _metadata, new SchemaRegistryPolicy(), ct))
 			.ConfigureAwait(false);
 
 		var id          = Uuid.FromGuid(message.RecordId); // BROKEN
@@ -314,13 +314,13 @@ public class AppendStreamRequestBuilder {
 		return new ValueTask<AppendStreamRequest>(request);
 	}
 
-	/// <summary>
-	/// Builds and executes the append operation
-	/// </summary>
-	public async Task<AppendStreamResult> ExecuteAsync(CancellationToken cancellationToken = default) {
-		var request = await BuildAsync(cancellationToken).ConfigureAwait(false);
-		return await Client.AppendStream(request, cancellationToken);
-	}
+	// /// <summary>
+	// /// Builds and executes the append operation
+	// /// </summary>
+	// public async Task<AppendStreamResult> ExecuteAsync(CancellationToken cancellationToken = default) {
+	// 	var request = await BuildAsync(cancellationToken).ConfigureAwait(false);
+	// 	return await Client.AppendStream(request, cancellationToken);
+	// }
 }
 
 // class MyClass {

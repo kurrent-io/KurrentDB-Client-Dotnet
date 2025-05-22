@@ -1,5 +1,4 @@
 ﻿using System.Collections.Immutable;
-using KurrentDB.Client;
 using Microsoft.Extensions.Configuration;
 
 namespace KurrentDB.Client.Tests;

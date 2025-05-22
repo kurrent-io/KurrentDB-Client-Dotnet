@@ -9,7 +9,6 @@ using KurrentDB.Diagnostics;
 using KurrentDB.Diagnostics.Telemetry;
 using KurrentDB.Diagnostics.Tracing;
 using KurrentDB.Client.Diagnostics;
-using KurrentDB.Protocol.Streams.V2;
 
 namespace KurrentDB.Client;
 

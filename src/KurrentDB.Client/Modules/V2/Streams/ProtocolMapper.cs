@@ -1,7 +1,6 @@
 using Google.Protobuf;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
-using JetBrains.Annotations;
 using KurrentDB.Client.Model;
 using KurrentDB.Protocol.Streams.V2;
 

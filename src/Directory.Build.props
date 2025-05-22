@@ -46,4 +46,8 @@
         <InternalsVisibleTo Include="$(ProjectName).Common.Tests" />
         <InternalsVisibleTo Include="$(ProjectName).Tests.Common" />
     </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="JetBrains.Annotations" />
+    </ItemGroup>
 </Project>

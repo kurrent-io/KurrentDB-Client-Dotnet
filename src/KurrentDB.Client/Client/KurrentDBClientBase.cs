@@ -8,11 +8,7 @@ using Grpc.Core;
 using KurrentDB.Client.Model;
 using KurrentDB.Client.SchemaRegistry;
 using KurrentDB.Client.SchemaRegistry.Serialization;
-using KurrentDB.Client.SchemaRegistry.Serialization.Bytes;
-using KurrentDB.Client.SchemaRegistry.Serialization.Json;
-using KurrentDB.Client.SchemaRegistry.Serialization.Protobuf;
 using KurrentDB.Protocol.Registry.V2;
-using Microsoft.Extensions.Logging.Abstractions;
 
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
@@ -49,29 +45,24 @@ public abstract class KurrentDBClientBase : IAsyncDisposable {
 		var messageTypeRegistry = new MessageTypeMapper();
 		var schemaExporter      = new SchemaExporter();
 
-		var schemaManager = new SchemaManager(new KurrentRegistryClient(Settings), schemaExporter);
-
-		SerializerProvider = new SchemaSerializerProvider([
-			new BytesPassthroughSerializer(),
-			new JsonSchemaSerializer(
-				new() {
-					AutoRegister       = Settings.SchemaRegistry.AutoRegister,
-					Validate           = Settings.SchemaRegistry.Validate,
-					SchemaNameStrategy = Settings.SchemaRegistry.SchemaNameStrategy
-				},
-				schemaManager: schemaManager,
-				typeMapper: messageTypeRegistry
-			),
-			new ProtobufSchemaSerializer(
-				new() {
-					AutoRegister       = Settings.SchemaRegistry.AutoRegister,
-					Validate           = Settings.SchemaRegistry.Validate,
-					SchemaNameStrategy = Settings.SchemaRegistry.SchemaNameStrategy
-				},
-				schemaManager: schemaManager,
-				typeMapper: messageTypeRegistry
-			)
-		]);
+		// var schemaManager = new SchemaManager(new KurrentRegistryClient(Settings), schemaExporter);
+		//
+		// SerializerProvider = new SchemaSerializerProvider([
+		// 	new BytesPassthroughSerializer(),
+		// 	new JsonSchemaSerializer(
+		// 		new() {
+		// 			SchemaRegistration = SchemaRegistrationOptions.AutoMap,
+		// 			ConsumeMappedOnly  = false,
+		// 		},
+		// 		schemaManager: schemaManager
+		// 	),
+		// 	new ProtobufSchemaSerializer(
+		// 		new() {
+		// 			SchemaRegistration = SchemaRegistrationOptions.AutoMap,
+		// 		},
+		// 		schemaManager: schemaManager
+		// 	)
+		// ]);
 	}
 
 	internal class GrpcServiceClients(ChannelInfo channelInfo) {
@@ -86,7 +77,7 @@ public abstract class KurrentDBClientBase : IAsyncDisposable {
 	internal KurrentDBClientSettings Settings       { get; }
 	internal GrpcServiceClients      ServiceClients { get; private set; } = null!;
 
-	protected internal ISchemaSerializerProvider SerializerProvider { get; }
+	protected internal ISchemaSerializerProvider SerializerProvider { get; } = null!;
 	protected internal IMetadataDecoder          MetadataDecoder    { get; } = null!;
 
 	internal ServerCapabilities ServerCapabilities => ChannelInfo.ServerCapabilities;

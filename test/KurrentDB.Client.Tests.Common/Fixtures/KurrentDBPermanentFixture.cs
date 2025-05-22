@@ -4,7 +4,6 @@ using System.Net;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Services.Extensions;
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
 using static System.TimeSpan;

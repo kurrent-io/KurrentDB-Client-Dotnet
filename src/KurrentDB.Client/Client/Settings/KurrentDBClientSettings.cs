@@ -1,8 +1,5 @@
-using System.Net.Http;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
-using Grpc.Net.Client;
-using Grpc.Net.Client.Configuration;
 using KurrentDB.Client.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;

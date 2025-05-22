@@ -178,11 +178,7 @@ class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey, TValue
 			);
 
 			// If the key previously existed and had a different value, remove the old reverse mapping
-#if NET48
-			if (hadOldValue && !_valueComparer.Equals(oldValue!, value))
-#else
 			if (hadOldValue && !_valueComparer.Equals(oldValue, value))
-#endif
 				// oldValue cannot be null here if hadOldValue is true, but compiler needs hint
 				if (oldValue != null)
 					_reverse.TryRemove(oldValue, out _);
@@ -238,13 +234,7 @@ class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey, TValue
 			if (!_reverse.TryAdd(value, key)) {
 				// Rollback: Remove the key from the forward dictionary.
 				// We need to use TryRemove that matches the value we just added.
-
-#if NET48
-				_forward.TryRemove(key, out _);
-#else
 				_forward.TryRemove(KeyValuePair.Create(key, value));
-#endif
-
 				return false;
 			}
 

@@ -5,7 +5,6 @@ using Grpc.Core;
 using Grpc.Core.Interceptors;
 using KurrentDB.Client.Interceptors;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace KurrentDB.Client;
 

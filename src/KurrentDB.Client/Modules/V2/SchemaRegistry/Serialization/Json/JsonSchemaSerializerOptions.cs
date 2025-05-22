@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using JetBrains.Annotations;
 
 namespace KurrentDB.Client.SchemaRegistry.Serialization.Json;
 

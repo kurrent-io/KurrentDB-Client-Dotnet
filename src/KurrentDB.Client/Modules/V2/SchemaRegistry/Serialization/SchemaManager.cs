@@ -1,7 +1,5 @@
 using System.Collections.Concurrent;
-using JetBrains.Annotations;
 using KurrentDB.Client.Model;
-using KurrentDB.Protocol.Registry.V2;
 using SchemaDataFormat = KurrentDB.Client.Model.SchemaDataFormat;
 
 namespace KurrentDB.Client.SchemaRegistry.Serialization;

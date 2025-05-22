@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
-using JetBrains.Annotations;
 using KurrentDB.Client.Model;
 using NJsonSchema;
 using OneOf;

@@ -1,4 +1,3 @@
-using JetBrains.Annotations;
 using KurrentDB.Client.Diagnostics;
 using OpenTelemetry.Trace;
 

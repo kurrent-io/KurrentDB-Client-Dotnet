@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using JetBrains.Annotations;
 using static System.String;
 
 namespace KurrentDB.Client.Model;
@@ -36,11 +35,7 @@ public record ConsumeFilter {
 	public bool IsStreamNameFilter => Type == ConsumeFilterType.Literal && Scope == ConsumeFilterScope.Stream;
 	public bool IsEmptyFilter      => Type == ConsumeFilterType.Unspecified && Scope == ConsumeFilterScope.Unspecified;
 
-#if NET48
-	public bool IsMatch(ReadOnlySpan<char> input) => Regex.IsMatch(input.ToString());
-#else
 	public bool IsMatch(ReadOnlySpan<char> input) => Regex.IsMatch(input);
-#endif
 
     public static ConsumeFilter FromStream(string stream) {
 	    if (IsNullOrWhiteSpace(stream))

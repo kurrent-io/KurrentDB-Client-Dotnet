@@ -1,6 +1,5 @@
 // ReSharper disable InconsistentNaming
 
-using Grpc.Core;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;

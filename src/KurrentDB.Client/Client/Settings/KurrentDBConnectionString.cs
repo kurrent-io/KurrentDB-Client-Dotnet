@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 
@@ -248,38 +247,6 @@ record KurrentDBConnectionString {
 
 		return settings;
 
-#if NET48
-        HttpMessageHandler CreateDefaultHandler()
-        {
-            var handler = new WinHttpHandler
-            {
-                TcpKeepAliveEnabled = true,
-                TcpKeepAliveTime = settings.ConnectivitySettings.KeepAliveTimeout,
-                TcpKeepAliveInterval = settings.ConnectivitySettings.KeepAliveInterval,
-                EnableMultipleHttp2Connections = true
-            };
-
-            if (settings.ConnectivitySettings.Insecure) return handler;
-
-            if (settings.ConnectivitySettings.ClientCertificate is not null)
-                handler.ClientCertificates.Add(settings.ConnectivitySettings.ClientCertificate);
-
-            handler.ServerCertificateValidationCallback = settings.ConnectivitySettings.TlsVerifyCert switch
-            {
-                false => delegate { return true; },
-                true when settings.ConnectivitySettings.TlsCaFile is not null => (sender, certificate, chain, errors) =>
-                {
-                    if (chain is null) return false;
-
-                    chain.ChainPolicy.ExtraStore.Add(settings.ConnectivitySettings.TlsCaFile);
-                    return chain.Build(certificate);
-                },
-                _ => null
-            };
-
-            return handler;
-        }
-#else
 		HttpMessageHandler CreateDefaultHandler() {
 			var handler = new SocketsHttpHandler {
 				KeepAlivePingDelay             = settings.ConnectivitySettings.KeepAliveInterval,
@@ -309,7 +276,6 @@ record KurrentDBConnectionString {
 
 			return handler;
 		}
-#endif
 	}
 
 	static void ConfigureClientCertificate(KurrentDBClientSettings settings, IReadOnlyDictionary<string, object> options) {
