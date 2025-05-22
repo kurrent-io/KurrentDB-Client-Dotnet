@@ -109,137 +109,137 @@ public class KurrentDBClientSettings {
 	public static KurrentDBClientSettings Create(string connectionString) =>
 		KurrentDBConnectionString.Parse(connectionString).ToClientSettings();
 
-	public (GrpcChannel Channel, CallInvoker Invoker) CreateGrpcChannel(bool enableLoadBalancing = true) {
-		// Configure service config with both load balancing and retry
-		var retryMethodConfig = GetRetryMethodConfig();
-
-		var serviceConfig = retryMethodConfig switch {
-			not null when enableLoadBalancing => new ServiceConfig {
-				LoadBalancingConfigs = { new RoundRobinConfig() },
-				MethodConfigs        = { retryMethodConfig }
-			},
-			not null when !enableLoadBalancing => new ServiceConfig {
-				MethodConfigs = { retryMethodConfig }
-			},
-			null when enableLoadBalancing => new ServiceConfig {
-				LoadBalancingConfigs = { new RoundRobinConfig() },
-			},
-			_ => null
-		};
-
-		// Create the authenticated channel credentials
-		var credentials = CreateChannelCredentials();
-
-		// Set up channel options
-		var channelOptions = new GrpcChannelOptions {
-			Credentials   = credentials,
-			HttpHandler   = CreateHttpMessageHandler?.Invoke(),
-			LoggerFactory = LoggerFactory,
-			ServiceConfig = serviceConfig
-		};
-
-		// Create a channel with the authenticated credentials
-		var channel = GrpcChannel.ForAddress(ConnectivitySettings.Address!, channelOptions);
-
-		return (channel, channel.Intercept(Interceptors?.ToArray() ?? []));
-
-		ChannelCredentials CreateChannelCredentials() {
-			if (DefaultCredentials is null)
-				return ChannelCredentials ?? new SslCredentials();
-
-			var getAuthValue = OperationOptions.GetAuthenticationHeaderValue;
-			var callCredentials = CallCredentials.FromInterceptor(async (context, metadata) => {
-				var authValue = await getAuthValue(DefaultCredentials, context.CancellationToken).ConfigureAwait(false);
-				metadata.Add(Constants.Headers.Authorization, authValue);
-			});
-
-			// Combine with existing channel credentials or default to SSL
-			return ChannelCredentials.Create(ChannelCredentials ?? new SslCredentials(), callCredentials);
-		}
-
-		MethodConfig? GetRetryMethodConfig() {
-			if (!RetrySettings.IsEnabled)
-				return null;
-
-			var retryPolicy = new RetryPolicy {
-				MaxAttempts       = RetrySettings.MaxAttempts,
-				InitialBackoff    = RetrySettings.InitialBackoff,
-				MaxBackoff        = RetrySettings.MaxBackoff,
-				BackoffMultiplier = RetrySettings.BackoffMultiplier
-			};
-
-			foreach (var statusCode in RetrySettings.RetryableStatusCodes)
-				retryPolicy.RetryableStatusCodes.Add(statusCode);
-
-			// Apply retry policy to all methods
-			return new MethodConfig {
-				Names       = { MethodName.Default },
-				RetryPolicy = retryPolicy
-			};
-		}
-
-		// static ChannelCredentials CreateChannelCredentials3(
-		// 	ChannelCredentials? channelCredentials, UserCredentials? userCredentials,
-		// 	Func<UserCredentials, CancellationToken, ValueTask<string>> getUserAuthValue
-		// ) {
-		// 	channelCredentials ??= new SslCredentials();
-		//
-		// 	if (userCredentials is null)
-		// 		return channelCredentials;
-		//
-		// 	var callCredentials = CallCredentials.FromInterceptor(async (context, metadata) => {
-		// 		var authValue = await getUserAuthValue(userCredentials, context.CancellationToken).ConfigureAwait(false);
-		// 		metadata.Add(Constants.Headers.Authorization, authValue);
-		// 	});
-		//
-		// 	// Combine with existing channel credentials or default to SSL
-		// 	return ChannelCredentials.Create(channelCredentials, callCredentials);
-		// }
-
-		// static ChannelCredentials CreateChannelCredentials(ChannelCredentials? channelCredentials, AsyncAuthInterceptor? authInterceptor = null) {
-		// 	channelCredentials ??= new SslCredentials();
-		// 	return authInterceptor is not null
-		// 		? ChannelCredentials.Create(channelCredentials, CallCredentials.FromInterceptor(authInterceptor))
-		// 		: channelCredentials;
-		// }
-
-	}
-
-	static CallOptions CreateGrpcCallOptions(KurrentDBClientSettings settings, CancellationToken cancellationToken) {
-		// var temp = new CallOptions()
-		// 	.WithCancellationToken(cancellationToken)
-		// 	.WithCredentials(settings.DefaultCredentials)
-
-		var options =  new CallOptions(
-			cancellationToken: cancellationToken,
-			deadline: DeadlineAfter(settings.DefaultDeadline),
-			headers: new() {
-				{
-					Constants.Headers.RequiresLeader,
-					settings.ConnectivitySettings.NodePreference == NodePreference.Leader
-						? bool.TrueString
-						: bool.FalseString
-				}
-			},
-			credentials: settings.DefaultCredentials is not null
-				? CallCredentials.FromInterceptor(async (_, metadata) => {
-						var authorizationHeader = await settings.OperationOptions
-							.GetAuthenticationHeaderValue(settings.DefaultCredentials, CancellationToken.None)
-							.ConfigureAwait(false);
-
-						metadata.Add(Constants.Headers.Authorization, authorizationHeader);
-					}
-				)
-				: null
-		);
-
-		return options;
-
-		static DateTime? DeadlineAfter(TimeSpan? timeoutAfter) =>
-			timeoutAfter.HasValue
-				? timeoutAfter.Value == TimeSpan.MaxValue || timeoutAfter.Value == Timeout.InfiniteTimeSpan
-					? DateTime.MaxValue
-					: DateTime.UtcNow.Add(timeoutAfter.Value)
-				: null;
-	}
+	// public (GrpcChannel Channel, CallInvoker Invoker) CreateGrpcChannel(bool enableLoadBalancing = true) {
+	// 	// Configure service config with both load balancing and retry
+	// 	var retryMethodConfig = GetRetryMethodConfig();
+	//
+	// 	var serviceConfig = retryMethodConfig switch {
+	// 		not null when enableLoadBalancing => new ServiceConfig {
+	// 			LoadBalancingConfigs = { new RoundRobinConfig() },
+	// 			MethodConfigs        = { retryMethodConfig }
+	// 		},
+	// 		not null when !enableLoadBalancing => new ServiceConfig {
+	// 			MethodConfigs = { retryMethodConfig }
+	// 		},
+	// 		null when enableLoadBalancing => new ServiceConfig {
+	// 			LoadBalancingConfigs = { new RoundRobinConfig() },
+	// 		},
+	// 		_ => null
+	// 	};
+	//
+	// 	// Create the authenticated channel credentials
+	// 	var credentials = CreateChannelCredentials();
+	//
+	// 	// Set up channel options
+	// 	var channelOptions = new GrpcChannelOptions {
+	// 		Credentials   = credentials,
+	// 		HttpHandler   = CreateHttpMessageHandler?.Invoke(),
+	// 		LoggerFactory = LoggerFactory,
+	// 		ServiceConfig = serviceConfig
+	// 	};
+	//
+	// 	// Create a channel with the authenticated credentials
+	// 	var channel = GrpcChannel.ForAddress(ConnectivitySettings.Address!, channelOptions);
+	//
+	// 	return (channel, channel.Intercept(Interceptors?.ToArray() ?? []));
+	//
+	// 	ChannelCredentials CreateChannelCredentials() {
+	// 		if (DefaultCredentials is null)
+	// 			return ChannelCredentials ?? new SslCredentials();
+	//
+	// 		var getAuthValue = OperationOptions.GetAuthenticationHeaderValue;
+	// 		var callCredentials = CallCredentials.FromInterceptor(async (context, metadata) => {
+	// 			var authValue = await getAuthValue(DefaultCredentials, context.CancellationToken).ConfigureAwait(false);
+	// 			metadata.Add(Constants.Headers.Authorization, authValue);
+	// 		});
+	//
+	// 		// Combine with existing channel credentials or default to SSL
+	// 		return ChannelCredentials.Create(ChannelCredentials ?? new SslCredentials(), callCredentials);
+	// 	}
+	//
+	// 	MethodConfig? GetRetryMethodConfig() {
+	// 		if (!RetrySettings.IsEnabled)
+	// 			return null;
+	//
+	// 		var retryPolicy = new RetryPolicy {
+	// 			MaxAttempts       = RetrySettings.MaxAttempts,
+	// 			InitialBackoff    = RetrySettings.InitialBackoff,
+	// 			MaxBackoff        = RetrySettings.MaxBackoff,
+	// 			BackoffMultiplier = RetrySettings.BackoffMultiplier
+	// 		};
+	//
+	// 		foreach (var statusCode in RetrySettings.RetryableStatusCodes)
+	// 			retryPolicy.RetryableStatusCodes.Add(statusCode);
+	//
+	// 		// Apply retry policy to all methods
+	// 		return new MethodConfig {
+	// 			Names       = { MethodName.Default },
+	// 			RetryPolicy = retryPolicy
+	// 		};
+	// 	}
+	//
+	// 	// static ChannelCredentials CreateChannelCredentials3(
+	// 	// 	ChannelCredentials? channelCredentials, UserCredentials? userCredentials,
+	// 	// 	Func<UserCredentials, CancellationToken, ValueTask<string>> getUserAuthValue
+	// 	// ) {
+	// 	// 	channelCredentials ??= new SslCredentials();
+	// 	//
+	// 	// 	if (userCredentials is null)
+	// 	// 		return channelCredentials;
+	// 	//
+	// 	// 	var callCredentials = CallCredentials.FromInterceptor(async (context, metadata) => {
+	// 	// 		var authValue = await getUserAuthValue(userCredentials, context.CancellationToken).ConfigureAwait(false);
+	// 	// 		metadata.Add(Constants.Headers.Authorization, authValue);
+	// 	// 	});
+	// 	//
+	// 	// 	// Combine with existing channel credentials or default to SSL
+	// 	// 	return ChannelCredentials.Create(channelCredentials, callCredentials);
+	// 	// }
+	//
+	// 	// static ChannelCredentials CreateChannelCredentials(ChannelCredentials? channelCredentials, AsyncAuthInterceptor? authInterceptor = null) {
+	// 	// 	channelCredentials ??= new SslCredentials();
+	// 	// 	return authInterceptor is not null
+	// 	// 		? ChannelCredentials.Create(channelCredentials, CallCredentials.FromInterceptor(authInterceptor))
+	// 	// 		: channelCredentials;
+	// 	// }
+	//
+	// }
+	//
+	// static CallOptions CreateGrpcCallOptions(KurrentDBClientSettings settings, CancellationToken cancellationToken) {
+	// 	// var temp = new CallOptions()
+	// 	// 	.WithCancellationToken(cancellationToken)
+	// 	// 	.WithCredentials(settings.DefaultCredentials)
+	//
+	// 	var options =  new CallOptions(
+	// 		cancellationToken: cancellationToken,
+	// 		deadline: DeadlineAfter(settings.DefaultDeadline),
+	// 		headers: new() {
+	// 			{
+	// 				Constants.Headers.RequiresLeader,
+	// 				settings.ConnectivitySettings.NodePreference == NodePreference.Leader
+	// 					? bool.TrueString
+	// 					: bool.FalseString
+	// 			}
+	// 		},
+	// 		credentials: settings.DefaultCredentials is not null
+	// 			? CallCredentials.FromInterceptor(async (_, metadata) => {
+	// 					var authorizationHeader = await settings.OperationOptions
+	// 						.GetAuthenticationHeaderValue(settings.DefaultCredentials, CancellationToken.None)
+	// 						.ConfigureAwait(false);
+	//
+	// 					metadata.Add(Constants.Headers.Authorization, authorizationHeader);
+	// 				}
+	// 			)
+	// 			: null
+	// 	);
+	//
+	// 	return options;
+	//
+	// 	static DateTime? DeadlineAfter(TimeSpan? timeoutAfter) =>
+	// 		timeoutAfter.HasValue
+	// 			? timeoutAfter.Value == TimeSpan.MaxValue || timeoutAfter.Value == Timeout.InfiniteTimeSpan
+	// 				? DateTime.MaxValue
+	// 				: DateTime.UtcNow.Add(timeoutAfter.Value)
+	// 			: null;
+	// }
 }

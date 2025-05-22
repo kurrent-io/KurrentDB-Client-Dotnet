@@ -7,5 +7,6 @@ public record ServerCapabilities(
 	bool SupportsPersistentSubscriptionsGetInfo = false,
 	bool SupportsPersistentSubscriptionsRestartSubsystem = false,
 	bool SupportsPersistentSubscriptionsReplayParked = false,
-	bool SupportsPersistentSubscriptionsList = false
+	bool SupportsPersistentSubscriptionsList = false,
+	bool SupportsSchemaRegistry = false
 );

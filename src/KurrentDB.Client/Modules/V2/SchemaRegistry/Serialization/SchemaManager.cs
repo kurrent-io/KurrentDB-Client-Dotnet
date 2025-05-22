@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using JetBrains.Annotations;
 using KurrentDB.Client.Model;
 
@@ -39,9 +40,10 @@ public class SchemaNotFoundException(SchemaIdentifier schemaIdentifier) : Except
 }
 
 [PublicAPI]
-public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter schemaExporter) {
+public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter schemaExporter, MessageTypeMapper typeMapper) {
 	KurrentRegistryClient SchemaRegistry { get; } = schemaRegistry;
 	ISchemaExporter       SchemaExporter { get; } = schemaExporter;
+	MessageTypeMapper     TypeMapper     { get; } = typeMapper;
 
 	ConcurrentDictionary<Type, List<SchemaVersionDescriptor>> CompatibleVersions { get; } = new();
 
@@ -52,12 +54,9 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 	/// <param name="schemaName">The name of the schema to register.</param>
 	/// <param name="messageType">The type to serialize and register in the schema registry.</param>
 	/// <param name="dataFormat">The data format (e.g., Json, Protobuf, etc.) of the schema.</param>
-	/// <param name="stream">The stream associated with the schema, if applicable.</param>
 	/// <param name="cancellationToken">A token to monitor for cancellation requests during the operation.</param>
 	/// <returns>The version descriptor of the schema, including its unique ID and version number.</returns>
-	public async ValueTask<SchemaVersionDescriptor> TryRegisterSchema(
-		SchemaName schemaName, Type messageType, SchemaDataFormat dataFormat, CancellationToken cancellationToken
-	) {
+	public async ValueTask<SchemaVersionDescriptor> TryRegisterSchema(SchemaName schemaName, Type messageType, SchemaDataFormat dataFormat, CancellationToken cancellationToken) {
 		if (schemaName == SchemaName.None)
 			throw new ArgumentNullException(nameof(schemaName), "Schema name cannot be None");
 
@@ -97,7 +96,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 						return TryRegisterSchema(schemaName, messageType, dataFormat, cancellationToken);
 				},
 				// edge case: the schema was created by another client between checking and creating
-				alreadyExists => TryRegisterSchema(schemaName, messageType, dataFormat, cancellationToken)
+				_ => TryRegisterSchema(schemaName, messageType, dataFormat, cancellationToken)
 			);
 		}
 	}
@@ -134,7 +133,8 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 						// would be needed
 						versions.Insert(versions.Count - 1, state.Version);
 						return versions;
-					}, (
+					},
+					(
 						LastVersion: new SchemaVersionDescriptor(lastSchemaVersionId, 0),
 						Version: new SchemaVersionDescriptor(schemaVersionId, 0)
 					)
@@ -142,9 +142,22 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 
 				return lastSchemaVersionId;
 			},
-			errors   => throw new SchemaValidationException(dataFormat, schemaVersionId, messageType, errors.Errors),
-			notFound => throw new SchemaNotFoundException(schemaVersionId)
+			errors => throw new SchemaValidationException(dataFormat, schemaVersionId, messageType, errors.Errors),
+			_ => throw new SchemaNotFoundException(schemaVersionId)
 		);
+
+		// Attempts to retrieve the last schema version ID that is compatible with the provided schema version ID.
+		bool TryGetLastSchemaVersion(SchemaVersionId schemaVersionId, out SchemaVersionDescriptor lastSchemaVersion) {
+			foreach (var entry in CompatibleVersions) {
+				if (entry.Value.Any(x => x.VersionId == schemaVersionId)) {
+					lastSchemaVersion = entry.Value.Last();
+					return true;
+				}
+			}
+
+			lastSchemaVersion = SchemaVersionDescriptor.None;
+			return false;
+		}
 	}
 
 	/// <summary>
@@ -159,7 +172,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 		if (CompatibleVersions.TryGetValue(messageType, out var versions))
 			return versions.Last().VersionId;
 
-		var definition = SchemaExporter.Export(messageType, dataFormat);
+		var definition = SchemaExporter.Export(messageType, SchemaDataFormat.Json);
 
 		var result = await SchemaRegistry
 			.CheckSchemaCompatibility(schemaName, definition, dataFormat, cancellationToken)
@@ -171,23 +184,93 @@ public class SchemaManager(KurrentRegistryClient schemaRegistry, ISchemaExporter
 				CompatibleVersions.TryAdd(messageType, [new SchemaVersionDescriptor(schemaVersionId, 0)]);
 				return schemaVersionId;
 			},
-			errors   => throw new SchemaValidationException(dataFormat, schemaName, messageType, errors.Errors),
-			notFound => throw new SchemaNotFoundException(schemaName)
+			errors => throw new SchemaValidationException(dataFormat, schemaName, messageType, errors.Errors),
+			_ => throw new SchemaNotFoundException(schemaName)
 		);
 	}
 
-	/// <summary>
-	/// Attempts to retrieve the last schema version ID that is compatible with the provided schema version ID.
-	/// </summary>
-	bool TryGetLastSchemaVersion(SchemaVersionId schemaVersionId, out SchemaVersionDescriptor lastSchemaVersion) {
-		foreach (var entry in CompatibleVersions) {
-			if (entry.Value.Any(x => x.VersionId == schemaVersionId)) {
-				lastSchemaVersion = entry.Value.Last();
-				return true;
-			}
-		}
+	// public async ValueTask<(Type MessageType, SchemaVersionId SchemaVersionId)> HandleSchemaValidation(RecordSchemaInfo schemaInfo, bool validate, CancellationToken cancellationToken) {
+	// 	// check if the message type was mapped or try to resolve it "magically"
+	// 	if (!TypeMapper.TryGetMessageType(schemaInfo.SchemaName, out var messageType)) {
+	// 		// it will only work if the name strategy was used was MessageSchemaNameStrategy
+	// 		// (or the old event type property contains the full clr type name)
+	// 		if (!SystemTypes.TryResolveType(schemaInfo.SchemaName, out messageType))
+	// 			throw new Exception($"Schema name '{schemaInfo.SchemaName}' not mapped and does not match any known type");
+	// 	}
+	//
+	// 	if (!validate)
+	// 		return (messageType, SchemaVersionId.None);
+	//
+	// 	if (schemaInfo.HasSchemaVersionId) {
+	// 		await EnsureSchemaCompatibility(schemaInfo.SchemaVersionId, messageType, schemaInfo.DataFormat, cancellationToken);
+	// 		return (messageType, SchemaVersionId.None);
+	// 	}
+	//
+	// 	// fallback behaviour for backwards compatibility
+	// 	var lastSchemaVersionId = await EnsureSchemaCompatibility(schemaInfo.SchemaName, messageType, schemaInfo.DataFormat, cancellationToken);
+	//
+	// 	// return the schema version id so we can set it in the metadata
+	// 	return (messageType, lastSchemaVersionId);
+	// }
 
-		lastSchemaVersion = SchemaVersionDescriptor.None;
-		return false;
-	}
+	// public async ValueTask EnforceSchemaRegistration(Type messageType, SchemaRegistrationPolicies policies, SchemaSerializationContext schemaSerializationContext, CancellationToken cancellationToken) {
+	// 	if (policies.MustBeEnforced)
+	// 		await HandleWithSchemaRegistry(messageType, schemaSerializationContext, policies, cancellationToken).ConfigureAwait(false);
+	// 	else
+	// 		HandleWithoutSchemaRegistry(messageType, schemaSerializationContext);
+	// }
+	//
+	// async ValueTask HandleWithSchemaRegistry(Type messageType, SchemaDataFormat dataFormat, SchemaSerializationContext context, SchemaRegistrationPolicies policies, CancellationToken cancellationToken) {
+	// 	context.ServerConfiguration.EnsureDataFormatAllowed(dataFormat);
+	//
+	// 	var schemaName = Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream);
+	//
+	// 	if (policies.EnforceAutoRegistration)
+	// 		await RegisterProducerSchema();
+	//
+	// 	if (policies.EnforceValidation)
+	// 		await ValidateProducerSchema();
+	//
+	// 	return;
+	//
+	// 	async ValueTask RegisterProducerSchema() {
+	// 		var versionInfo = await TryRegisterSchema(schemaName, messageType, dataFormat, cancellationToken)
+	// 			.ConfigureAwait(false);
+	//
+	// 		TypeMapper.TryMap(schemaName, messageType);
+	//
+	// 		context.Metadata
+	// 			.Set(SystemMetadataKeys.SchemaName, schemaName)
+	// 			.Set(SystemMetadataKeys.SchemaVersionId, versionInfo.VersionId)
+	// 			.Set(SystemMetadataKeys.SchemaDataFormat, dataFormat);
+	// 	}
+	//
+	// 	async ValueTask ValidateProducerSchema() {
+	// 		var lastSchemaVersionId = await EnsureSchemaCompatibility(schemaName, messageType, dataFormat, cancellationToken)
+	// 			.ConfigureAwait(false);
+	//
+	// 		context.Metadata
+	// 			.Set(SystemMetadataKeys.SchemaName, schemaName)
+	// 			.Set(SystemMetadataKeys.SchemaVersionId, lastSchemaVersionId)
+	// 			.Set(SystemMetadataKeys.SchemaDataFormat, dataFormat);
+	// 	}
+	// }
+	//
+	// void HandleWithoutSchemaRegistry(Type messageType, SchemaSerializationContext context) {
+	// 	if (Options.AutoRegister) {
+	// 		var schemaName = TypeMapper
+	// 			.GetOrMap(Options.SchemaNameStrategy.GenerateSchemaName(messageType, context.Stream), messageType);
+	//
+	// 		context.Metadata
+	// 			.Set(SystemMetadataKeys.SchemaName, schemaName)
+	// 			.Set(SystemMetadataKeys.SchemaDataFormat, DataFormat);
+	// 	}
+	// 	else if (TypeMapper.TryGetSchemaName(messageType, out var schemaName)) {
+	// 		context.Metadata
+	// 			.Set(SystemMetadataKeys.SchemaName, schemaName)
+	// 			.Set(SystemMetadataKeys.SchemaDataFormat, DataFormat);
+	// 	}
+	// 	else
+	// 		throw new InvalidOperationException($"The message type '{messageType.FullName}' is not mapped and auto-registration is disabled.");
+	// }
 }

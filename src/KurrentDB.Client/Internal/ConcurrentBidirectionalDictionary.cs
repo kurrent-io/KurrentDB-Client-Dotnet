@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
 
 namespace KurrentDB.Client;
 
@@ -11,12 +10,11 @@ namespace KurrentDB.Client;
 /// </summary>
 /// <typeparam name="TKey">The type of the keys.</typeparam>
 /// <typeparam name="TValue">The type of the values.</typeparam>
-public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>, IDisposable
+class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey, TValue>, IReadOnlyDictionary<TKey, TValue>, IDisposable
 	where TKey : notnull where TValue : notnull {
-	readonly ReaderWriterLockSlim _lock = new(LockRecursionPolicy.NoRecursion);
-
 	readonly ConcurrentDictionary<TKey, TValue> _forward;
 	readonly IEqualityComparer<TKey>            _keyComparer;
+	readonly ReaderWriterLockSlim               _lock = new(LockRecursionPolicy.NoRecursion);
 	readonly ConcurrentDictionary<TValue, TKey> _reverse;
 	readonly IEqualityComparer<TValue>          _valueComparer;
 
@@ -30,15 +28,15 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 		_reverse       = new ConcurrentDictionary<TValue, TKey>(_valueComparer);
 	}
 
-	// public ConcurrentBidirectionalDictionary(int concurrencyLevel, int capacity)
-	// 	: this(concurrencyLevel, capacity, EqualityComparer<TKey>.Default, EqualityComparer<TValue>.Default) { }
-	//
-	// public ConcurrentBidirectionalDictionary(int concurrencyLevel, int capacity, IEqualityComparer<TKey> keyComparer, IEqualityComparer<TValue> valueComparer) {
-	// 	_keyComparer   = keyComparer;
-	// 	_valueComparer = valueComparer;
-	// 	_forward       = new ConcurrentDictionary<TKey, TValue>(concurrencyLevel, capacity, _keyComparer);
-	// 	_reverse       = new ConcurrentDictionary<TValue, TKey>(concurrencyLevel, capacity, _valueComparer);
-	// }
+	public ConcurrentBidirectionalDictionary(int concurrencyLevel, int capacity)
+		: this(concurrencyLevel, capacity, EqualityComparer<TKey>.Default, EqualityComparer<TValue>.Default) { }
+
+	public ConcurrentBidirectionalDictionary(int concurrencyLevel, int capacity, IEqualityComparer<TKey> keyComparer, IEqualityComparer<TValue> valueComparer) {
+		_keyComparer   = keyComparer;
+		_valueComparer = valueComparer;
+		_forward       = new ConcurrentDictionary<TKey, TValue>(concurrencyLevel, capacity, _keyComparer);
+		_reverse       = new ConcurrentDictionary<TValue, TKey>(concurrencyLevel, capacity, _valueComparer);
+	}
 
 	/// <summary>
 	/// Gets or sets the value associated with the specified key.
@@ -50,8 +48,6 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 	/// <exception cref="KeyNotFoundException">The property is retrieved and key does not exist in the collection.</exception>
 	/// <exception cref="ArgumentException">The property is set and the value already exists mapped to a different key.</exception>
 	public TValue this[TKey key] {
-		// Note: IReadOnlyDictionary only requires a getter. IDictionary requires getter+setter.
-		// The public getter satisfies IReadOnlyDictionary.
 		get => _forward[key]; // Use ConcurrentDictionary's getter (throws KeyNotFoundException)
 		set => Set(key, value);
 	}
@@ -89,15 +85,7 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 	/// <returns>true if the key was found; otherwise, false.</returns>
 	/// <exception cref="ArgumentNullException">key is null.</exception>
 	public bool TryGetValue(TKey key, out TValue value) =>
-	// public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value) =>
-		// ConcurrentDictionary.TryGetValue is thread-safe and typically lock-free
-		// Satisfies both IDictionary and IReadOnlyDictionary
 		_forward.TryGetValue(key, out value!);
-
-	// public bool TryGetValue(TKey key, [MaybeNullWhen(false)] out TValue value) =>
-	// 	// ConcurrentDictionary.TryGetValue is thread-safe and typically lock-free
-	// 	// Satisfies both IDictionary and IReadOnlyDictionary
-	// 	_forward.TryGetValue(key, out value);
 
 	/// <summary>
 	/// Determines whether the dictionary contains the specified key. Typically lock-free.
@@ -106,8 +94,6 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 	/// <returns>true if the dictionary contains an element with the specified key; otherwise, false.</returns>
 	/// <exception cref="ArgumentNullException">key is null.</exception>
 	public bool ContainsKey(TKey key) =>
-		// ConcurrentDictionary.ContainsKey is thread-safe and typically lock-free
-		// Satisfies both IDictionary and IReadOnlyDictionary
 		_forward.ContainsKey(key);
 
 	/// <summary>
@@ -130,9 +116,7 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 	/// Accessing the count on ConcurrentDictionary is typically lock-free but might represent a slightly stale value
 	/// if accessed concurrently with write operations not yet fully completed across both internal dictionaries.
 	/// </summary>
-	public int Count => _forward.Count; // Satisfies both ICollection<> and IReadOnlyCollection<>
-
-	// --- IDictionary & IReadOnlyDictionary Properties ---
+	public int Count => _forward.Count;
 
 	/// <summary>
 	/// Gets a collection containing the keys. Implements IDictionary.Keys.
@@ -145,9 +129,7 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 	/// Does not allocate a new list on access. The collection reflects the state of the dictionary at the point it's retrieved.
 	/// Note: Value uniqueness is enforced by the dictionary, but ConcurrentDictionary.Values itself doesn't guarantee uniqueness checks on enumeration if the underlying dictionary changes concurrently.
 	/// </summary>
-	public ICollection<TValue> Values => _forward.Values; // Using _forward's values, consistent with Keys/Enumerator
-
-	// --- Enumerators ---
+	public ICollection<TValue> Values => _forward.Values;
 
 	/// <summary>
 	/// Returns an enumerator that iterates through the key/value pairs. Implements IDictionary and IEnumerable<>.
@@ -159,18 +141,9 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-	// --- Explicit Interface Implementations for IReadOnlyDictionary ---
-	// Needed because IDictionary defines Keys/Values returning ICollection<T>,
-	// while IReadOnlyDictionary defines them returning IEnumerable<T>.
-	// The public ICollection<T> properties satisfy the IEnumerable<T> contract,
-	// but explicit implementation clarifies intent for the compiler/runtime.
-
 	IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => Keys;
 
 	IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => Values;
-
-	// Explicit implementation for IReadOnlyDictionary indexer getter (optional, public getter suffices)
-	// TValue IReadOnlyDictionary<TKey, TValue>.this[TKey key] => this[key];
 
 	void Set(TKey key, TValue value) {
 		if (key is null)
@@ -181,7 +154,6 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 
 		_lock.EnterWriteLock();
 		try {
-			// Check if the new value conflicts with an existing mapping
 			if (_reverse.TryGetValue(value, out var existingKey) && !_keyComparer.Equals(existingKey, key))
 				throw new ArgumentException($"Value '{value}' already exists for key '{existingKey}'. Cannot map it to key '{key}'.");
 
@@ -191,15 +163,14 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 
 			_forward.AddOrUpdate(
 				key,
-				// Add factory: maps value to key in reverse
-				k => {
+				_ => {
 					// We might have added to _reverse speculatively before, ensure consistency
 					// Or, more simply, just add/update reverse map *after* forward map is settled
 					// We'll handle the reverse update below after AddOrUpdate completes
 					return value;
 				},
 				// Update factory: potentially removes old reverse mapping
-				(k, existingValue) => {
+				(_, existingValue) => {
 					oldValue    = existingValue;
 					hadOldValue = true;
 					return value; // Return the new value
@@ -207,11 +178,11 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 			);
 
 			// If the key previously existed and had a different value, remove the old reverse mapping
-			#if NET48
+#if NET48
 			if (hadOldValue && !_valueComparer.Equals(oldValue!, value))
-			#else
+#else
 			if (hadOldValue && !_valueComparer.Equals(oldValue, value))
-			#endif
+#endif
 				// oldValue cannot be null here if hadOldValue is true, but compiler needs hint
 				if (oldValue != null)
 					_reverse.TryRemove(oldValue, out _);
@@ -232,7 +203,8 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 	/// <exception cref="ArgumentNullException">value is null.</exception>
 	/// <exception cref="KeyNotFoundException">The value does not exist in the collection.</exception>
 	public TKey GetKeyByValue(TValue value) {
-		if (value == null) throw new ArgumentNullException(nameof(value));
+		if (value is null)
+			throw new ArgumentNullException(nameof(value));
 
 		// Use ConcurrentDictionary's indexer (throws KeyNotFoundException if value isn't found)
 		return _reverse[value];
@@ -246,8 +218,11 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 	/// <returns>true if the key/value pair was added successfully; otherwise, false.</returns>
 	/// <exception cref="ArgumentNullException">key or value is null.</exception>
 	public bool TryAdd(TKey key, TValue value) {
-		if (key == null) throw new ArgumentNullException(nameof(key));
-		if (value == null) throw new ArgumentNullException(nameof(value));
+		if (key is null)
+			throw new ArgumentNullException(nameof(key));
+
+		if (value is null)
+			throw new ArgumentNullException(nameof(value));
 
 		_lock.EnterWriteLock();
 		try {
@@ -264,11 +239,11 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 				// Rollback: Remove the key from the forward dictionary.
 				// We need to use TryRemove that matches the value we just added.
 
-				#if NET48
+#if NET48
 				_forward.TryRemove(key, out _);
-				#else
+#else
 				_forward.TryRemove(KeyValuePair.Create(key, value));
-				#endif
+#endif
 
 				return false;
 			}
@@ -313,7 +288,8 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 	/// <returns>true if the value was found and removed; otherwise, false.</returns>
 	/// <exception cref="ArgumentNullException">value is null.</exception>
 	public bool RemoveByValue(TValue value) {
-		if (value == null) throw new ArgumentNullException(nameof(value));
+		if (value is null)
+			throw new ArgumentNullException(nameof(value));
 
 		_lock.EnterWriteLock();
 		try {
@@ -339,18 +315,11 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 	/// <returns>true if the value was found; otherwise, false.</returns>
 	/// <exception cref="ArgumentNullException">value is null.</exception>
 	public bool TryGetKey(TValue value, out TKey key) {
-		if (value == null) throw new ArgumentNullException(nameof(value));
+		if (value is null)
+			throw new ArgumentNullException(nameof(value));
 
-		// ConcurrentDictionary.TryGetValue is thread-safe and typically lock-free
 		return _reverse.TryGetValue(value, out key!);
 	}
-
-	// public bool TryGetKey(TValue value, [MaybeNullWhen(false)] out TKey key) {
-	// 	if (value == null) throw new ArgumentNullException(nameof(value));
-	//
-	// 	// ConcurrentDictionary.TryGetValue is thread-safe and typically lock-free
-	// 	return _reverse.TryGetValue(value, out key);
-	// }
 
 	/// <summary>
 	/// Determines whether the dictionary contains the specified value. Typically lock-free.
@@ -359,26 +328,25 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 	/// <returns>true if the dictionary contains an element with the specified value; otherwise, false.</returns>
 	/// <exception cref="ArgumentNullException">value is null.</exception>
 	public bool ContainsValue(TValue value) {
-		if (value == null) throw new ArgumentNullException(nameof(value));
+		if (value is null)
+			throw new ArgumentNullException(nameof(value));
 
-		// ConcurrentDictionary.ContainsKey is thread-safe and typically lock-free
 		return _reverse.ContainsKey(value);
 	}
 
 	#region Explicit Interface Implementations (ICollection<KeyValuePair<TKey, TValue>>)
 
-	void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item)
-		=> Add(item.Key, item.Value); // Use the public Add method
+	void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item) =>
+		Add(item.Key, item.Value);
 
 	bool ICollection<KeyValuePair<TKey, TValue>>.Contains(KeyValuePair<TKey, TValue> item) =>
-		// Check if the key exists and maps to the specific value. Typically lock-free.
 		_forward.TryGetValue(item.Key, out var value) && _valueComparer.Equals(value, item.Value);
 
 	bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item) {
-		if (item.Key == null)
+		if (item.Key is null)
 			throw new ArgumentNullException(nameof(item), "Key cannot be null.");
 
-		if (item.Value == null)
+		if (item.Value is null)
 			throw new ArgumentNullException(nameof(item), "Value cannot be null.");
 
 		_lock.EnterWriteLock();
@@ -389,8 +357,8 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 			// We need to check the value before removing.
 			if (_forward.TryGetValue(item.Key, out var currentValue) && _valueComparer.Equals(currentValue, item.Value)) {
 				// Now attempt to remove both under the lock
-				if (_forward.TryRemove(item.Key, out _)) // We know the value matches, just remove by key
-				{
+				// We know the value matches, just remove by key
+				if (_forward.TryRemove(item.Key, out _)) {
 					// Ensure reverse is also removed
 					_reverse.TryRemove(item.Value, out _);
 					return true;
@@ -422,7 +390,8 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 			// Iterate over the forward dictionary (which is safe for concurrent reads)
 			foreach (var kvp in _forward) {
 				// Check bounds defensively in case count was stale and dictionary grew
-				if (i >= array.Length) throw new ArgumentException("Destination array was not large enough. This might be due to concurrent additions.");
+				if (i >= array.Length)
+					throw new ArgumentException("Destination array was not large enough. This might be due to concurrent additions.");
 
 				array[i++] = kvp;
 			}
@@ -443,7 +412,6 @@ public class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey,
 	protected virtual void Dispose(bool disposing) {
 		if (!_disposed) {
 			if (disposing)
-				// Dispose managed state (managed objects).
 				_lock?.Dispose();
 
 			_disposed = true;

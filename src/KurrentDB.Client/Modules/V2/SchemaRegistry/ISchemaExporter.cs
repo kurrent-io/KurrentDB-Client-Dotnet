@@ -5,7 +5,7 @@ using NJsonSchema.Generation;
 namespace KurrentDB.Client.SchemaRegistry;
 
 public interface ISchemaExporter {
-	string Export(Type messageType,  SchemaDataFormat dataFormat);
+	string Export(Type messageType, SchemaDataFormat dataFormat);
 }
 
 public sealed class SchemaExporter(SystemTextJsonSchemaGeneratorSettings? settings = null) : ISchemaExporter {

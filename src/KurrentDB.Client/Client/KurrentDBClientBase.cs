@@ -52,12 +52,12 @@ public abstract class KurrentDBClientBase : IAsyncDisposable {
 		var schemaManager = new SchemaManager(new KurrentRegistryClient(Settings), schemaExporter);
 
 		SerializerProvider = new SchemaSerializerProvider([
-			new BytesSerializer(),
+			new BytesPassthroughSerializer(),
 			new JsonSchemaSerializer(
 				new() {
 					AutoRegister       = Settings.SchemaRegistry.AutoRegister,
 					Validate           = Settings.SchemaRegistry.Validate,
-					SchemaNameStrategy = Settings.SchemaRegistry.NameStrategy
+					SchemaNameStrategy = Settings.SchemaRegistry.SchemaNameStrategy
 				},
 				schemaManager: schemaManager,
 				typeMapper: messageTypeRegistry
@@ -66,7 +66,7 @@ public abstract class KurrentDBClientBase : IAsyncDisposable {
 				new() {
 					AutoRegister       = Settings.SchemaRegistry.AutoRegister,
 					Validate           = Settings.SchemaRegistry.Validate,
-					SchemaNameStrategy = Settings.SchemaRegistry.NameStrategy
+					SchemaNameStrategy = Settings.SchemaRegistry.SchemaNameStrategy
 				},
 				schemaManager: schemaManager,
 				typeMapper: messageTypeRegistry

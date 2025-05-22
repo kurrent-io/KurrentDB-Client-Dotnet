@@ -45,7 +45,7 @@ public readonly struct HashCode {
 	/// Combines enumerable values into the current hash.
 	/// </summary>
 	public HashCode CombineEnumerable<T>(IEnumerable<T>? values) {
-		if (values == null)
+		if (values is null)
 			return this;
 
 		var hash = this;

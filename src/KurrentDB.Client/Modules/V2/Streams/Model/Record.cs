@@ -1,4 +1,5 @@
 using JetBrains.Annotations;
+using KurrentDB.Client.SchemaRegistry;
 
 namespace KurrentDB.Client.Model;
 
@@ -14,10 +15,12 @@ namespace KurrentDB.Client.Model;
 /// <param name="SchemaVersionId">
 /// The unique identifier for the version of the schema.
 /// </param>
-public record RecordSchemaInfo(string SchemaName, SchemaDataFormat DataFormat, Guid SchemaVersionId) {
-	public static readonly RecordSchemaInfo None = new(string.Empty, SchemaDataFormat.Unspecified, Guid.Empty);
+public record RecordSchemaInfo(SchemaName SchemaName, SchemaDataFormat DataFormat, SchemaVersionId SchemaVersionId) {
+	public static readonly RecordSchemaInfo None = new(SchemaName.None, SchemaDataFormat.Unspecified, SchemaVersionId.None);
 
-	public bool HasSchemaVersionId => SchemaVersionId != Guid.Empty;
+	public bool HasSchemaName      => SchemaName != SchemaName.None;
+	public bool HasDataFormat      => DataFormat != SchemaDataFormat.Unspecified;
+	public bool HasSchemaVersionId => SchemaVersionId != SchemaVersionId.None;
 
 	public override string ToString() => $"{SchemaName} {DataFormat} {SchemaVersionId}";
 }
@@ -73,9 +76,9 @@ public readonly record struct Record() {
 	/// The schema information associated with the record.
 	/// </summary>
 	public RecordSchemaInfo Schema => new RecordSchemaInfo(
-		Metadata.Get<string>(SystemMetadataKeys.SchemaName)!,
-		Metadata.Get<SchemaDataFormat>(SystemMetadataKeys.SchemaDataFormat),
-		Metadata.Get<Guid>(SystemMetadataKeys.SchemaVersionId)
+		Metadata.TryGet<string>(SystemMetadataKeys.SchemaName, out var schemaName) ? SchemaName.From(schemaName!) : SchemaName.None,
+		Metadata.Get<SchemaDataFormat>(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Unspecified),
+		Metadata.Get<Guid>(SystemMetadataKeys.SchemaVersionId, Guid.Empty)
 	);
 
 	public bool IsDecoded => Value is not null
