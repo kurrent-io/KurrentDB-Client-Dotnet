@@ -23,18 +23,17 @@ public partial class KurrentDBProjectionManagementClient {
 		var value = await GetResultInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 			.ConfigureAwait(false);
 
-#if NET
-		await using var stream = new MemoryStream();
-#else
-			using var stream = new MemoryStream();
-#endif
+		await using var stream     = new MemoryStream();
 		await using var writer     = new Utf8JsonWriter(stream);
-		var             serializer = new ValueSerializer();
+
+		var serializer = new ValueSerializer();
 		serializer.Write(writer, value, DefaultJsonSerializerOptions);
 		await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 		stream.Position = 0;
 
-		return JsonDocument.Parse(stream);
+		return await JsonDocument
+			.ParseAsync(stream, cancellationToken: cancellationToken)
+			.ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -49,18 +48,16 @@ public partial class KurrentDBProjectionManagementClient {
 	/// <typeparam name="T"></typeparam>
 	/// <returns></returns>
 	public async Task<T> GetResultAsync<T>(string name, string? partition = null,
-	                                       JsonSerializerOptions? serializerOptions = null, 
+	                                       JsonSerializerOptions? serializerOptions = null,
 	                                       TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 	                                       CancellationToken cancellationToken = default) {
 		var value = await GetResultInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 			.ConfigureAwait(false);
-#if NET
+
 		await using var stream = new MemoryStream();
-#else
-			using var stream = new MemoryStream();
-#endif
-		await using var writer     = new Utf8JsonWriter(stream);
-		var             serializer = new ValueSerializer();
+		await using var writer = new Utf8JsonWriter(stream);
+
+		var serializer = new ValueSerializer();
 		serializer.Write(writer, value, DefaultJsonSerializerOptions);
 		await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 		stream.Position = 0;
@@ -98,18 +95,17 @@ public partial class KurrentDBProjectionManagementClient {
 		var value = await GetStateInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 			.ConfigureAwait(false);
 
-#if NET
-		await using var stream = new MemoryStream();
-#else
-			using var stream = new MemoryStream();
-#endif
+		await using var stream     = new MemoryStream();
 		await using var writer     = new Utf8JsonWriter(stream);
-		var             serializer = new ValueSerializer();
+
+		var serializer = new ValueSerializer();
 		serializer.Write(writer, value, DefaultJsonSerializerOptions);
 		stream.Position = 0;
 		await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 
-		return JsonDocument.Parse(stream);
+		return await JsonDocument
+			.ParseAsync(stream, cancellationToken: cancellationToken)
+			.ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -129,13 +125,10 @@ public partial class KurrentDBProjectionManagementClient {
 		var value = await GetStateInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 			.ConfigureAwait(false);
 
-#if NET
 		await using var stream = new MemoryStream();
-#else
-			using var stream = new MemoryStream();
-#endif
-		await using var writer     = new Utf8JsonWriter(stream);
-		var             serializer = new ValueSerializer();
+		await using var writer = new Utf8JsonWriter(stream);
+
+		var serializer = new ValueSerializer();
 		serializer.Write(writer, value, DefaultJsonSerializerOptions);
 		await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 		stream.Position = 0;

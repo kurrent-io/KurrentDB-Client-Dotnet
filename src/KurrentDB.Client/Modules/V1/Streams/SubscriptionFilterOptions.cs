@@ -18,7 +18,7 @@ public class SubscriptionFilterOptions {
 	/// A Task invoked and await when a checkpoint is reached.
 	/// Set the checkpointInterval to define how often this method is called.
 	/// </summary>
-	public Func<StreamSubscription, Position, CancellationToken, Task> CheckpointReached { get; } = null!;
+	public Func<StreamSubscription, Position, DateTimeOffset, CancellationToken, Task> CheckpointReached { get; } = null!;
 
 	/// <summary>
 	///
@@ -30,12 +30,17 @@ public class SubscriptionFilterOptions {
 	/// Set the checkpointInterval to define how often this method is called.
 	/// </param>
 	/// <exception cref="ArgumentNullException"></exception>
-	public SubscriptionFilterOptions(IEventFilter filter, uint checkpointInterval,
-	                                 Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached) 
-		: this(filter, checkpointInterval) {
-		CheckpointReached = checkpointReached ?? ((_, __, ct) => Task.CompletedTask);
-	}
-		
+	public SubscriptionFilterOptions(IEventFilter filter, uint checkpointInterval, Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached)
+		: this(filter, checkpointInterval) =>
+		CheckpointReached = checkpointReached switch {
+			null => (_, _, _, _) => Task.CompletedTask,
+			_    => (subscription, position, _, ct) => checkpointReached(subscription, position, ct)
+		};
+
+	public SubscriptionFilterOptions(IEventFilter filter, uint checkpointInterval, Func<StreamSubscription, Position, DateTimeOffset, CancellationToken, Task>? checkpointReached)
+		: this(filter, checkpointInterval) =>
+		CheckpointReached = checkpointReached ?? ((_, _, _, _) => Task.CompletedTask);
+
 	/// <summary>
 	///
 	/// </summary>

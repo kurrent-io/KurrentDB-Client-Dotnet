@@ -60,34 +60,8 @@ public class KurrentDBClientConnectivitySettingsBuilder {
 	/// <param name="endpoints">An array of DNS endpoints.</param>
 	/// <returns>The builder for method chaining.</returns>
 	/// <exception cref="ArgumentNullException">Thrown when <paramref name="endpoints"/> is null.</exception>
-	public KurrentDBClientConnectivitySettingsBuilder WithDnsGossipSeeds(DnsEndPoint[] endpoints) {
-		_settings.DnsGossipSeeds = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
-		return this;
-	}
-
-	/// <summary>
-	/// Sets a single DNS endpoint to use for seeding gossip.
-	/// </summary>
-	/// <param name="host">The host name.</param>
-	/// <param name="port">The port number.</param>
-	/// <returns>The builder for method chaining.</returns>
-	/// <exception cref="ArgumentNullException">Thrown when <paramref name="host"/> is null.</exception>
-	public KurrentDBClientConnectivitySettingsBuilder WithDnsGossipSeed(string host, int port) {
-		if (string.IsNullOrWhiteSpace(host))
-			throw new ArgumentNullException(nameof(host));
-
-		_settings.DnsGossipSeeds = new[] { new DnsEndPoint(host, port) };
-		return this;
-	}
-
-	/// <summary>
-	/// Sets IP endpoints to use for seeding gossip.
-	/// </summary>
-	/// <param name="endpoints">An array of IP endpoints.</param>
-	/// <returns>The builder for method chaining.</returns>
-	/// <exception cref="ArgumentNullException">Thrown when <paramref name="endpoints"/> is null.</exception>
-	public KurrentDBClientConnectivitySettingsBuilder WithIpGossipSeeds(IPEndPoint[] endpoints) {
-		_settings.IpGossipSeeds = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
+	public KurrentDBClientConnectivitySettingsBuilder WithGossipSeeds(params DnsEndPoint[] endpoints) {
+		_settings.GossipSeeds = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
 		return this;
 	}
 

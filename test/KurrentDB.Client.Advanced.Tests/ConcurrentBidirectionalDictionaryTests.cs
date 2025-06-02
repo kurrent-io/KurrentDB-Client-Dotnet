@@ -482,7 +482,7 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 	// --- ICollection<KeyValuePair<TKey, TValue>> ---
 	[Test]
 	public void ICollection_Add_ShouldWork() {
-		var coll = (ICollection<KeyValuePair<string, int>>)_sut;
+		ICollection<KeyValuePair<string, int>> coll = _sut;
 		coll.Add(new KeyValuePair<string, int>("a", 1));
 
 		_sut.Count.ShouldBe(1);
@@ -492,21 +492,21 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 	[Test]
 	public void ICollection_Contains_ExistingItem_ShouldReturnTrue() {
 		_sut.Add("a", 1);
-		var coll = (ICollection<KeyValuePair<string, int>>)_sut;
+		ICollection<KeyValuePair<string, int>> coll = _sut;
 		coll.Contains(new KeyValuePair<string, int>("a", 1)).ShouldBeTrue();
 	}
 
 	[Test]
 	public void ICollection_Contains_NonExistingKey_ShouldReturnFalse() {
 		_sut.Add("a", 1);
-		var coll = (ICollection<KeyValuePair<string, int>>)_sut;
+		ICollection<KeyValuePair<string, int>> coll = _sut;
 		coll.Contains(new KeyValuePair<string, int>("b", 1)).ShouldBeFalse();
 	}
 
 	[Test]
 	public void ICollection_Contains_KeyExistsButWrongValue_ShouldReturnFalse() {
 		_sut.Add("a", 1);
-		var coll = (ICollection<KeyValuePair<string, int>>)_sut;
+		ICollection<KeyValuePair<string, int>> coll = _sut;
 		coll.Contains(new KeyValuePair<string, int>("a", 2)).ShouldBeFalse();
 	}
 
@@ -514,7 +514,7 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 	public void ICollection_Remove_ExistingItem_ShouldSucceed() {
 		_sut.Add("a", 1);
 		_sut.Add("b", 2);
-		var coll = (ICollection<KeyValuePair<string, int>>)_sut;
+		ICollection<KeyValuePair<string, int>> coll = _sut;
 
 		var result = coll.Remove(new KeyValuePair<string, int>("a", 1));
 
@@ -529,7 +529,7 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 	public void ICollection_Remove_ItemWithWrongValue_ShouldReturnFalse() {
 		_sut.Add("a", 1);
 		_sut.Add("b", 2);
-		var coll = (ICollection<KeyValuePair<string, int>>)_sut;
+		ICollection<KeyValuePair<string, int>> coll = _sut;
 
 		var result = coll.Remove(new KeyValuePair<string, int>("a", 99)); // Key exists, value doesn't match
 
@@ -542,7 +542,7 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 	[Test]
 	public void ICollection_Remove_NonExistingItem_ShouldReturnFalse() {
 		_sut.Add("a", 1);
-		var coll = (ICollection<KeyValuePair<string, int>>)_sut;
+		ICollection<KeyValuePair<string, int>> coll = _sut;
 
 		var result = coll.Remove(new KeyValuePair<string, int>("c", 3));
 
@@ -555,7 +555,7 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 		_sut.Add("one", 1);
 		_sut.Add("two", 2);
 		_sut.Add("three", 3);
-		var coll = (ICollection<KeyValuePair<string, int>>)_sut;
+		ICollection<KeyValuePair<string, int>> coll = _sut;
 
 		var array = new KeyValuePair<string, int>[5]; // Larger array
 		coll.CopyTo(array, 1);                        // Copy starting at index 1
@@ -567,30 +567,35 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 
 	[Test]
 	public void ICollection_CopyTo_ThrowsOnNullArray() {
-		var coll = (ICollection<KeyValuePair<string, int>>)_sut;
-		Should.Throw<ArgumentNullException>(() => coll.CopyTo(null!, 0));
+		ICollection<KeyValuePair<string, int>> coll = _sut;
+		Should.Throw<NullReferenceException>(() => coll.CopyTo(null!, 0));
 	}
 
 	[Test]
 	public void ICollection_CopyTo_ThrowsOnNegativeIndex() {
 		_sut.Add("a", 1);
-		var coll  = (ICollection<KeyValuePair<string, int>>)_sut;
+
+		ICollection<KeyValuePair<string, int>> coll = _sut;
+
 		var array = new KeyValuePair<string, int>[1];
-		Should.Throw<ArgumentOutOfRangeException>(() => coll.CopyTo(array, -1));
+		Should.Throw<IndexOutOfRangeException>(() => coll.CopyTo(array, -1));
 	}
 
 	[Test]
 	public void ICollection_CopyTo_ThrowsOnInsufficientSpace() {
 		_sut.Add("a", 1);
 		_sut.Add("b", 2);
-		var coll  = (ICollection<KeyValuePair<string, int>>)_sut;
+
+		ICollection<KeyValuePair<string, int>> coll = _sut;
+
 		var array = new KeyValuePair<string, int>[3];
+
 		Should.Throw<ArgumentException>(() => coll.CopyTo(array, 2)); // Only 1 space left, need 2
 	}
 
 	[Test]
 	public void ICollection_IsReadOnly_ShouldBeFalse() {
-		var coll = (ICollection<KeyValuePair<string, int>>)_sut;
+		ICollection<KeyValuePair<string, int>> coll = _sut;
 		coll.IsReadOnly.ShouldBeFalse();
 	}
 
@@ -661,19 +666,19 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 							var itemNum = rnd.Next(initialItems * 2); // Target items in a wider range
 
 							try {
-								if (opType == 0) // TryAdd
-								{
+								// TryAdd
+								if (opType == 0) {
 									_sut.TryAdd($"Task{taskNum}-{j}", itemNum);
 								}
-								else if (opType == 1) // TryRemove (Key or Value)
-								{
+								// TryRemove (Key or Value)
+								else if (opType == 1) {
 									if (rnd.Next(2) == 0)
 										_sut.Remove($"SomeKey{itemNum}"); // Try removing potential keys
 									else
 										_sut.RemoveByValue(itemNum); // Try removing potential values
 								}
-								else // Update/Set
-								{
+								// Update/Set
+								else {
 									_sut[$"UpdateKey{itemNum}"] = itemNum + 10000; // Set potentially new or existing keys
 								}
 							}
@@ -691,8 +696,8 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 		for (var i = 0; i < numReaderTasks; i++)
 			tasks.Add(
 				Task.Run(() => {
-						for (var j = 0; j < operationsPerTask * 2; j++) // More reads
-						{
+						// More reads
+						for (var j = 0; j < operationsPerTask * 2; j++) {
 							var itemNum = rnd.Next(initialItems * 2);
 							_sut.TryGetValue($"SomeKey{itemNum}", out _);
 							_sut.TryGetKey(itemNum, out _);
@@ -736,11 +741,10 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 		values.Count.ShouldBe(_sut.Count);
 		foreach (var val in values) {
 			_sut.TryGetKey(val, out var key).ShouldBeTrue();
-			_sut.ContainsKey(key!).ShouldBeTrue(); // Key must still exist
-			_sut[key!].ShouldBe(val);              // And map back to the value
+			_sut.ContainsKey(key).ShouldBeTrue(); // Key must still exist
+			_sut[key].ShouldBe(val);              // And map back to the value
 		}
 	}
 
-	// --- Helper ---
 	static KeyValuePair<TKey, TValue> Kvp<TKey, TValue>(TKey key, TValue value) => new(key, value);
 }

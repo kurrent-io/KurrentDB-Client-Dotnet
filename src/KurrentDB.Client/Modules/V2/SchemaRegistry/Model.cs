@@ -86,7 +86,7 @@ public readonly record struct SchemaVersion(
 	DateTimeOffset RegisteredAt
 ) {
 	internal static SchemaVersion FromProto(Contracts.SchemaVersion version) {
-		if (version is null) throw new ArgumentNullException(nameof(version));
+		ArgumentNullException.ThrowIfNull(version);
 
 		return new SchemaVersion(
 			SchemaVersionId.From(version.SchemaVersionId),
@@ -276,7 +276,6 @@ public partial class SchemaIdentifier : OneOfBase<SchemaName, SchemaVersionId>, 
 
 	public static bool operator !=(SchemaIdentifier? left, SchemaIdentifier? right) =>
 		!(left == right);
-
 }
 
 public class SchemaIdentifierEqualityComparer : IEqualityComparer<SchemaIdentifier> {
@@ -300,7 +299,6 @@ public class SchemaIdentifierEqualityComparer : IEqualityComparer<SchemaIdentifi
 			: obj.AsSchemaVersionId.Value.GetHashCode();
 	}
 }
-
 
 [GenerateOneOf]
 public partial class CreateSchemaResult : OneOfBase<SchemaVersionDescriptor, ErrorDetails.SchemaAlreadyExists> {

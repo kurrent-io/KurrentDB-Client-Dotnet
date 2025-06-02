@@ -7,14 +7,15 @@ namespace KurrentDB.Client;
 /// A class representing a <see cref="StreamSubscription"/>.
 /// </summary>
 public class StreamSubscription : IDisposable {
-	readonly KurrentDBClient.StreamSubscriptionResult                           _subscription;
-	readonly IAsyncEnumerator<StreamMessage>                                    _messages;
-	readonly Func<StreamSubscription, ResolvedEvent, CancellationToken, Task>   _eventAppeared;
-	readonly Func<StreamSubscription, Position, CancellationToken, Task>        _checkpointReached;
-	readonly Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? _subscriptionDropped;
-	readonly ILogger                                                            _log;
-	readonly CancellationTokenSource                                            _cts;
-	int                                                                         _subscriptionDroppedInvoked;
+	readonly KurrentDBClient.StreamSubscriptionResult                                    _subscription;
+	readonly IAsyncEnumerator<StreamMessage>                                             _messages;
+	readonly Func<StreamSubscription, ResolvedEvent, CancellationToken, Task>            _eventAppeared;
+	readonly Func<StreamSubscription, Position, DateTimeOffset, CancellationToken, Task> _checkpointReached;
+	readonly Action<StreamSubscription, SubscriptionDroppedReason, Exception?>?          _subscriptionDropped;
+	readonly ILogger                                                                     _log;
+	readonly CancellationTokenSource                                                     _cts;
+
+	int _subscriptionDroppedInvoked;
 
 	/// <summary>
 	/// The id of the <see cref="StreamSubscription"/> set by the server.
@@ -26,7 +27,7 @@ public class StreamSubscription : IDisposable {
 		Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 		Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped,
 		ILogger log,
-		Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached = null,
+		Func<StreamSubscription, Position, DateTimeOffset, CancellationToken, Task>? checkpointReached = null,
 		CancellationToken cancellationToken = default
 	) {
 		var messages = subscription.Messages;
@@ -55,14 +56,14 @@ public class StreamSubscription : IDisposable {
 		Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 		Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped,
 		ILogger log,
-		Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached,
+		Func<StreamSubscription, Position, DateTimeOffset, CancellationToken, Task>? checkpointReached,
 		CancellationToken cancellationToken = default
 	) {
 		_cts                        = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 		_subscription               = subscription;
 		_messages                   = messages;
 		_eventAppeared              = eventAppeared;
-		_checkpointReached          = checkpointReached ?? ((_, _, _) => Task.CompletedTask);
+		_checkpointReached          = checkpointReached ?? ((_, _, _, _) => Task.CompletedTask);
 		_subscriptionDropped        = subscriptionDropped;
 		_log                        = log;
 		_subscriptionDroppedInvoked = 0;
@@ -93,9 +94,9 @@ public class StreamSubscription : IDisposable {
 							await _eventAppeared(this, resolvedEvent, _cts.Token).ConfigureAwait(false);
 							break;
 
-						case StreamMessage.AllStreamCheckpointReached(var position):
-						// case StreamMessage.AllStreamCheckpointReached(var position):
-							await _checkpointReached(this, position, _cts.Token)
+						case StreamMessage.AllStreamCheckpointReached allStreamCheckpointReached:
+							// case StreamMessage.AllStreamCheckpointReached(var position):
+							await _checkpointReached(this, allStreamCheckpointReached.Position, allStreamCheckpointReached.Timestamp, _cts.Token)
 								.ConfigureAwait(false);
 
 							break;

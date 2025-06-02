@@ -163,11 +163,7 @@ public partial class KurrentDBClient {
 						}
 					}
 					finally {
-#if NET8_0_OR_GREATER
 						await _cts.CancelAsync().ConfigureAwait(false);
-#else
-                            _cts.Cancel();
-#endif
 					}
 				}
 			}
@@ -203,57 +199,25 @@ public partial class KurrentDBClient {
 				try {
 					var channelInfo = await selectChannelInfo(_cts.Token).ConfigureAwait(false);
 					var client      = new Streams.StreamsClient(channelInfo.CallInvoker);
+
 					_call = client.Read(_request, _callOptions);
+
 					await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
 						StreamMessage subscriptionMessage =
 							response.ContentCase switch {
-								Confirmation        => new StreamMessage.SubscriptionConfirmation(response.Confirmation.SubscriptionId),
-								Event               => new StreamMessage.Event(ConvertToResolvedEvent(response.Event)),
-								FirstStreamPosition => new StreamMessage.FirstStreamPosition(new StreamPosition(response.FirstStreamPosition)),
-								LastStreamPosition  => new StreamMessage.LastStreamPosition(new StreamPosition(response.LastStreamPosition)),
-								LastAllStreamPosition => new StreamMessage.LastAllStreamPosition(
-									new Position(response.LastAllStreamPosition.CommitPosition, response.LastAllStreamPosition.PreparePosition)
-								),
-								Checkpoint => new StreamMessage.AllStreamCheckpointReached(
-									new Position(
-										response.Checkpoint.CommitPosition,
-										response.Checkpoint.PreparePosition
-									)
-								),
-								CaughtUp   => StreamMessage.CaughtUp.Instance,
-								FellBehind => StreamMessage.FellBehind.Instance,
+								Event      => new StreamMessage.Event(ConvertToResolvedEvent(response.Event)),
+								Checkpoint => OnCheckpointMessage(response.Checkpoint),
+								CaughtUp   => OnCaughtUpMessage(response.CaughtUp),
+								FellBehind => OnFellBehindMessage(response.FellBehind),
 
-								//TODO SS: Must check with William and finish the implementation
-								// Checkpoint => new StreamMessage.AllStreamCheckpointReached(
-								// 	new Position(
-								// 		response.Checkpoint.CommitPosition,
-								// 		response.Checkpoint.PreparePosition
-								// 	),
-								// 	response.Checkpoint.Timestamp is { Seconds: 0, Nanos: 0 }
-								// 		? DateTimeOffset.UtcNow : response.FellBehind.Timestamp.ToDateTimeOffset()
-								// ),
-								// CaughtUp => new StreamMessage.CaughtUp(
-								// 	response.CaughtUp.Position.CommitPosition == 0 && response.CaughtUp.Position.PreparePosition == 0
-								// 		? null : new Position(
-								// 			response.CaughtUp.Position.CommitPosition,
-								// 			response.CaughtUp.Position.PreparePosition
-								// 		),
-								// 	response.CaughtUp.HasStreamRevision ? response.CaughtUp.StreamRevision : null,
-								// 	response.CaughtUp.Timestamp is { Seconds: 0, Nanos: 0 }
-								// 		? DateTimeOffset.UtcNow : response.CaughtUp.Timestamp.ToDateTimeOffset()
-								// ),
-								// FellBehind => new StreamMessage.FellBehind(
-								// 	response.FellBehind.Position.CommitPosition == 0 && response.FellBehind.Position.PreparePosition == 0
-								// 		? null : new Position(
-								// 			response.FellBehind.Position.CommitPosition,
-								// 			response.FellBehind.Position.PreparePosition
-								// 		),
-								// 	response.FellBehind.HasStreamRevision ? response.FellBehind.StreamRevision : null,
-								// 	response.FellBehind.Timestamp is { Seconds: 0, Nanos: 0 }
-								// 		? DateTimeOffset.UtcNow : response.FellBehind.Timestamp.ToDateTimeOffset()
-								// ),
+								FirstStreamPosition   => new StreamMessage.FirstStreamPosition(new StreamPosition(response.FirstStreamPosition)),
+								LastStreamPosition    => new StreamMessage.LastStreamPosition(new StreamPosition(response.LastStreamPosition)),
+								LastAllStreamPosition => new StreamMessage.LastAllStreamPosition(new Position(response.LastAllStreamPosition.CommitPosition, response.LastAllStreamPosition.PreparePosition)),
+								Confirmation          => new StreamMessage.SubscriptionConfirmation(response.Confirmation.SubscriptionId),
+
 								_ => StreamMessage.Unknown.Instance
 							};
+
 
 						if (subscriptionMessage is StreamMessage.Event evt)
 							KurrentDBClientDiagnostics.ActivitySource.TraceSubscriptionEvent(
@@ -272,6 +236,28 @@ public partial class KurrentDBClient {
 					_channel.Writer.Complete();
 				} catch (Exception ex) {
 					_channel.Writer.TryComplete(ex);
+				}
+
+				return;
+
+				StreamMessage.AllStreamCheckpointReached OnCheckpointMessage(ReadResp.Types.Checkpoint checkpoint) {
+					var position  = new Position(checkpoint.CommitPosition, checkpoint.PreparePosition);
+					var timestamp = checkpoint.Timestamp.ToDateTimeOffset();
+					return new(position, timestamp);
+				}
+
+				static StreamMessage.CaughtUp OnCaughtUpMessage(ReadResp.Types.CaughtUp caughtUp) {
+					Position? position  = caughtUp.Position is not null ? new(caughtUp.Position.CommitPosition, caughtUp.Position.PreparePosition) : null;
+					long?     revision  = caughtUp.HasStreamRevision ? caughtUp.StreamRevision : null;
+					var       timestamp = caughtUp.Timestamp.ToDateTimeOffset();
+					return new(position, revision, timestamp);
+				}
+
+				static StreamMessage.FellBehind OnFellBehindMessage(ReadResp.Types.FellBehind fellBehind) {
+					Position? position  = fellBehind.Position is not null ? new(fellBehind.Position.CommitPosition, fellBehind.Position.PreparePosition) : null;
+					long?     revision  = fellBehind.HasStreamRevision ? fellBehind.StreamRevision : null;
+					var       timestamp = fellBehind.Timestamp.ToDateTimeOffset();
+					return new(position, revision, timestamp);
 				}
 			}
 		}
@@ -317,11 +303,7 @@ public partial class KurrentDBClient {
 				}
 			}
 			finally {
-#if NET8_0_OR_GREATER
 				await _cts.CancelAsync().ConfigureAwait(false);
-#else
-                    _cts.Cancel();
-#endif
 			}
 		}
 	}

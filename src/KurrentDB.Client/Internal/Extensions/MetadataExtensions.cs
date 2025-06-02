@@ -4,7 +4,7 @@ namespace KurrentDB.Client;
 
 static class MetadataExtensions {
 	public static bool TryGetValue(this Metadata metadata, string key, out string? value) {
-		value = default;
+		value = null;
 
 		foreach (var entry in metadata) {
 			if (entry.Key != key)
@@ -25,5 +25,5 @@ static class MetadataExtensions {
 	public static int GetIntValueOrDefault(this Metadata metadata, string key) =>
 		metadata.TryGetValue(key, out var s) && int.TryParse(s, out var value)
 			? value
-			: default;
+			: 0;
 }

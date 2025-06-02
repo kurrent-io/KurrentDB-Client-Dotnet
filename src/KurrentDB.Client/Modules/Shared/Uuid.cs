@@ -83,13 +83,7 @@ public readonly struct Uuid : IEquatable<Uuid> {
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
-	static long BitConverterToInt64(ReadOnlySpan<byte> value) {
-#if NET
-		return BitConverter.ToInt64(value);
-#else
-			return Unsafe.ReadUnaligned<long>(ref MemoryMarshal.GetReference(value));
-#endif
-	}
+	static long BitConverterToInt64(ReadOnlySpan<byte> value) => BitConverter.ToInt64(value);
 
 	Uuid(string value) : this(
 		value == null
@@ -167,11 +161,7 @@ public readonly struct Uuid : IEquatable<Uuid> {
 		data.Slice(6, 2).Reverse();
 		data[8..].Reverse();
 
-#if NET
 		return new Guid(data);
-#else
-			return new Guid(data.ToArray());
-#endif
 	}
 
 	static bool TryWriteBytes(Span<byte> destination, long value) {
@@ -182,16 +172,5 @@ public readonly struct Uuid : IEquatable<Uuid> {
 		return true;
 	}
 
-	bool TryWriteGuidBytes(Guid value, Span<byte> destination) {
-#if NET
-		return value.TryWriteBytes(destination);
-#else
-			if (destination.Length < 16)
-				return false;
-
-			var bytes = value.ToByteArray();
-			bytes.CopyTo(destination);
-			return true;
-#endif
-	}
+	static bool TryWriteGuidBytes(Guid value, Span<byte> destination) => value.TryWriteBytes(destination);
 }

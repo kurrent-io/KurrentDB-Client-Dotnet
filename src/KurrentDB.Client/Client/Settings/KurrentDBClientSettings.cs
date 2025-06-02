@@ -6,41 +6,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace KurrentDB.Client;
 
-// /// <summary>
-// /// Defines reconnection configuration for gRPC channel-level connections.
-// /// </summary>
-// public class KurrentDBChannelReconnectionSettings {
-// 	/// <summary>
-// 	/// Gets or sets the initial backoff delay for reconnection attempts.
-// 	/// </summary>
-// 	public TimeSpan InitialReconnectBackoff { get; set; } = TimeSpan.FromMilliseconds(500);
-//
-// 	/// <summary>
-// 	/// Gets or sets the maximum backoff delay for reconnection attempts.
-// 	/// </summary>
-// 	public TimeSpan MaxReconnectBackoff { get; set; } = TimeSpan.FromSeconds(30);
-//
-// 	/// <summary>
-// 	/// Gets or sets the minimum connection timeout.
-// 	/// </summary>
-// 	public TimeSpan MinConnectionTimeout { get; set; } = TimeSpan.FromSeconds(5);
-//
-// 	/// <summary>
-// 	/// Gets or sets the maximum connection attempts. Set to null for unlimited attempts.
-// 	/// </summary>
-// 	public int? MaxAttempts { get; set; } = null; // Unlimited reconnection attempts for long-lived connections
-//
-// 	/// <summary>
-// 	/// Default reconnection settings with the default values.
-// 	/// </summary>
-// 	public static KurrentDBChannelReconnectionSettings Default => new();
-// }
-
 /// <summary>
 /// A class that represents the settings to use for operations made from an implementation of <see cref="KurrentDBClientBase"/>.
 /// </summary>
 public class KurrentDBClientSettings {
-	public static KurrentDBClientSettingsBuilder Builder => new();
+	// public static KurrentDBClientSettingsBuilder Builder => new();
 
 	/// <summary>
 	/// The name of the connection.
@@ -94,6 +64,14 @@ public class KurrentDBClientSettings {
 	/// </summary>
 	public KurrentDBClientRetrySettings RetrySettings { get; set; } = KurrentDBClientRetrySettings.NoRetry;
 
+	/// <summary>
+	/// Indicates whether the client requires channel-level credentials for secure communication.
+	/// </summary>
+	public bool RequiresSecureCommunication =>
+		ChannelCredentials is not null
+	 || DefaultCredentials is not null
+	 || ConnectivitySettings.SslCredentials.Required;
+
 	public KurrentDBClientSchemaRegistrySettings SchemaRegistry { get; set; } = KurrentDBClientSchemaRegistrySettings.Default;
 
 	public IMetadataDecoder MetadataDecoder { get; set; } = null!;
@@ -105,138 +83,4 @@ public class KurrentDBClientSettings {
 	/// <returns>A configured KurrentDBClientSettings instance</returns>
 	public static KurrentDBClientSettings Create(string connectionString) =>
 		KurrentDBConnectionString.Parse(connectionString).ToClientSettings();
-
-	// public (GrpcChannel Channel, CallInvoker Invoker) CreateGrpcChannel(bool enableLoadBalancing = true) {
-	// 	// Configure service config with both load balancing and retry
-	// 	var retryMethodConfig = GetRetryMethodConfig();
-	//
-	// 	var serviceConfig = retryMethodConfig switch {
-	// 		not null when enableLoadBalancing => new ServiceConfig {
-	// 			LoadBalancingConfigs = { new RoundRobinConfig() },
-	// 			MethodConfigs        = { retryMethodConfig }
-	// 		},
-	// 		not null when !enableLoadBalancing => new ServiceConfig {
-	// 			MethodConfigs = { retryMethodConfig }
-	// 		},
-	// 		null when enableLoadBalancing => new ServiceConfig {
-	// 			LoadBalancingConfigs = { new RoundRobinConfig() },
-	// 		},
-	// 		_ => null
-	// 	};
-	//
-	// 	// Create the authenticated channel credentials
-	// 	var credentials = CreateChannelCredentials();
-	//
-	// 	// Set up channel options
-	// 	var channelOptions = new GrpcChannelOptions {
-	// 		Credentials   = credentials,
-	// 		HttpHandler   = CreateHttpMessageHandler?.Invoke(),
-	// 		LoggerFactory = LoggerFactory,
-	// 		ServiceConfig = serviceConfig
-	// 	};
-	//
-	// 	// Create a channel with the authenticated credentials
-	// 	var channel = GrpcChannel.ForAddress(ConnectivitySettings.Address!, channelOptions);
-	//
-	// 	return (channel, channel.Intercept(Interceptors?.ToArray() ?? []));
-	//
-	// 	ChannelCredentials CreateChannelCredentials() {
-	// 		if (DefaultCredentials is null)
-	// 			return ChannelCredentials ?? new SslCredentials();
-	//
-	// 		var getAuthValue = OperationOptions.GetAuthenticationHeaderValue;
-	// 		var callCredentials = CallCredentials.FromInterceptor(async (context, metadata) => {
-	// 			var authValue = await getAuthValue(DefaultCredentials, context.CancellationToken).ConfigureAwait(false);
-	// 			metadata.Add(Constants.Headers.Authorization, authValue);
-	// 		});
-	//
-	// 		// Combine with existing channel credentials or default to SSL
-	// 		return ChannelCredentials.Create(ChannelCredentials ?? new SslCredentials(), callCredentials);
-	// 	}
-	//
-	// 	MethodConfig? GetRetryMethodConfig() {
-	// 		if (!RetrySettings.IsEnabled)
-	// 			return null;
-	//
-	// 		var retryPolicy = new RetryPolicy {
-	// 			MaxAttempts       = RetrySettings.MaxAttempts,
-	// 			InitialBackoff    = RetrySettings.InitialBackoff,
-	// 			MaxBackoff        = RetrySettings.MaxBackoff,
-	// 			BackoffMultiplier = RetrySettings.BackoffMultiplier
-	// 		};
-	//
-	// 		foreach (var statusCode in RetrySettings.RetryableStatusCodes)
-	// 			retryPolicy.RetryableStatusCodes.Add(statusCode);
-	//
-	// 		// Apply retry policy to all methods
-	// 		return new MethodConfig {
-	// 			Names       = { MethodName.Default },
-	// 			RetryPolicy = retryPolicy
-	// 		};
-	// 	}
-	//
-	// 	// static ChannelCredentials CreateChannelCredentials3(
-	// 	// 	ChannelCredentials? channelCredentials, UserCredentials? userCredentials,
-	// 	// 	Func<UserCredentials, CancellationToken, ValueTask<string>> getUserAuthValue
-	// 	// ) {
-	// 	// 	channelCredentials ??= new SslCredentials();
-	// 	//
-	// 	// 	if (userCredentials is null)
-	// 	// 		return channelCredentials;
-	// 	//
-	// 	// 	var callCredentials = CallCredentials.FromInterceptor(async (context, metadata) => {
-	// 	// 		var authValue = await getUserAuthValue(userCredentials, context.CancellationToken).ConfigureAwait(false);
-	// 	// 		metadata.Add(Constants.Headers.Authorization, authValue);
-	// 	// 	});
-	// 	//
-	// 	// 	// Combine with existing channel credentials or default to SSL
-	// 	// 	return ChannelCredentials.Create(channelCredentials, callCredentials);
-	// 	// }
-	//
-	// 	// static ChannelCredentials CreateChannelCredentials(ChannelCredentials? channelCredentials, AsyncAuthInterceptor? authInterceptor = null) {
-	// 	// 	channelCredentials ??= new SslCredentials();
-	// 	// 	return authInterceptor is not null
-	// 	// 		? ChannelCredentials.Create(channelCredentials, CallCredentials.FromInterceptor(authInterceptor))
-	// 	// 		: channelCredentials;
-	// 	// }
-	//
-	// }
-	//
-	// static CallOptions CreateGrpcCallOptions(KurrentDBClientSettings settings, CancellationToken cancellationToken) {
-	// 	// var temp = new CallOptions()
-	// 	// 	.WithCancellationToken(cancellationToken)
-	// 	// 	.WithCredentials(settings.DefaultCredentials)
-	//
-	// 	var options =  new CallOptions(
-	// 		cancellationToken: cancellationToken,
-	// 		deadline: DeadlineAfter(settings.DefaultDeadline),
-	// 		headers: new() {
-	// 			{
-	// 				Constants.Headers.RequiresLeader,
-	// 				settings.ConnectivitySettings.NodePreference == NodePreference.Leader
-	// 					? bool.TrueString
-	// 					: bool.FalseString
-	// 			}
-	// 		},
-	// 		credentials: settings.DefaultCredentials is not null
-	// 			? CallCredentials.FromInterceptor(async (_, metadata) => {
-	// 					var authorizationHeader = await settings.OperationOptions
-	// 						.GetAuthenticationHeaderValue(settings.DefaultCredentials, CancellationToken.None)
-	// 						.ConfigureAwait(false);
-	//
-	// 					metadata.Add(Constants.Headers.Authorization, authorizationHeader);
-	// 				}
-	// 			)
-	// 			: null
-	// 	);
-	//
-	// 	return options;
-	//
-	// 	static DateTime? DeadlineAfter(TimeSpan? timeoutAfter) =>
-	// 		timeoutAfter.HasValue
-	// 			? timeoutAfter.Value == TimeSpan.MaxValue || timeoutAfter.Value == Timeout.InfiniteTimeSpan
-	// 				? DateTime.MaxValue
-	// 				: DateTime.UtcNow.Add(timeoutAfter.Value)
-	// 			: null;
-	// }
 }

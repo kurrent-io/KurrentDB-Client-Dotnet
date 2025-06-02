@@ -10,20 +10,20 @@ static class ActivityTagsCollectionExtensions {
     public static ActivityTagsCollection WithGrpcChannelServerTags(this ActivityTagsCollection tags, ChannelInfo? channelInfo) {
         if (channelInfo is null)
             return tags;
-        
+
         var authorityParts = channelInfo.Channel.Target.Split(':');
 
         return tags
             .WithRequiredTag(TelemetryTags.Server.Address, authorityParts[0])
             .WithRequiredTag(TelemetryTags.Server.Port, int.Parse(authorityParts[1]));
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ActivityTagsCollection WithClientSettingsServerTags(this ActivityTagsCollection source, KurrentDBClientSettings settings) {
-        if (settings.ConnectivitySettings.DnsGossipSeeds?.Length != 1)
+        if (settings.ConnectivitySettings.GossipSeeds.Length != 1)
             return source;
-        
-        var gossipSeed = settings.ConnectivitySettings.DnsGossipSeeds[0];
+
+        var gossipSeed = settings.ConnectivitySettings.GossipSeeds[0];
 
         return source
             .WithRequiredTag(TelemetryTags.Server.Address, gossipSeed.Host)

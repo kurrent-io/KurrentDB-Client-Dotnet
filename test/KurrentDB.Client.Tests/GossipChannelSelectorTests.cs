@@ -15,7 +15,7 @@ public class GossipChannelSelectorTests {
 
 		var settings = new KurrentDBClientSettings {
 			ConnectivitySettings = {
-				DnsGossipSeeds = [
+				GossipSeeds = [
 					firstSelection,
 					secondSelection
 				],
@@ -58,8 +58,8 @@ public class GossipChannelSelectorTests {
 	public async Task ThrowsWhenDiscoveryFails() {
 		var settings = new KurrentDBClientSettings {
 			ConnectivitySettings = {
-				IpGossipSeeds = [
-					new IPEndPoint(IPAddress.Loopback, 2113)
+				GossipSeeds = [
+					new DnsEndPoint(IPAddress.Loopback.ToString(), 2113)
 				],
 				Insecure            = true,
 				MaxDiscoverAttempts = 3

@@ -9,8 +9,8 @@ namespace KurrentDB.Client.SchemaRegistry.Serialization.Bytes;
 /// Provides a passthrough implementation of the <see cref="ISchemaSerializer"/> interface
 /// for the <see cref="SchemaDataFormat.Bytes"/> format. This serializer does not transform
 /// the raw data and assumes the input value is an array or memory structure of bytes.
-///
-/// It will enforce the schema data format to be <see cref="SchemaDataFormat.Bytes"/>.
+/// <para />
+///  It will enforce the schema data format to be <see cref="SchemaDataFormat.Bytes"/>.
 /// </summary>
 public class BytesPassthroughSerializer : ISchemaSerializer {
 	public SchemaDataFormat DataFormat => SchemaDataFormat.Bytes;
@@ -20,7 +20,7 @@ public class BytesPassthroughSerializer : ISchemaSerializer {
 
 		// enforce the schema data format
 		context.Metadata
-			.Set(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Bytes);
+			.With(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Bytes);
 
 		var result = value switch {
 			null                       => ReadOnlyMemory<byte>.Empty,

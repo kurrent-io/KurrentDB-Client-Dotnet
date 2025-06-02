@@ -1,6 +1,4 @@
 ﻿using Grpc.Core;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace KurrentDB.Client;
@@ -16,7 +14,6 @@ public sealed partial class KurrentDBOperationsClient : KurrentDBClientBase {
 			)
 		};
 
-	readonly ILogger _log;
 
 	/// <summary>
 	/// Constructs a new <see cref="KurrentDBOperationsClient"/>. This method is not intended to be called directly in your code.
@@ -28,6 +25,5 @@ public sealed partial class KurrentDBOperationsClient : KurrentDBClientBase {
 	/// Constructs a new <see cref="KurrentDBOperationsClient"/>.
 	/// </summary>
 	/// <param name="settings"></param>
-	public KurrentDBOperationsClient(KurrentDBClientSettings? settings = null) : base(settings, ExceptionMap) =>
-		_log = Settings.LoggerFactory?.CreateLogger<KurrentDBOperationsClient>() ?? new NullLogger<KurrentDBOperationsClient>();
+	public KurrentDBOperationsClient(KurrentDBClientSettings? settings = null) : base(settings, ExceptionMap) { }
 }

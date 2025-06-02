@@ -1,16 +1,102 @@
 <Project>
     <PropertyGroup>
         <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
         <Nullable>enable</Nullable>
-        <NullableContextOptions>enable</NullableContextOptions>
-        <ImplicitUsings>true</ImplicitUsings>
+        <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>preview</LangVersion>
+        <EnablePreviewFeatures>true</EnablePreviewFeatures>
 
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-        <DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
-        <DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
+        <!-- Performance optimizations -->
+        <TieredCompilation>true</TieredCompilation>
+        <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
+        <TieredCompilationQuickJitForLoops>true</TieredCompilationQuickJitForLoops>
 
-        <UseLinkBase>true</UseLinkBase>
+        <!-- Code quality -->
+        <EnableNETAnalyzers>true</EnableNETAnalyzers>
+        <AnalysisLevel>latest</AnalysisLevel>
+<!--        <AnalysisMode>AllEnabledByDefault</AnalysisMode>-->
+<!--        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>-->
+
+        <!-- Set Default Configuration -->
+        <Configuration Condition="'$(Configuration)'==''">Debug</Configuration>
+    </PropertyGroup>
+
+    <!-- Debug Configuration Settings -->
+    <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+        <DebugType>portable</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+        <Optimize>false</Optimize>
+        <DefineConstants>DEBUG;TRACE</DefineConstants>
+    </PropertyGroup>
+
+    <!-- Release Configuration Settings -->
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <DebugType>portable</DebugType>
+        <DebugSymbols>true</DebugSymbols>
+        <Optimize>true</Optimize>
+        <EmbedAllSources>true</EmbedAllSources>
+    </PropertyGroup>
+
+    <!-- Add Source Link support for public packages -->
+    <PropertyGroup Condition="'$(Configuration)'=='Release'">
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+        <!-- Uncomment if you want to enable trimming -->
+        <!-- <PublishTrimmed>true</PublishTrimmed> -->
+
+        <!-- Uncomment if you want AOT compilation -->
+        <!-- <PublishAot>true</PublishAot> -->
+    </PropertyGroup>
+
+    <!-- Deterministic builds for CI environments -->
+    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <Deterministic>true</Deterministic>
     </PropertyGroup>
 </Project>
+
+<!--<Project>-->
+<!--    <PropertyGroup>-->
+<!--        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>-->
+<!--        <Nullable>enable</Nullable>-->
+<!--        <ImplicitUsings>true</ImplicitUsings>-->
+<!--        <LangVersion>preview</LangVersion>-->
+<!--    </PropertyGroup>-->
+
+<!--    &lt;!&ndash; Debug Configuration Settings &ndash;&gt;-->
+<!--    <PropertyGroup Condition="'$(Configuration)'=='Debug'">-->
+<!--        <DebugType>portable</DebugType>-->
+<!--        <DebugSymbols>true</DebugSymbols>-->
+<!--        <Optimize>false</Optimize>-->
+<!--        <DefineConstants>DEBUG;TRACE</DefineConstants>-->
+<!--    </PropertyGroup>-->
+
+<!--    &lt;!&ndash; Release Configuration Settings &ndash;&gt;-->
+<!--    <PropertyGroup Condition="'$(Configuration)'=='Release'">-->
+<!--        <DebugType>portable</DebugType>-->
+<!--        <DebugSymbols>true</DebugSymbols>-->
+<!--        <Optimize>true</Optimize>-->
+<!--        <EmbedAllSources>true</EmbedAllSources>-->
+<!--    </PropertyGroup>-->
+
+<!--    &lt;!&ndash; Set Default Configuration &ndash;&gt;-->
+<!--    <PropertyGroup>-->
+<!--        <Configuration Condition="'$(Configuration)'==''">Debug</Configuration>-->
+<!--    </PropertyGroup>-->
+
+<!--    &lt;!&ndash; Add Source Link support for public packages &ndash;&gt;-->
+<!--    <PropertyGroup Condition="'$(Configuration)'=='Release'">-->
+<!--        <PublishRepositoryUrl>true</PublishRepositoryUrl>-->
+<!--        <EmbedUntrackedSources>true</EmbedUntrackedSources>-->
+<!--        <IncludeSymbols>true</IncludeSymbols>-->
+<!--        <SymbolPackageFormat>snupkg</SymbolPackageFormat>-->
+<!--    </PropertyGroup>-->
+
+<!--    &lt;!&ndash; Deterministic builds for CI environments &ndash;&gt;-->
+<!--    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">-->
+<!--        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>-->
+<!--    </PropertyGroup>-->
+<!--</Project>-->

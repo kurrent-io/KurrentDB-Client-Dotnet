@@ -14,7 +14,7 @@ public class KurrentDBClientConnectivitySettings {
 	/// </summary>
 	public const int DefaultPort = 2113;
 
-	bool _insecure;
+	// bool _insecure;
 
 	/// <summary>
 	/// The <see cref="Uri"/> of the KurrentDB. Use this when connecting to a single node.
@@ -28,7 +28,7 @@ public class KurrentDBClientConnectivitySettings {
 
 	Uri DefaultAddress =>
 		new UriBuilder {
-			Scheme = _insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps,
+			Scheme = Insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps,
 			Port   = DefaultPort
 		}.Uri;
 
@@ -37,36 +37,41 @@ public class KurrentDBClientConnectivitySettings {
 	/// </summary>
 	public int MaxDiscoverAttempts { get; set; }
 
-	/// <summary>
-	/// An array of <see cref="EndPoint"/>s used to seed gossip.
-	/// </summary>
-	public EndPoint[] GossipSeeds =>
-		((object?)DnsGossipSeeds ?? IpGossipSeeds) switch {
-			DnsEndPoint[] dns => Array.ConvertAll<DnsEndPoint, EndPoint>(dns, x => x),
-			IPEndPoint[] ip   => Array.ConvertAll<IPEndPoint, EndPoint>(ip, x => x),
-			_                 => []
-		};
+	// /// <summary>
+	// /// An array of <see cref="EndPoint"/>s used to seed gossip.
+	// /// </summary>
+	// public EndPoint[] GossipSeeds =>
+	// 	((object?)DnsGossipSeeds ?? IpGossipSeeds) switch {
+	// 		DnsEndPoint[] dns => Array.ConvertAll<DnsEndPoint, EndPoint>(dns, x => x),
+	// 		IPEndPoint[] ip   => Array.ConvertAll<IPEndPoint, EndPoint>(ip, x => x),
+	// 		_                 => []
+	// 	};
 
-	/// <summary>
-	/// An array of <see cref="DnsEndPoint"/>s to use for seeding gossip. This will be checked before <see cref="IpGossipSeeds"/>.
-	/// </summary>
-	public DnsEndPoint[]? DnsGossipSeeds { get; set; }
+	public DnsEndPoint[] GossipSeeds { get; set; } = [];
 
-	/// <summary>
-	/// An array of <see cref="IPEndPoint"/>s to use for seeding gossip. This will be checked after <see cref="DnsGossipSeeds"/>.
-	/// </summary>
-	public IPEndPoint[]? IpGossipSeeds { get; set; }
+	// public DnsEndPoint[] GossipSeeds =>
+	// 	DnsGossipSeeds.Concat(IpGossipSeeds.Select(x => new DnsEndPoint(x.Address.ToString(), x.Port))).ToArray();
+
+	// /// <summary>
+	// /// An array of <see cref="DnsEndPoint"/>s to use for seeding gossip. This will be checked before <see cref="IpGossipSeeds"/>.
+	// /// </summary>
+	// public DnsEndPoint[] DnsGossipSeeds { get; set; } = [];
+	//
+	// /// <summary>
+	// /// An array of <see cref="IPEndPoint"/>s to use for seeding gossip. This will be checked after <see cref="DnsGossipSeeds"/>.
+	// /// </summary>
+	// public IPEndPoint[] IpGossipSeeds { get; set; } = [];
 
 	/// <summary>
 	/// The <see cref="TimeSpan"/> after which an attempt to discover gossip will fail.
 	/// </summary>
 	public TimeSpan GossipTimeout { get; set; }
 
-	/// <summary>
-	/// Whether or not to use HTTPS when communicating via gossip.
-	/// </summary>
-	[Obsolete]
-	public bool GossipOverHttps { get; set; } = true;
+	// /// <summary>
+	// /// Whether or not to use HTTPS when communicating via gossip.
+	// /// </summary>
+	// [Obsolete]
+	// public bool GossipOverHttps { get; set; } = true;
 
 	/// <summary>
 	/// The polling interval used to discover the <see cref="EndPoint"/>.
@@ -97,8 +102,8 @@ public class KurrentDBClientConnectivitySettings {
 	/// True if communicating over an insecure channel; otherwise false.
 	/// </summary>
 	public bool Insecure {
-		get => IsSingleNode ? string.Equals(Address?.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) : _insecure;
-		set => _insecure = value;
+		get => IsSingleNode ? string.Equals(Address?.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) : field;
+		set;
 	}
 
 	/// <summary>
@@ -118,6 +123,12 @@ public class KurrentDBClientConnectivitySettings {
 	public X509Certificate2? ClientCertificate { get; set; }
 
 	/// <summary>
+	/// Configuration for SSL/TLS credentials, including client and root certificates,
+	/// as well as server certificate verification settings.
+	/// </summary>
+	public SslCredentialsSettings SslCredentials { get; set; } = new();
+
+	/// <summary>
 	/// The default <see cref="KurrentDBClientConnectivitySettings"/>.
 	/// </summary>
 	public static KurrentDBClientConnectivitySettings Default => new() {
@@ -127,7 +138,8 @@ public class KurrentDBClientConnectivitySettings {
 		NodePreference      = NodePreference.Leader,
 		KeepAliveInterval   = TimeSpan.FromSeconds(10),
 		KeepAliveTimeout    = TimeSpan.FromSeconds(10),
-		TlsVerifyCert       = true
+		TlsVerifyCert       = true,
+		SslCredentials      = new()
 	};
 
 	/// <summary>
@@ -137,8 +149,7 @@ public class KurrentDBClientConnectivitySettings {
 	public KurrentDBClientConnectivitySettings Clone() => new() {
 		Address             = Address,
 		MaxDiscoverAttempts = MaxDiscoverAttempts,
-		DnsGossipSeeds      = DnsGossipSeeds?.ToArray(),
-		IpGossipSeeds       = IpGossipSeeds?.ToArray(),
+		GossipSeeds         = GossipSeeds.ToArray(),
 		GossipTimeout       = GossipTimeout,
 		DiscoveryInterval   = DiscoveryInterval,
 		NodePreference      = NodePreference,
@@ -147,6 +158,47 @@ public class KurrentDBClientConnectivitySettings {
 		TlsVerifyCert       = TlsVerifyCert,
 		TlsCaFile           = TlsCaFile,
 		ClientCertificate   = ClientCertificate,
-		Insecure            = Insecure
+		Insecure            = Insecure,
+		SslCredentials      = SslCredentials
 	};
+}
+
+public record SslCredentialsSettings {
+	/// <summary>
+	/// Path to the client certificate file for mTLS.
+	/// </summary>
+	public string? ClientCertificatePath { get; init; }
+
+	/// <summary>
+	/// Path to the client private key file for mTLS.
+	/// </summary>
+	public string? ClientCertificateKeyPath { get; init; }
+
+	/// <summary>
+	/// Path to the root CA certificate for server validation.
+	/// </summary>
+	public string? RootCertificatePath { get; init; }
+
+	/// <summary>
+	/// Whether to verify the server certificate.
+	/// </summary>
+	public bool VerifyServerCertificate { get; init; } = true;
+
+	/// <summary>
+	/// Indicates whether a client certificate is available based on the absence of paths for the certificate
+	/// and its associated key.
+	/// </summary>
+	public bool HasClientCertificate =>
+		string.IsNullOrWhiteSpace(ClientCertificatePath) && string.IsNullOrWhiteSpace(ClientCertificateKeyPath);
+
+	/// <summary>
+	/// Indicates whether a root certificate is specified for the connection.
+	/// </summary>
+	public bool HasRootCertificate =>
+		string.IsNullOrWhiteSpace(RootCertificatePath);
+
+	/// <summary>
+	/// Indicates whether SSL credentials are required based on the presence of client or root certificates.
+	/// </summary>
+	public bool Required => HasClientCertificate || HasRootCertificate;
 }

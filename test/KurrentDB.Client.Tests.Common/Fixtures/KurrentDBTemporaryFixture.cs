@@ -1,6 +1,5 @@
 // ReSharper disable InconsistentNaming
 
-using System.Net;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Services.Extensions;
@@ -19,12 +18,9 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 		Logging.Initialize();
 		Logger = Serilog.Log.ForContext<KurrentDBTemporaryFixture>();
 
-#if NET9_0_OR_GREATER
 		var httpClientHandler = new HttpClientHandler();
 		httpClientHandler.ServerCertificateCustomValidationCallback = delegate { return true; };
-#else
-		ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
-#endif
+		// ServicePointManager.ServerCertificateValidationCallback     = delegate { return true; };
 	}
 
 	public KurrentDBTemporaryFixture() : this(options => options) { }

@@ -8,13 +8,14 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <ProductName>KurrentDB .NET Client</ProductName>
+        <Title>KurrentDB .NET Client</Title>
+        <Product>KurrentDB .NET Client</Product>
         <PackageIcon>ouro.png</PackageIcon>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageProjectUrl>https://kurrent.io</PackageProjectUrl>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
         <PackageReleaseNotes>https://kurrent.io/blog/</PackageReleaseNotes>
-        <PackageTags>KurrentDB Client gRPC</PackageTags>
+        <PackageTags>KurrentDB Client gRPC Kurrent</PackageTags>
         <Authors>Kurrent, Inc</Authors>
         <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Kurrent, Inc</Copyright>
         <MinVerTagPrefix>v</MinVerTagPrefix>
@@ -31,7 +32,7 @@
     <ItemGroup>
         <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" PrivateAssets="All" />
         <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
-        <PackageReference Include="MinVer" Version="3.0.0" PrivateAssets="All" />
+        <PackageReference Include="MinVer" Version="6.0.0" PrivateAssets="All" />
     </ItemGroup>
 
     <ItemGroup>

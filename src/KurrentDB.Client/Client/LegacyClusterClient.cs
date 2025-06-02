@@ -32,7 +32,7 @@ class LegacyClusterClient : IAsyncDisposable, ILegacyClusterClient {
 	readonly SharingProvider<ReconnectionRequired, ChannelInfo> _channelInfoProvider;
 	readonly CancellationTokenSource                            _cancellator;
 
-	public LegacyClusterClient(KurrentDBClientSettings settings, Action<ChannelInfo> onRefresh, Dictionary<string, Func<RpcException, Exception>> exceptionMap) {
+	public LegacyClusterClient(KurrentDBClientSettings settings, Dictionary<string, Func<RpcException, Exception>> exceptionMap) {
 		_cancellator  = new CancellationTokenSource();
 		_channelCache = new(settings);
 
@@ -75,8 +75,8 @@ class LegacyClusterClient : IAsyncDisposable, ILegacyClusterClient {
 			},
 			settings.ConnectivitySettings.DiscoveryInterval,
 			ReconnectionRequired.Rediscover.Instance,
-			onRefresh,
-			settings.LoggerFactory?.CreateLogger($"SharingProvider-{settings.ConnectionName}")
+			null,
+			settings.LoggerFactory.CreateLogger($"SharingProvider-{settings.ConnectionName}")
 		);
 	}
 
@@ -94,7 +94,7 @@ class LegacyClusterClient : IAsyncDisposable, ILegacyClusterClient {
 	public async ValueTask DisposeAsync() {
 		_channelInfoProvider.Dispose();
 
-		_cancellator.Cancel();
+		await _cancellator.CancelAsync();
 		_cancellator.Dispose();
 
 		await _channelCache

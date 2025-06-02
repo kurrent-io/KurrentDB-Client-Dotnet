@@ -24,7 +24,7 @@
 // 	public static Version Version => _version ??= GetVersion();
 //
 // 	public static EventStoreFixtureOptions DefaultOptions() {
-// 		const string connString = "esdb://admin:changeit@localhost:{port}/?tlsVerifyCert=false";
+// 		const string connString = "kurrentdb://admin:changeit@localhost:{port}/?tlsVerifyCert=false";
 //
 // 		var port = NetworkPortProvider.NextAvailablePort;
 //

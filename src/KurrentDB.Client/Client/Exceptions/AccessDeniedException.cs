@@ -8,7 +8,7 @@ public class AccessDeniedException : Exception {
 	/// <summary>
 	/// Constructs a new <see cref="AccessDeniedException" />.
 	/// </summary>
-	public AccessDeniedException(string message, Exception innerException) : base(message, innerException) { }
+	public AccessDeniedException(string message, Exception? innerException = null) : base(message, innerException) { }
 
 	/// <summary>
 	/// Constructs a new <see cref="AccessDeniedException" />.

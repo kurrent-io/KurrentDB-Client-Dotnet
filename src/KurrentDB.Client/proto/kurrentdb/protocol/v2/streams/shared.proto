@@ -13,19 +13,23 @@ import "google/protobuf/struct.proto";
 // ErrorDetails provides detailed information about specific error conditions.
 message ErrorDetails {
   // When the user does not have sufficient permissions to perform the operation.
-  message AccessDenied {
-    // The simplified reason for access denial.
-    string reason = 1;
-  }
+  message AccessDenied { }
 
   // When the stream has been deleted.
   message StreamDeleted {
+    // The name of the stream that was deleted.
+    string stream = 1;
     // The time when the stream was deleted.
-    google.protobuf.Timestamp deleted_at = 1;
-
+    google.protobuf.Timestamp deleted_at = 2;
     // If the stream was hard deleted, you cannot reuse the stream name,
     // it will raise an exception if you try to append to it again.
-    bool tombstoned = 2;
+    bool tombstoned = 3;
+  }
+
+  // When the stream is not found.
+  message StreamNotFound {
+    // The name of the stream that was not found.
+    string stream = 1;
   }
 
   // When the expected revision of the stream does not match the actual revision.

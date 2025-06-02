@@ -1,7 +1,6 @@
 using System.Net;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace KurrentDB.Client;
 
@@ -17,7 +16,7 @@ class GossipChannelSelector : IChannelSelector {
 		_settings     = settings;
 		_channels     = channelCache;
 		_gossipClient = gossipClient;
-		_log          = settings.LoggerFactory?.CreateLogger<GossipChannelSelector>() ?? NullLogger<GossipChannelSelector>.Instance;
+		_log          = settings.LoggerFactory.CreateLogger<GossipChannelSelector>();
 		_nodeSelector = new(_settings.ConnectivitySettings.NodePreference);
 	}
 
@@ -62,11 +61,7 @@ class GossipChannelSelector : IChannelSelector {
 			}
 
 			// couldn't select a node from any _channel. reseed the channels.
-			_channels.UpdateCache(
-				_settings.ConnectivitySettings.GossipSeeds
-				.Select(endPoint => endPoint as DnsEndPoint ?? new DnsEndPoint(endPoint.GetHost(), endPoint.GetPort()))
-				.ToArray()
-			);
+			_channels.UpdateCache(_settings.ConnectivitySettings.GossipSeeds);
 
 			await Task
 				.Delay(_settings.ConnectivitySettings.DiscoveryInterval, cancellationToken)

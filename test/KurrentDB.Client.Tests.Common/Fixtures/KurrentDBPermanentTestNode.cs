@@ -69,6 +69,8 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 			["KURRENTDB_MEM_DB"]                           = "true",
 			["KURRENTDB_CERTIFICATE_FILE"]                 = "/etc/kurrentdb/certs/node/node.crt",
 			["KURRENTDB_CERTIFICATE_PRIVATE_KEY_FILE"]     = "/etc/kurrentdb/certs/node/node.key",
+			["KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH"]   = "/etc/kurrentdb/certs/ca",
+			["KURRENTDB_USER_CERTIFICATES__ENABLED"]       = "true",
 			["KURRENTDB_STREAM_EXISTENCE_FILTER_SIZE"]     = "10000",
 			["KURRENTDB_STREAM_INFO_CACHE_CAPACITY"]       = "10000",
 			["KURRENTDB_ENABLE_ATOM_PUB_OVER_HTTP"]        = "true",
@@ -81,8 +83,10 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 		};
 
 		if (GlobalEnvironment.DockerImage.Contains("commercial")) {
-			defaultEnvironment["KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/kurrentdb/certs/ca";
-			defaultEnvironment["KurrentDB__Plugins__UserCertificates__Enabled"] = "true";
+			defaultEnvironment["EVENTSTORE_CERTIFICATE_FILE"]                    = "/etc/eventstore/certs/node/node.crt";
+			defaultEnvironment["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"]        = "/etc/eventstore/certs/node/node.key";
+			defaultEnvironment["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/eventstore/certs/ca";
+			defaultEnvironment["EventStore__Plugins__UserCertificates__Enabled"] = "true";
 		}
 
 		if (port != NetworkPortProvider.DefaultEsdbPort) {
@@ -116,21 +120,19 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 		throw new InvalidOperationException("Could not determine server version.");
 
 		IEnumerable<char> ReadVersion(string s) {
-			foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) {
+			foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c)))
 				yield return c;
-			}
 		}
 	}
 
 	protected override ContainerBuilder Configure() {
-		var env = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
-
-		var port      = Options.DBClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
+		var env       = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
+		var port      = Options.DBClientSettings.ConnectivitySettings.Address?.Port ?? KurrentDBClientConnectivitySettings.DefaultPort;
 		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
 
 		var containerName = port == 2113
-			? "kurrentdb-client-dotnet-test"
-			: $"kurrentdb-client-dotnet-test-{port}-{Guid.NewGuid().ToString()[30..]}";
+			? "kurrentdb-dotnet-test"
+			: $"kurrentdb-dotnet-test-{port}-{Guid.NewGuid().ToString()[30..]}";
 
 		CertificatesManager.VerifyCertificatesExist(certsPath);
 
@@ -186,11 +188,7 @@ class NetworkPortProvider(int port = 2114) {
 
 					await Task.Delay(delay);
 				} finally {
-#if NET
 					if (socket.Connected) await socket.DisconnectAsync(true);
-#else
-					if (socket.Connected) socket.Disconnect(true);
-#endif
 				}
 			}
 		} finally {

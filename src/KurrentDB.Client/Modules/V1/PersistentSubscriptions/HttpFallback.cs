@@ -11,7 +11,7 @@ class HttpFallback : IDisposable {
 	readonly string                _addressScheme;
 
 	internal HttpFallback(KurrentDBClientSettings settings) {
-		_addressScheme      = settings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme;
+		_addressScheme      = settings.ConnectivitySettings.Address?.Scheme ?? (settings.ConnectivitySettings.Insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps);
 		_defaultCredentials = settings.DefaultCredentials;
 
 		var handler = new HttpClientHandler();
@@ -53,11 +53,7 @@ class HttpFallback : IDisposable {
 
 		var httpResult = await HttpSendAsync(request, onNotFound, deadline, cancellationToken).ConfigureAwait(false);
 
-#if NET
 		var json = await httpResult.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-#else
-		var json = await httpResult.Content.ReadAsStringAsync().ConfigureAwait(false);
-#endif
 
 		var result = JsonSerializer.Deserialize<T>(json, _jsonSettings);
 		if (result == null)

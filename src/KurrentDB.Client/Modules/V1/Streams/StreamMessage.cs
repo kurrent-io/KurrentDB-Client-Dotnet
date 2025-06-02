@@ -52,26 +52,36 @@ public abstract record StreamMessage {
 	/// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that a checkpoint has been reached.
 	/// </summary>
 	/// <param name="Position">The <see cref="Position" />.</param>
-	public record AllStreamCheckpointReached(Position Position) : StreamMessage;
+	public record AllStreamCheckpointReached(Position Position, DateTimeOffset Timestamp) : StreamMessage;
 
 	/// <summary>
 	/// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that a checkpoint has been reached.
 	/// </summary>
 	/// <param name="StreamPosition">The <see cref="StreamPosition" />.</param>
-	public record StreamCheckpointReached(StreamPosition StreamPosition) : StreamMessage;
+	public record StreamCheckpointReached(StreamPosition StreamPosition, DateTimeOffset Timestamp) : StreamMessage;
+
+	// /// <summary>
+	// /// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that a checkpoint has been reached.
+	// /// </summary>
+	// public record Checkpoint(Position? Position, long? StreamRevision, DateTimeOffset Timestamp) : StreamMessage {
+	// 	public bool HasPosition       => Position.HasValue;
+	// 	public bool HasStreamRevision => StreamRevision.HasValue;
+	// }
 
 	/// <summary>
 	/// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that the subscription is live.
 	/// </summary>
-	public record CaughtUp : StreamMessage {
-		internal static readonly CaughtUp Instance = new();
+	public record CaughtUp(Position? Position, long? StreamRevision, DateTimeOffset Timestamp) : StreamMessage {
+		public bool HasPosition       => Position.HasValue;
+		public bool HasStreamRevision => StreamRevision.HasValue;
 	}
 
 	/// <summary>
 	/// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that the subscription has switched to catch up mode.
 	/// </summary>
-	public record FellBehind : StreamMessage {
-		internal static readonly FellBehind Instance = new();
+	public record FellBehind(Position? Position, long? StreamRevision, DateTimeOffset Timestamp) : StreamMessage {
+		public bool HasPosition       => Position.HasValue;
+		public bool HasStreamRevision => StreamRevision.HasValue;
 	}
 
 	/// <summary>
@@ -116,12 +126,5 @@ public abstract record StreamMessage {
 	// 	public bool HasPosition       => Position.HasValue;
 	// 	public bool HasStreamRevision => StreamRevision.HasValue;
 	// 	public bool HasTimestamp      => Timestamp.HasValue;
-	// }
-	//
-	// /// <summary>
-	// /// A <see cref="KurrentDB.Client.StreamMessage"/> that could not be identified, usually indicating a lower client compatibility level than the server supports.
-	// /// </summary>
-	// public record Unknown : StreamMessage {
-	// 	internal static readonly Unknown Instance = new();
 	// }
 }

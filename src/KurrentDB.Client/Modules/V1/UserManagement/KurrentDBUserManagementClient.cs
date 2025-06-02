@@ -1,8 +1,6 @@
 using System.Runtime.CompilerServices;
 using EventStore.Client.Users;
 using Grpc.Core;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace KurrentDB.Client;
 
@@ -10,17 +8,11 @@ namespace KurrentDB.Client;
 /// The client used for operations on internal users.
 /// </summary>
 public sealed class KurrentDBUserManagementClient : KurrentDBClientBase {
-	readonly ILogger _log;
-
 	/// <summary>
 	/// Constructs a new <see cref="KurrentDBUserManagementClient"/>.
 	/// </summary>
 	/// <param name="settings"></param>
-	public KurrentDBUserManagementClient(KurrentDBClientSettings? settings = null) :
-		base(settings, ExceptionMap) {
-		_log = Settings.LoggerFactory?.CreateLogger<KurrentDBUserManagementClient>() ??
-		       new NullLogger<KurrentDBUserManagementClient>();
-	}
+	public KurrentDBUserManagementClient(KurrentDBClientSettings? settings = null) : base(settings, ExceptionMap) { }
 
 	/// <summary>
 	/// Creates an internal user.
@@ -35,9 +27,7 @@ public sealed class KurrentDBUserManagementClient : KurrentDBClientBase {
 	/// <returns></returns>
 	/// <exception cref="ArgumentNullException"></exception>
 	/// <exception cref="ArgumentOutOfRangeException"></exception>
-	public async Task CreateUserAsync(string loginName, string fullName, string[] groups, string password,
-	                                  TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-	                                  CancellationToken cancellationToken = default) {
+	public async Task CreateUserAsync(string loginName, string fullName, string[] groups, string password, TimeSpan? deadline = null, UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 		if (loginName == null) throw new ArgumentNullException(nameof(loginName));
 		if (fullName == null) throw new ArgumentNullException(nameof(fullName));
 		if (groups == null) throw new ArgumentNullException(nameof(groups));
@@ -71,7 +61,7 @@ public sealed class KurrentDBUserManagementClient : KurrentDBClientBase {
 	/// <exception cref="ArgumentOutOfRangeException"></exception>
 	public async Task<UserDetails> GetUserAsync(string loginName, TimeSpan? deadline = null,
 	                                            UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-		if (loginName == null) {
+		if (loginName is null) {
 			throw new ArgumentNullException(nameof(loginName));
 		}
 

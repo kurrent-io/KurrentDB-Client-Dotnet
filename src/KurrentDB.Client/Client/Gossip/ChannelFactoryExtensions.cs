@@ -1,52 +1,19 @@
-using System.IO.Compression;
+using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Grpc.Net.Client;
-using Grpc.Net.Compression;
-using EndPoint = System.Net.EndPoint;
 
 namespace KurrentDB.Client;
-
-#if NET6_0_OR_GREATER
-/// <summary>
-/// Provides Brotli compression and decompression functionality
-/// for gRPC communication. Implements the <see cref="ICompressionProvider"/> interface.
-/// </summary>
-/// <param name="defaultCompressionLevel">The default compression level to use when compressing data.</param>
-public class BrotliCompressionProvider(CompressionLevel? defaultCompressionLevel = null) : ICompressionProvider {
-	readonly CompressionLevel _defaultCompressionLevel = defaultCompressionLevel ?? CompressionLevel.Fastest;
-
-	public string EncodingName => "br";
-
-	public Stream CreateCompressionStream(Stream stream, CompressionLevel? compressionLevel) =>
-		new BrotliStream(stream, compressionLevel ?? _defaultCompressionLevel, true);
-
-	public Stream CreateDecompressionStream(Stream stream) =>
-		new BrotliStream(stream, CompressionMode.Decompress);
-}
-#endif
 
 static class ChannelFactoryExtensions {
 	const int MaxReceiveMessageLength = 17 * 1024 * 1024; // 17MB
 
-	internal static readonly Dictionary<string, ICompressionProvider> CompressionProviders = new Dictionary<string, ICompressionProvider>(StringComparer.Ordinal) {
-		["gzip"] = new GzipCompressionProvider(CompressionLevel.Fastest),
-#if NET8_0_OR_GREATER
-		["deflate"] = new DeflateCompressionProvider(CompressionLevel.Fastest),
-		["br"] = new BrotliCompressionProvider(CompressionLevel.Fastest),
-#endif
-	};
-
-	static readonly IList<ICompressionProvider> DefaultCompressionProviders = CompressionProviders.Values.ToList();
-
-	public static GrpcChannel CreateChannel(this KurrentDBClientSettings settings, EndPoint endPoint) {
+	public static GrpcChannel CreateChannel(this KurrentDBClientSettings settings, DnsEndPoint endPoint) {
 		if (settings.ConnectivitySettings.Insecure) {
 			//this must be switched on before creation of the HttpMessageHandler
 			AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
 		}
 
 		var options = new GrpcChannelOptions {
-			CompressionProviders = DefaultCompressionProviders,
-
 			ServiceConfig = settings.RetrySettings.IsEnabled
 				? new() { MethodConfigs = { settings.RetrySettings.GetRetryMethodConfig() } }
 				: null,
@@ -61,7 +28,11 @@ static class ChannelFactoryExtensions {
 			MaxReceiveMessageSize = MaxReceiveMessageLength
 		};
 
-		var address = endPoint.ToUri(!settings.ConnectivitySettings.Insecure);
+		var address = new UriBuilder {
+			Scheme = settings.ConnectivitySettings.Insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps,
+			Host   = endPoint.Host,
+			Port   = endPoint.Port
+		}.Uri;
 
 		return GrpcChannel.ForAddress(address, options);
 

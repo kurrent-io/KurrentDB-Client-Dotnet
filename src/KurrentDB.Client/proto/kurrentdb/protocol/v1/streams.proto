@@ -1,6 +1,6 @@
 syntax = "proto3";
 package event_store.client.streams;
-option java_package = "io.kurrent.client.proto.streams";
+option java_package = "com.eventstore.dbclient.proto.streams";
 
 import "shared.proto";
 import "status.proto";
@@ -106,7 +106,7 @@ message ReadResp {
   // The $all or stream subscription has caught up and become live.
   message CaughtUp {
     // Current time in the server when the subscription caught up
-    optional google.protobuf.Timestamp timestamp = 1;
+    google.protobuf.Timestamp timestamp = 1;
 
     // Checkpoint for resuming a stream subscription.
     // For stream subscriptions it is populated unless the stream is empty.
@@ -122,7 +122,7 @@ message ReadResp {
   // The $all or stream subscription has fallen back into catchup mode and is no longer live.
   message FellBehind {
     // Current time in the server when the subscription fell behind
-    optional google.protobuf.Timestamp timestamp = 1;
+    google.protobuf.Timestamp timestamp = 1;
 
     // Checkpoint for resuming a stream subscription.
     // For stream subscriptions it is populated unless the stream is empty.

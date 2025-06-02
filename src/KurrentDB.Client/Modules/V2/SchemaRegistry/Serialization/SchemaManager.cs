@@ -12,7 +12,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistryClient, ISchemaEx
 
 	ConcurrentDictionary<Type, List<SchemaVersionDescriptor>> CompatibleVersions { get; } = new();
 
-	#region Serialize
+	#region . Serialize .
 
 	public async ValueTask<(SchemaName SchemaName, SchemaVersionId SchemaVersionId)> RegisterOrValidateSchema(Type messageType, ResolvedSchemaRegistryPolicy policy, CancellationToken ct) {
 		if (policy is { AutoRegisterSchemas: true, DataFormat: SchemaDataFormat.Json })
@@ -72,7 +72,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistryClient, ISchemaEx
 
 	#endregion
 
-	#region Deserialize
+	#region . Deserialize .
 
 	public async ValueTask<(Type MessageType, SchemaVersionId SchemaVersionId)> ValidateAndEnsureSchemaCompatibility(RecordSchemaInfo schemaInfo, ResolvedSchemaRegistryPolicy policy, CancellationToken ct) {
 		var messageType = TypeMapper.GetOrResolveMessageType(schemaInfo.SchemaName);

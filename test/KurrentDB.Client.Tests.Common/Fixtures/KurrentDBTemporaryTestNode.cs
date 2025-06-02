@@ -70,6 +70,8 @@ public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null)
 			["KURRENTDB_MEM_DB"]                           = "true",
 			["KURRENTDB_CERTIFICATE_FILE"]                 = "/etc/kurrentdb/certs/node/node.crt",
 			["KURRENTDB_CERTIFICATE_PRIVATE_KEY_FILE"]     = "/etc/kurrentdb/certs/node/node.key",
+			["KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH"]   = "/etc/kurrentdb/certs/ca",
+			["KURRENTDB_USER_CERTIFICATES__ENABLED"]       = "true",
 			["KURRENTDB_STREAM_EXISTENCE_FILTER_SIZE"]     = "10000",
 			["KURRENTDB_STREAM_INFO_CACHE_CAPACITY"]       = "10000",
 			["KURRENTDB_ENABLE_ATOM_PUB_OVER_HTTP"]        = "true",
@@ -80,8 +82,10 @@ public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null)
 		};
 
 		if (GlobalEnvironment.DockerImage.Contains("commercial")) {
-			defaultEnvironment["KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/kurrentdb/certs/ca";
-			defaultEnvironment["KURRENTDB__Plugins__UserCertificates__Enabled"] = "true";
+			defaultEnvironment["EVENTSTORE_CERTIFICATE_FILE"]                    = "/etc/eventstore/certs/node/node.crt";
+			defaultEnvironment["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"]        = "/etc/eventstore/certs/node/node.key";
+			defaultEnvironment["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/eventstore/certs/ca";
+			defaultEnvironment["EventStore__Plugins__UserCertificates__Enabled"] = "true";
 		}
 
 		if (port != NetworkPortProvider.DefaultEsdbPort) {
@@ -122,12 +126,11 @@ public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null)
 	}
 
 	protected override ContainerBuilder Configure() {
-		var env = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
-
-		var port      = Options.DBClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
+		var env       = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
+		var port      = Options.DBClientSettings.ConnectivitySettings.Address?.Port ?? KurrentDBClientConnectivitySettings.DefaultPort;
 		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
 
-		var containerName = $"kurrentdb-client-dotnet-test-{port}-{Guid.NewGuid().ToString()[30..]}";
+		var containerName = $"kurrentdb-dotnet-test-{port}-{Guid.NewGuid().ToString()[30..]}";
 
 		CertificatesManager.VerifyCertificatesExist(certsPath);
 
@@ -139,15 +142,11 @@ public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null)
 			.WithEnvironment(env)
 			.MountVolume(certsPath, "/etc/kurrentdb/certs", MountType.ReadOnly)
 			.ExposePort(port, 2113)
-			.WaitUntilReadyWithConstantBackoff(
-				1_000,
-				60,
-				service => {
-					var output = service.ExecuteCommand("curl -u admin:changeit --cacert /etc/kurrentdb/certs/ca/ca.crt https://localhost:2113/health/live");
-					if (!output.Success)
-						throw new Exception(output.Error);
-				}
-			);
+			.WaitUntilReadyWithConstantBackoff(1_000, 60, service => {
+				var output = service.ExecuteCommand("curl -u admin:changeit --cacert /etc/kurrentdb/certs/ca/ca.crt https://localhost:2113/health/live");
+				if (!output.Success)
+					throw new Exception(output.Error);
+			});
 
 		return builder;
 	}
@@ -180,11 +179,7 @@ class NetworkPortProvider(int port = 2114) {
 
 					await Task.Delay(delay);
 				} finally {
-#if NET
 					if (socket.Connected) await socket.DisconnectAsync(true);
-#else
-					if (socket.Connected) socket.Disconnect(true);
-#endif
 				}
 			}
 		} finally {

@@ -29,7 +29,7 @@ public abstract class SchemaSerializerBase(SchemaSerializerOptions options, Sche
 		// -------------------------------------------------------------------------------------------------
 		// these debug asserts ensure the required info is set during the development process
 		// -------------------------------------------------------------------------------------------------
-		Debug.Assert(!string.IsNullOrWhiteSpace(context.Stream) || context.Metadata.Get<string>(SystemMetadataKeys.Stream) is not null, "Stream name is missing in the metadata");
+		Debug.Assert(!string.IsNullOrWhiteSpace(context.Stream) || context.Metadata.GetOrDefault<string>(SystemMetadataKeys.Stream) is not null, "Stream name is missing in the metadata");
 		Debug.Assert(context.Metadata.Get(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Unspecified) == DataFormat, "Schema data format does not match the serializer data format");
 		// -------------------------------------------------------------------------------------------------
 
@@ -48,11 +48,11 @@ public abstract class SchemaSerializerBase(SchemaSerializerOptions options, Sche
 				.ConfigureAwait(false);
 
 			context.Metadata
-				.Set(SystemMetadataKeys.SchemaName, result.SchemaName)
-				.Set(SystemMetadataKeys.SchemaDataFormat, DataFormat);
+				.With(SystemMetadataKeys.SchemaName, result.SchemaName)
+				.With(SystemMetadataKeys.SchemaDataFormat, DataFormat);
 
 			if (result.SchemaVersionId != SchemaVersionId.None)
-				context.Metadata.Set(SystemMetadataKeys.SchemaVersionId, result.SchemaVersionId);
+				context.Metadata.With(SystemMetadataKeys.SchemaVersionId, result.SchemaVersionId);
 
 			return Serialize(value);
 		}
@@ -86,7 +86,7 @@ public abstract class SchemaSerializerBase(SchemaSerializerOptions options, Sche
 
 			// set the schema version id in the metadata
 			if(result.SchemaVersionId != SchemaVersionId.None)
-				context.Metadata.Set(SystemMetadataKeys.SchemaVersionId, result.SchemaVersionId);
+				context.Metadata.With(SystemMetadataKeys.SchemaVersionId, result.SchemaVersionId);
 
 			return Deserialize(data, result.MessageType);
 		}

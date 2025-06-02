@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <LangVersion>preview</LangVersion>
+        <EnablePreviewFeatures>true</EnablePreviewFeatures>
+        <!-- Set Default Configuration -->
+        <Configuration Condition="'$(Configuration)'==''">Debug</Configuration>
+    </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\KurrentDB.Client\KurrentDB.Client.csproj" />
+    <ProjectReference Include="..\KurrentDB.Client.Testing\KurrentDB.Client.Testing.csproj" />
+  </ItemGroup>
+</Project>

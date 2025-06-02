@@ -14,8 +14,10 @@ public sealed class SchemaExporter(SystemTextJsonSchemaGeneratorSettings? settin
 	};
 
 	public string Export(Type messageType, SchemaDataFormat dataFormat) {
-		if (dataFormat != SchemaDataFormat.Json)
+		if (dataFormat != SchemaDataFormat.Json) {
 			throw new NotSupportedException($"Unsupported schema data format. Expected {SchemaDataFormat.Json} but got {dataFormat}.");
+		}
+
 
 		var schema = NJsonSchema.JsonSchema.FromType(messageType, _settings);
 		return schema.ToJson();

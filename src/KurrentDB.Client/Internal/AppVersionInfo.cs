@@ -71,11 +71,8 @@ class AppVersionInfo() {
 	/// an <see cref="AppVersionInfo"/> object with all properties set to null is returned.
 	/// </returns>
 	static AppVersionInfo GetCurrent() {
-		var entryAssembly = Assembly.GetEntryAssembly();
-		// This can happen in contexts like unit tests, some ASP.NET scenarios,
-		// or when hosted by unmanaged code.
-		// Returning an object with null properties allows the caller to decide how to handle this case.
-		return entryAssembly is null ? new AppVersionInfo() : GetForAssembly(entryAssembly);
+		var entryAssembly = Assembly.GetExecutingAssembly();
+		return GetForAssembly(entryAssembly);
 	}
 
 	/// <summary>

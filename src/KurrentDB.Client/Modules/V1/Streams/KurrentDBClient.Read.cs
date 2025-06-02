@@ -211,7 +211,7 @@ public partial class KurrentDBClient {
 				}
 			}
 			finally {
-				_cts.Cancel();
+				await _cts.CancelAsync().ConfigureAwait(false);
 			}
 		}
 	}
@@ -223,7 +223,7 @@ public partial class KurrentDBClient {
 	/// </summary>
 	/// <param name="direction">The <see cref="Direction"/> in which to read.</param>
 	/// <param name="streamName">The name of the stream to read.</param>
-	/// <param name="revision">The <see cref="StreamRevision"/> to start reading from.</param>
+	/// <param name="revision">The <see cref="StreamPosition"/> to start reading from.</param>
 	/// <param name="maxCount">The number of events to read from the stream.</param>
 	/// <param name="resolveLinkTos">Whether to resolve LinkTo events automatically.</param>
 	/// <param name="deadline"></param>
@@ -319,9 +319,6 @@ public partial class KurrentDBClient {
 								case StreamMessage.LastStreamPosition(var lastStreamPosition):
 									LastStreamPosition = lastStreamPosition;
 									break;
-
-								default:
-									break;
 							}
 
 							yield return message;
@@ -370,17 +367,18 @@ public partial class KurrentDBClient {
 				var firstMessageRead = false;
 
 				try {
-					var       callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
-					var       client      = new Streams.StreamsClient(callInvoker);
-					using var call        = client.Read(request, callOptions);
+					var callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
+					var client      = new Streams.StreamsClient(callInvoker);
 
-					await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken)
-						               .ConfigureAwait(false)) {
+					using var call = client.Read(request, callOptions);
+
+					await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken).ConfigureAwait(false)) {
 						if (!firstMessageRead) {
 							firstMessageRead = true;
 
 							if (response.ContentCase != StreamNotFound || request.Options.Stream == null) {
-								await _channel.Writer.WriteAsync(StreamMessage.Ok.Instance, linkedCancellationToken)
+								await _channel.Writer
+									.WriteAsync(StreamMessage.Ok.Instance, linkedCancellationToken)
 									.ConfigureAwait(false);
 
 								tcs.SetResult(Client.ReadState.Ok);
@@ -439,7 +437,7 @@ public partial class KurrentDBClient {
 				}
 			}
 			finally {
-				_cts.Cancel();
+				await _cts.CancelAsync().ConfigureAwait(false);
 			}
 		}
 	}

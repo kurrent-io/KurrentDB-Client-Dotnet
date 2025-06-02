@@ -2,7 +2,6 @@ using System.Text.Encodings.Web;
 using System.Threading.Channels;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace KurrentDB.Client;
 
@@ -37,8 +36,7 @@ public sealed partial class KurrentDBPersistentSubscriptionsClient : KurrentDBCl
 					ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
 					ex.Trailers.First(x => x.Key == Constants.Exceptions.GroupName).Value, ex)
 		}) {
-		_log = Settings.LoggerFactory?.CreateLogger<KurrentDBPersistentSubscriptionsClient>()
-		    ?? new NullLogger<KurrentDBPersistentSubscriptionsClient>();
+		_log = Settings.LoggerFactory.CreateLogger<KurrentDBPersistentSubscriptionsClient>();
 
 		_httpFallback = new Lazy<HttpFallback>(() => new HttpFallback(Settings));
 	}
@@ -55,9 +53,11 @@ public sealed partial class KurrentDBPersistentSubscriptionsClient : KurrentDBCl
 		TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken
 	) => _httpFallback.Value.HttpPostAsync(path, query, channelInfo, deadline, userCredentials, onNotFound, cancellationToken);
 
-	protected override async ValueTask DisposeAsyncCore() {
-		await DisposeAsync().ConfigureAwait(false);
-		if (_httpFallback.IsValueCreated) _httpFallback.Value.Dispose();
+	protected override ValueTask DisposeAsyncCore() {
+		if (_httpFallback.IsValueCreated)
+			_httpFallback.Value.Dispose();
+
+		return ValueTask.CompletedTask;
 	}
 
 	static string UrlEncode(string value) => UrlEncoder.Default.Encode(value);

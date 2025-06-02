@@ -7,6 +7,15 @@ namespace KurrentDB.Client.SchemaRegistry;
 /// and formatting settings in the context of client and server operations.
 /// </summary>
 public record SchemaRegistryPolicy {
+	public static readonly SchemaRegistryPolicy NoRequirements = new() {
+		Enabled                 = true,
+		RegistrationRequirement = PolicyRequirement.Optional,
+		ValidationRequirement   = PolicyRequirement.Optional,
+		EnforcedDataFormat      = SchemaDataFormat.Unspecified
+	};
+
+	public static readonly SchemaRegistryPolicy Disabled = new() { Enabled = false };
+
 	/// <summary>
 	/// Whether the schema registry is enabled on the server
 	/// </summary>

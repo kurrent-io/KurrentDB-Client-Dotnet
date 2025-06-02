@@ -8,16 +8,15 @@ namespace KurrentDB.Client;
 /// Represents a parsed KurrentDB connection string with all its components
 /// </summary>
 record KurrentDBConnectionString {
-	const string SchemeSeparator   = "://";
-	const string UserInfoSeparator = "@";
-	const string Colon             = ":";
-	const string Slash             = "/";
-	const string Comma             = ",";
-	const string Ampersand         = "&";
-	const string Equal             = "=";
-	const string QuestionMark      = "?";
+	const string SchemeSeparator = "://";
 
-	const string UriSchemeDiscover = "kurrentdb+discover";
+	const char UserInfoSeparator = '@';
+	const char Colon             = ':';
+	const char Slash             = '/';
+	const char Comma             = ',';
+	const char Ampersand         = '&';
+	const char Equal             = '=';
+	const char QuestionMark      = '?';
 
 	const string Tls                  = nameof(Tls);
 	const string ConnectionName       = nameof(ConnectionName);
@@ -34,9 +33,12 @@ record KurrentDBConnectionString {
 	const string UserCertFile         = nameof(UserCertFile);
 	const string UserKeyFile          = nameof(UserKeyFile);
 
-	static readonly string[] Schemes           = ["kurrentdb", UriSchemeDiscover];
-	static readonly int      DefaultPort       = KurrentDBClientConnectivitySettings.Default.ResolvedAddressOrDefault.Port;
-	static readonly bool     DefaultUseTls     = true;
+	static readonly string[] SchemesDiscovery = ["esdb+discover", "eventstore+discover", "kurrentdb+discover"];
+
+	static readonly string[] Schemes = ["esdb", "eventstore", "kurrentdb", ..SchemesDiscovery];
+
+	static readonly int  DefaultPort   = KurrentDBClientConnectivitySettings.DefaultPort;
+	static readonly bool DefaultUseTls = true;
 
 	static readonly Dictionary<string, Type> SettingsType =
 		new(StringComparer.InvariantCultureIgnoreCase) {
@@ -56,22 +58,16 @@ record KurrentDBConnectionString {
 			{ UserKeyFile, typeof(string) }
 		};
 
-	KurrentDBConnectionString(
-		string scheme,
-		(string user, string pass)? userInfo,
-		EndPoint[] hosts,
-		Dictionary<string, string> options
-	) {
+	KurrentDBConnectionString(string scheme, (string user, string pass)? userInfo, DnsEndPoint[] hosts, Dictionary<string, string> options) {
 		Scheme   = scheme;
 		UserInfo = userInfo;
 		Hosts    = hosts;
 		Options  = options;
 	}
 
-	// Connection string components
 	public string                      Scheme   { get; }
 	public (string user, string pass)? UserInfo { get; }
-	public EndPoint[]                  Hosts    { get; }
+	public DnsEndPoint[]               Hosts    { get; }
 	public Dictionary<string, string>  Options  { get; }
 
 	/// <summary>
@@ -81,32 +77,37 @@ record KurrentDBConnectionString {
 	/// <returns>A KurrentDBConnectionString containing the parsed components</returns>
 	public static KurrentDBConnectionString Parse(string connectionString) {
 		var currentIndex = 0;
+
 		var schemeIndex  = connectionString.IndexOf(SchemeSeparator, currentIndex, StringComparison.Ordinal);
 		if (schemeIndex == -1)
 			throw new NoSchemeException();
 
-		var scheme = ParseScheme(connectionString.Substring(0, schemeIndex));
+		var scheme = ParseScheme(connectionString[..schemeIndex]);
 
 		currentIndex = schemeIndex + SchemeSeparator.Length;
 
-		var userInfoIndex = connectionString.IndexOf(UserInfoSeparator, currentIndex, StringComparison.Ordinal);
+		var userInfoIndex = connectionString.IndexOf(UserInfoSeparator, currentIndex);
 
-		(string user, string pass)? userInfo      = null;
+		(string user, string pass)? userInfo = null;
 		if (userInfoIndex != -1) {
 			userInfo     = ParseUserInfo(connectionString.Substring(currentIndex, userInfoIndex - currentIndex));
-			currentIndex = userInfoIndex + UserInfoSeparator.Length;
+			currentIndex = userInfoIndex + 1;
 		}
 
-		var slashIndex        = connectionString.IndexOf(Slash, currentIndex, StringComparison.Ordinal);
-		var questionMarkIndex = connectionString.IndexOf(QuestionMark, currentIndex, StringComparison.Ordinal);
+		var slashIndex        = connectionString.IndexOf(Slash, currentIndex);
+		var questionMarkIndex = connectionString.IndexOf(QuestionMark, currentIndex);
 		var endIndex          = connectionString.Length;
 
 		//for simpler substring operations:
-		if (slashIndex == -1) slashIndex               = int.MaxValue;
-		if (questionMarkIndex == -1) questionMarkIndex = int.MaxValue;
+		if (slashIndex == -1)
+			slashIndex = int.MaxValue;
+
+		if (questionMarkIndex == -1)
+			questionMarkIndex = int.MaxValue;
 
 		var hostSeparatorIndex = Math.Min(Math.Min(slashIndex, questionMarkIndex), endIndex);
 		var hosts              = ParseHosts(connectionString.Substring(currentIndex, hostSeparatorIndex - currentIndex));
+
 		currentIndex = hostSeparatorIndex;
 
 		var path = "";
@@ -118,16 +119,68 @@ record KurrentDBConnectionString {
 
 		if (path != "" && path != "/")
 			throw new ConnectionStringParseException(
-				$"The specified path must be either an empty string or a forward slash (/) but the following path was found instead: '{path}'"
-			);
+				$"The specified path must be either an empty string or a forward slash (/) but the following path was found instead: '{path}'");
 
 		var options = new Dictionary<string, string>();
+
 		if (questionMarkIndex != int.MaxValue) {
-			currentIndex = questionMarkIndex + QuestionMark.Length;
-			options      = ParseKeyValuePairs(connectionString.Substring(currentIndex));
+			currentIndex = questionMarkIndex + 1;
+			options      = ParseKeyValuePairs(connectionString[currentIndex..]);
 		}
 
 		return new KurrentDBConnectionString(scheme, userInfo, hosts, options);
+
+		static string ParseScheme(string input) =>
+			!Schemes.Contains(input) ? throw new InvalidSchemeException(input, Schemes) : input;
+
+		static (string, string) ParseUserInfo(string input) {
+			var tokens = input.Split(Colon);
+			return tokens.Length != 2
+				? throw new InvalidUserCredentialsException(input)
+				: (tokens[0], tokens[1]);
+		}
+
+		static DnsEndPoint[] ParseHosts(string input) {
+			// var this_would_be_nice = input.Split(Comma, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+			var hosts = input.Split(Comma).Select(hostToken => {
+				// address can be in the form of "host:port" or just "host"
+				var token = hostToken.Split(Colon, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+
+				var endpoint =  token.Length switch {
+					1 => new DnsEndPoint(token[0], DefaultPort),
+					2 => new DnsEndPoint(token[0], int.TryParse(token[1], out var port) ? port : throw new InvalidHostException(hostToken)),
+					_ => throw new InvalidHostException(hostToken)
+				};
+
+				return endpoint;
+			}).ToArray();
+
+			if (hosts.Length == 0)
+				throw new InvalidHostException(input);
+
+			return hosts;
+		}
+
+		static Dictionary<string, string> ParseKeyValuePairs(string input) {
+			return input.Split(Ampersand)
+				.Aggregate(
+					new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase),
+					(seed, option) => {
+						var (key, value) = ParseKeyValuePair(option);
+						return !seed.TryAdd(key, value)
+							? throw new DuplicateKeyException(key)
+							: seed;
+					}
+				);
+
+			static (string, string) ParseKeyValuePair(string input) {
+				var keyValueToken = input.Split(Equal);
+				return keyValueToken.Length != 2
+					? throw new InvalidKeyValuePairException(input)
+					: (keyValueToken[0], keyValueToken[1]);
+			}
+		}
 	}
 
 	/// <summary>
@@ -211,27 +264,31 @@ record KurrentDBConnectionString {
 
 		settings.ConnectivitySettings.Insecure = !useTls;
 
-		if (Hosts.Length == 1 && Scheme != UriSchemeDiscover) {
+		if (Hosts.Length == 1 && !SchemesDiscovery.Contains(Scheme))
 			settings.ConnectivitySettings.Address = Hosts[0].ToUri(useTls);
-		}
 		else {
-			if (Hosts.Any(x => x is DnsEndPoint))
-				settings.ConnectivitySettings.DnsGossipSeeds =
-					Array.ConvertAll(Hosts, x => new DnsEndPoint(x.GetHost(), x.GetPort()));
-			else
-				settings.ConnectivitySettings.IpGossipSeeds = Array.ConvertAll(Hosts, x => (IPEndPoint)x);
+			settings.ConnectivitySettings.Address     = null; //new Uri("kurrentdb+discover://cluster");
+			settings.ConnectivitySettings.GossipSeeds = Hosts;
+
+			// why? if discovery then all hosts are used for discovery
+			// if (Hosts.Any(x => x is DnsEndPoint))
+			// 	settings.ConnectivitySettings.DnsGossipSeeds =
+			// 		Array.ConvertAll(Hosts, x => new DnsEndPoint(x.GetHost(), x.GetPort()));
+			// else
+			// 	settings.ConnectivitySettings.IpGossipSeeds = Array.ConvertAll(Hosts, x => (IPEndPoint)x);
 		}
 
-		if (typedOptions.TryGetValue(TlsVerifyCert, out var tlsVerifyCert)) settings.ConnectivitySettings.TlsVerifyCert = (bool)tlsVerifyCert;
+		if (typedOptions.TryGetValue(TlsVerifyCert, out var tlsVerifyCert))
+			settings.ConnectivitySettings.TlsVerifyCert = (bool)tlsVerifyCert;
 
 		if (typedOptions.TryGetValue(TlsCaFile, out var tlsCaFile)) {
 			var tlsCaFilePath = Path.GetFullPath((string)tlsCaFile);
 			if (!string.IsNullOrEmpty(tlsCaFilePath) && !File.Exists(tlsCaFilePath))
-				throw new InvalidClientCertificateException($"Failed to load certificate. File was not found.");
+				throw new InvalidClientCertificateException("Failed to load certificate. File was not found.");
 
 			try {
 #if NET9_0_OR_GREATER
-                settings.ConnectivitySettings.TlsCaFile = X509CertificateLoader.LoadCertificateFromFile(tlsCaFilePath);
+				settings.ConnectivitySettings.TlsCaFile = X509CertificateLoader.LoadCertificateFromFile(tlsCaFilePath);
 #else
 				settings.ConnectivitySettings.TlsCaFile = new X509Certificate2(tlsCaFilePath);
 #endif
@@ -241,11 +298,20 @@ record KurrentDBConnectionString {
 			}
 		}
 
+		settings.ConnectivitySettings.SslCredentials = new() {
+			ClientCertificatePath    = GetOptionValueAsString(UserCertFile),
+			ClientCertificateKeyPath = GetOptionValueAsString(UserKeyFile),
+			RootCertificatePath      = GetOptionValueAsString(TlsCaFile),
+			VerifyServerCertificate  = settings.ConnectivitySettings.TlsVerifyCert
+		};
+
 		ConfigureClientCertificate(settings, typedOptions);
 
 		settings.CreateHttpMessageHandler = CreateDefaultHandler;
 
 		return settings;
+
+		string GetOptionValueAsString(string key) => typedOptions.TryGetValue(key, out var value) ? (string)value : "";
 
 		HttpMessageHandler CreateDefaultHandler() {
 			var handler = new SocketsHttpHandler {
@@ -264,7 +330,7 @@ record KurrentDBConnectionString {
 
 			handler.SslOptions.RemoteCertificateValidationCallback = settings.ConnectivitySettings.TlsVerifyCert switch {
 				false => delegate { return true; },
-				true when settings.ConnectivitySettings.TlsCaFile is not null => (sender, certificate, chain, errors) => {
+				true when settings.ConnectivitySettings.TlsCaFile is not null => (_, certificate, chain, _) => {
 					if (certificate is not X509Certificate2 peerCertificate || chain is null) return false;
 
 					chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
@@ -276,102 +342,33 @@ record KurrentDBConnectionString {
 
 			return handler;
 		}
-	}
 
-	static void ConfigureClientCertificate(KurrentDBClientSettings settings, IReadOnlyDictionary<string, object> options) {
-		var certPemFilePath = GetOptionValueAsString(UserCertFile);
-		var keyPemFilePath  = GetOptionValueAsString(UserKeyFile);
+		static void ConfigureClientCertificate(KurrentDBClientSettings settings, IReadOnlyDictionary<string, object> options) {
+			var certPemFilePath = GetOptionValueAsString(UserCertFile);
+			var keyPemFilePath  = GetOptionValueAsString(UserKeyFile);
 
-		if (string.IsNullOrEmpty(certPemFilePath) && string.IsNullOrEmpty(keyPemFilePath))
+			if (string.IsNullOrEmpty(certPemFilePath) && string.IsNullOrEmpty(keyPemFilePath))
+				return;
+
+			if (string.IsNullOrEmpty(certPemFilePath) || string.IsNullOrEmpty(keyPemFilePath))
+				throw new InvalidClientCertificateException("Invalid client certificate settings. Both UserCertFile and UserKeyFile must be set.");
+
+			if (!File.Exists(certPemFilePath))
+				throw new InvalidClientCertificateException($"Invalid client certificate settings. The specified UserCertFile does not exist: {certPemFilePath}");
+
+			if (!File.Exists(keyPemFilePath))
+				throw new InvalidClientCertificateException($"Invalid client certificate settings. The specified UserKeyFile does not exist: {keyPemFilePath}");
+
+			try {
+				settings.ConnectivitySettings.ClientCertificate = X509Certificates.CreateFromPemFile(certPemFilePath, keyPemFilePath);
+			}
+			catch (Exception ex) {
+				throw new InvalidClientCertificateException($"Failed to create client certificate: {ex.Message}", ex);
+			}
+
 			return;
 
-		if (string.IsNullOrEmpty(certPemFilePath) || string.IsNullOrEmpty(keyPemFilePath))
-			throw new InvalidClientCertificateException("Invalid client certificate settings. Both UserCertFile and UserKeyFile must be set.");
-
-		if (!File.Exists(certPemFilePath))
-			throw new InvalidClientCertificateException($"Invalid client certificate settings. The specified UserCertFile does not exist: {certPemFilePath}");
-
-		if (!File.Exists(keyPemFilePath))
-			throw new InvalidClientCertificateException($"Invalid client certificate settings. The specified UserKeyFile does not exist: {keyPemFilePath}");
-
-		try {
-			settings.ConnectivitySettings.ClientCertificate = X509Certificates.CreateFromPemFile(certPemFilePath, keyPemFilePath);
+			string GetOptionValueAsString(string key) => options.TryGetValue(key, out var value) ? (string)value : "";
 		}
-		catch (Exception ex) {
-			throw new InvalidClientCertificateException("Failed to create client certificate.", ex);
-		}
-
-		return;
-
-		string GetOptionValueAsString(string key) => options.TryGetValue(key, out var value) ? (string)value : "";
-	}
-
-	static string ParseScheme(string s) =>
-		!Schemes.Contains(s) ? throw new InvalidSchemeException(s, Schemes) : s;
-
-	static (string, string) ParseUserInfo(string s) {
-		var tokens = s.Split(Colon[0]);
-		if (tokens.Length != 2) throw new InvalidUserCredentialsException(s);
-
-		return (tokens[0], tokens[1]);
-	}
-
-	static EndPoint[] ParseHosts(string s) {
-		var hostsTokens = s.Split(Comma[0]);
-		var hosts       = new List<EndPoint>();
-		foreach (var hostToken in hostsTokens) {
-			var    hostPortToken = hostToken.Split(Colon[0]);
-			string host;
-			int    port;
-			switch (hostPortToken.Length) {
-				case 1:
-					host = hostPortToken[0];
-					port = DefaultPort;
-					break;
-
-				case 2: {
-					host = hostPortToken[0];
-					if (!int.TryParse(hostPortToken[1], out port))
-						throw new InvalidHostException(hostToken);
-
-					break;
-				}
-
-				default:
-					throw new InvalidHostException(hostToken);
-			}
-
-			if (host.Length == 0) throw new InvalidHostException(hostToken);
-
-			if (IPAddress.TryParse(host, out var ip))
-				hosts.Add(new IPEndPoint(ip, port));
-			else
-				hosts.Add(new DnsEndPoint(host, port));
-		}
-
-		return hosts.ToArray();
-	}
-
-	static Dictionary<string, string> ParseKeyValuePairs(string s) {
-		var options       = new Dictionary<string, string>(StringComparer.InvariantCultureIgnoreCase);
-		var optionsTokens = s.Split(Ampersand[0]);
-		foreach (var optionToken in optionsTokens) {
-			var (key, val) = ParseKeyValuePair(optionToken);
-			try {
-				options.Add(key, val);
-			}
-			catch (ArgumentException) {
-				throw new DuplicateKeyException(key);
-			}
-		}
-
-		return options;
-	}
-
-	static (string, string) ParseKeyValuePair(string s) {
-		var keyValueToken = s.Split(Equal[0]);
-		if (keyValueToken.Length != 2) throw new InvalidKeyValuePairException(s);
-
-		return (keyValueToken[0], keyValueToken[1]);
 	}
 }

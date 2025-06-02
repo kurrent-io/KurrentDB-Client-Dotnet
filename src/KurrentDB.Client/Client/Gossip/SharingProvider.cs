@@ -55,31 +55,31 @@ class SharingProvider<TInput, TOutput> : SharingProvider, IDisposable {
 	public void Reset(TInput? input = default) => OnBroken(_currentBox, input ?? _initialInput);
 
 
-	public Task ResetAsync(TInput? input = default) => OnBrokenAsync(_currentBox, input ?? _initialInput);
+	//public Task ResetAsync(TInput? input = default) => OnBrokenAsync(_currentBox, input ?? _initialInput);
 
-	async Task OnBrokenAsync(TaskCompletionSource<TOutput> brokenBox, TInput input) {
-		if (!brokenBox.Task.IsCompleted) {
-			// factory is still working on this box. don't create a new box to fill
-			// or we would have to require the factory be thread safe.
-			Logger.LogDebug("{type} returned to factory. Production already in progress.", typeof(TOutput).Name);
-			return;
-		}
-
-		// replace _currentBox with a new one, but only if it is the broken one.
-		var originalBox = Interlocked.CompareExchange(
-			location1: ref _currentBox,
-			value: new(TaskCreationOptions.RunContinuationsAsynchronously),
-			comparand: brokenBox);
-
-		if (originalBox == brokenBox) {
-			// replaced the _currentBox, call the factory to fill it.
-			Logger.LogDebug("{type} returned to factory. Producing a new one.", typeof(TOutput).Name);
-			await FillBoxAsync(_currentBox, input);
-		} else {
-			// did not replace. a new one was created previously. do nothing.
-			Logger.LogDebug("{type} returned to factory. Production already complete.", typeof(TOutput).Name);
-		}
-	}
+	// async Task OnBrokenAsync(TaskCompletionSource<TOutput> brokenBox, TInput input) {
+	// 	if (!brokenBox.Task.IsCompleted) {
+	// 		// factory is still working on this box. don't create a new box to fill
+	// 		// or we would have to require the factory be thread safe.
+	// 		Logger.LogDebug("{type} returned to factory. Production already in progress.", typeof(TOutput).Name);
+	// 		return;
+	// 	}
+	//
+	// 	// replace _currentBox with a new one, but only if it is the broken one.
+	// 	var originalBox = Interlocked.CompareExchange(
+	// 		location1: ref _currentBox,
+	// 		value: new(TaskCreationOptions.RunContinuationsAsynchronously),
+	// 		comparand: brokenBox);
+	//
+	// 	if (originalBox == brokenBox) {
+	// 		// replaced the _currentBox, call the factory to fill it.
+	// 		Logger.LogDebug("{type} returned to factory. Producing a new one.", typeof(TOutput).Name);
+	// 		await FillBoxAsync(_currentBox, input);
+	// 	} else {
+	// 		// did not replace. a new one was created previously. do nothing.
+	// 		Logger.LogDebug("{type} returned to factory. Production already complete.", typeof(TOutput).Name);
+	// 	}
+	// }
 
 	// Call this to return a box containing a defective item, or indeed no item at all.
 	// A new box will be produced and filled if necessary.

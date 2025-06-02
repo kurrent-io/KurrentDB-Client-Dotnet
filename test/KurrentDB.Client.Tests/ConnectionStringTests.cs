@@ -78,7 +78,7 @@ public class ConnectionStringTests {
 					Scheme = ipGossipSettings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme
 				}.Uri;
 
-			ipGossipSettings.ConnectivitySettings.DnsGossipSeeds = null;
+			ipGossipSettings.ConnectivitySettings.GossipSeeds = [];
 
 			yield return [
 				GetConnectionString(ipGossipSettings),
@@ -96,8 +96,7 @@ public class ConnectionStringTests {
 				OperationOptions     = fixture.Create<KurrentDBClientOperationOptions>()
 			};
 
-			singleNodeSettings.ConnectivitySettings.DnsGossipSeeds = null;
-			singleNodeSettings.ConnectivitySettings.IpGossipSeeds  = null;
+			singleNodeSettings.ConnectivitySettings.GossipSeeds = [];
 			singleNodeSettings.ConnectivitySettings.Address = new UriBuilder(fixture.Create<Uri>()) {
 				Scheme = singleNodeSettings.ConnectivitySettings.ResolvedAddressOrDefault.Scheme
 			}.Uri;
@@ -139,32 +138,16 @@ public class ConnectionStringTests {
 	public void tls_verify_cert(bool tlsVerifyCert) {
 		var       connectionString = $"kurrentdb://localhost:2113/?tlsVerifyCert={tlsVerifyCert}";
 		var       result           = KurrentDBClientSettings.Create(connectionString);
+
 		using var handler          = result.CreateHttpMessageHandler?.Invoke();
-#if NET
+
 		var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
 		if (!tlsVerifyCert) {
 			Assert.NotNull(socketsHandler.SslOptions.RemoteCertificateValidationCallback);
-			Assert.True(
-				socketsHandler.SslOptions.RemoteCertificateValidationCallback!.Invoke(
-					null!,
-					default,
-					default,
-					default
-				)
-			);
+			Assert.True(socketsHandler.SslOptions.RemoteCertificateValidationCallback!.Invoke(null!, default, default, default));
 		} else {
 			Assert.Null(socketsHandler.SslOptions.RemoteCertificateValidationCallback);
 		}
-#else
-		var socketsHandler = Assert.IsType<WinHttpHandler>(handler);
-		if (!tlsVerifyCert) {
-			Assert.NotNull(socketsHandler.ServerCertificateValidationCallback);
-			Assert.True(socketsHandler.ServerCertificateValidationCallback!.Invoke(null!, default!,
-				default!, default));
-		} else {
-			Assert.Null(socketsHandler.ServerCertificateValidationCallback);
-		}
-#endif
 	}
 
 #endif
@@ -208,15 +191,9 @@ public class ConnectionStringTests {
 
 		using var handler = result.CreateHttpMessageHandler?.Invoke();
 
-#if NET
 		var socketsHandler = Assert.IsType<SocketsHttpHandler>(handler);
 		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingTimeout);
 		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, socketsHandler.KeepAlivePingDelay);
-#else
-		var winHttpHandler = Assert.IsType<WinHttpHandler>(handler);
-		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, winHttpHandler.TcpKeepAliveTime);
-		Assert.Equal(System.Threading.Timeout.InfiniteTimeSpan, winHttpHandler.TcpKeepAliveInterval);
-#endif
 	}
 
 	[RetryFact]
@@ -225,7 +202,7 @@ public class ConnectionStringTests {
 	[Theory]
 	[InlineData("esdbwrong://")]
 	[InlineData("wrong://")]
-	[InlineData("badesdb://")]
+	[InlineData("badkurrentdb://")]
 	public void connection_string_with_invalid_scheme_should_throw(string connectionString) =>
 		Assert.Throws<InvalidSchemeException>(() => KurrentDBClientSettings.Create(connectionString));
 
@@ -305,14 +282,12 @@ public class ConnectionStringTests {
 			settings.ConnectivitySettings.DiscoveryInterval.TotalMilliseconds
 		);
 
-		Assert.Null(KurrentDBClientConnectivitySettings.Default.DnsGossipSeeds);
 		Assert.Empty(KurrentDBClientConnectivitySettings.Default.GossipSeeds);
 		Assert.Equal(
 			KurrentDBClientConnectivitySettings.Default.GossipTimeout.TotalMilliseconds,
 			settings.ConnectivitySettings.GossipTimeout.TotalMilliseconds
 		);
 
-		Assert.Null(KurrentDBClientConnectivitySettings.Default.IpGossipSeeds);
 		Assert.Equal(
 			KurrentDBClientConnectivitySettings.Default.MaxDiscoverAttempts,
 			settings.ConnectivitySettings.MaxDiscoverAttempts
@@ -419,10 +394,7 @@ public class ConnectionStringTests {
 	static string GetAuthority(KurrentDBClientSettings settings) =>
 		settings.ConnectivitySettings.IsSingleNode
 			? $"{settings.ConnectivitySettings.ResolvedAddressOrDefault.Host}:{settings.ConnectivitySettings.ResolvedAddressOrDefault.Port}"
-			: string.Join(
-				",",
-				settings.ConnectivitySettings.GossipSeeds.Select(x => $"{x.GetHost()}:{x.GetPort()}")
-			);
+			: string.Join(",", settings.ConnectivitySettings.GossipSeeds.Select(x => $"{x.Host}:{x.Port}"));
 
 	static string GetKeyValuePairs(
 		KurrentDBClientSettings settings,
@@ -447,18 +419,11 @@ public class ConnectionStringTests {
 
 		if (settings.CreateHttpMessageHandler != null) {
 			using var handler = settings.CreateHttpMessageHandler.Invoke();
-#if NET
+
 			if (handler is SocketsHttpHandler socketsHttpHandler &&
 			    socketsHttpHandler.SslOptions.RemoteCertificateValidationCallback != null)
 				pairs.Add("tlsVerifyCert", "false");
 		}
-#else
-			if (handler is WinHttpHandler winHttpHandler &&
-			    winHttpHandler.ServerCertificateValidationCallback != null) {
-				pairs.Add("tlsVerifyCert", "false");
-			}
-		}
-#endif
 
 		return string.Join("&", pairs.Select(pair => $"{getKey?.Invoke(pair.Key) ?? pair.Key}={pair.Value}"));
 	}

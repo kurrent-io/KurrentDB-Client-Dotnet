@@ -2,25 +2,30 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<PackageId>KurrentDB.Client</PackageId>
+        <Title>KurrentDB .NET Client</Title>
+        <Product>KurrentDB .NET Client</Product>
 		<Description>The base GRPC client library for the Kurrent Platform. Get the open source or commercial versions of KurrentDB from https://kurrent.io/</Description>
 		<PackageId>KurrentDB.Client</PackageId>
 		<RootNamespace>KurrentDB.Client</RootNamespace>
+        <EnablePreviewFeatures>true</EnablePreviewFeatures>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Google.Protobuf" Version="3.29.1"/>
+		<PackageReference Include="Google.Protobuf" Version="3.31.0" />
 		<PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
+		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0" />
 		<PackageReference Include="Humanizer.Core" Version="2.14.1" />
 		<PackageReference Include="LruCacheNet" Version="1.2.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0"/>
+		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
         <PackageReference Include="NJsonSchema" Version="11.3.2" />
+        <PackageReference Include="NJsonSchema.CodeGeneration.CSharp" Version="11.3.2" />
 		<PackageReference Include="OneOf" Version="3.0.271" />
 		<PackageReference Include="OneOf.SourceGenerator" Version="3.0.271" />
-<!--        <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.0"/>-->
+<!--        <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.5" />-->
 		<PackageReference Include="System.Linq.Async" Version="6.0.1"/>
 		<PackageReference Include="OpenTelemetry.Api" Version="1.12.0"/>
 
-		<PackageReference Include="Grpc.Tools" Version="2.68.1">
+		<PackageReference Include="Grpc.Tools" Version="2.72.0">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -46,20 +51,6 @@
         />
 	</ItemGroup>
 
-	<!--    <ItemGroup Condition="'$(TargetFramework)' == 'net48'">-->
-	<!--        <PackageReference Include="System.Net.Http.WinHttpHandler" Version="9.0.0"/>-->
-	<!--        <PackageReference Include="System.Threading.Channels" Version="9.0.0"/>-->
-	<!--        <PackageReference Include="BouncyCastle.Cryptography" Version="2.5.0" />-->
-	<!--    </ItemGroup>-->
-
-	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-		<!--        <PackageReference Include="System.Net.Http" Version="4.3.4"/>-->
-		<PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0" />
-		<PackageReference Include="System.Text.Json" Version="8.0.5" />
-		<PackageReference Include="System.Threading.Channels" Version="8.0.0" />
-		<PackageReference Include="BouncyCastle.Cryptography" Version="2.3.1" />
-    </ItemGroup>
-
 	<ItemGroup>
 		<None Remove="Kurrent.Client.csproj.DotSettings" />
 	</ItemGroup>
@@ -68,6 +59,15 @@
         <InternalsVisibleTo Include="$(AssemblyName).Testing"/>
         <InternalsVisibleTo Include="$(AssemblyName).Advanced.Tests"/>
         <InternalsVisibleTo Include="$(AssemblyName).Tests"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Kurrent.Grpc\Kurrent.Grpc.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Modules\V2\Services\" />
+      <Folder Include="Modules\V2\Subscriptions\" />
     </ItemGroup>
 
 </Project>

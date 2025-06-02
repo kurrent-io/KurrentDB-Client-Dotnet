@@ -3,12 +3,13 @@ using System.Threading.Channels;
 using EventStore.Client;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 using static EventStore.Client.Streams.ReadReq.Types.Options.Types;
 
 namespace KurrentDB.Client;
+
+// EventStoreClient
 
 /// <summary>
 /// The client used for operations on streams.
@@ -69,7 +70,7 @@ public sealed partial class KurrentDBClient : KurrentDBClientBase {
 	/// </summary>
 	/// <param name="settings"></param>
 	public KurrentDBClient(KurrentDBClientSettings? settings = null) : base(settings, ExceptionMap) {
-		_log                 = Settings.LoggerFactory?.CreateLogger<KurrentDBClient>() ?? NullLogger<KurrentDBClient>.Instance;
+		_log                 = Settings.LoggerFactory.CreateLogger<KurrentDBClient>();
 		_disposedTokenSource = new CancellationTokenSource();
 		_batchAppenderLazy   = new Lazy<StreamAppender>(CreateStreamAppender);
 	}
@@ -80,8 +81,8 @@ public sealed partial class KurrentDBClient : KurrentDBClientBase {
 	// todo: might be nice to have two different kinds of appenders and we decide which to instantiate according to the server caps.
 	StreamAppender CreateStreamAppender() => new StreamAppender(
 		Settings,
-		//GetChannelInfo(_disposedTokenSource.Token),
-		new(ChannelInfo),
+		GetChannelInfo(_disposedTokenSource.Token),
+		// new(ChannelInfo),
 		_disposedTokenSource.Token,
 		SwapStreamAppender
 	);

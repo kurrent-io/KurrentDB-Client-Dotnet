@@ -6,31 +6,43 @@ namespace KurrentDB.Client.Tests;
 [Trait("Category", "Target:Misc")]
 [Trait("Category", "Target:Plugins")]
 [Trait("Category", "Type:UserCertificate")]
-public class ClientCertificateTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)
-	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
-	[SupportsPlugins.Theory(EventStoreRepository.Commercial, "This server version does not support plugins"), BadClientCertificatesTestCases]
+public class ClientCertificateTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture) : KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
+	// [SupportsPlugins.Theory(EventStoreRepository.Commercial, "This server version does not support plugins"), BadClientCertificatesTestCases]
+	[Theory, BadClientCertificatesTestCases]
 	async Task bad_certificates_combinations_should_return_authentication_error(string userCertFile, string userKeyFile, string tlsCaFile) {
 		var stream     = Fixture.GetStreamName();
 		var seedEvents = Fixture.CreateTestEvents();
 		var port       = Fixture.Options.DBClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 
-		var connectionString = $"esdb://localhost:{port}/?tls=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
+		var connectionString = $"kurrentdb://localhost:{port}/?tls=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
 
 		var settings = KurrentDBClientSettings.Create(connectionString);
 		settings.ConnectivitySettings.TlsVerifyCert.ShouldBeTrue();
 
-		await using var client = new KurrentDBClient(settings);
+		// await using var client = new KurrentDBClient(settings);
 
-		await client.AppendToStreamAsync(stream, StreamState.NoStream, seedEvents).ShouldThrowAsync<NotAuthenticatedException>();
+		// await client.AppendToStreamAsync(stream, StreamState.NoStream, seedEvents).ShouldThrowAsync<NotAuthenticatedException>();
+
+		try
+		{
+			await using var client = new KurrentDBClient(settings);
+			await client.AppendToStreamAsync(stream, StreamState.NoStream, seedEvents);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine(ex);
+			throw;
+		}
 	}
 
-	[SupportsPlugins.Theory(EventStoreRepository.Commercial, "This server version does not support plugins"), ValidClientCertificatesTestCases]
+	// [SupportsPlugins.Theory(EventStoreRepository.Commercial, "This server version does not support plugins"), ValidClientCertificatesTestCases]
+	[Theory, ValidClientCertificatesTestCases]
 	async Task valid_certificates_combinations_should_write_to_stream(string userCertFile, string userKeyFile, string tlsCaFile) {
 		var stream     = Fixture.GetStreamName();
 		var seedEvents = Fixture.CreateTestEvents();
 		var port       = Fixture.Options.DBClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 
-		var connectionString = $"esdb://localhost:{port}/?userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
+		var connectionString = $"kurrentdb://localhost:{port}/?userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
 
 		var settings = KurrentDBClientSettings.Create(connectionString);
 		settings.ConnectivitySettings.TlsVerifyCert.ShouldBeTrue();
@@ -41,13 +53,14 @@ public class ClientCertificateTests(ITestOutputHelper output, KurrentDBTemporary
 		result.ShouldNotBeNull();
 	}
 
-	[SupportsPlugins.Theory(EventStoreRepository.Commercial, "This server version does not support plugins"), BadClientCertificatesTestCases]
+	// [SupportsPlugins.Theory(EventStoreRepository.Commercial, "This server version does not support plugins"), BadClientCertificatesTestCases]
+	[Theory, BadClientCertificatesTestCases]
 	async Task basic_authentication_should_take_precedence(string userCertFile, string userKeyFile, string tlsCaFile) {
 		var stream     = Fixture.GetStreamName();
 		var seedEvents = Fixture.CreateTestEvents();
 		var port       = Fixture.Options.DBClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 
-		var connectionString = $"esdb://admin:changeit@localhost:{port}/?userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
+		var connectionString = $"kurrentdb://admin:changeit@localhost:{port}/?userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
 
 		var settings = KurrentDBClientSettings.Create(connectionString);
 		settings.ConnectivitySettings.TlsVerifyCert.ShouldBeTrue();

@@ -29,7 +29,7 @@ public class NodeSelectorTests {
 
 			var settings = new KurrentDBClientSettings {
 				ConnectivitySettings = {
-					DnsGossipSeeds = [allowedNode, notAllowedNode],
+					GossipSeeds = [allowedNode, notAllowedNode],
 					Insecure       = true
 				}
 			};
@@ -71,7 +71,7 @@ public class NodeSelectorTests {
 
 		var settings = new KurrentDBClientSettings {
 			ConnectivitySettings = {
-				DnsGossipSeeds = [allowedNode, notAllowedNode],
+				GossipSeeds = [allowedNode, notAllowedNode],
 				Insecure       = true
 			}
 		};
