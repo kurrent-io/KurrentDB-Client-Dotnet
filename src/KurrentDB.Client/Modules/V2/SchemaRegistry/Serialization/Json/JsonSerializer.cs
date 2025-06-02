@@ -2,9 +2,10 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Google.Protobuf;
-using KurrentDB.Client.SchemaRegistry.Serialization.Protobuf;
+using Kurrent.Client.SchemaRegistry.Serialization.Protobuf;
+using KurrentDB.Client;
 
-namespace KurrentDB.Client.SchemaRegistry.Serialization.Json;
+namespace Kurrent.Client.SchemaRegistry.Serialization.Json;
 
 /// <summary>
 /// A serializer class that supports serialization and deserialization of objects

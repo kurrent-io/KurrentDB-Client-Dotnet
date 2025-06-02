@@ -1,6 +1,7 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
-using KurrentDB.Client.Model;
+using Kurrent.Client;
+using Kurrent.Client.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -72,7 +73,7 @@ public class KurrentDBClientSettings {
 	 || DefaultCredentials is not null
 	 || ConnectivitySettings.SslCredentials.Required;
 
-	public KurrentDBClientSchemaRegistrySettings SchemaRegistry { get; set; } = KurrentDBClientSchemaRegistrySettings.Default;
+	public KurrentClientSchemaRegistrySettings SchemaRegistry { get; set; } = KurrentClientSchemaRegistrySettings.Default;
 
 	public IMetadataDecoder MetadataDecoder { get; set; } = null!;
 

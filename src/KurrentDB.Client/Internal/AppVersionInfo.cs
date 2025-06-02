@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace KurrentDB.Client;
+namespace Kurrent.Client;
 
 /// <summary>
 /// Provides detailed version and attribute information for an assembly.

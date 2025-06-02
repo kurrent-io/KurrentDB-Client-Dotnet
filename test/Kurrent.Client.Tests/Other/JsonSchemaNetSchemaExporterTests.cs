@@ -1,5 +1,5 @@
-using KurrentDB.Client.Model;
-using KurrentDB.Client.SchemaRegistry;
+using Kurrent.Client.Model;
+using Kurrent.Client.SchemaRegistry;
 
 namespace Kurrent.Client.Tests;
 

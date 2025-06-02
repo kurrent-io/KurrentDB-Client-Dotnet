@@ -1,6 +1,6 @@
-using KurrentDB.Client.SchemaRegistry;
+using Kurrent.Client.SchemaRegistry;
 
-namespace KurrentDB.Client.Model;
+namespace Kurrent.Client.Model;
 
 /// <summary>
 /// Represents information about the schema of a record, including its name, format, and version identifier.

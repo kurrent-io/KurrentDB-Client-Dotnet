@@ -3,7 +3,7 @@ using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Protocol.Streams.V2;
 
-namespace KurrentDB.Client.Model;
+namespace Kurrent.Client.Model;
 
 [PublicAPI]
 static class ProtocolMapping {

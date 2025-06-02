@@ -8,15 +8,15 @@ using Serilog.Extensions.Logging;
 namespace Kurrent.Client.Tests.Next;
 
 public class KurrentClientTestFixture : TestFixture {
-	readonly Lazy<KurrentDB.Client.KurrentClient> _lazyClient = new(() => {
+	readonly Lazy<Kurrent.Client.KurrentClient> _lazyClient = new(() => {
 		var settings = KurrentDBClientSettings
 			.Create(KurrentDBContainerAutoWireUp.Container.AuthenticatedConnectionString)
 			.With(x => { x.LoggerFactory = new SerilogLoggerFactory(Log.Logger); });
 
-		return new KurrentDB.Client.KurrentClient(settings);
+		return new Kurrent.Client.KurrentClient(settings);
 	});
 
-	protected KurrentDB.Client.KurrentClient Client => _lazyClient.Value;
+	protected Kurrent.Client.KurrentClient Client => _lazyClient.Value;
 
 	public string GetStreamName([CallerMemberName] string? testMethod = null) =>
 		$"stream-{testMethod}-{Guid.NewGuid():N}";

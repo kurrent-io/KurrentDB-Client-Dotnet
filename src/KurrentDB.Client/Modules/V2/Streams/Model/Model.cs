@@ -1,8 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using Kurrent.Client;
 using OneOf;
 
-namespace KurrentDB.Client.Model;
+namespace Kurrent.Client.Model;
 
 [PublicAPI]
 [method: SetsRequiredMembers]
@@ -88,12 +89,12 @@ public class AppendStreamFailures : List<AppendStreamFailure> {
 
 [PublicAPI]
 [method: SetsRequiredMembers]
-public record AppendStreamRequest(string Stream, StreamState ExpectedState, IEnumerable<Message> Messages) {
+public record AppendStreamRequest(string Stream, ExpectedStreamState ExpectedState, IEnumerable<Message> Messages) {
 	public static AppendStreamRequestBuilder New() => new();
 
 	public required string               Stream        { get; init; } = Stream;
 	public required IEnumerable<Message> Messages      { get; init; } = Messages;
-	public required StreamState          ExpectedState { get; init; } = ExpectedState;
+	public required ExpectedStreamState  ExpectedState { get; init; } = ExpectedState;
 }
 
 [PublicAPI]
@@ -214,7 +215,7 @@ public class MessageBuilder {
 
 [PublicAPI]
 public class AppendStreamRequestBuilder {
-	StreamState          _expectedState   = StreamState.Any;
+	ExpectedStreamState  _expectedState   = ExpectedStreamState.Any.Instance;
 	List<MessageBuilder> _messageBuilders = [];
 
 	string _stream = "";
@@ -224,7 +225,7 @@ public class AppendStreamRequestBuilder {
 		return this;
 	}
 
-	public AppendStreamRequestBuilder ExpectingState(StreamState expectedState) {
+	public AppendStreamRequestBuilder ExpectingState(ExpectedStreamState expectedState) {
 		_expectedState = expectedState;
 		return this;
 	}
@@ -254,6 +255,16 @@ public class AppendStreamRequestBuilder {
 [PublicAPI]
 [GenerateOneOf]
 public partial class ReadResult : OneOfBase<Record, Heartbeat> {
+	public bool IsRecord    => IsT0;
+	public bool IsHeartbeat => IsT1;
+
+	public Record    AsRecord()    => AsT0;
+	public Heartbeat AsHeartbeat() => AsT1;
+}
+
+[PublicAPI]
+[GenerateOneOf]
+public partial class SubscribeResult : OneOfBase<Record, Heartbeat> {
 	public bool IsRecord    => IsT0;
 	public bool IsHeartbeat => IsT1;
 

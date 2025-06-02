@@ -2,13 +2,12 @@
 
 using Google.Protobuf;
 using Grpc.Core;
-using KurrentDB.Client.Model;
+using Kurrent.Client.SchemaRegistry;
+using KurrentDB.Client;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
-using KurrentDB.Client.SchemaRegistry;
-
 using Contracts = KurrentDB.Protocol.Registry.V2;
 
-namespace KurrentDB.Client;
+namespace Kurrent.Client.Model;
 
 [PublicAPI]
 public class KurrentRegistryClient(KurrentDBClientSettings? settings) : KurrentDBClientBase(settings) {

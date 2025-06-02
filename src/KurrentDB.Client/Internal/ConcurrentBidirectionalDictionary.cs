@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Concurrent;
 
-namespace KurrentDB.Client;
+namespace Kurrent.Client;
 
 /// <summary>
 /// Represents a thread-safe, bidirectional collection of keys and values.
@@ -324,7 +324,7 @@ class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey, TValue
 		return _reverse.ContainsKey(value);
 	}
 
-	#region Explicit Interface Implementations (ICollection<KeyValuePair<TKey, TValue>>)
+	#region . explicit interface implementations .
 
 	void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item) =>
 		Add(item.Key, item.Value);
@@ -395,7 +395,7 @@ class ConcurrentBidirectionalDictionary<TKey, TValue> : IDictionary<TKey, TValue
 
 	#endregion
 
-	#region IDisposable Implementation
+	#region . IDisposable .
 
 	bool _disposed;
 

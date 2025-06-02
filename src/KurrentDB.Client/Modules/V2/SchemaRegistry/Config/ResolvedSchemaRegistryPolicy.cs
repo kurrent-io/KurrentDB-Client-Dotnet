@@ -1,6 +1,6 @@
-using KurrentDB.Client.Model;
+using Kurrent.Client.Model;
 
-namespace KurrentDB.Client.SchemaRegistry;
+namespace Kurrent.Client.SchemaRegistry;
 
 /// <summary>
 /// Contains the resolved policy decisions for schema registry operations

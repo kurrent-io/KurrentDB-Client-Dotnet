@@ -1,4 +1,4 @@
-namespace KurrentDB.Client.SchemaRegistry;
+namespace Kurrent.Client.SchemaRegistry;
 
 /// <summary>
 /// Defines the format options for schema name generation, which determine

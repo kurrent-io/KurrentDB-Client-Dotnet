@@ -1,7 +1,7 @@
 using Google.Protobuf;
-using KurrentDB.Client.Model;
+using Kurrent.Client.Model;
 
-namespace KurrentDB.Client.SchemaRegistry.Serialization.Protobuf;
+namespace Kurrent.Client.SchemaRegistry.Serialization.Protobuf;
 
 public record ProtobufSchemaSerializerOptions : SchemaSerializerOptions {
 	public static readonly ProtobufSchemaSerializerOptions Default = new();

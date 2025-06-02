@@ -29,10 +29,6 @@ public readonly struct StreamState : IEquatable<StreamState> {
 		public const int StreamExists = -4;
 	}
 
-	// enum ExpectedRevisionConstants {
-	// 	SingleEvent = 0, Any = -2, NoStream = -1, Exists = -4,
-	// }
-
 	internal StreamState(long value) {
 		switch (value) {
 			case Constants.NoStream:

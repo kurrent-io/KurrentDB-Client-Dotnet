@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace KurrentDB.Client.Model;
+namespace Kurrent.Client.Model;
 
 /// <summary>
 /// Represents the type of a heartbeat message.

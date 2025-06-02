@@ -44,14 +44,8 @@
         />
 	</ItemGroup>
 
-	<ItemGroup>
-		<None Remove="Kurrent.Client.csproj.DotSettings" />
-		<None Remove="proto.zip" />
-	</ItemGroup>
-
     <ItemGroup>
         <InternalsVisibleTo Include="Kurrent.Client"/>
-        <InternalsVisibleTo Include="Kurrent.Client.Tests.Testing"/>
         <InternalsVisibleTo Include="Kurrent.Client.Tests"/>
 
         <InternalsVisibleTo Include="KurrentDB.Client.Tests"/>
@@ -66,11 +60,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Kurrent.Grpc\Kurrent.Grpc.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Folder Include="Modules\V2\Services\" />
-      <Folder Include="Modules\V2\Subscriptions\" />
     </ItemGroup>
 
 </Project>

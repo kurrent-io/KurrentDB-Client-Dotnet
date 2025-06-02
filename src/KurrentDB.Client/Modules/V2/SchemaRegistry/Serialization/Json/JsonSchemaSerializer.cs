@@ -1,6 +1,6 @@
-using KurrentDB.Client.Model;
+using Kurrent.Client.Model;
 
-namespace KurrentDB.Client.SchemaRegistry.Serialization.Json;
+namespace Kurrent.Client.SchemaRegistry.Serialization.Json;
 
 /// <summary>
 /// A serializer class that supports serialization and deserialization of objects

@@ -1,4 +1,4 @@
-namespace KurrentDB.Client.Model;
+namespace Kurrent.Client.Model;
 
 
 /// <summary>

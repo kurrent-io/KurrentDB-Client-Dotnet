@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace KurrentDB.Client.SchemaRegistry.Serialization.Json;
+namespace Kurrent.Client.SchemaRegistry.Serialization.Json;
 
 [PublicAPI]
 public record JsonSchemaSerializerOptions : SchemaSerializerOptions {

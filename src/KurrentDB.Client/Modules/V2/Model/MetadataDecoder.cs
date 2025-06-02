@@ -1,7 +1,7 @@
-using KurrentDB.Client.SchemaRegistry.Serialization.Json;
+using Kurrent.Client.SchemaRegistry.Serialization.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace KurrentDB.Client.Model;
+namespace Kurrent.Client.Model;
 
 /// <summary>
 /// Defines a contract for decoding metadata from serialized byte representations.

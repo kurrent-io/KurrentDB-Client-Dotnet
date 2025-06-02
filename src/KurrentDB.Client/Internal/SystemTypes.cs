@@ -1,3 +1,5 @@
+using Kurrent.Client;
+
 namespace KurrentDB.Client;
 
 /// <summary>

@@ -1,7 +1,8 @@
-using KurrentDB.Client.SchemaRegistry;
-using KurrentDB.Client.SchemaRegistry.Serialization;
+using KurrentDB.Client;
+using Kurrent.Client.SchemaRegistry;
+using Kurrent.Client.SchemaRegistry.Serialization;
 
-namespace KurrentDB.Client.Model;
+namespace Kurrent.Client.Model;
 
 public class LegacyDataConverter(ISchemaSerializerProvider serializerProvider, IMetadataDecoder metadataDecoder, SchemaRegistryPolicy registryPolicy) {
 	ISchemaSerializerProvider SerializerProvider { get; } = serializerProvider;

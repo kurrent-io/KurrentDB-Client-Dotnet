@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using static System.String;
 
-namespace KurrentDB.Client.Model;
+namespace Kurrent.Client.Model;
 
 /// <summary>
 /// Represents a filter used to match or restrict data in a reading operation.

@@ -1,9 +1,9 @@
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
 using System.Diagnostics;
-using KurrentDB.Client.Model;
+using Kurrent.Client.Model;
 
-namespace KurrentDB.Client.SchemaRegistry.Serialization.Bytes;
+namespace Kurrent.Client.SchemaRegistry.Serialization.Bytes;
 
 /// <summary>
 /// Provides a passthrough implementation of the <see cref="ISchemaSerializer"/> interface

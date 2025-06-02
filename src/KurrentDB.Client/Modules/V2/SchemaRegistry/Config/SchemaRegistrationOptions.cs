@@ -1,5 +1,5 @@
 
-namespace KurrentDB.Client.SchemaRegistry;
+namespace Kurrent.Client.SchemaRegistry;
 
 /// <summary>
 /// Configuration for schema registration behavior

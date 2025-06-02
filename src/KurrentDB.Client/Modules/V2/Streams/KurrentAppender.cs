@@ -1,16 +1,16 @@
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
+// ReSharper disable CheckNamespace
 
-using KurrentDB.Client.Model;
+using KurrentDB.Client;
+using Kurrent.Client.Model;
 using static KurrentDB.Protocol.Streams.V2.StreamsService;
 using Contracts = KurrentDB.Protocol.Streams.V2;
 
-namespace KurrentDB.Client;
+namespace Kurrent.Client;
 
 [PublicAPI]
-public static class KurrentDBAppender {
-	#region . MultiStreamAppend .
-
-	public static async ValueTask<MultiStreamAppendResult> Append(this KurrentDBClient client, IAsyncEnumerable<AppendStreamRequest> requests, CancellationToken cancellationToken = default) {
+public static class KurrentAppender {
+	public static async ValueTask<MultiStreamAppendResult> Append(this KurrentClient client, IAsyncEnumerable<AppendStreamRequest> requests, CancellationToken cancellationToken = default) {
 		var (serviceClient, _) = await client.Connect<StreamsServiceClient>(cancellationToken).ConfigureAwait(false);
 
 		using var session = serviceClient.MultiStreamAppendSession(cancellationToken: cancellationToken);
@@ -23,7 +23,7 @@ public static class KurrentDBAppender {
 
 			var serviceRequest = new Contracts.AppendStreamRequest {
 				Stream           = request.Stream,
-				ExpectedRevision = request.ExpectedState.ToInt64(),
+				ExpectedRevision = request.ExpectedState,
 				Records          = { records }
 			};
 
@@ -44,15 +44,11 @@ public static class KurrentDBAppender {
 		};
 	}
 
-	public static ValueTask<MultiStreamAppendResult> Append(this KurrentDBClient client, IEnumerable<AppendStreamRequest> requests, CancellationToken cancellationToken = default) =>
+	public static ValueTask<MultiStreamAppendResult> Append(this KurrentClient client, IEnumerable<AppendStreamRequest> requests, CancellationToken cancellationToken = default) =>
 		 Append(client, requests.ToAsyncEnumerable(), cancellationToken);
 
-	public static ValueTask<MultiStreamAppendResult> Append(this KurrentDBClient client, MultiStreamAppendRequest request, CancellationToken cancellationToken = default) =>
+	public static ValueTask<MultiStreamAppendResult> Append(this KurrentClient client, MultiStreamAppendRequest request, CancellationToken cancellationToken = default) =>
 		Append(client, request.Requests.ToAsyncEnumerable(), cancellationToken);
-
-	#endregion
-
-	#region . AppendStream .
 
 	/// <summary>
 	/// Appends a series of messages to a specified stream in KurrentDB.
@@ -61,7 +57,7 @@ public static class KurrentDBAppender {
 	/// <param name="request">The request object that specifies the stream, expected state, and messages to append.</param>
 	/// <param name="cancellationToken">A token to cancel the operation if needed.</param>
 	/// <returns>An <see cref="AppendStreamResult"/> representing the result of the append operation.</returns>
-	public static async ValueTask<AppendStreamResult> Append(this KurrentDBClient client, AppendStreamRequest request, CancellationToken cancellationToken) {
+	public static async ValueTask<AppendStreamResult> Append(this KurrentClient client, AppendStreamRequest request, CancellationToken cancellationToken) {
 		var result = await Append(client, [request], cancellationToken).ConfigureAwait(false);
 
 		return result.Match<AppendStreamResult>(
@@ -79,8 +75,6 @@ public static class KurrentDBAppender {
 	/// <param name="messages">A collection of messages to be appended to the stream.</param>
 	/// <param name="cancellationToken">A token to observe while waiting for the operation to complete, allowing for cancellation if needed.</param>
 	/// <returns>An <see cref="AppendStreamResult"/> containing the outcome of the append operation, including success or failure details.</returns>
-	public static ValueTask<AppendStreamResult> Append(this KurrentDBClient client, string stream, StreamState expectedState, IEnumerable<Message> messages, CancellationToken cancellationToken) =>
+	public static ValueTask<AppendStreamResult> Append(this KurrentClient client, string stream, ExpectedStreamState expectedState, IEnumerable<Message> messages, CancellationToken cancellationToken) =>
 		client.Append(new AppendStreamRequest(stream, expectedState, messages), cancellationToken);
-
-	#endregion
 }

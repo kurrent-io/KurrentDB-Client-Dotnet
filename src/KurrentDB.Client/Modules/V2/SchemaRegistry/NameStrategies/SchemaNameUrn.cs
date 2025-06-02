@@ -1,6 +1,6 @@
 // using Humanizer;
 
-namespace KurrentDB.Client.SchemaRegistry;
+namespace Kurrent.Client.SchemaRegistry;
 
 /// <summary>
 /// Represents a Uniform Resource Name (URN) composed of a Namespace Identifier (NID)

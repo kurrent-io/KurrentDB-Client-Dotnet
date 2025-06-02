@@ -1,6 +1,6 @@
-using KurrentDB.Client.SchemaRegistry;
+using Kurrent.Client.SchemaRegistry;
 
-namespace KurrentDB.Client.Model;
+namespace Kurrent.Client.Model;
 
 public static class MetadataSchemaExtensions {
 	public static RecordSchemaInfo GetSchemaInfo(this Metadata metadata) =>

@@ -1,4 +1,6 @@
-namespace KurrentDB.Client.SchemaRegistry;
+using KurrentDB.Client;
+
+namespace Kurrent.Client.SchemaRegistry;
 
 /// <summary>
 /// Responsible for mapping message types to schema names and managing the bidirectional mapping

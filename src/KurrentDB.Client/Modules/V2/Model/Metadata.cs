@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Diagnostics;
 
-namespace KurrentDB.Client.Model;
+namespace Kurrent.Client.Model;
 
 /// <summary>
 /// Represents a collection of metadata as key-value pairs with additional helper methods.

@@ -1,22 +1,14 @@
+// ReSharper disable CheckNamespace
+
 using System.Runtime.CompilerServices;
-using KurrentDB.Client.Model;
-using OneOf;
+using KurrentDB.Client;
+using Kurrent.Client.Model;
 
-namespace KurrentDB.Client;
+namespace Kurrent.Client;
 
-[PublicAPI]
-[GenerateOneOf]
-public partial class SubscribeResult : OneOfBase<Record, Heartbeat> {
-	public bool IsRecord    => IsT0;
-	public bool IsHeartbeat => IsT1;
-
-	public Record    AsRecord()    => AsT0;
-	public Heartbeat AsHeartbeat() => AsT1;
-}
-
-public static class KurrentDBClientSubscriber {
+public static class KurrentSubscriber {
 	public static IAsyncEnumerable<SubscribeResult> UnifiedSubscribe(
-		this KurrentDBClient client,
+		this KurrentClient client,
 		LogPosition startPosition, ReadFilter filter, HeartbeatOptions heartbeatOptions,
 		CancellationToken cancellationToken = default
 	) {
@@ -34,7 +26,7 @@ public static class KurrentDBClientSubscriber {
 	}
 
 	public static async IAsyncEnumerable<SubscribeResult> SubscribeToAll(
-		this KurrentDBClient client,
+		this KurrentClient client,
 		LogPosition startPosition, ReadFilter filter, HeartbeatOptions heartbeatOptions,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default
 	) {
@@ -44,7 +36,7 @@ public static class KurrentDBClientSubscriber {
 		// wth?!?... is SubscriptionFilterOptions.CheckpointInterval != IEventFilter.MaxSearchWindow ?!?!?!
 		var filterOptions = new SubscriptionFilterOptions(eventFilter, (uint)heartbeatOptions.RecordsThreshold);
 
-		await using var session = client.SubscribeToAll(
+		await using var session = client.LegacyProxy.SubscribeToAll(
 			start: start,
 			filterOptions: filterOptions,
 			cancellationToken: cancellationToken
@@ -88,13 +80,13 @@ public static class KurrentDBClientSubscriber {
 	}
 
 	public static async IAsyncEnumerable<SubscribeResult> SubscribeToStream(
-		this KurrentDBClient client,
+		this KurrentClient client,
 		string stream, StreamRevision startRevision, ReadFilter filter,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default
 	) {
 		var start = startRevision.ConvertToLegacyFromStream();
 
-		await using var session = client.SubscribeToStream(
+		await using var session = client.LegacyProxy.SubscribeToStream(
 			streamName: stream,
 			start: start,
 			cancellationToken: cancellationToken
@@ -180,7 +172,7 @@ public static class KurrentDBClientSubscriber {
 	}
 
 	public static async IAsyncEnumerable<SubscribeResult> SubscribeToStream(
-		this KurrentDBClient client,
+		this KurrentClient client,
 		string stream, LogPosition startPosition, ReadFilter filter,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default
 	) {

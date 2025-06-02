@@ -3,13 +3,14 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
-using KurrentDB.Client.Model;
+using Kurrent.Client.Model;
 using NJsonSchema;
 using OneOf;
+
 using Contracts = KurrentDB.Protocol.Registry.V2;
 using Enum = System.Enum;
 
-namespace KurrentDB.Client.SchemaRegistry;
+namespace Kurrent.Client.SchemaRegistry;
 
 public readonly record struct Schema(
 	SchemaName SchemaName,

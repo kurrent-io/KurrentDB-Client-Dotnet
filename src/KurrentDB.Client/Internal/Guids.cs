@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace KurrentDB.Client;
+namespace Kurrent.Client;
 
 /// <summary>
 /// Provides methods for generating GUIDs following the UUID version 7 specification as defined in RFC 9562.
@@ -10,7 +10,7 @@ namespace KurrentDB.Client;
 /// <remarks>
 /// If using .NET 9.0 or later, it utilizes the built-in `Guid.CreateVersion7` method for generating version 7 UUIDs.
 /// </remarks>
-public static class Guids {
+static class Guids {
 	/// <summary>
 	/// Creates a new version 7 UUID using the current UTC timestamp.
 	/// </summary>

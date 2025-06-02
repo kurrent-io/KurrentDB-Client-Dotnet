@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace KurrentDB.Client.Model;
+namespace Kurrent.Client.Model;
 
 [PublicAPI]
 [DebuggerDisplay("{ToDebugString()}")]

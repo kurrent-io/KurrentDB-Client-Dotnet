@@ -1,6 +1,6 @@
-using KurrentDB.Client.Model;
+using Kurrent.Client.Model;
 
-namespace KurrentDB.Client.SchemaRegistry.Serialization;
+namespace Kurrent.Client.SchemaRegistry.Serialization;
 
 /// <summary>
 /// Defines the contract for schema-based serialization and deserialization operations.

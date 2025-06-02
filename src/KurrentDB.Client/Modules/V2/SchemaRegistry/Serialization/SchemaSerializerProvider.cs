@@ -1,6 +1,6 @@
-using KurrentDB.Client.Model;
+using Kurrent.Client.Model;
 
-namespace KurrentDB.Client.SchemaRegistry.Serialization;
+namespace Kurrent.Client.SchemaRegistry.Serialization;
 
 /// <summary>
 /// Defines functionality to provide schema serializers for specified data formats.

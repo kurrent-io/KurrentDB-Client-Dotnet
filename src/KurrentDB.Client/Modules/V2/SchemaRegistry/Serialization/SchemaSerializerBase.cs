@@ -1,9 +1,10 @@
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
 
 using System.Diagnostics;
-using KurrentDB.Client.Model;
+using Kurrent.Client.Model;
+using Kurrent.Client.SchemaRegistry;
 
-namespace KurrentDB.Client.SchemaRegistry.Serialization;
+namespace Kurrent.Client.SchemaRegistry.Serialization;
 
 public record SchemaSerializerOptions {
 	/// <summary>

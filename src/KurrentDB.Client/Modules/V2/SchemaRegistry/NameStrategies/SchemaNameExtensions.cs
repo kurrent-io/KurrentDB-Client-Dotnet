@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace KurrentDB.Client.SchemaRegistry;
+namespace Kurrent.Client.SchemaRegistry;
 
 static class SchemaNameExtensions {
 	public static string ToSnakeCase(this string input) =>

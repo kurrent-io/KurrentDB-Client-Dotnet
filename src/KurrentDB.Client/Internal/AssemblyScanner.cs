@@ -1,6 +1,7 @@
 using System.Reflection;
+using KurrentDB.Client;
 
-namespace KurrentDB.Client;
+namespace Kurrent.Client;
 
 /// <summary>
 /// Scans assemblies and provides a mechanism to load and retrieve types from the assemblies.

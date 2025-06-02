@@ -1,10 +1,12 @@
 using System.Runtime.CompilerServices;
-using KurrentDB.Client.SchemaRegistry;
-using KurrentDB.Client.SchemaRegistry.Serialization;
-using KurrentDB.Client.SchemaRegistry.Serialization.Json;
+using Kurrent.Client.SchemaRegistry;
+using Kurrent.Client.SchemaRegistry.Serialization;
+using Kurrent.Client.SchemaRegistry.Serialization.Json;
+using KurrentDB.Client;
+
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace KurrentDB.Client.Model;
+namespace Kurrent.Client.Model;
 
 static class LegacyProtocolMapping {
 	public static async ValueTask<EventData> ConvertToEventData(

@@ -1,8 +1,8 @@
 using System.Collections.Concurrent;
-using KurrentDB.Client.Model;
-using SchemaDataFormat = KurrentDB.Client.Model.SchemaDataFormat;
+using Kurrent.Client.Model;
+using SchemaDataFormat = Kurrent.Client.Model.SchemaDataFormat;
 
-namespace KurrentDB.Client.SchemaRegistry.Serialization;
+namespace Kurrent.Client.SchemaRegistry.Serialization;
 
 [PublicAPI]
 public class SchemaManager(KurrentRegistryClient schemaRegistryClient, ISchemaExporter schemaExporter, MessageTypeMapper typeMapper) {

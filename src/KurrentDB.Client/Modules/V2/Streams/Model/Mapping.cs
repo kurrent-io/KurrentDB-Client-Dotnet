@@ -5,11 +5,13 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
-using KurrentDB.Client.SchemaRegistry;
-using KurrentDB.Client.SchemaRegistry.Serialization;
+using Kurrent.Client.SchemaRegistry;
+using Kurrent.Client.SchemaRegistry.Serialization;
+using KurrentDB.Client;
+
 using Contracts = KurrentDB.Protocol.Streams.V2;
 
-namespace KurrentDB.Client.Model;
+namespace Kurrent.Client.Model;
 
 static partial class Mapping {
 	public static async IAsyncEnumerable<Contracts.AppendRecord> Map(this IEnumerable<Message> source, string stream, ISchemaSerializerProvider serializerProvider, [EnumeratorCancellation] CancellationToken ct) {

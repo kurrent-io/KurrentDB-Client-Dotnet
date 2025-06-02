@@ -1,8 +1,8 @@
-using KurrentDB.Client.Model;
-using KurrentDB.Client.SchemaRegistry.Serialization.Json;
+using Kurrent.Client.Model;
+using Kurrent.Client.SchemaRegistry.Serialization.Json;
 using NJsonSchema.Generation;
 
-namespace KurrentDB.Client.SchemaRegistry;
+namespace Kurrent.Client.SchemaRegistry;
 
 public interface ISchemaExporter {
 	string Export(Type messageType, SchemaDataFormat dataFormat);

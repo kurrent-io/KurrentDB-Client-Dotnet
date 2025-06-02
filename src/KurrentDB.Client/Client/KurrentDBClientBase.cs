@@ -1,10 +1,12 @@
 using Grpc.Core;
-using KurrentDB.Client.Model;
-using KurrentDB.Client.SchemaRegistry;
-using KurrentDB.Client.SchemaRegistry.Serialization;
-using KurrentDB.Client.SchemaRegistry.Serialization.Bytes;
-using KurrentDB.Client.SchemaRegistry.Serialization.Json;
-using KurrentDB.Client.SchemaRegistry.Serialization.Protobuf;
+using Kurrent.Client.Model;
+using Kurrent.Client.SchemaRegistry;
+using Kurrent.Client.SchemaRegistry.Serialization;
+using Kurrent.Client.SchemaRegistry;
+using Kurrent.Client.SchemaRegistry.Serialization;
+using Kurrent.Client.SchemaRegistry.Serialization.Bytes;
+using Kurrent.Client.SchemaRegistry.Serialization.Json;
+using Kurrent.Client.SchemaRegistry.Serialization.Protobuf;
 
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
@@ -61,11 +63,8 @@ public abstract class KurrentDBClientBase : IAsyncDisposable {
 
 	#region . Legacy Stuff .
 
-	// [Obsolete("You should not use this property, use the Service Clients properties available on this class instead.", false)]
-	// internal ChannelInfo ChannelInfo { get; private set; } = null!;
-
 	// [Obsolete("Stop using this method and use the Service Clients properties available on this class instead.", false)]
-	protected internal ValueTask<ChannelInfo> GetChannelInfo(CancellationToken cancellationToken = default) =>
+	internal ValueTask<ChannelInfo> GetChannelInfo(CancellationToken cancellationToken = default) =>
 		LegacyClusterClient.Connect(cancellationToken);
 
 	protected internal async ValueTask<ChannelInfo> RediscoverAsync() =>
