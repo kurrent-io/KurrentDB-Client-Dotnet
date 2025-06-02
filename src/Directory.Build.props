@@ -2,14 +2,10 @@
     <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
     <PropertyGroup>
-        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-        <RootNamespace>Kurrent.Client</RootNamespace>
-        <PackageId>Kurrent.Client</PackageId>
-    </PropertyGroup>
-
-    <PropertyGroup>
         <Title>KurrentDB .NET Client</Title>
         <Product>KurrentDB .NET Client</Product>
+        <Description>The base GRPC client library for the Kurrent Platform. Get the open source or commercial versions of KurrentDB from https://kurrent.io/</Description>
+
         <PackageIcon>ouro.png</PackageIcon>
         <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
         <PackageProjectUrl>https://kurrent.io</PackageProjectUrl>
@@ -36,16 +32,16 @@
     </ItemGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="$(ProjectName)" />
-        <InternalsVisibleTo Include="$(ProjectName).Operations.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).PersistentSubscriptions.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).ProjectionManagement.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).Streams.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).UserManagement.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).Extensions.OpenTelemetry" />
-        <InternalsVisibleTo Include="$(ProjectName).Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).Common.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).Tests.Common" />
+<!--        <InternalsVisibleTo Include="$(ProjectName)" />-->
+<!--        <InternalsVisibleTo Include="$(ProjectName).Operations.Tests" />-->
+<!--        <InternalsVisibleTo Include="$(ProjectName).PersistentSubscriptions.Tests" />-->
+<!--        <InternalsVisibleTo Include="$(ProjectName).ProjectionManagement.Tests" />-->
+<!--        <InternalsVisibleTo Include="$(ProjectName).Streams.Tests" />-->
+<!--        <InternalsVisibleTo Include="$(ProjectName).UserManagement.Tests" />-->
+<!--        <InternalsVisibleTo Include="$(ProjectName).Extensions.OpenTelemetry" />-->
+<!--        <InternalsVisibleTo Include="$(ProjectName).Tests" />-->
+<!--        <InternalsVisibleTo Include="$(ProjectName).Common.Tests" />-->
+<!--        <InternalsVisibleTo Include="$(ProjectName).Tests.Common" />-->
     </ItemGroup>
 
     <ItemGroup>

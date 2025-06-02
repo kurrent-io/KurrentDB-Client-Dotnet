@@ -9,15 +9,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Client", "src\Kur
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Client.Tests.Common", "test\KurrentDB.Client.Tests.Common\KurrentDB.Client.Tests.Common.csproj", "{47BF715B-A0BF-4044-B335-717E56422550}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.LoadBalancer", "src\KurrentDB.LoadBalancer\KurrentDB.LoadBalancer.csproj", "{52632219-4407-4DE0-A32D-A49D9ADC1F52}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.Tests", "test\Kurrent.Client.Tests\Kurrent.Client.Tests.csproj", "{AF718DAF-FB2A-4E12-BBB6-33B67825DCBF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Client.Advanced.Tests", "test\KurrentDB.Client.Advanced.Tests\KurrentDB.Client.Advanced.Tests.csproj", "{AF718DAF-FB2A-4E12-BBB6-33B67825DCBF}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Client.Testing", "test\KurrentDB.Client.Testing\KurrentDB.Client.Testing.csproj", "{400203E4-A80F-4B69-854E-EF730216DA71}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KurrentDB.Client.Testing.Containers.KurrentDB", "test\KurrentDB.Client.Testing.Containers.KurrentDB\KurrentDB.Client.Testing.Containers.KurrentDB.csproj", "{2CD0C7D1-AA4A-4C5C-8F17-C53A0066A9E3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.Testing", "test\Kurrent.Client.Testing\Kurrent.Client.Testing.csproj", "{400203E4-A80F-4B69-854E-EF730216DA71}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Grpc", "src\Kurrent.Grpc\Kurrent.Grpc.csproj", "{14492F96-1565-41E2-AD85-6A9B43E9BF82}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client", "src\Kurrent.Client\Kurrent.Client.csproj", "{FFB5B486-EEE7-41A6-9CDA-32A522DE1DE2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -40,10 +38,6 @@ Global
 		{47BF715B-A0BF-4044-B335-717E56422550}.Debug|x64.Build.0 = Debug|Any CPU
 		{47BF715B-A0BF-4044-B335-717E56422550}.Release|x64.ActiveCfg = Release|Any CPU
 		{47BF715B-A0BF-4044-B335-717E56422550}.Release|x64.Build.0 = Release|Any CPU
-		{52632219-4407-4DE0-A32D-A49D9ADC1F52}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{52632219-4407-4DE0-A32D-A49D9ADC1F52}.Debug|x64.Build.0 = Debug|Any CPU
-		{52632219-4407-4DE0-A32D-A49D9ADC1F52}.Release|x64.ActiveCfg = Release|Any CPU
-		{52632219-4407-4DE0-A32D-A49D9ADC1F52}.Release|x64.Build.0 = Release|Any CPU
 		{AF718DAF-FB2A-4E12-BBB6-33B67825DCBF}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{AF718DAF-FB2A-4E12-BBB6-33B67825DCBF}.Debug|x64.Build.0 = Debug|Any CPU
 		{AF718DAF-FB2A-4E12-BBB6-33B67825DCBF}.Release|x64.ActiveCfg = Release|Any CPU
@@ -52,14 +46,14 @@ Global
 		{400203E4-A80F-4B69-854E-EF730216DA71}.Debug|x64.Build.0 = Debug|Any CPU
 		{400203E4-A80F-4B69-854E-EF730216DA71}.Release|x64.ActiveCfg = Release|Any CPU
 		{400203E4-A80F-4B69-854E-EF730216DA71}.Release|x64.Build.0 = Release|Any CPU
-		{2CD0C7D1-AA4A-4C5C-8F17-C53A0066A9E3}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{2CD0C7D1-AA4A-4C5C-8F17-C53A0066A9E3}.Debug|x64.Build.0 = Debug|Any CPU
-		{2CD0C7D1-AA4A-4C5C-8F17-C53A0066A9E3}.Release|x64.ActiveCfg = Release|Any CPU
-		{2CD0C7D1-AA4A-4C5C-8F17-C53A0066A9E3}.Release|x64.Build.0 = Release|Any CPU
 		{14492F96-1565-41E2-AD85-6A9B43E9BF82}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{14492F96-1565-41E2-AD85-6A9B43E9BF82}.Debug|x64.Build.0 = Debug|Any CPU
 		{14492F96-1565-41E2-AD85-6A9B43E9BF82}.Release|x64.ActiveCfg = Release|Any CPU
 		{14492F96-1565-41E2-AD85-6A9B43E9BF82}.Release|x64.Build.0 = Release|Any CPU
+		{FFB5B486-EEE7-41A6-9CDA-32A522DE1DE2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FFB5B486-EEE7-41A6-9CDA-32A522DE1DE2}.Debug|x64.Build.0 = Debug|Any CPU
+		{FFB5B486-EEE7-41A6-9CDA-32A522DE1DE2}.Release|x64.ActiveCfg = Release|Any CPU
+		{FFB5B486-EEE7-41A6-9CDA-32A522DE1DE2}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
