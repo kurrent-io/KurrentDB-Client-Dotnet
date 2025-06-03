@@ -60,11 +60,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kurrent.Grpc\Kurrent.Grpc.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="V2\" />
+    <Folder Include="V1\Services\" />
+    <Folder Include="V2\Services\" />
   </ItemGroup>
 
 </Project>

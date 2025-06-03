@@ -6,7 +6,7 @@ namespace KurrentDB.Client.Interceptors;
 /// <summary>
 /// A generic gRPC interceptor that adds custom headers to all requests
 /// </summary>
-public class HeadersInterceptor(Dictionary<string, string> headers) : Interceptor {
+class HeadersInterceptor(Dictionary<string, string> headers) : Interceptor {
 	public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(
 		TRequest request,
 		ClientInterceptorContext<TRequest, TResponse> context,

@@ -37,8 +37,4 @@
     <InternalsVisibleTo Include="Kurrent.Client.Tests.Testing" />
     <InternalsVisibleTo Include="Kurrent.Client.Tests" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Kurrent.Grpc\Kurrent.Grpc.csproj" />
-  </ItemGroup>
 </Project>
