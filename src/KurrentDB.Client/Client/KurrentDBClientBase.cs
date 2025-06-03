@@ -1,4 +1,5 @@
 using Grpc.Core;
+using Kurrent.Client;
 using Kurrent.Client.Model;
 using Kurrent.Client.SchemaRegistry;
 using Kurrent.Client.SchemaRegistry.Serialization;

@@ -22,7 +22,7 @@ public static class KurrentDBReaderExtensions {
 		LogPosition startPosition,
 		long limit,
 		ReadFilter? filter = null,
-		Direction direction = Direction.Forwards,
+		ReadDirection direction = ReadDirection.Forwards,
 		HeartbeatOptions? heartbeatOptions = null,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default
 	) {

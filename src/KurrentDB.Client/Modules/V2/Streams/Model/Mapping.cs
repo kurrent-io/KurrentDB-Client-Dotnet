@@ -1,5 +1,6 @@
 #pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
 // ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+// ReSharper disable CheckNamespace
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -7,9 +8,9 @@ using Google.Protobuf;
 using Google.Protobuf.Collections;
 using Kurrent.Client.SchemaRegistry;
 using Kurrent.Client.SchemaRegistry.Serialization;
-using KurrentDB.Client;
 
 using Contracts = KurrentDB.Protocol.Streams.V2;
+
 
 namespace Kurrent.Client.Model;
 
@@ -34,25 +35,21 @@ static partial class Mapping {
 			.Serialize(source, context)
 			.ConfigureAwait(false);
 
-		// // we need to remove the schema name from the
-		// // metadata as it is not required in the end.
-		// message.Metadata.Remove(SystemMetadataKeys.SchemaName);
-
 		return new Contracts.AppendRecord {
-			RecordId   = Uuid.FromGuid(source.RecordId).ToString(), // not sure if this is still relevant, but keeping it for now.
+			RecordId   = source.RecordId.ToString(),
 			Data       = ByteString.CopyFrom(data.Span),
 			Properties = { source.Metadata.MapToDynamicMapField() }
 		};
 	}
 
-	public static async Task<Record> Map(this Contracts.Record source, ISchemaSerializerProvider serializerProvider,  CancellationToken cancellationToken) {
+	public static async Task<Record> Map(this Contracts.Record source, ISchemaSerializerProvider serializerProvider,  CancellationToken ct) {
 		var metadata = source.Properties.MapToMetadata();
 
 		var context = new SchemaSerializationContext {
 			Stream               = source.Stream,
 			Metadata             = metadata,
 			SchemaRegistryPolicy = SchemaRegistryPolicy.NoRequirements,
-			CancellationToken    = cancellationToken
+			CancellationToken    = ct
 		};
 
 		var value = await serializerProvider
@@ -73,10 +70,10 @@ static partial class Mapping {
 		};
 	}
 
-	public static Contracts.ReadDirection Map(this Direction source) =>
+	public static Contracts.ReadDirection Map(this ReadDirection source) =>
 		source switch {
-			Direction.Forwards  => Contracts.ReadDirection.Forwards,
-			Direction.Backwards => Contracts.ReadDirection.Backwards,
+			ReadDirection.Forwards  => Contracts.ReadDirection.Forwards,
+			ReadDirection.Backwards => Contracts.ReadDirection.Backwards,
 		};
 
 	public static Contracts.ReadFilter Map(this ReadFilter source) =>
@@ -109,12 +106,12 @@ static partial class Mapping {
 
 	public static Contracts.HeartbeatOptions Map(this HeartbeatOptions source) =>
 		new() {
-				Enable           = source.Enable,
-				RecordsThreshold = source.RecordsThreshold
-			};
+			Enable           = source.Enable,
+			RecordsThreshold = source.RecordsThreshold
+		};
 
-	public static AppendStreamFailure Map(this Contracts.AppendStreamFailure source) {
-		return source.ErrorCase switch {
+	public static AppendStreamFailure Map(this Contracts.AppendStreamFailure source) =>
+		source.ErrorCase switch {
 			Contracts.AppendStreamFailure.ErrorOneofCase.StreamNotFound             => new AppendErrorDetails.StreamNotFound(source.Stream),
 			Contracts.AppendStreamFailure.ErrorOneofCase.StreamDeleted              => new AppendErrorDetails.StreamDeleted(source.Stream),
 			Contracts.AppendStreamFailure.ErrorOneofCase.WrongExpectedRevision      => new AppendErrorDetails.WrongExpectedRevision(source.Stream, source.WrongExpectedRevision.StreamRevision),
@@ -122,7 +119,6 @@ static partial class Mapping {
 			Contracts.AppendStreamFailure.ErrorOneofCase.TransactionMaxSizeExceeded => new AppendErrorDetails.TransactionMaxSizeExceeded(source.TransactionMaxSizeExceeded.MaxSize),
 			_                                                                       => throw new UnreachableException($"Unexpected append stream failure error case: {source.ErrorCase}")
 		};
-	}
 
 	public static AppendStreamSuccess Map(this Contracts.AppendStreamSuccess source) =>
 		new(source.Stream, source.Position, source.StreamRevision);

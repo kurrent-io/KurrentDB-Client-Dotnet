@@ -17,8 +17,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Grpc", "src\Kurrent
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client", "src\Kurrent.Client\Kurrent.Client.csproj", "{FFB5B486-EEE7-41A6-9CDA-32A522DE1DE2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MasterPackage", "src\MasterPackage\MasterPackage.csproj", "{C8C1BB43-96E7-4AB3-87C3-4E17C84FB8C7}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -56,10 +54,6 @@ Global
 		{FFB5B486-EEE7-41A6-9CDA-32A522DE1DE2}.Debug|x64.Build.0 = Debug|Any CPU
 		{FFB5B486-EEE7-41A6-9CDA-32A522DE1DE2}.Release|x64.ActiveCfg = Release|Any CPU
 		{FFB5B486-EEE7-41A6-9CDA-32A522DE1DE2}.Release|x64.Build.0 = Release|Any CPU
-		{C8C1BB43-96E7-4AB3-87C3-4E17C84FB8C7}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{C8C1BB43-96E7-4AB3-87C3-4E17C84FB8C7}.Debug|x64.Build.0 = Debug|Any CPU
-		{C8C1BB43-96E7-4AB3-87C3-4E17C84FB8C7}.Release|x64.ActiveCfg = Release|Any CPU
-		{C8C1BB43-96E7-4AB3-87C3-4E17C84FB8C7}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection

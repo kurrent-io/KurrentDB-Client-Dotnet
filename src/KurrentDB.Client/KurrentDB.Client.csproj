@@ -1,65 +1,66 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <PackageId>KurrentDB.Client</PackageId>
-    </PropertyGroup>
+  <PropertyGroup>
+    <PackageId>KurrentDB.Client</PackageId>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
 
-    <ItemGroup>
-		<PackageReference Include="Google.Protobuf" Version="3.31.0" />
-		<PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
-		<PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0" />
-		<PackageReference Include="Humanizer.Core" Version="2.14.1" />
-		<PackageReference Include="LruCacheNet" Version="1.2.0" />
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
-        <PackageReference Include="NJsonSchema" Version="11.3.2" />
-        <PackageReference Include="NJsonSchema.CodeGeneration.CSharp" Version="11.3.2" />
-		<PackageReference Include="OneOf" Version="3.0.271" />
-		<PackageReference Include="OneOf.SourceGenerator" Version="3.0.271" />
-		<PackageReference Include="System.Linq.Async" Version="6.0.1"/>
-		<PackageReference Include="OpenTelemetry.Api" Version="1.12.0"/>
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="3.31.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
+    <PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0" />
+    <PackageReference Include="Humanizer.Core" Version="2.14.1" />
+    <PackageReference Include="LruCacheNet" Version="1.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
+    <PackageReference Include="NJsonSchema" Version="11.3.2" />
+    <PackageReference Include="NJsonSchema.CodeGeneration.CSharp" Version="11.3.2" />
+    <PackageReference Include="OneOf" Version="3.0.271" />
+    <PackageReference Include="OneOf.SourceGenerator" Version="3.0.271" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+    <PackageReference Include="OpenTelemetry.Api" Version="1.12.0" />
 
-		<PackageReference Include="Grpc.Tools" Version="2.72.0">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-	</ItemGroup>
+    <PackageReference Include="Grpc.Tools" Version="2.72.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 
-	<ItemGroup>
-        <!-- v1 -->
-        <Protobuf
-                ProtoRoot="../../proto/kurrentdb/protocol/v1"
-                Include="../../proto/kurrentdb/protocol/v1/**/*.proto"
-                Link="proto\kurrentdb\protocol\v1\%(RecursiveDir)/%(FileName)%(Extension)"
-                GrpcServices="Client"
-                Access="internal"
-        />
+  <ItemGroup>
+    <!-- v1 -->
+    <Protobuf
+        ProtoRoot="../../proto/kurrentdb/protocol/v1"
+        Include="../../proto/kurrentdb/protocol/v1/**/*.proto"
+        Link="proto\kurrentdb\protocol\v1\%(RecursiveDir)/%(FileName)%(Extension)"
+        GrpcServices="Client"
+        Access="internal"
+    />
 
-        <!-- v2 -->
-        <Protobuf
-                ProtoRoot="../../proto/kurrentdb/protocol/v2"
-                Include="../../proto/kurrentdb/protocol/v2/**/*.proto"
-                Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
-                GrpcServices="Client"
-                Access="internal"
-        />
-	</ItemGroup>
+    <!-- v2 -->
+    <Protobuf
+        ProtoRoot="../../proto/kurrentdb/protocol/v2"
+        Include="../../proto/kurrentdb/protocol/v2/**/*.proto"
+        Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
+        GrpcServices="Client"
+        Access="internal"
+    />
+  </ItemGroup>
 
-    <ItemGroup>
-        <InternalsVisibleTo Include="Kurrent.Client"/>
-        <InternalsVisibleTo Include="Kurrent.Client.Tests"/>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kurrent.Client" />
+    <InternalsVisibleTo Include="Kurrent.Client.Tests" />
 
-        <InternalsVisibleTo Include="KurrentDB.Client.Tests"/>
-        <InternalsVisibleTo Include="KurrentDB.Client.Tests.Common"/>
-        <InternalsVisibleTo Include="KurrentDB.Client.Operations.Tests" />
-        <InternalsVisibleTo Include="KurrentDB.Client.PersistentSubscriptions.Tests" />
-        <InternalsVisibleTo Include="KurrentDB.Client.ProjectionManagement.Tests" />
-        <InternalsVisibleTo Include="KurrentDB.Client.Streams.Tests" />
-        <InternalsVisibleTo Include="KurrentDB.Client.UserManagement.Tests" />
-        <InternalsVisibleTo Include="KurrentDB.Client.Extensions.OpenTelemetry" />
-    </ItemGroup>
+    <InternalsVisibleTo Include="KurrentDB.Client.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Client.Tests.Common" />
+    <InternalsVisibleTo Include="KurrentDB.Client.Operations.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Client.PersistentSubscriptions.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Client.ProjectionManagement.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Client.Streams.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Client.UserManagement.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Client.Extensions.OpenTelemetry" />
+  </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Kurrent.Grpc\Kurrent.Grpc.csproj" />
-    </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Kurrent.Grpc\Kurrent.Grpc.csproj" />
+  </ItemGroup>
 
 </Project>

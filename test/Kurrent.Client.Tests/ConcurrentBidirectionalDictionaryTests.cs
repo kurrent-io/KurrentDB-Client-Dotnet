@@ -1,14 +1,9 @@
-using KurrentDB.Client;
-
 namespace Kurrent.Client.Tests;
 
 public class ConcurrentBidirectionalDictionaryTests : IDisposable {
-	// Use a new dictionary for each test to ensure isolation
 	readonly ConcurrentBidirectionalDictionary<string, int> _sut = new();
 
 	public void Dispose() => _sut.Dispose();
-
-	// --- Basic Operations ---
 
 	[Test]
 	public void Add_SingleItem_ShouldSucceedAndBeRetrievable() {
@@ -129,8 +124,6 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 		_sut.Count.ShouldBe(1);
 	}
 
-	// --- Indexer ---
-
 	[Test]
 	public void Indexer_Set_AddNewItem_ShouldSucceed() {
 		// Arrange
@@ -220,8 +213,6 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 		Should.Throw<KeyNotFoundException>(() => _sut.GetKeyByValue(1));
 	}
 
-	// --- Error Handling & Edge Cases ---
-
 	[Test]
 	public void Add_DuplicateKey_ShouldThrowArgumentException() {
 		// Arrange
@@ -278,22 +269,10 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 		_sut["one"].ShouldBe(1); // Original key remains
 	}
 
-	// [Test]
-	// [TestData(null, 1)]
-	// [TestData("key", null)] // Assuming TValue is reference type (int isn't, need specific test for ref types)
-	// public void Add_NullKeyOrValue_ShouldThrowArgumentNullException(string? key, object? value) {
-	// 	// This test needs adjustment if TValue is a value type like int
-	// 	// Let's test with string/string
-	// 	using var sutStr = new ConcurrentBidirectionalDictionary<string, string>();
-	// 	Should.Throw<ArgumentNullException>(() => sutStr.Add(key!, (string)value!));
-	// }
-
 	[Test]
 	public void Add_NullKey_ShouldThrowArgumentNullException_ValueType() {
 		Should.Throw<ArgumentNullException>(() => _sut.Add(null!, 1));
 	}
-
-	// --- Contains & TryGet ---
 
 	[Test]
 	public void ContainsKey_ExistingKey_ShouldReturnTrue() {
@@ -347,8 +326,6 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 		key.ShouldBe(default(string)); // null for string
 	}
 
-	// --- Clear & Count ---
-
 	[Test]
 	public void Clear_NonEmptyDictionary_ShouldRemoveAllItems() {
 		// Arrange
@@ -379,8 +356,6 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 		_sut.Clear();
 		_sut.Count.ShouldBe(0);
 	}
-
-	// --- Enumeration ---
 
 	[Test]
 	public void Keys_ShouldReturnAllKeys() {
@@ -422,8 +397,6 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 		pairs.ShouldContain(kvp => kvp.Key == "two" && kvp.Value == 2);
 		pairs.ShouldContain(kvp => kvp.Key == "three" && kvp.Value == 3);
 	}
-
-	// --- Custom Comparers ---
 
 	[Test]
 	public void CustomComparers_CaseInsensitive_ShouldWorkCorrectly() {
@@ -481,7 +454,6 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 		sutCi.Count.ShouldBe(0);
 	}
 
-	// --- ICollection<KeyValuePair<TKey, TValue>> ---
 	[Test]
 	public void ICollection_Add_ShouldWork() {
 		ICollection<KeyValuePair<string, int>> coll = _sut;
@@ -600,8 +572,6 @@ public class ConcurrentBidirectionalDictionaryTests : IDisposable {
 		ICollection<KeyValuePair<string, int>> coll = _sut;
 		coll.IsReadOnly.ShouldBeFalse();
 	}
-
-	// --- Concurrency Tests ---
 
 	[Test]
 	public async Task Concurrent_Adds_ShouldMaintainConsistency() {

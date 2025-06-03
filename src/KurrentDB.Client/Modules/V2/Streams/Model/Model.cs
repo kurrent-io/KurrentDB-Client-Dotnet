@@ -13,13 +13,6 @@ public record AppendStreamSuccess(string Stream, long Position, long StreamRevis
 	public required long   StreamRevision { get; init; } = StreamRevision;
 }
 
-// [PublicAPI]
-// [method: SetsRequiredMembers]
-// public record AppendStreamFailure(string Stream, Exception Error) {
-// 	public required string    Stream { get; init; } = Stream;
-// 	public required Exception Error  { get; init; } = Error;
-// }
-
 /// <summary>
 /// Provides a set of error detail types for representing specific append operation failures in a stream.
 /// </summary>
@@ -258,8 +251,8 @@ public partial class ReadResult : OneOfBase<Record, Heartbeat> {
 	public bool IsRecord    => IsT0;
 	public bool IsHeartbeat => IsT1;
 
-	public Record    AsRecord()    => AsT0;
-	public Heartbeat AsHeartbeat() => AsT1;
+	public Record    AsRecord    => AsT0;
+	public Heartbeat AsHeartbeat => AsT1;
 }
 
 [PublicAPI]
@@ -268,6 +261,6 @@ public partial class SubscribeResult : OneOfBase<Record, Heartbeat> {
 	public bool IsRecord    => IsT0;
 	public bool IsHeartbeat => IsT1;
 
-	public Record    AsRecord()    => AsT0;
-	public Heartbeat AsHeartbeat() => AsT1;
+	public Record    AsRecord    => AsT0;
+	public Heartbeat AsHeartbeat => AsT1;
 }
