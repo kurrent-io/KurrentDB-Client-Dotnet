@@ -63,4 +63,8 @@
     <ProjectReference Include="..\Kurrent.Grpc\Kurrent.Grpc.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="V2\" />
+  </ItemGroup>
+
 </Project>
