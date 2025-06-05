@@ -3,12 +3,12 @@ using Grpc.Net.ClientFactory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace KurrentDB.Client;
+namespace KurrentDB.Client.Legacy;
 
 /// <summary>
 /// Extension methods for registering the legacy call invoker with dependency injection.
 /// </summary>
-public static class KurrentDBLegacyExtensions {
+static class KurrentDBLegacyExtensions {
 	/// <summary>
 	/// Adds a gRPC client that uses the LegacyClusterClient for channel management.
 	/// </summary>

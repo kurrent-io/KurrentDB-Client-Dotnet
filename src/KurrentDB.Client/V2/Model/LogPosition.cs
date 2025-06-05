@@ -1,6 +1,5 @@
 namespace Kurrent.Client.Model;
 
-
 /// <summary>
 /// Record position in the global log.
 /// </summary>

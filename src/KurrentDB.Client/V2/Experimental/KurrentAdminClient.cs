@@ -1,5 +1,4 @@
-//
-// using Kurrent.Client;
+// using Grpc.Core;
 // using Kurrent.Client.Features;
 // using Kurrent.Client.Model;
 // using static EventStore.Client.ServerFeatures.ServerFeatures;
@@ -7,14 +6,14 @@
 // namespace KurrentDB.Client.ServerInfo;
 //
 // [PublicAPI]
-// public class KurrentAdminClient : KurrentSubClientBase {
+// public class KurrentAdminClient {
 // 	// Custom empty request to avoid using the default one from the library.... sigh... -_-'
 // 	static readonly EventStore.Client.Empty CustomEmptyRequest = new();
 //
-// 	public KurrentAdminClient(KurrentClient client) : base(client) =>
-// 		Connection = Client.GetProxyConnection<ServerFeaturesClient>();
+// 	internal KurrentAdminClient(CallInvoker invoker) =>
+// 		ServiceClient = new ServerFeaturesClient(invoker);
 //
-// 	ThinClientConnection<ServerFeaturesClient> Connection { get; }
+// 	ServerFeaturesClient ServiceClient { get; }
 //
 // 	/// <summary>
 // 	/// Gets server information including features and their enablement status.
@@ -25,7 +24,7 @@
 // 	/// <returns>Server information with features.</returns>
 // 	public async Task<Kurrent.Client.Features.ServerInfo> GetServerInfo(CancellationToken ct = default) {
 // 		// Get the raw methods and their features from the server
-// 		var response = await Connection.ServiceClient
+// 		var response = await ServiceClient
 // 			.GetSupportedMethodsAsync(CustomEmptyRequest, cancellationToken: ct)
 // 			.ConfigureAwait(false);
 //

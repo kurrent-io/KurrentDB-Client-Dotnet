@@ -34,11 +34,10 @@ record KurrentDBConnectionString {
 	const string UserKeyFile          = nameof(UserKeyFile);
 
 	static readonly string[] SchemesDiscovery = ["esdb+discover", "eventstore+discover", "kurrentdb+discover"];
+	static readonly string[] Schemes          = ["esdb", "eventstore", "kurrentdb", ..SchemesDiscovery];
 
-	static readonly string[] Schemes = ["esdb", "eventstore", "kurrentdb", ..SchemesDiscovery];
-
-	static readonly int  DefaultPort   = KurrentDBClientConnectivitySettings.DefaultPort;
-	static readonly bool DefaultUseTls = true;
+	const int  DefaultPort   = KurrentDBClientConnectivitySettings.DefaultPort;
+	const bool DefaultUseTls = true;
 
 	static readonly Dictionary<string, Type> SettingsType =
 		new(StringComparer.InvariantCultureIgnoreCase) {
@@ -69,7 +68,6 @@ record KurrentDBConnectionString {
 	public (string user, string pass)? UserInfo { get; }
 	public DnsEndPoint[]               Hosts    { get; }
 	public Dictionary<string, string>  Options  { get; }
-
 
 	public bool IsDiscoveryScheme => SchemesDiscovery.Contains(Scheme);
 

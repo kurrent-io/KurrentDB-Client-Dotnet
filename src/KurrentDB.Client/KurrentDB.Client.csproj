@@ -67,7 +67,6 @@
 
   <ItemGroup>
     <Folder Include="V1\Services\" />
-    <Folder Include="V2\Services\Diagnostics\" />
   </ItemGroup>
 
 </Project>

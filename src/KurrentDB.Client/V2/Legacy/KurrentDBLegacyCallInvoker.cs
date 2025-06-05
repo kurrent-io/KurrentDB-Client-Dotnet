@@ -1,6 +1,6 @@
 using Grpc.Core;
 
-namespace KurrentDB.Client;
+namespace KurrentDB.Client.Legacy;
 
 /// <summary>
 /// A gRPC CallInvoker implementation that delegates to the LegacyClusterClient to obtain
@@ -12,18 +12,26 @@ namespace KurrentDB.Client;
 /// in a thread-safe manner. It transparently handles obtaining the correct channel invoker
 /// from the LegacyClusterClient for each gRPC call.
 /// </remarks>
-public sealed class KurrentDBLegacyCallInvoker : CallInvoker, IDisposable {
+sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
     readonly SemaphoreSlim       _capabilitiesLock = new(1, 1);
     readonly LegacyClusterClient _legacyClient;
+    readonly bool                _disposeClient;
     volatile ServerCapabilities  _currentCapabilities;
-    bool                         _disposed;
+
+    bool _disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="KurrentDBLegacyCallInvoker"/> class.
     /// </summary>
-    /// <param name="legacyClient">The legacy cluster client used to obtain channel information.</param>
-    internal KurrentDBLegacyCallInvoker(LegacyClusterClient legacyClient) {
-	    _legacyClient = legacyClient;
+    /// <param name="legacyClient">
+    /// The legacy cluster client used to obtain channel information.
+    /// </param>
+    /// <param name="disposeClient">
+    /// Optional; indicates whether the legacy client should be disposed when this invoker is disposed.
+    /// </param>
+    internal KurrentDBLegacyCallInvoker(LegacyClusterClient legacyClient, bool disposeClient = true) {
+	    _legacyClient        = legacyClient;
+	    _disposeClient  = disposeClient;
 	    _currentCapabilities = null!;
     }
 
@@ -36,76 +44,93 @@ public sealed class KurrentDBLegacyCallInvoker : CallInvoker, IDisposable {
     );
 
     /// <summary>
-    /// Gets an invoker safely without deadlock risks.
+    /// Forces a refresh of the internal channel info and server capabilities by attempting to reconnect to the cluster.
+    /// </summary>
+    public async Task ForceRefresh(CancellationToken cancellationToken) {
+	    if (_disposed)
+		    throw new ObjectDisposedException(nameof(KurrentDBLegacyCallInvoker));
+
+	    // must be called for every gRPC operation as per requirements
+	    var channelInfo = await _legacyClient.ForceReconnect().ConfigureAwait(false);
+
+	    // update capabilities in a thread-safe manner
+	    await UpdateServerCapabilities(channelInfo.ServerCapabilities, cancellationToken);
+    }
+
+    /// <summary>
+    /// Gets a channel info invoker safely without deadlock risks.
     /// <remarks>
     /// Asynchronously gets the current <see cref="CallInvoker"/> from the legacy cluster client.
     /// Updates the server capabilities as a side effect.
     /// </remarks>
     /// </summary>
-    CallInvoker GetLegacyInvoker(CancellationToken cancellationToken) {
+    CallInvoker WithChannelInfoInvoker(CancellationToken cancellationToken) {
 	    if (_disposed)
 		    throw new ObjectDisposedException(nameof(KurrentDBLegacyCallInvoker));
 
-        return Task.Run(
-	        () => GetInvokerAsync(cancellationToken).ConfigureAwait(false).GetAwaiter().GetResult(),
+	    return Task.Run(
+	        () => GetInvokerAsync().ConfigureAwait(false).GetAwaiter().GetResult(),
 	        cancellationToken
         ).GetAwaiter().GetResult();
 
-        async Task<CallInvoker> GetInvokerAsync(CancellationToken cancellationToken) {
-	        // must be called for every gRPC operation as per requirements
-	        var channelInfo = await _legacyClient.Connect(cancellationToken).ConfigureAwait(false);
+	    async Task<CallInvoker> GetInvokerAsync() {
+		    // must be called for every gRPC operation as per requirements
+		    var channelInfo = await _legacyClient.Connect(cancellationToken).ConfigureAwait(false);
 
-	        // update capabilities in a thread-safe manner
-	        await _capabilitiesLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-	        try {
-		        _currentCapabilities = channelInfo.ServerCapabilities;
-	        }
-	        finally {
-		        _capabilitiesLock.Release();
-	        }
+		    // update capabilities in a thread-safe manner
+		    await UpdateServerCapabilities(channelInfo.ServerCapabilities, cancellationToken);
 
-	        return channelInfo.CallInvoker;
-        }
-    }
-
-    /// <inheritdoc/>
-    public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request) {
-        var invoker = GetLegacyInvoker(options.CancellationToken);
-        return invoker.AsyncUnaryCall(method, host, options, request);
-    }
-
-    /// <inheritdoc/>
-    public override TResponse BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request) {
-        var invoker = GetLegacyInvoker(options.CancellationToken);
-        return invoker.BlockingUnaryCall(method, host, options, request);
-    }
-
-    /// <inheritdoc/>
-    public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options) {
-        var invoker = GetLegacyInvoker(options.CancellationToken);
-        return invoker.AsyncClientStreamingCall(method, host, options);
-    }
-
-    /// <inheritdoc/>
-    public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request) {
-        var invoker = GetLegacyInvoker(options.CancellationToken);
-        return invoker.AsyncServerStreamingCall(method, host, options, request);
-    }
-
-    /// <inheritdoc/>
-    public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options) {
-        var invoker = GetLegacyInvoker(options.CancellationToken);
-        return invoker.AsyncDuplexStreamingCall(method, host, options);
+		    return channelInfo.CallInvoker;
+	    }
     }
 
     /// <summary>
-    /// Disposes resources used by this invoker.
+    ///  Updates the server capabilities in a thread-safe manner.
     /// </summary>
-    public void Dispose() {
-        if (_disposed)
-            return;
+    async Task UpdateServerCapabilities(ServerCapabilities capabilities, CancellationToken cancellationToken) {
+	    // update capabilities in a thread-safe manner
+	    await _capabilitiesLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+	    try {
+		    _currentCapabilities = capabilities;
+	    }
+	    finally {
+		    _capabilitiesLock.Release();
+	    }
+    }
 
-        _disposed = true;
-        _capabilitiesLock.Dispose();
+    #region . CallInvoker Overrides .
+
+    /// <inheritdoc/>
+    public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request) =>
+	    WithChannelInfoInvoker(options.CancellationToken).AsyncUnaryCall(method, host, options, request);
+
+    /// <inheritdoc/>
+    public override TResponse BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request) =>
+	    WithChannelInfoInvoker(options.CancellationToken).BlockingUnaryCall(method, host, options, request);
+
+    /// <inheritdoc/>
+    public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options) =>
+	    WithChannelInfoInvoker(options.CancellationToken).AsyncClientStreamingCall(method, host, options);
+
+    /// <inheritdoc/>
+    public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options, TRequest request) =>
+	    WithChannelInfoInvoker(options.CancellationToken).AsyncServerStreamingCall(method, host, options, request);
+
+    /// <inheritdoc/>
+    public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string? host, CallOptions options) =>
+	    WithChannelInfoInvoker(options.CancellationToken).AsyncDuplexStreamingCall(method, host, options);
+
+    #endregion
+
+    /// <inheritdoc/>
+    public async ValueTask DisposeAsync() {
+	    if (_disposed)
+		    return;
+
+	    _disposed = true;
+	    _capabilitiesLock.Dispose();
+
+	    if (_disposeClient)
+		    await _legacyClient.DisposeAsync().ConfigureAwait(false);
     }
 }

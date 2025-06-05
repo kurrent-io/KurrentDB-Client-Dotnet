@@ -1,14 +1,31 @@
 using System.Runtime.CompilerServices;
+using Kurrent.Client.Model;
 using Kurrent.Client.SchemaRegistry;
 using Kurrent.Client.SchemaRegistry.Serialization;
 using Kurrent.Client.SchemaRegistry.Serialization.Json;
-using KurrentDB.Client;
-
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace Kurrent.Client.Model;
+namespace KurrentDB.Client.Legacy;
 
-static class LegacyProtocolMapping {
+class KurrentDBLegacyConverter(ISchemaSerializerProvider serializerProvider, IMetadataDecoder metadataDecoder, SchemaRegistryPolicy registryPolicy) {
+	ISchemaSerializerProvider SerializerProvider { get; } = serializerProvider;
+	IMetadataDecoder          MetadataDecoder    { get; } = metadataDecoder;
+	SchemaRegistryPolicy      RegistryPolicy     { get; } = registryPolicy;
+
+	public ValueTask<EventData> ConvertToEventData(Message message, string stream, CancellationToken ct) =>
+		message.ConvertToEventData(stream, SerializerProvider, RegistryPolicy, ct);
+
+	public ValueTask<Record> ConvertToRecord(ResolvedEvent resolvedEvent, CancellationToken ct) =>
+		resolvedEvent.ConvertToRecord(SerializerProvider, MetadataDecoder, RegistryPolicy, ct);
+
+	public IAsyncEnumerable<EventData> ConvertAllToEventData(IEnumerable<Message> messages, string stream, CancellationToken ct) =>
+		messages.ConvertAllToEventData(stream, SerializerProvider, RegistryPolicy, ct);
+
+	public IAsyncEnumerable<Record> ConvertAllToRecord(IEnumerable<ResolvedEvent> resolvedEvents, CancellationToken ct) =>
+		resolvedEvents.ConvertAllToRecord(SerializerProvider, MetadataDecoder, RegistryPolicy, ct);
+}
+
+static class KurrentDBLegacyMapper {
 	public static async ValueTask<EventData> ConvertToEventData(
 		this Message message,
 		string stream,

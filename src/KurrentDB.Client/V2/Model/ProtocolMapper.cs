@@ -6,7 +6,7 @@ using KurrentDB.Protocol.Streams.V2;
 namespace Kurrent.Client.Model;
 
 [PublicAPI]
-static class ProtocolMapping {
+static class ProtocolMapper {
 	public static DynamicValueMap MapToDynamicValueMap(this Metadata source) =>
 		new() { Values = { source.MapToDynamicMapField() } };
 

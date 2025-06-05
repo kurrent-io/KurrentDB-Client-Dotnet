@@ -1,6 +1,5 @@
 using System.Collections;
 using System.ComponentModel;
-using System.Runtime.InteropServices;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Client.Model;
@@ -227,24 +226,6 @@ public enum CompatibilityMode {
 	[Description("COMPATIBILITY_MODE_NONE")] None = 4,
 }
 
-[PublicAPI]
-public static class ErrorDetails {
-	[StructLayout(LayoutKind.Sequential, Size = 1)]
-	public readonly struct SchemaNotFound {
-		public static readonly SchemaNotFound Value = new();
-	}
-
-	[StructLayout(LayoutKind.Sequential, Size = 1)]
-	public readonly struct SchemaAlreadyExists {
-		public static readonly SchemaAlreadyExists Value = new();
-	}
-}
-
-[StructLayout(LayoutKind.Sequential, Size = 1)]
-public readonly struct Success {
-	public static readonly Success Value = new();
-}
-
 [GenerateOneOf]
 public partial class SchemaIdentifier : OneOfBase<SchemaName, SchemaVersionId>, IEquatable<SchemaIdentifier> {
 	public bool IsSchemaName      => Value is SchemaName;
@@ -277,73 +258,28 @@ public partial class SchemaIdentifier : OneOfBase<SchemaName, SchemaVersionId>, 
 
 	public static bool operator !=(SchemaIdentifier? left, SchemaIdentifier? right) =>
 		!(left == right);
-}
 
-public class SchemaIdentifierEqualityComparer : IEqualityComparer<SchemaIdentifier> {
-	public bool Equals(SchemaIdentifier? x, SchemaIdentifier? y) {
-		if (ReferenceEquals(x, y)) return true;
-		if (x is null || y is null) return false;
+	public static readonly SchemaIdentifierEqualityComparer Comparer = new();
 
-		// Both must be of the same type (either both SchemaName or both SchemaVersionId)
-		if (x.IsSchemaName != y.IsSchemaName) return false;
+	public class SchemaIdentifierEqualityComparer : IEqualityComparer<SchemaIdentifier> {
+		public bool Equals(SchemaIdentifier? x, SchemaIdentifier? y) {
+			if (ReferenceEquals(x, y)) return true;
+			if (x is null || y is null) return false;
 
-		return x.IsSchemaName
-			? x.AsSchemaName.Value == y.AsSchemaName.Value
-			: x.AsSchemaVersionId.Value == y.AsSchemaVersionId.Value;
+			// Both must be of the same type (either both SchemaName or both SchemaVersionId)
+			if (x.IsSchemaName != y.IsSchemaName) return false;
+
+			return x.IsSchemaName
+				? x.AsSchemaName.Value == y.AsSchemaName.Value
+				: x.AsSchemaVersionId.Value == y.AsSchemaVersionId.Value;
+		}
+
+		public int GetHashCode(SchemaIdentifier? obj) {
+			if (obj is null) return 0;
+
+			return obj.IsSchemaName
+				? obj.AsSchemaName.Value.GetHashCode()
+				: obj.AsSchemaVersionId.Value.GetHashCode();
+		}
 	}
-
-	public int GetHashCode(SchemaIdentifier? obj) {
-		if (obj is null) return 0;
-
-		return obj.IsSchemaName
-			? obj.AsSchemaName.Value.GetHashCode()
-			: obj.AsSchemaVersionId.Value.GetHashCode();
-	}
-}
-
-[GenerateOneOf]
-public partial class CreateSchemaResult : OneOfBase<SchemaVersionDescriptor, ErrorDetails.SchemaAlreadyExists> {
-	public bool IsSchemaVersionDescriptor => IsT0;
-	public bool IsSchemaAlreadyExists     => IsT1;
-
-	public SchemaVersionDescriptor          AsSchemaVersionDescriptor => AsT0;
-	public ErrorDetails.SchemaAlreadyExists AsSchemaAlreadyExists     => AsT1;
-}
-
-[GenerateOneOf]
-public partial class GetSchemaResult : OneOfBase<Schema, ErrorDetails.SchemaNotFound> {
-	public bool IsSchema         => IsT0;
-	public bool IsSchemaNotFound => IsT1;
-
-	public Schema                      AsSchema         => AsT0;
-	public ErrorDetails.SchemaNotFound AsSchemaNotFound => AsT1;
-}
-
-[GenerateOneOf]
-public partial class GetSchemaVersionResult : OneOfBase<SchemaVersion, ErrorDetails.SchemaNotFound> {
-	public bool IsSchemaVersion  => IsT0;
-	public bool IsSchemaNotFound => IsT1;
-
-	public SchemaVersion               AsSchemaVersion  => AsT0;
-	public ErrorDetails.SchemaNotFound AsSchemaNotFound => AsT1;
-}
-
-[GenerateOneOf]
-public partial class DeleteSchemaResult : OneOfBase<Success, ErrorDetails.SchemaNotFound> {
-	public bool IsSuccess        => IsT0;
-	public bool IsSchemaNotFound => IsT1;
-
-	public Success                     AsSuccess        => AsT0;
-	public ErrorDetails.SchemaNotFound AsSchemaNotFound => AsT1;
-}
-
-[GenerateOneOf]
-public partial class CheckSchemaCompatibilityResult : OneOfBase<SchemaVersionId, SchemaCompatibilityErrors, ErrorDetails.SchemaNotFound> {
-	public bool IsSchemaVersionId => IsT0;
-	public bool IsSchemaErrors    => IsT1;
-	public bool IsSchemaNotFound  => IsT2;
-
-	public SchemaVersionId             AsSchemaVersionId => AsT0;
-	public SchemaCompatibilityErrors   AsSchemaErrors    => AsT1;
-	public ErrorDetails.SchemaNotFound AsSchemaNotFound  => AsT2;
 }

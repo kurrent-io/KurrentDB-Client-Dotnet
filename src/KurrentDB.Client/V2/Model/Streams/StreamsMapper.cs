@@ -11,10 +11,9 @@ using Kurrent.Client.SchemaRegistry.Serialization;
 
 using Contracts = KurrentDB.Protocol.Streams.V2;
 
-
 namespace Kurrent.Client.Model;
 
-static partial class Mapping {
+static class StreamsMapper {
 	public static async IAsyncEnumerable<Contracts.AppendRecord> Map(this IEnumerable<Message> source, string stream, ISchemaSerializerProvider serializerProvider, [EnumeratorCancellation] CancellationToken ct) {
 		foreach (var message in source)
 			yield return await message

@@ -2,30 +2,18 @@
 
 using Google.Protobuf;
 using Grpc.Core;
-using Kurrent.Client.Features;
 using Kurrent.Client.Model;
 using Kurrent.Client.SchemaRegistry;
-using KurrentDB.Client;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 using Contracts = KurrentDB.Protocol.Registry.V2;
 
 namespace Kurrent.Client;
 
 public class KurrentRegistryClient {
-	internal KurrentRegistryClient(KurrentDBClientSettings settings, KurrentDBClient legacyClient) {
-		Settings   = settings;
-		Proxy = legacyClient.GetProxyConnection<SchemaRegistryServiceClient>();
-	}
+	internal KurrentRegistryClient(CallInvoker invoker) =>
+		ServiceClient = new SchemaRegistryServiceClient(invoker);
 
-	internal KurrentRegistryClient(KurrentDBClientSettings settings, SchemaRegistryServiceClient serviceClient, CallInvoker invoker) {
-		Settings = settings;
-		Proxy    = ServiceProxy<SchemaRegistryServiceClient>.Create(serviceClient,invoker, new ServerInfo());
-	}
-
-	KurrentDBClientSettings                   Settings { get; }
-	ServiceProxy<SchemaRegistryServiceClient> Proxy    { get; }
-
-	SchemaRegistryServiceClient ServiceClient => Proxy.ServiceClient;
+	SchemaRegistryServiceClient ServiceClient { get; }
 
 	/// <summary>
 	/// Creates a new schema in the registry with the provided details.

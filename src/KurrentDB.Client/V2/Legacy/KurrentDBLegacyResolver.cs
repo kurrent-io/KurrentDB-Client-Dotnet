@@ -1,10 +1,9 @@
 using Grpc.Core;
 using Grpc.Net.Client.Balancer;
 using Kurrent.Grpc.Balancer;
-using KurrentDB.Client;
 using Microsoft.Extensions.Logging;
 
-namespace Kurrent.Client;
+namespace KurrentDB.Client.Legacy;
 
 /// <summary>
 /// A resolver that uses the legacy cluster client to resolve addresses.

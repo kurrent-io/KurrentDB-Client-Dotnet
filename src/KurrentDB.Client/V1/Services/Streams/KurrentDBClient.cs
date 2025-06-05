@@ -25,7 +25,7 @@ public sealed partial class KurrentDBClient : KurrentDBClientBase {
 		AllowSynchronousContinuations = true
 	};
 
-	static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
+	internal static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
 		[Constants.Exceptions.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),
 		[Constants.Exceptions.StreamDeleted] = ex => new StreamDeletedException(
 			ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value ?? "<unknown>",

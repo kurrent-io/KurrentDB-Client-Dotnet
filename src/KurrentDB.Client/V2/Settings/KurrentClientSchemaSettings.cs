@@ -5,7 +5,7 @@ namespace Kurrent.Client;
 /// <summary>
 /// Defines schema settings for a KurrentDB client, including naming strategies and auto-registration.
 /// </summary>
-public record KurrentClientSchemaRegistrySettings {
+public record KurrentClientSchemaSettings {
 	/// <summary>
 	/// Gets or initializes the strategy used for generating schema names.
 	/// This determines how schemas are named when registering message types.
@@ -44,5 +44,5 @@ public record KurrentClientSchemaRegistrySettings {
 	/// automatic schema registration enabled, and
 	/// schema validation enabled.
 	/// </remarks>
-	public static KurrentClientSchemaRegistrySettings Default => new();
+	public static KurrentClientSchemaSettings Default => new();
 }

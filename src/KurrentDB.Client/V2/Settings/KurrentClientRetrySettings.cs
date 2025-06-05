@@ -1,12 +1,12 @@
 using Grpc.Core;
 using Grpc.Net.Client.Configuration;
 
-namespace KurrentDB.Client;
+namespace Kurrent.Client;
 
 /// <summary>
 /// Defines retry configuration for gRPC operations.
 /// </summary>
-public record KurrentDBClientRetrySettings {
+public record KurrentClientRetrySettings {
 	/// <summary>
 	/// Gets or sets whether retry is enabled.
 	/// </summary>
@@ -45,12 +45,12 @@ public record KurrentDBClientRetrySettings {
 	/// <summary>
 	/// Default retry settings with the default values.
 	/// </summary>
-	public static KurrentDBClientRetrySettings Default => new();
+	public static KurrentClientRetrySettings Default => new();
 
 	/// <summary>
 	/// Retry settings with retry disabled.
 	/// </summary>
-	public static KurrentDBClientRetrySettings NoRetry => new() { IsEnabled = false };
+	public static KurrentClientRetrySettings NoRetry => new() { IsEnabled = false };
 
 	internal MethodConfig GetRetryMethodConfig() {
 		var retryPolicy = new RetryPolicy {

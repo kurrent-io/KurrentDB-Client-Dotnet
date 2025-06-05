@@ -37,6 +37,7 @@ using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
 using Ductus.FluentDocker.Services.Extensions;
+using Kurrent.Client;
 using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
 using Serilog.Extensions.Logging;
@@ -64,7 +65,7 @@ public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null)
 			.With(x => x.DefaultDeadline = Application.DebuggerIsAttached ? new TimeSpan?() : FromSeconds(30))
 			.With(x => x.ConnectivitySettings.MaxDiscoverAttempts = 20)
 			.With(x => x.ConnectivitySettings.DiscoveryInterval = FromSeconds(1))
-			.With(x => x.RetrySettings = KurrentDBClientRetrySettings.NoRetry);
+			.With(x => x.RetrySettings = KurrentClientRetrySettings.NoRetry);
 
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
 			["KURRENTDB_MEM_DB"]                           = "true",

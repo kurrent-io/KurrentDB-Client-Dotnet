@@ -46,8 +46,10 @@ class LegacyClusterClient {
 		_cancellator  = new CancellationTokenSource();
 		_channelCache = new(settings);
 
-		var clientName     = AppVersionInfo.Current.ProductName ?? "KurrentDB .NET Client";
-		var clientVersion  = AppVersionInfo.Current.ProductVersion ?? AppVersionInfo.Current.FileVersion ?? "0.0.0";
+		var clientName    = AppVersionInfo.Current.ProductName ?? "KurrentDB .NET Client";
+		var clientVersion = AppVersionInfo.Current.ProductVersion ?? AppVersionInfo.Current.FileVersion ?? "0.0.0";
+
+		// TODO SS: this should become node read preference.
 		var requiresLeader = settings.ConnectivitySettings.NodePreference == NodePreference.Leader ? bool.TrueString : bool.FalseString;
 
 		Interceptor[] interceptors = [
@@ -91,6 +93,8 @@ class LegacyClusterClient {
 
 		ResolverScheme = settings.ConnectivitySettings.IsSingleNode ? "kurrentdb" : "kurrentdb+discover";
 	}
+
+	public LegacyClusterClient(KurrentDBClientSettings settings) : this(settings, KurrentDBClient.ExceptionMap) { }
 
 	public string ResolverScheme { get; }
 

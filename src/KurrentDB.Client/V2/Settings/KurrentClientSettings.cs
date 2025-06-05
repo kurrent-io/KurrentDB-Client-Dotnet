@@ -7,10 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace KurrentDB.Client;
 
-/// <summary>
-/// A class that represents the settings to use for operations made from an implementation of <see cref="KurrentDBClientBase"/>.
-/// </summary>
-public class KurrentDBClientSettings {
+public class KurrentClientSettings {
 	// public static KurrentDBClientSettingsBuilder Builder => new();
 
 	/// <summary>
