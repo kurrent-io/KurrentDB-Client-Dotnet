@@ -82,7 +82,6 @@ public sealed partial class KurrentDBClient : KurrentDBClientBase {
 	StreamAppender CreateStreamAppender() => new StreamAppender(
 		Settings,
 		GetChannelInfo(_disposedTokenSource.Token),
-		// new(ChannelInfo),
 		_disposedTokenSource.Token,
 		SwapStreamAppender
 	);

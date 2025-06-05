@@ -81,7 +81,6 @@ public record ResolvedSchemaRegistryPolicy {
 
 public delegate SchemaName GenerateSchemaName(Type messageType);
 
-
 /// <summary>
 /// Exception thrown when a schema data format does not comply with the format required by the schema registry governance policy.
 /// </summary>

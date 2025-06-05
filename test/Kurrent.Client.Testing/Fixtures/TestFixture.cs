@@ -6,8 +6,11 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using Serilog;
+using Serilog.Events;
+using Serilog.Extensions.Logging;
 using TUnit.Core.Exceptions;
 using TUnit.Core.Interfaces;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
 
 namespace Kurrent.Client.Testing.Fixtures;
 /// <summary>
@@ -18,7 +21,7 @@ namespace Kurrent.Client.Testing.Fixtures;
 /// for testing scenarios.
 /// </summary>
 [PublicAPI]
-public class TestFixture : ITestStartEventReceiver, ITestEndEventReceiver {
+public class TestFixture : ITestStartEventReceiver, ITestEndEventReceiver, ITestRetryEventReceiver {
     /// <summary>
     /// The Fixture name.
     /// </summary>
@@ -32,7 +35,12 @@ public class TestFixture : ITestStartEventReceiver, ITestEndEventReceiver {
     /// <summary>
     /// The logger factory instance associated with the test fixture, enabling creation of other loggers for logging purposes.
     /// </summary>
-    protected ILoggerFactory LoggerFactory => TestContext.Current.LoggerFactory();
+    protected ILoggerFactory LoggerFactory { get; private set; } = null!;
+
+    /// <summary>
+    /// The logger instance associated with the test fixture.
+    /// </summary>
+    protected ILogger Logger { get; private set; } = null!;
 
     /// <summary>
     /// The time provider used for simulating and controlling time in tests.
@@ -51,18 +59,18 @@ public class TestFixture : ITestStartEventReceiver, ITestEndEventReceiver {
 	        .TestSetUp(beforeTestContext.TestContext)
 	        .ConfigureAwait(false);
 
-        FixtureName   = beforeTestContext.TestContext.TestDetails.TestClass.Name;
-        TimeProvider  = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        TestContext.Current!.AddAsyncLocalValues();
+
+        FixtureName  = beforeTestContext.TestContext.TestDetails.TestClass.Name;
+        TimeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
 
         var services = new ServiceCollection()
-	        .AddSingleton(LoggerFactory)
+	        .AddLogging(x => x.AddSerilog(TestContext.Current.Logger(), true))
 	        .AddSingleton(Faker)
 	        .AddSingleton<TimeProvider>(TimeProvider);
 
-        services.TryAdd(ServiceDescriptor.Singleton(typeof(ILogger<>), typeof(Logger<>)));
-
         try {
-            await OnSetUp(services).ConfigureAwait(false);
+            await OnSetUp(services);
         }
         catch (Exception ex) {
             Log.Error(ex, "An error occurred during the manual setup of {FixtureName}", FixtureName);
@@ -70,11 +78,14 @@ public class TestFixture : ITestStartEventReceiver, ITestEndEventReceiver {
         }
 
         ServiceProvider = services.BuildServiceProvider();
+
+        Logger        = ServiceProvider.GetRequiredService<ILogger<TestFixture>>();
+        LoggerFactory = ServiceProvider.GetRequiredService<ILoggerFactory>();
     }
 
     public async ValueTask OnTestEnd(AfterTestContext afterTestContext)  {
         try {
-            await OnCleanUp().ConfigureAwait(false);
+            await OnCleanUp();
         }
         catch (Exception ex) {
             Log.Error(ex, "An error occurred during the manual cleanup of {FixtureName}", FixtureName);
@@ -91,6 +102,26 @@ public class TestFixture : ITestStartEventReceiver, ITestEndEventReceiver {
         await TestingToolkitAutoWireUp
 	        .TestCleanUp(afterTestContext)
 	        .ConfigureAwait(false);
+    }
+
+
+    public ValueTask OnTestRetry(TestContext testContext, int retryAttempt) {
+	    Log.Warning(
+		    "#### Test {TestName} retrying (attempt {Attempt})",
+		    GetTestMethodName(testContext.TestDetails.TestId), retryAttempt + 1);
+
+	    return ValueTask.CompletedTask;
+
+	    static string GetTestMethodName(string fullyQualifiedTestName) {
+		    // Get the last segment after splitting by '.'
+		    var methodNameWithPossibleParams = fullyQualifiedTestName.Split('.').Last();
+
+		    // Remove any parameters or additional info after ':'
+		    var colonIndex = methodNameWithPossibleParams.IndexOf(':');
+		    return colonIndex >= 0
+			    ? methodNameWithPossibleParams[..colonIndex]
+			    : methodNameWithPossibleParams;
+	    }
     }
 
     /// <summary>
@@ -110,5 +141,5 @@ public class TestFixture : ITestStartEventReceiver, ITestEndEventReceiver {
     /// test fixtures.
     /// </summary>
     public virtual ValueTask OnCleanUp() =>
-        ValueTask.CompletedTask;
+	    ValueTask.CompletedTask;
 }

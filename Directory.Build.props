@@ -1,63 +1,63 @@
 <Project>
-    <PropertyGroup>
-        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-        <Nullable>enable</Nullable>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <LangVersion>preview</LangVersion>
-        <EnablePreviewFeatures>true</EnablePreviewFeatures>
-        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>preview</LangVersion>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 
-        <!-- Performance optimizations -->
-        <TieredCompilation>true</TieredCompilation>
-        <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
-        <TieredCompilationQuickJitForLoops>true</TieredCompilationQuickJitForLoops>
+    <!-- Performance optimizations -->
+    <TieredCompilation>true</TieredCompilation>
+    <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
+    <TieredCompilationQuickJitForLoops>true</TieredCompilationQuickJitForLoops>
 
-        <!-- Code quality -->
-        <EnableNETAnalyzers>true</EnableNETAnalyzers>
-        <AnalysisLevel>latest</AnalysisLevel>
-<!--        <AnalysisMode>AllEnabledByDefault</AnalysisMode>-->
-<!--        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>-->
+    <!-- Code quality -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <!--        <AnalysisMode>AllEnabledByDefault</AnalysisMode>-->
+    <!--        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>-->
 
-        <!-- Set Default Configuration -->
-        <Configuration Condition="'$(Configuration)'==''">Debug</Configuration>
+    <!-- Set Default Configuration -->
+    <Configuration Condition="'$(Configuration)'==''">Debug</Configuration>
 
-        <!-- Exclude all .DotSettings files from being included -->
-        <DefaultItemExcludes>$(DefaultItemExcludes);**/*.DotSettings</DefaultItemExcludes>
-    </PropertyGroup>
+    <!-- Exclude all .DotSettings files from being included -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);**/*.DotSettings</DefaultItemExcludes>
+  </PropertyGroup>
 
-    <!-- Debug Configuration Settings -->
-    <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-        <DebugType>portable</DebugType>
-        <DebugSymbols>true</DebugSymbols>
-        <Optimize>false</Optimize>
-        <DefineConstants>DEBUG;TRACE</DefineConstants>
-    </PropertyGroup>
+  <!-- Debug Configuration Settings -->
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
 
-    <!-- Release Configuration Settings -->
-    <PropertyGroup Condition="'$(Configuration)'=='Release'">
-        <DebugType>portable</DebugType>
-        <DebugSymbols>true</DebugSymbols>
-        <Optimize>true</Optimize>
-        <EmbedAllSources>true</EmbedAllSources>
-    </PropertyGroup>
+  <!-- Release Configuration Settings -->
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>true</Optimize>
+    <EmbedAllSources>true</EmbedAllSources>
+  </PropertyGroup>
 
-    <!-- Add Source Link support for public packages -->
-    <PropertyGroup Condition="'$(Configuration)'=='Release'">
-        <PublishRepositoryUrl>true</PublishRepositoryUrl>
-        <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <IncludeSymbols>true</IncludeSymbols>
-        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  <!-- Add Source Link support for public packages -->
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
 
-        <!-- Uncomment if you want to enable trimming -->
-        <!-- <PublishTrimmed>true</PublishTrimmed> -->
+    <!-- Uncomment if you want to enable trimming -->
+    <!-- <PublishTrimmed>true</PublishTrimmed> -->
 
-        <!-- Uncomment if you want AOT compilation -->
-        <!-- <PublishAot>true</PublishAot> -->
-    </PropertyGroup>
+    <!-- Uncomment if you want AOT compilation -->
+    <!-- <PublishAot>true</PublishAot> -->
+  </PropertyGroup>
 
-    <!-- Deterministic builds for CI environments -->
-    <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
-        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-        <Deterministic>true</Deterministic>
-    </PropertyGroup>
+  <!-- Deterministic builds for CI environments -->
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
 </Project>

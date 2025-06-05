@@ -17,9 +17,7 @@ public partial class KurrentDBPermanentFixture {
 	public string GetGroupName([CallerMemberName] string? testMethod = null) =>
 		$"group-{testMethod}-{Guid.NewGuid():N}";
 
-	public UserCredentials GetUserCredentials([CallerMemberName] string? testMethod = null) => new UserCredentials(
-		$"user-{testMethod}-{Guid.NewGuid():N}", "pa$$word"
-	);
+	public UserCredentials GetUserCredentials([CallerMemberName] string? testMethod = null) => new($"user-{testMethod}-{Guid.NewGuid():N}", "pa$$word");
 
 	public string GetProjectionName([CallerMemberName] string? testMethod = null) =>
 		$"projection-{testMethod}-{Guid.NewGuid():N}";
@@ -84,8 +82,7 @@ public partial class KurrentDBPermanentFixture {
 		Fakers.Users
 			.RuleFor(x => x.Groups, f => withoutGroups ? Array.Empty<string>() : f.Lorem.Words())
 			.Generate(count)
-			.Select(
-				async user => {
+			.Select(async user => {
 					await DBUsers.CreateUserAsync(
 						user.LoginName,
 						user.FullName,

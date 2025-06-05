@@ -45,15 +45,16 @@ class SharingProvider<TInput, TOutput> : SharingProvider, IDisposable {
 		_initialInput      = initialInput;
 		_onRefresh         = onRefresh ?? (_ => Logger.LogDebug("{type} refreshed!", typeof(TOutput).Name));
 		_currentBox        = new(TaskCreationOptions.RunContinuationsAsynchronously);
-		_                  = FillBoxAsync(_currentBox, input: initialInput);
+		_                  = FillBoxAsync(_currentBox, initialInput);
 	}
 
 	public Task<TOutput> CurrentAsync => _currentBox.Task;
 
+	public void Dispose() => _disposed = true;
+
 	//public void Reset() => OnBroken(_currentBox, _initialInput);
 
 	public void Reset(TInput? input = default) => OnBroken(_currentBox, input ?? _initialInput);
-
 
 	//public Task ResetAsync(TInput? input = default) => OnBrokenAsync(_currentBox, input ?? _initialInput);
 
@@ -93,15 +94,17 @@ class SharingProvider<TInput, TOutput> : SharingProvider, IDisposable {
 
 		// replace _currentBox with a new one, but only if it is the broken one.
 		var originalBox = Interlocked.CompareExchange(
-			location1: ref _currentBox,
-			value: new(TaskCreationOptions.RunContinuationsAsynchronously),
-			comparand: brokenBox);
+			ref _currentBox,
+			new(TaskCreationOptions.RunContinuationsAsynchronously),
+			brokenBox
+		);
 
 		if (originalBox == brokenBox) {
 			// replaced the _currentBox, call the factory to fill it.
 			Logger.LogDebug("{type} returned to factory. Producing a new one.", typeof(TOutput).Name);
 			_ = FillBoxAsync(_currentBox, input);
-		} else {
+		}
+		else {
 			// did not replace. a new one was created previously. do nothing.
 			Logger.LogDebug("{type} returned to factory. Production already complete.", typeof(TOutput).Name);
 		}
@@ -120,7 +123,8 @@ class SharingProvider<TInput, TOutput> : SharingProvider, IDisposable {
 			_onRefresh(item);
 			box.TrySetResult(item);
 			Logger.LogDebug("{type} produced!", typeof(TOutput).Name);
-		} catch (Exception ex) {
+		}
+		catch (Exception ex) {
 			await Task.Yield(); // avoid risk of stack overflow
 			Logger.LogDebug(ex, "{type} production failed. Retrying in {delay}", typeof(TOutput).Name, _factoryRetryDelay);
 			await Task.Delay(_factoryRetryDelay).ConfigureAwait(false);
@@ -129,6 +133,4 @@ class SharingProvider<TInput, TOutput> : SharingProvider, IDisposable {
 			//await OnBrokenAsync(box, _initialInput);
 		}
 	}
-
-	public void Dispose() => _disposed = true;
 }

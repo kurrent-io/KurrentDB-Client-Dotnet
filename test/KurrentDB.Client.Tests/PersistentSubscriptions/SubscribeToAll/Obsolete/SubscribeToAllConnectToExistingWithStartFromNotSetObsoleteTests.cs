@@ -16,9 +16,7 @@ public class SubscribeToAllConnectToExistingWithStartFromNotSetObsoleteTests(ITe
 			await Fixture.Streams.AppendToStreamAsync(
 				stream,
 				StreamState.Any,
-				[
-					@event
-				]
+				[@event]
 			);
 
 		await Fixture.Subscriptions.CreateToAllAsync(

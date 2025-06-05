@@ -43,6 +43,12 @@
         GrpcServices="Client"
         Access="internal"
     />
+    <Protobuf Update="..\..\proto\kurrentdb\protocol\v2\capabilities\core.proto">
+      <Generator>MSBuild:Compile</Generator>
+    </Protobuf>
+    <Protobuf Update="..\..\proto\kurrentdb\protocol\v2\dynamic-values.proto">
+      <Generator>MSBuild:Compile</Generator>
+    </Protobuf>
   </ItemGroup>
 
   <ItemGroup>
@@ -61,7 +67,7 @@
 
   <ItemGroup>
     <Folder Include="V1\Services\" />
-    <Folder Include="V2\Services\" />
+    <Folder Include="V2\Services\Diagnostics\" />
   </ItemGroup>
 
 </Project>

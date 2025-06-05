@@ -58,6 +58,7 @@ class GrpcServerCapabilitiesClient : IServerCapabilitiesClient {
 				}
 
 			return new(
+				response.EventStoreServerVersion,
 				supportsBatchAppend,
 				supportsPersistentSubscriptionsToAll,
 				supportsPersistentSubscriptionsGetInfo,

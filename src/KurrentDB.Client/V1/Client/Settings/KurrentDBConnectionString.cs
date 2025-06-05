@@ -70,6 +70,9 @@ record KurrentDBConnectionString {
 	public DnsEndPoint[]               Hosts    { get; }
 	public Dictionary<string, string>  Options  { get; }
 
+
+	public bool IsDiscoveryScheme => SchemesDiscovery.Contains(Scheme);
+
 	/// <summary>
 	/// Parses a connection string into its components
 	/// </summary>
@@ -156,10 +159,7 @@ record KurrentDBConnectionString {
 				return endpoint;
 			}).ToArray();
 
-			if (hosts.Length == 0)
-				throw new InvalidHostException(input);
-
-			return hosts;
+			return hosts.Length == 0 ? throw new InvalidHostException(input) : hosts;
 		}
 
 		static Dictionary<string, string> ParseKeyValuePairs(string input) {

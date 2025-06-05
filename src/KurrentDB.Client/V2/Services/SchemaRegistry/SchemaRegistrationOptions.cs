@@ -1,4 +1,3 @@
-
 namespace Kurrent.Client.SchemaRegistry;
 
 /// <summary>

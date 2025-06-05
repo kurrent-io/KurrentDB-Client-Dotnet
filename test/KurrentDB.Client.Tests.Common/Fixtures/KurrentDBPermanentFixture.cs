@@ -11,7 +11,8 @@ namespace KurrentDB.Client.Tests;
 
 [PublicAPI]
 public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposable {
-	static readonly ILogger Logger;
+	static readonly ILogger       Logger;
+	static readonly SemaphoreSlim WarmUpGatekeeper = new(1, 1);
 
 	static KurrentDBPermanentFixture() {
 		Logging.Initialize();
@@ -34,7 +35,7 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 
 	public ITestService            Service { get; }
 	public KurrentDBFixtureOptions Options { get; }
-	public Faker                   Faker   { get; } = new Faker();
+	public Faker                   Faker   { get; } = new();
 
 	public Version EventStoreVersion               { get; private set; } = null!;
 	public bool    EventStoreHasLastStreamPosition { get; private set; }
@@ -66,15 +67,9 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 			DefaultDeadline          = Options.DBClientSettings.DefaultDeadline
 		};
 
-	InterlockedBoolean            WarmUpCompleted { get; } = new InterlockedBoolean();
-	static readonly SemaphoreSlim WarmUpGatekeeper = new(1, 1);
+	InterlockedBoolean WarmUpCompleted { get; } = new();
 
-	public void CaptureTestRun(ITestOutputHelper outputHelper) {
-		var testRunId = Logging.CaptureLogs(outputHelper);
-		TestRuns.Add(testRunId);
-		Logger.Information(">>> Test Run {TestRunId} {Operation} <<<", testRunId, "starting");
-		Service.ReportStatus();
-	}
+	async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
 
 	public async Task InitializeAsync() {
 		await WarmUpGatekeeper.WaitAsync();
@@ -89,22 +84,24 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 
 				await Task.WhenAll(
 					InitClient<KurrentDBUserManagementClient>(async x => DBUsers = await Task.FromResult(x)),
-					InitClient<KurrentDBClient>(async x => Streams = await Task.FromResult(x)),
+					InitClient<KurrentDBClient>(async x => Streams               = await Task.FromResult(x)),
 					InitClient<KurrentDBProjectionManagementClient>(
 						async x => DBProjections = await Task.FromResult(x),
 						Options.Environment["KURRENTDB_RUN_PROJECTIONS"] != "None"
 					),
 					InitClient<KurrentDBPersistentSubscriptionsClient>(async x => Subscriptions = SkipPsWarmUp ? x : await Task.FromResult(x)),
-					InitClient<KurrentDBOperationsClient>(async x => DBOperations = await Task.FromResult(x))
+					InitClient<KurrentDBOperationsClient>(async x => DBOperations               = await Task.FromResult(x))
 				);
 
 				WarmUpCompleted.EnsureCalledOnce();
 
 				Logger.Warning("*** Warmup completed ***");
-			} else {
+			}
+			else {
 				Logger.Information("*** Warmup skipped ***");
 			}
-		} finally {
+		}
+		finally {
 			WarmUpGatekeeper.Release();
 		}
 
@@ -138,17 +135,14 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 				    Version.TryParse(
 					    new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()),
 					    out var version
-				    )) {
+				    ))
 					return version;
-				}
 			}
 
 			throw new InvalidOperationException("Could not determine server version.");
 
 			IEnumerable<char> ReadVersion(string s) {
-				foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) {
-					yield return c;
-				}
+				foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) yield return c;
 			}
 		}
 	}
@@ -156,7 +150,8 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 	public async Task DisposeAsync() {
 		try {
 			await OnTearDown();
-		} catch {
+		}
+		catch {
 			// ignored
 		}
 
@@ -166,7 +161,12 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 			Logging.ReleaseLogs(testRunId);
 	}
 
-	async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
+	public void CaptureTestRun(ITestOutputHelper outputHelper) {
+		var testRunId = Logging.CaptureLogs(outputHelper);
+		TestRuns.Add(testRunId);
+		Logger.Information(">>> Test Run {TestRunId} {Operation} <<<", testRunId, "starting");
+		Service.ReportStatus();
+	}
 }
 
 public abstract class KurrentDBPermanentTests<TFixture> : IClassFixture<TFixture> where TFixture : KurrentDBPermanentFixture {

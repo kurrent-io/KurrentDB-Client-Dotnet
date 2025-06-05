@@ -21,8 +21,8 @@ public class TestingToolkitAutoWireUp {
     }
 
     [AfterEvery(Assembly)]
-    public static void AssemblyCleanUp(AssemblyHookContext context) {
-        Logging.Logging.CloseAndFlush();
+    public static async Task AssemblyCleanUp(AssemblyHookContext context) {
+        await Logging.Logging.CloseAndFlushAsync().ConfigureAwait(false);
     }
 
     // [BeforeEvery(Test)] [AfterEvery(Test)]
@@ -30,15 +30,16 @@ public class TestingToolkitAutoWireUp {
     // therefor we must manually call the method from the TestFixture to capture all logs.
     //
 
-    public static Task TestSetUp(TestContext context, CancellationToken cancellationToken = default) {
-        var testUid = Guid.NewGuid();
-
-        var loggerFactory = Logging.Logging.CaptureTestLogs(
-            testUid, () => TestContext.Current.TryGetTestUid(out var uid) ? uid : Guid.Empty
-        );
-
+    public static Task TestSetUp(TestContext context, CancellationToken ct = default) {
+	    var testUid = Guid.NewGuid();
         context.SetTestUid(testUid);
-        context.SetLoggerFactory(loggerFactory);
+
+        var logger = Logging.Logging
+	        .CaptureTestLogs(testUid, _ => TestContext.Current.TestUid(defaultValue: Guid.Empty).Equals(testUid));
+
+        context.SetLogger(logger);
+        // context.SetLoggerSubscription(subscription);
+
         context.SetOtelServiceMetadata(
             new(context.TestDetails.TestClass.Name) {
                 ServiceInstanceId = testUid.ToString(),
@@ -46,35 +47,48 @@ public class TestingToolkitAutoWireUp {
             }
         );
 
-        Log.Verbose("#### Test Started: {TestName}", context.TestDetails.TestId);
+        Log.Verbose("#### Test {TestName} started", GetTestMethodName(context.TestDetails.TestId));
 
         return Task.CompletedTask;
     }
 
-    public static async Task TestCleanUp(TestContext context, CancellationToken cancellationToken = default) {
+    public static Task TestCleanUp(TestContext context, CancellationToken ct = default) {
         Log.Verbose(
-            "#### Test Finished in {Elapsed} after {Attempt} attempt(s): {TestName}",
+            "#### Test {TestName} finished in {Elapsed} after {Attempt} attempt(s)",
+            GetTestMethodName(context.TestDetails.TestId),
             (TimeProvider.System.GetUtcNow() - context.TestStart.GetValueOrDefault()).Humanize(precision: 2),
-            context.TestDetails.CurrentRepeatAttempt + 1,
-            context.TestDetails.TestId
+            context.TestDetails.CurrentRepeatAttempt + 1
+
         );
 
-        if (context.TryGetLoggerFactory(out var loggerFactory))
-            await loggerFactory.DisposeAsync();
+		return Task.CompletedTask;
+    }
+
+    static string GetTestMethodName(string fullyQualifiedTestName) {
+	    // Get the last segment after splitting by '.'
+	    var methodNameWithPossibleParams = fullyQualifiedTestName.Split('.').Last();
+
+	    // Remove any parameters or additional info after ':'
+	    var colonIndex = methodNameWithPossibleParams.IndexOf(':');
+	    return colonIndex >= 0
+		    ? methodNameWithPossibleParams[..colonIndex]
+		    : methodNameWithPossibleParams;
     }
 }
 
 public static class TestContextExtensions {
     const string TestUidKey = "$ToolkitTestUid";
 
-    public static void SetTestUid(this TestContext context, Guid testUid) {
+    public static Guid SetTestUid(this TestContext context, Guid testUid) {
 	    if (testUid == Guid.Empty)
 		    throw new ArgumentException("Value cannot be empty.", nameof(testUid));
 
         context.ObjectBag[TestUidKey] = testUid;
+
+        return testUid;
     }
 
-    public static bool TryGetTestUid(this TestContext? context, out Guid testUid) {
+    static bool TryGetTestUid(this TestContext? context, out Guid testUid) {
         if (context is not null
          && context.ObjectBag.TryGetValue(TestUidKey, out var value)
          && value is Guid uid) {
@@ -86,8 +100,8 @@ public static class TestContextExtensions {
         return false;
     }
 
-    public static Guid TestUid(this TestContext? context) =>
-        !context.TryGetTestUid(out var testUid)
-            ? throw new InvalidOperationException("Testing toolkit test uid not found!")
-            : testUid;
+    public static Guid TestUid(this TestContext? context, Guid? defaultValue = null) =>
+	    !context.TryGetTestUid(out var testUid)
+		    ? defaultValue ?? throw new InvalidOperationException("Testing toolkit test uid not found!")
+		    : testUid;
 }

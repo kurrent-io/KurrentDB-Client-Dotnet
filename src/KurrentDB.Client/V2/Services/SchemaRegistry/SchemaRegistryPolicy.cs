@@ -1,3 +1,4 @@
+using Kurrent.Client.Features;
 using Kurrent.Client.Model;
 
 namespace Kurrent.Client.SchemaRegistry;
@@ -7,14 +8,14 @@ namespace Kurrent.Client.SchemaRegistry;
 /// and formatting settings in the context of client and server operations.
 /// </summary>
 public record SchemaRegistryPolicy {
+	public static readonly SchemaRegistryPolicy Disabled = new() { Enabled = false };
+
 	public static readonly SchemaRegistryPolicy NoRequirements = new() {
 		Enabled                 = true,
 		RegistrationRequirement = PolicyRequirement.Optional,
 		ValidationRequirement   = PolicyRequirement.Optional,
 		EnforcedDataFormat      = SchemaDataFormat.Unspecified
 	};
-
-	public static readonly SchemaRegistryPolicy Disabled = new() { Enabled = false };
 
 	/// <summary>
 	/// Whether the schema registry is enabled on the server
@@ -91,6 +92,41 @@ public record SchemaRegistryPolicy {
 			validate = true;
 
 		return new(autoRegister, validate, options.AutoMapMessages, EnforcedDataFormat, options.SchemaNameStrategy, stream);
+	}
+
+	/// <summary>
+	/// Creates a schema registry policy from server capabilities.
+	/// </summary>
+	/// <param name="features">The server capabilities object containing schema registry information.</param>
+	/// <returns>
+	/// A configured <see cref="SchemaRegistryPolicy"/> based on server capabilities,
+	/// or <see cref="SchemaRegistryPolicy.Disabled"/> if schema registry is not supported.
+	/// </returns>
+	public static SchemaRegistryPolicy FromServerFeatures(ServerFeatures features) {
+		// Check if schema registry capability exists
+		var capability = features.GetFeature("SchemaRegistry");
+
+		// If capability is null or not enabled, return disabled policy
+		if (capability is null && capability is not { Enabled: true })
+			return Disabled;
+
+		var registrationSupport = capability.GetRequirementValue("RegistrationSupport", false);
+		var validationSupport   = capability.GetRequirementValue("ValidationSupport", false);
+
+		// If neither registration nor validation is supported, consider it disabled
+		if (!registrationSupport && !validationSupport)
+			return Disabled;
+
+		var registration   = capability.GetRequirementValue("Registration", PolicyRequirement.Optional);
+		var validation     = capability.GetRequirementValue("Validation", PolicyRequirement.Optional);
+		var enforcedFormat = capability.GetRequirementValue("DataFormat", SchemaDataFormat.Unspecified);
+
+		return new SchemaRegistryPolicy {
+			Enabled                 = true,
+			RegistrationRequirement = registration,
+			ValidationRequirement   = validation,
+			EnforcedDataFormat      = enforcedFormat
+		};
 	}
 }
 
