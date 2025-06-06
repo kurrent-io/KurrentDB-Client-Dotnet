@@ -19,14 +19,21 @@ public class SchemaNameStrategiesTests {
 	}
 
 	[Test]
-	[Arguments(None, "Logistics.OrderShipped")]
-	[Arguments(KebabCase, "logistics.order-shipped")]
-	[Arguments(SnakeCase, "logistics.order_shipped")]
-	[Arguments(Urn, "urn:schemas-kurrent:logistics:order-shipped")]
-	public void category_schema_name_strategy_generates_correct_name(SchemaNameOutputFormat format, string expectedName) {
+	[Arguments(None, "Logistics-101", "Logistics.OrderShipped")]
+	[Arguments(None, "-Logistics-101", "Logistics.OrderShipped")]
+	[Arguments(None, "--Logistics-101", "Logistics.OrderShipped")]
+	[Arguments(KebabCase, "Logistics-101", "logistics.order-shipped")]
+	[Arguments(KebabCase, "-Logistics-101", "logistics.order-shipped")]
+	[Arguments(KebabCase, "--Logistics-101", "logistics.order-shipped")]
+	[Arguments(SnakeCase, "Logistics-101", "logistics.order_shipped")]
+	[Arguments(SnakeCase, "-Logistics-101", "logistics.order_shipped")]
+	[Arguments(SnakeCase, "--Logistics-101", "logistics.order_shipped")]
+	[Arguments(Urn, "Logistics-101", "urn:schemas-kurrent:logistics:order-shipped")]
+	[Arguments(Urn, "-Logistics-101", "urn:schemas-kurrent:logistics:order-shipped")]
+	[Arguments(Urn, "--Logistics-101", "urn:schemas-kurrent:logistics:order-shipped")]
+	public void category_schema_name_strategy_generates_correct_name(SchemaNameOutputFormat format, string streamName, string expectedName) {
 		var strategy    = new CategorySchemaNameStrategy(format);
 		var messageType = typeof(Amazon.Logistics.Events.OrderShipped);
-		var streamName  = "Logistics-101";
 
 		var result = strategy.GenerateSchemaName(messageType, streamName);
 

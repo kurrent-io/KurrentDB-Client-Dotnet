@@ -69,10 +69,10 @@ public record ResolvedSchemaRegistryPolicy {
 	/// Ensures the data format is allowed by the policy
 	/// </summary>
 	public ResolvedSchemaRegistryPolicy EnsureDataFormatCompliance(SchemaDataFormat dataFormat) {
-		if (DataFormat == SchemaDataFormat.Unspecified || DataFormat != dataFormat)
-			return this;
+		if (DataFormat != SchemaDataFormat.Unspecified && DataFormat != dataFormat)
+			throw new NonCompliantSchemaDataFormatException(dataFormat, DataFormat);
 
-		throw new NonCompliantSchemaDataFormatException(dataFormat, DataFormat);
+		return this;
 	}
 
 	public SchemaName GetSchemaName(Type messageType) =>

@@ -16,6 +16,10 @@ public class CategorySchemaNameStrategy(SchemaNameOutputFormat format = SchemaNa
 		if (string.IsNullOrWhiteSpace(streamName))
 			throw new ArgumentException("Stream name cannot be empty or whitespace", nameof(streamName));
 
-		return (streamName.Split('-').First(), messageType.Name);
+		var segments = streamName.Split('-', StringSplitOptions.RemoveEmptyEntries);
+		if (segments.Length is 0)
+			throw new ArgumentException("Stream name must contain at least one non-empty segment after splitting", nameof(streamName));
+
+		return (segments[0], messageType.Name);
 	}
 }

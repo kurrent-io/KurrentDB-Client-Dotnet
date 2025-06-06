@@ -68,7 +68,7 @@ public record SchemaRegistryPolicy {
 		};
 
 		// Resolve validation based on client mode and server policy
-		var validate = options.ValidationMode switch {
+		var validate = RegistrationRequirement is PolicyRequirement.Prohibited || options.ValidationMode switch {
 			SchemaValidationMode.Enabled => ValidationRequirement switch {
 				PolicyRequirement.Required   => true,
 				PolicyRequirement.Prohibited => false,
@@ -85,10 +85,6 @@ public record SchemaRegistryPolicy {
 
 			_ => false
 		};
-
-		// If registration is prohibited by policy, ensure validation is enabled
-		if (RegistrationRequirement == PolicyRequirement.Prohibited)
-			validate = true;
 
 		return new(autoRegister, validate, options.AutoMapMessages, EnforcedDataFormat, options.SchemaNameStrategy, stream);
 	}
