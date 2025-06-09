@@ -45,7 +45,7 @@ public class Result<TSuccess, TError> {
     /// Gets a value indicating whether the operation failed.
     /// </summary>
     /// <value><c>true</c> if the operation failed; otherwise, <c>false</c>.</value>
-    public bool IsFailure => !IsSuccess;
+    public bool IsError => !IsSuccess;
 
     /// <summary>
     /// Gets the success value.
@@ -54,7 +54,7 @@ public class Result<TSuccess, TError> {
     /// <value>The success value.</value>
     /// <exception cref="InvalidOperationException">If the result represents a failure.</exception>
     public TSuccess AsSuccess =>
-        IsFailure
+        IsError
             ? throw new InvalidOperationException("Result is not a success.")
             : _success;
 

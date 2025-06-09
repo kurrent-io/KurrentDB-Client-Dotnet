@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.Testing", "t
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole", "src\TestConsole\TestConsole.csproj", "{03459F62-1CE6-4AF4-9651-1DCC9874F318}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.SourceGenerators", "src\Kurrent.Client.SourceGenerators\Kurrent.Client.SourceGenerators.csproj", "{4C4E9633-270B-4BF2-A480-6B6D9E2BF433}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -48,6 +50,10 @@ Global
 		{03459F62-1CE6-4AF4-9651-1DCC9874F318}.Debug|x64.Build.0 = Debug|Any CPU
 		{03459F62-1CE6-4AF4-9651-1DCC9874F318}.Release|x64.ActiveCfg = Release|Any CPU
 		{03459F62-1CE6-4AF4-9651-1DCC9874F318}.Release|x64.Build.0 = Release|Any CPU
+		{4C4E9633-270B-4BF2-A480-6B6D9E2BF433}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{4C4E9633-270B-4BF2-A480-6B6D9E2BF433}.Debug|x64.Build.0 = Debug|Any CPU
+		{4C4E9633-270B-4BF2-A480-6B6D9E2BF433}.Release|x64.ActiveCfg = Release|Any CPU
+		{4C4E9633-270B-4BF2-A480-6B6D9E2BF433}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection

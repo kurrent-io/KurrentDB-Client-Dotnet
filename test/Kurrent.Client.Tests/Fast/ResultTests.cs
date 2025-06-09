@@ -35,10 +35,10 @@ public class ResultTests {
         var resultTicTacToe = Result<GameStarted, InvalidMoveError>.Error(ticTacToeError);
 
         // Assert
-        resultGameEnded.IsFailure.ShouldBeTrue();
+        resultGameEnded.IsError.ShouldBeTrue();
         resultGameEnded.AsError.ShouldBe(gameEndedError);
 
-        resultTicTacToe.IsFailure.ShouldBeTrue();
+        resultTicTacToe.IsError.ShouldBeTrue();
         resultTicTacToe.AsError.ShouldBe(ticTacToeError);
     }
 
@@ -64,7 +64,7 @@ public class ResultTests {
         var result = new TestResult<GameStarted, InvalidMoveError>(false, error: errorValue);
 
         // Assert
-        result.IsFailure.ShouldBeTrue();
+        result.IsError.ShouldBeTrue();
         result.AsError.ShouldBe(errorValue);
     }
 
@@ -92,7 +92,7 @@ public class ResultTests {
         var errorResult = Result<GameStarted, InvalidMoveError>.Error(new InvalidMoveError(Faker.Random.Guid(), "Test reason"));
 
         // Act & Assert
-        errorResult.IsFailure.ShouldBeTrue();
+        errorResult.IsError.ShouldBeTrue();
     }
 
     [Test]
@@ -101,7 +101,7 @@ public class ResultTests {
         var successResult = Result<GameStarted, InvalidMoveError>.Success(new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>()));
 
         // Act & Assert
-        successResult.IsFailure.ShouldBeFalse();
+        successResult.IsError.ShouldBeFalse();
     }
 
     [Test]
@@ -220,7 +220,7 @@ public class ResultTests {
         Result<GameStarted, InvalidMoveError> result = errorValue;
 
         // Assert
-        result.IsFailure.ShouldBeTrue();
+        result.IsError.ShouldBeTrue();
         result.AsError.ShouldBe(errorValue);
     }
 
@@ -380,7 +380,7 @@ public class ResultFunctionalTests {
         var mappedResult = result.Map(gameId => new GameUpdated(gameId.Value, GameStatus.Draw));
 
         // Assert
-        mappedResult.IsFailure.ShouldBeTrue();
+        mappedResult.IsError.ShouldBeTrue();
         mappedResult.AsError.ShouldBe(errorValue);
     }
 
@@ -418,7 +418,7 @@ public class ResultFunctionalTests {
         );
 
         // Assert
-        mappedResult.IsFailure.ShouldBeTrue();
+        mappedResult.IsError.ShouldBeTrue();
         mappedResult.AsError.ShouldBe(errorValue);
     }
 
@@ -455,7 +455,7 @@ public class ResultFunctionalTests {
         var boundResult = result.Then(gameId => Result<PlayerTurn, InvalidMoveError>.Error(nextError with { GameId = gameId.Value }));
 
         // Assert
-        boundResult.IsFailure.ShouldBeTrue();
+        boundResult.IsError.ShouldBeTrue();
         boundResult.AsError.GameId.ShouldBe(initialSuccess.Value);
         boundResult.AsError.Reason.ShouldBe(nextError.Reason);
     }
@@ -472,7 +472,7 @@ public class ResultFunctionalTests {
         );
 
         // Assert
-        boundResult.IsFailure.ShouldBeTrue();
+        boundResult.IsError.ShouldBeTrue();
         boundResult.AsError.ShouldBe(errorValue);
     }
 
@@ -513,7 +513,7 @@ public class ResultFunctionalTests {
         );
 
         // Assert
-        boundResult.IsFailure.ShouldBeTrue();
+        boundResult.IsError.ShouldBeTrue();
         boundResult.AsError.GameId.ShouldBe(successValue.Value);
         boundResult.AsError.Reason.ShouldBe("Stateful chained op failed");
         boundResult.AsError.StateContext.ShouldBe(stateContext);
@@ -534,7 +534,7 @@ public class ResultFunctionalTests {
         );
 
         // Assert
-        boundResult.IsFailure.ShouldBeTrue();
+        boundResult.IsError.ShouldBeTrue();
         boundResult.AsError.ShouldBe(errorValue);
     }
 

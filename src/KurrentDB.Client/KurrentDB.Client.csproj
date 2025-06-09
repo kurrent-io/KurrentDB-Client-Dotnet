@@ -13,7 +13,6 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
     <PackageReference Include="NJsonSchema" Version="11.3.2" />
     <PackageReference Include="OneOf" Version="3.0.271" />
-<!--    <PackageReference Include="OneOf.Monads" Version="1.21.0" />-->
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="OpenTelemetry.Api" Version="1.12.0" />
 
@@ -45,6 +44,10 @@
         GrpcServices="Client"
         Access="internal"
     />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kurrent.Client.SourceGenerators\Kurrent.Client.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

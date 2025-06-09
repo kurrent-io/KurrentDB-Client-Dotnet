@@ -7,8 +7,7 @@ namespace Kurrent.Client.Model;
 /// Base exception class for all KurrentDB client exceptions.
 /// </summary>
 public class KurrentClientException(string errorCode, string message, Exception? innerException = null) : Exception(message, innerException) {
-    public static void Throw<T>(T error, Exception? innerException = null) =>
-        throw new KurrentClientException(typeof(T).Name, error!.ToString()!, innerException);
+    public static void Throw<T>(T error, Exception? innerException = null) => throw new KurrentClientException(typeof(T).Name, error!.ToString()!, innerException);
 }
 
 /// <summary>
@@ -83,38 +82,28 @@ public partial class AppendStreamFailure : OneOfBase<ErrorDetails.StreamNotFound
     public ErrorDetails.TransactionMaxSizeExceeded AsTransactionMaxSizeExceeded => AsT3;
     public ErrorDetails.StreamRevisionConflict     AsStreamRevisionConflict     => AsT4;
 
-    public void Throw() => Switch(
-        notFound         => KurrentClientException.Throw(notFound),
-        deleted          => KurrentClientException.Throw(deleted),
-        accessDenied     => KurrentClientException.Throw(accessDenied),
-        maxSizeExceeded  => KurrentClientException.Throw(maxSizeExceeded),
-        revisionConflict => KurrentClientException.Throw(revisionConflict)
-    );
+    public void Throw() =>
+        Switch(
+            notFound => KurrentClientException.Throw(notFound),
+            deleted => KurrentClientException.Throw(deleted),
+            accessDenied => KurrentClientException.Throw(accessDenied),
+            maxSizeExceeded => KurrentClientException.Throw(maxSizeExceeded),
+            revisionConflict => KurrentClientException.Throw(revisionConflict)
+        );
 }
 
 [PublicAPI]
 [method: SetsRequiredMembers]
 public record AppendStreamRequest(string Stream, ExpectedStreamState ExpectedState, IEnumerable<Message> Messages) {
-	public static AppendStreamRequestBuilder New() => new();
-
-	public required string               Stream        { get; init; } = Stream;
-	public required IEnumerable<Message> Messages      { get; init; } = Messages;
-	public required ExpectedStreamState  ExpectedState { get; init; } = ExpectedState;
+    public required string                     Stream        { get; init; } = Stream;
+    public required IEnumerable<Message>       Messages      { get; init; } = Messages;
+    public required ExpectedStreamState        ExpectedState { get; init; } = ExpectedState;
+    public static   AppendStreamRequestBuilder New()         => new();
 }
 
-
 [PublicAPI]
-public class AppendStreamResult : Result<AppendStreamSuccess, AppendStreamFailure> {
-    protected AppendStreamResult(bool isSuccess, AppendStreamSuccess? success = null, AppendStreamFailure? error = null)
-        : base(isSuccess, success, error) { }
-
-    public new static AppendStreamResult Success(AppendStreamSuccess _) => new(true, success: _);
-    public new static AppendStreamResult Error(AppendStreamFailure _)   => new(false, error: _);
-
-    public static implicit operator AppendStreamResult(AppendStreamSuccess _) => new(true, success: _);
-    public static explicit operator AppendStreamSuccess(AppendStreamResult _) => _.AsSuccess;
-    public static implicit operator AppendStreamResult(AppendStreamFailure _) => new(false, error: _);
-    public static explicit operator AppendStreamFailure(AppendStreamResult _) => _.AsError;
+public partial class AppendStreamResult : Result<AppendStreamSuccess, AppendStreamFailure> {
+    // Constructor removed - will be generated
 }
 
 [PublicAPI]
@@ -135,63 +124,54 @@ public record MultiStreamAppendRequest {
 }
 
 [PublicAPI]
-public class MultiStreamAppendResult : Result<AppendStreamSuccesses, AppendStreamFailures> {
-    protected MultiStreamAppendResult(bool isSuccess, AppendStreamSuccesses? success = null, AppendStreamFailures? error = null)
-        : base(isSuccess, success, error) { }
-
-    public new static MultiStreamAppendResult Success(AppendStreamSuccesses _) => new(true, success: _);
-    public new static MultiStreamAppendResult Error(AppendStreamFailures _)    => new(false, error: _);
-
-    public static implicit operator MultiStreamAppendResult(AppendStreamSuccesses _) => new(true, success: _);
-    public static explicit operator AppendStreamSuccesses(MultiStreamAppendResult _) => _.AsSuccess;
-    public static implicit operator MultiStreamAppendResult(AppendStreamFailures _)  => new(false, error: _);
-    public static explicit operator AppendStreamFailures(MultiStreamAppendResult _)  => _.AsError;
+public partial class MultiStreamAppendResult : Result<AppendStreamSuccesses, AppendStreamFailures> {
+    // Constructor removed - will be generated
 }
 
 [PublicAPI]
 public class AppendStreamRequestBuilder {
-	ExpectedStreamState  _expectedState   = ExpectedStreamState.Any;
-	List<MessageBuilder> _messageBuilders = [];
+    ExpectedStreamState  _expectedState   = ExpectedStreamState.Any;
+    List<MessageBuilder> _messageBuilders = [];
 
-	string _stream = "";
+    string _stream = "";
 
-	public AppendStreamRequestBuilder ForStream(string stream) {
-		_stream = stream;
-		return this;
-	}
+    public AppendStreamRequestBuilder ForStream(string stream) {
+        _stream = stream;
+        return this;
+    }
 
-	public AppendStreamRequestBuilder ExpectingState(ExpectedStreamState expectedState) {
-		_expectedState = expectedState;
-		return this;
-	}
+    public AppendStreamRequestBuilder ExpectingState(ExpectedStreamState expectedState) {
+        _expectedState = expectedState;
+        return this;
+    }
 
-	public AppendStreamRequestBuilder WithMessage(Action<MessageBuilder> configureBuilder) {
-		var messageBuilder = new MessageBuilder();
-		configureBuilder(messageBuilder);
-		_messageBuilders.Add(messageBuilder);
-		return this;
-	}
+    public AppendStreamRequestBuilder WithMessage(Action<MessageBuilder> configureBuilder) {
+        var messageBuilder = new MessageBuilder();
+        configureBuilder(messageBuilder);
+        _messageBuilders.Add(messageBuilder);
+        return this;
+    }
 
-	public AppendStreamRequestBuilder WithMessage(MessageBuilder messageBuilder) {
-		_messageBuilders.Add(messageBuilder);
-		return this;
-	}
+    public AppendStreamRequestBuilder WithMessage(MessageBuilder messageBuilder) {
+        _messageBuilders.Add(messageBuilder);
+        return this;
+    }
 
-	public AppendStreamRequestBuilder WithMessage(object value, SchemaDataFormat dataFormat = SchemaDataFormat.Json, Metadata? metadata = null) =>
-		WithMessage(builder => builder.WithValue(value).WithDataFormat(dataFormat).WithMetadata(metadata ?? new Metadata()));
+    public AppendStreamRequestBuilder WithMessage(object value, SchemaDataFormat dataFormat = SchemaDataFormat.Json, Metadata? metadata = null) =>
+        WithMessage(builder => builder.WithValue(value).WithDataFormat(dataFormat).WithMetadata(metadata ?? new Metadata()));
 
-	public AppendStreamRequest Build() {
-		var messages = _messageBuilders.Select(x => x.Build());
-		var request  = new AppendStreamRequest(_stream, _expectedState, messages);
-		return request;
-	}
+    public AppendStreamRequest Build() {
+        var messages = _messageBuilders.Select(x => x.Build());
+        var request  = new AppendStreamRequest(_stream, _expectedState, messages);
+        return request;
+    }
 }
 
 [PublicAPI]
 [method: SetsRequiredMembers]
 public readonly record struct HeartbeatOptions(bool Enable, int RecordsThreshold) {
-    public static readonly HeartbeatOptions Disabled = new(false, 0);
     public static readonly HeartbeatOptions Default  = new(true, 1000);
+    public static readonly HeartbeatOptions Disabled = new(false, 0);
 
     public required bool Enable           { get; init; } = Enable;
     public required int  RecordsThreshold { get; init; } = RecordsThreshold;
@@ -200,21 +180,21 @@ public readonly record struct HeartbeatOptions(bool Enable, int RecordsThreshold
 [PublicAPI]
 [GenerateOneOf]
 public partial class ReadMessage : OneOfBase<Record, Heartbeat> {
-	public bool IsRecord    => IsT0;
-	public bool IsHeartbeat => IsT1;
+    public bool IsRecord    => IsT0;
+    public bool IsHeartbeat => IsT1;
 
-	public Record    AsRecord    => AsT0;
-	public Heartbeat AsHeartbeat => AsT1;
+    public Record    AsRecord    => AsT0;
+    public Heartbeat AsHeartbeat => AsT1;
 }
 
 [PublicAPI]
 [GenerateOneOf]
 public partial class SubscribeMessage : OneOfBase<Record, Heartbeat> {
-	public bool IsRecord    => IsT0;
-	public bool IsHeartbeat => IsT1;
+    public bool IsRecord    => IsT0;
+    public bool IsHeartbeat => IsT1;
 
-	public Record    AsRecord    => AsT0;
-	public Heartbeat AsHeartbeat => AsT1;
+    public Record    AsRecord    => AsT0;
+    public Heartbeat AsHeartbeat => AsT1;
 }
 
 /// <summary>
@@ -233,12 +213,13 @@ public partial class DeleteError : OneOfBase<ErrorDetails.StreamNotFound, ErrorD
     public ErrorDetails.AccessDenied           AsAccessDenied           => AsT2;
     public ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict => AsT3;
 
-    public void Throw() => Switch(
-        notFound         => KurrentClientException.Throw(notFound),
-        deleted          => KurrentClientException.Throw(deleted),
-        accessDenied     => KurrentClientException.Throw(accessDenied),
-        revisionConflict => KurrentClientException.Throw(revisionConflict)
-    );
+    public void Throw() =>
+        Switch(
+            notFound => KurrentClientException.Throw(notFound),
+            deleted => KurrentClientException.Throw(deleted),
+            accessDenied => KurrentClientException.Throw(accessDenied),
+            revisionConflict => KurrentClientException.Throw(revisionConflict)
+        );
 }
 
 /// <summary>
@@ -257,12 +238,13 @@ public partial class TombstoneError : OneOfBase<ErrorDetails.StreamNotFound, Err
     public ErrorDetails.AccessDenied           AsAccessDenied           => AsT2;
     public ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict => AsT3;
 
-    public void Throw() => Switch(
-        notFound         => KurrentClientException.Throw(notFound),
-        deleted          => KurrentClientException.Throw(deleted),
-        accessDenied     => KurrentClientException.Throw(accessDenied),
-        revisionConflict => KurrentClientException.Throw(revisionConflict)
-    );
+    public void Throw() =>
+        Switch(
+            notFound => KurrentClientException.Throw(notFound),
+            deleted => KurrentClientException.Throw(deleted),
+            accessDenied => KurrentClientException.Throw(accessDenied),
+            revisionConflict => KurrentClientException.Throw(revisionConflict)
+        );
 }
 
 [PublicAPI]
@@ -276,11 +258,12 @@ public partial class GetStreamInfoError : OneOfBase<ErrorDetails.StreamNotFound,
     public ErrorDetails.StreamDeleted  AsStreamDeleted  => AsT1;
     public ErrorDetails.AccessDenied   AsAccessDenied   => AsT2;
 
-    public void Throw() => Switch(
-        notFound         => KurrentClientException.Throw(notFound),
-        deleted          => KurrentClientException.Throw(deleted),
-        accessDenied     => KurrentClientException.Throw(accessDenied)
-    );
+    public void Throw() =>
+        Switch(
+            notFound => KurrentClientException.Throw(notFound),
+            deleted => KurrentClientException.Throw(deleted),
+            accessDenied => KurrentClientException.Throw(accessDenied)
+        );
 }
 
 [PublicAPI]
@@ -292,14 +275,15 @@ public partial class SetMetadataError : OneOfBase<ErrorDetails.StreamNotFound, E
     public bool IsStreamRevisionConflict => IsT3;
 
     public ErrorDetails.StreamNotFound         AsStreamNotFound         => AsT0;
-    public ErrorDetails.StreamDeleted          AsStreamDeleted          => AsT1;
-    public ErrorDetails.AccessDenied           AsAccessDenied           => AsT2;
-    public ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict => AsT3;
+    public ErrorDetails.StreamDeleted          AsStreamDeleted          => AsT1; 
+    public ErrorDetails.AccessDenied           AsAccessDenied           => AsT2; 
+    public ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict => AsT3; 
 
-    public void Throw() => Switch(
-        notFound         => KurrentClientException.Throw(notFound),
-        deleted          => KurrentClientException.Throw(deleted),
-        accessDenied     => KurrentClientException.Throw(accessDenied),
-        revisionConflict => KurrentClientException.Throw(revisionConflict)
-    );
+    public void Throw() =>
+        Switch(
+            notFound => KurrentClientException.Throw(notFound),
+            deleted => KurrentClientException.Throw(deleted),
+            accessDenied => KurrentClientException.Throw(accessDenied),
+            revisionConflict => KurrentClientException.Throw(revisionConflict)
+        );
 }

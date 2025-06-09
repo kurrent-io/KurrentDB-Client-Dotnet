@@ -61,7 +61,7 @@ public class StreamsAppendTests : KurrentClientTestFixture {
             .Append(stream, msg, ct)
             .ConfigureAwait(false);
 
-        if (appendResult.IsFailure)
+        if (appendResult.IsError)
             appendResult.AsError.Throw();
 
         // Act
@@ -84,7 +84,7 @@ public class StreamsAppendTests : KurrentClientTestFixture {
             .Append(stream, msg, ct)
             .ConfigureAwait(false);
 
-        if (appendResult.IsFailure)
+        if (appendResult.IsError)
             appendResult.AsError.Throw();
 
         // Act
