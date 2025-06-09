@@ -1,6 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
-using Kurrent.Client;
 using OneOf;
 
 namespace Kurrent.Client.Model;
@@ -8,9 +6,7 @@ namespace Kurrent.Client.Model;
 /// <summary>
 /// Base exception class for all KurrentDB client exceptions.
 /// </summary>
-public class KurrentClientException : Exception {
-    public KurrentClientException(string errorCode, string message, Exception? innerException = null) : base(message, innerException) { }
-
+public class KurrentClientException(string errorCode, string message, Exception? innerException = null) : Exception(message, innerException) {
     public static void Throw<T>(T error, Exception? innerException = null) =>
         throw new KurrentClientException(typeof(T).Name, error!.ToString()!, innerException);
 }
@@ -55,7 +51,7 @@ public static class ErrorDetails {
     /// Represents a failure due to an unexpected revision conflict during an append operation.
     /// </summary>
     /// <param name="StreamRevision">The actual revision of the stream.</param>
-    public readonly record struct WrongExpectedRevision(string Stream, StreamRevision StreamRevision) {
+    public readonly record struct StreamRevisionConflict(string Stream, StreamRevision StreamRevision) {
         public override string ToString() => $"Stream '{Stream}' operation failed due to revision conflict. Actual revision: {StreamRevision}.";
     }
 
@@ -74,18 +70,18 @@ public record AppendStreamSuccess(string Stream, LogPosition Position, StreamRev
 
 [PublicAPI]
 [GenerateOneOf]
-public partial class AppendStreamFailure : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.TransactionMaxSizeExceeded, ErrorDetails.WrongExpectedRevision> {
+public partial class AppendStreamFailure : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.TransactionMaxSizeExceeded, ErrorDetails.StreamRevisionConflict> {
     public bool IsStreamNotFound             => IsT0;
     public bool IsStreamDeleted              => IsT1;
     public bool IsAccessDenied               => IsT2;
     public bool IsTransactionMaxSizeExceeded => IsT3;
-    public bool IsWrongExpectedRevision      => IsT4;
+    public bool IsStreamRevisionConflict     => IsT4;
 
     public ErrorDetails.StreamNotFound             AsStreamNotFound             => AsT0;
     public ErrorDetails.StreamDeleted              AsStreamDeleted              => AsT1;
     public ErrorDetails.AccessDenied               AsAccessDenied               => AsT2;
     public ErrorDetails.TransactionMaxSizeExceeded AsTransactionMaxSizeExceeded => AsT3;
-    public ErrorDetails.WrongExpectedRevision      AsWrongExpectedRevision      => AsT4;
+    public ErrorDetails.StreamRevisionConflict     AsStreamRevisionConflict     => AsT4;
 
     public void Throw() => Switch(
         notFound         => KurrentClientException.Throw(notFound),
@@ -106,16 +102,20 @@ public record AppendStreamRequest(string Stream, ExpectedStreamState ExpectedSta
 	public required ExpectedStreamState  ExpectedState { get; init; } = ExpectedState;
 }
 
+
 [PublicAPI]
-[GenerateOneOf]
-public partial class AppendStreamResult : OneOfBase<AppendStreamSuccess, AppendStreamFailure> {
-    public bool IsSuccess => IsT0;
-    public bool IsFailure => IsT1;
+public class AppendStreamResult : Result<AppendStreamSuccess, AppendStreamFailure> {
+    protected AppendStreamResult(bool isSuccess, AppendStreamSuccess? success = null, AppendStreamFailure? error = null)
+        : base(isSuccess, success, error) { }
 
-    public AppendStreamSuccess AsSuccess => AsT0;
-    public AppendStreamFailure AsFailure => AsT1;
+    public new static AppendStreamResult Success(AppendStreamSuccess _) => new(true, success: _);
+    public new static AppendStreamResult Error(AppendStreamFailure _)   => new(false, error: _);
+
+    public static implicit operator AppendStreamResult(AppendStreamSuccess _) => new(true, success: _);
+    public static explicit operator AppendStreamSuccess(AppendStreamResult _) => _.AsSuccess;
+    public static implicit operator AppendStreamResult(AppendStreamFailure _) => new(false, error: _);
+    public static explicit operator AppendStreamFailure(AppendStreamResult _) => _.AsError;
 }
-
 
 [PublicAPI]
 public class AppendStreamSuccesses : List<AppendStreamSuccess> {
@@ -135,13 +135,17 @@ public record MultiStreamAppendRequest {
 }
 
 [PublicAPI]
-[GenerateOneOf]
-public partial class MultiStreamAppendResult : OneOfBase<AppendStreamSuccesses, AppendStreamFailures> {
-	public bool IsSuccess => IsT0;
-	public bool IsFailure => IsT1;
+public class MultiStreamAppendResult : Result<AppendStreamSuccesses, AppendStreamFailures> {
+    protected MultiStreamAppendResult(bool isSuccess, AppendStreamSuccesses? success = null, AppendStreamFailures? error = null)
+        : base(isSuccess, success, error) { }
 
-	public AppendStreamSuccesses Successes => AsT0;
-	public AppendStreamFailures  Failures  => AsT1;
+    public new static MultiStreamAppendResult Success(AppendStreamSuccesses _) => new(true, success: _);
+    public new static MultiStreamAppendResult Error(AppendStreamFailures _)    => new(false, error: _);
+
+    public static implicit operator MultiStreamAppendResult(AppendStreamSuccesses _) => new(true, success: _);
+    public static explicit operator AppendStreamSuccesses(MultiStreamAppendResult _) => _.AsSuccess;
+    public static implicit operator MultiStreamAppendResult(AppendStreamFailures _)  => new(false, error: _);
+    public static explicit operator AppendStreamFailures(MultiStreamAppendResult _)  => _.AsError;
 }
 
 [PublicAPI]
@@ -195,7 +199,7 @@ public readonly record struct HeartbeatOptions(bool Enable, int RecordsThreshold
 
 [PublicAPI]
 [GenerateOneOf]
-public partial class ReadResult : OneOfBase<Record, Heartbeat> {
+public partial class ReadMessage : OneOfBase<Record, Heartbeat> {
 	public bool IsRecord    => IsT0;
 	public bool IsHeartbeat => IsT1;
 
@@ -205,7 +209,7 @@ public partial class ReadResult : OneOfBase<Record, Heartbeat> {
 
 [PublicAPI]
 [GenerateOneOf]
-public partial class SubscribeResult : OneOfBase<Record, Heartbeat> {
+public partial class SubscribeMessage : OneOfBase<Record, Heartbeat> {
 	public bool IsRecord    => IsT0;
 	public bool IsHeartbeat => IsT1;
 
@@ -218,16 +222,16 @@ public partial class SubscribeResult : OneOfBase<Record, Heartbeat> {
 /// </summary>
 [PublicAPI]
 [GenerateOneOf]
-public partial class DeleteError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.WrongExpectedRevision> {
-    public bool IsStreamNotFound        => IsT0;
-    public bool IsStreamDeleted         => IsT1;
-    public bool IsAccessDenied          => IsT2;
-    public bool IsWrongExpectedRevision => IsT3;
+public partial class DeleteError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.StreamRevisionConflict> {
+    public bool IsStreamNotFound         => IsT0;
+    public bool IsStreamDeleted          => IsT1;
+    public bool IsAccessDenied           => IsT2;
+    public bool IsStreamRevisionConflict => IsT3;
 
-    public ErrorDetails.StreamNotFound        AsStreamNotFound        => AsT0;
-    public ErrorDetails.StreamDeleted         AsStreamDeleted         => AsT1;
-    public ErrorDetails.AccessDenied          AsAccessDenied          => AsT2;
-    public ErrorDetails.WrongExpectedRevision AsWrongExpectedRevision => AsT3;
+    public ErrorDetails.StreamNotFound         AsStreamNotFound         => AsT0;
+    public ErrorDetails.StreamDeleted          AsStreamDeleted          => AsT1;
+    public ErrorDetails.AccessDenied           AsAccessDenied           => AsT2;
+    public ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict => AsT3;
 
     public void Throw() => Switch(
         notFound         => KurrentClientException.Throw(notFound),
@@ -242,16 +246,16 @@ public partial class DeleteError : OneOfBase<ErrorDetails.StreamNotFound, ErrorD
 /// </summary>
 [PublicAPI]
 [GenerateOneOf]
-public partial class TombstoneError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.WrongExpectedRevision> {
-    public bool IsStreamNotFound        => IsT0;
-    public bool IsStreamDeleted         => IsT1;
-    public bool IsAccessDenied          => IsT2;
-    public bool IsWrongExpectedRevision => IsT3;
+public partial class TombstoneError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.StreamRevisionConflict> {
+    public bool IsStreamNotFound         => IsT0;
+    public bool IsStreamDeleted          => IsT1;
+    public bool IsAccessDenied           => IsT2;
+    public bool IsStreamRevisionConflict => IsT3;
 
-    public ErrorDetails.StreamNotFound        AsStreamNotFound        => AsT0;
-    public ErrorDetails.StreamDeleted         AsStreamDeleted         => AsT1;
-    public ErrorDetails.AccessDenied          AsAccessDenied          => AsT2;
-    public ErrorDetails.WrongExpectedRevision AsWrongExpectedRevision => AsT3;
+    public ErrorDetails.StreamNotFound         AsStreamNotFound         => AsT0;
+    public ErrorDetails.StreamDeleted          AsStreamDeleted          => AsT1;
+    public ErrorDetails.AccessDenied           AsAccessDenied           => AsT2;
+    public ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict => AsT3;
 
     public void Throw() => Switch(
         notFound         => KurrentClientException.Throw(notFound),
@@ -263,7 +267,7 @@ public partial class TombstoneError : OneOfBase<ErrorDetails.StreamNotFound, Err
 
 [PublicAPI]
 [GenerateOneOf]
-public abstract partial class GetStreamInfoError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied> {
+public partial class GetStreamInfoError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied> {
     public bool IsStreamNotFound => IsT0;
     public bool IsStreamDeleted  => IsT1;
     public bool IsAccessDenied   => IsT2;
@@ -281,16 +285,16 @@ public abstract partial class GetStreamInfoError : OneOfBase<ErrorDetails.Stream
 
 [PublicAPI]
 [GenerateOneOf]
-public abstract partial class SetStreamInfoError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.WrongExpectedRevision> {
-    public bool IsStreamNotFound        => IsT0;
-    public bool IsStreamDeleted         => IsT1;
-    public bool IsAccessDenied          => IsT2;
-    public bool IsWrongExpectedRevision => IsT3;
+public partial class SetMetadataError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.StreamRevisionConflict> {
+    public bool IsStreamNotFound         => IsT0;
+    public bool IsStreamDeleted          => IsT1;
+    public bool IsAccessDenied           => IsT2;
+    public bool IsStreamRevisionConflict => IsT3;
 
-    public ErrorDetails.StreamNotFound        AsStreamNotFound        => AsT0;
-    public ErrorDetails.StreamDeleted         AsStreamDeleted         => AsT1;
-    public ErrorDetails.AccessDenied          AsAccessDenied          => AsT2;
-    public ErrorDetails.WrongExpectedRevision AsWrongExpectedRevision => AsT3;
+    public ErrorDetails.StreamNotFound         AsStreamNotFound         => AsT0;
+    public ErrorDetails.StreamDeleted          AsStreamDeleted          => AsT1;
+    public ErrorDetails.AccessDenied           AsAccessDenied           => AsT2;
+    public ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict => AsT3;
 
     public void Throw() => Switch(
         notFound         => KurrentClientException.Throw(notFound),

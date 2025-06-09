@@ -21,7 +21,7 @@ public readonly record struct Record() {
 	/// <summary>
 	/// Represents the revision of a stream at a specific point in time.
 	/// </summary>
-	public StreamRevision StreamRevision { get; init; }
+	public StreamRevision StreamRevision { get; init; } = StreamRevision.Unset;
 
 	/// <summary>
 	/// When the record was created in the database.

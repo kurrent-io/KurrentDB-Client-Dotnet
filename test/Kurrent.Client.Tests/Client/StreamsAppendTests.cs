@@ -7,7 +7,7 @@ public class StreamsAppendTests : KurrentClientTestFixture {
     [Test]
     public async Task appends_message_to_new_stream_with_expected_revision(CancellationToken ct) {
         // Arrange
-        var stream = $"Game-{Guid.NewGuid():N[24,12]}";
+        var stream = $"Game-{Guid.NewGuid().ToString().Substring(24, 12)}";
 
         var msg = new GameStarted(Guid.NewGuid(), Player.X);
 
@@ -30,7 +30,7 @@ public class StreamsAppendTests : KurrentClientTestFixture {
     [Test]
     public async Task appends_message_to_existing_stream_with_expected_revision(CancellationToken ct) {
         // Arrange
-        var stream = $"Game-{Guid.NewGuid():N[24,12]}";
+        var stream = $"Game-{Guid.NewGuid().ToString().Substring(24, 12)}";
 
         var msg = new GameStarted(Guid.NewGuid(), Player.X);
 
@@ -53,7 +53,7 @@ public class StreamsAppendTests : KurrentClientTestFixture {
     [Test]
     public async Task deletes_existing_stream_with_expected_revision(CancellationToken ct) {
         // Arrange
-        var stream = $"Game-{Guid.NewGuid():N[24,12]}";
+        var stream = $"Game-{Guid.NewGuid().ToString().Substring(24, 12)}";
 
         var msg = new GameStarted(Guid.NewGuid(), Player.X);
 
@@ -62,7 +62,7 @@ public class StreamsAppendTests : KurrentClientTestFixture {
             .ConfigureAwait(false);
 
         if (appendResult.IsFailure)
-            appendResult.AsFailure.Throw();
+            appendResult.AsError.Throw();
 
         // Act
         var deleteResult = await Client.Streams
@@ -85,7 +85,7 @@ public class StreamsAppendTests : KurrentClientTestFixture {
             .ConfigureAwait(false);
 
         if (appendResult.IsFailure)
-            appendResult.AsFailure.Throw();
+            appendResult.AsError.Throw();
 
         // Act
         var deleteResult = await Client.Streams

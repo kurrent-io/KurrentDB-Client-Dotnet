@@ -1,469 +1,312 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using OneOf;
-using OneOf.Types;
 
-namespace KurrentDB.Client;
+namespace Kurrent.Client;
 
 /// <summary>
-/// Represents a discriminated union of an error or success value,
-/// providing a functional approach to error handling.
+/// Represents the result of an operation that can either succeed with a value or fail with an error.
+/// This class provides a functional approach to error handling, avoiding exceptions for expected failures.
+/// It supports direct instantiation, inheritance for domain-specific result types, and a fluent API for transformations.
 /// </summary>
-/// <typeparam name="TError">The type of the error value.</typeparam>
 /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+/// <typeparam name="TError">The type of the error value.</typeparam>
 [PublicAPI]
-public class Result<TError, TSuccess> : OneOfBase<Error<TError>, Success<TSuccess>> {
-    /// <summary>
-    /// Creates a new Result from a OneOf discriminated union.
-    /// </summary>
-    /// <param name="_">The discriminated union value.</param>
-    protected Result(OneOf<Error<TError>, Success<TSuccess>> _) : base(_) { }
+[DebuggerDisplay("{ToDebugString(),nq}")]
+public class Result<TSuccess, TError> {
+    readonly TSuccess  _success;
+    readonly TError    _error;
 
     /// <summary>
-    /// Protected constructor for derived classes that need to set up the internal state differently.
+    /// Initializes a new instance of the <see cref="Result{TSuccess,TError}"/> class.
+    /// This constructor is protected to encourage use of static factory methods <see cref="Success(TSuccess)"/> and <see cref="Error(TError)"/>
+    /// or for use by derived classes.
     /// </summary>
-    /// <param name="value">The value (either success or error).</param>
-    /// <param name="isSuccess">Whether this is a success result.</param>
-    protected Result(object value, bool isSuccess) : base(
-        isSuccess
-            ? OneOf<Error<TError>, Success<TSuccess>>.FromT1(new Success<TSuccess>((TSuccess)value))
-            : OneOf<Error<TError>, Success<TSuccess>>.FromT0(new Error<TError>((TError)value))
-    ) { }
-
-    // Implicit Conversions
-    /// <summary>
-    /// Implicitly converts an Error to a Result.
-    /// </summary>
-    public static implicit operator Result<TError, TSuccess>(Error<TError> _) => new(_);
-
-    /// <summary>
-    /// Implicitly converts a Success to a Result.
-    /// </summary>
-    public static implicit operator Result<TError, TSuccess>(Success<TSuccess> _) => new(_);
-
-    /// <summary>
-    /// Implicitly converts a success value to a Result.
-    /// </summary>
-    public static implicit operator Result<TError, TSuccess>(TSuccess value) => new Success<TSuccess>(value);
-
-    /// <summary>
-    /// Implicitly converts an error value to a Result.
-    /// </summary>
-    public static implicit operator Result<TError, TSuccess>(TError value) => new Error<TError>(value);
-
-    // Factory Methods
-    /// <summary>
-    /// Creates an error result with the specified error value.
-    /// </summary>
-    public static Result<TError, TSuccess> Error(TError value) => new Error<TError>(value);
-
-    /// <summary>
-    /// Creates a success result with the specified success value.
-    /// </summary>
-    public static Result<TError, TSuccess> Success(TSuccess value) => new Success<TSuccess>(value);
-
-    /// <summary>
-    /// Creates a result from a function that might throw an exception.
-    /// </summary>
-    /// <param name="func">A function that returns a value or throws an exception.</param>
-    /// <param name="exceptionHandler">A function that transforms an exception into an error value.</param>
-    public static Result<TError, TSuccess> Try(Func<TSuccess> func, Func<Exception, TError> exceptionHandler) {
-        try {
-            return Success(func());
-        }
-        catch (Exception ex) {
-            return Error(exceptionHandler(ex));
+    /// <param name="isSuccess">A flag indicating whether the result represents a success.</param>
+    /// <param name="success">The success value, applicable if <paramref name="isSuccess"/> is true. Defaults to <c>default</c>.</param>
+    /// <param name="error">The error value, applicable if <paramref name="isSuccess"/> is false. Defaults to <c>default</c>.</param>
+    protected Result(bool isSuccess, TSuccess? success = default, TError? error = default) {
+        IsSuccess = isSuccess;
+        if (isSuccess) {
+            _success = success!;
+            _error   = default!;
+        } else {
+            _success = default!;
+            _error   = error!;
         }
     }
 
     /// <summary>
-    /// Creates a result from a function that might throw an exception, passing state to the functions.
+    /// Gets a value indicating whether the operation was successful.
     /// </summary>
-    /// <typeparam name="TState">The type of the state to pass to the functions.</typeparam>
-    /// <param name="func">A function that takes state and returns a value or throws an exception.</param>
-    /// <param name="exceptionHandler">A function that takes state and an exception, and transforms it into an error value.</param>
-    /// <param name="state">The state to pass to the functions.</param>
-    public static Result<TError, TSuccess> Try<TState>(Func<TState, TSuccess> func, Func<TState, Exception, TError> exceptionHandler, TState state) {
-        try {
-            return Success(func(state));
-        }
-        catch (Exception ex) {
-            return Error(exceptionHandler(state, ex));
-        }
-    }
+    /// <value><c>true</c> if the operation was successful; otherwise, <c>false</c>.</value>
+    public bool IsSuccess { get; }
 
     /// <summary>
-    /// Creates a result from a nullable reference type.
+    /// Gets a value indicating whether the operation failed.
     /// </summary>
-    /// <param name="value">The value which might be null.</param>
-    /// <param name="errorIfNull">The error value to use if the value is null.</param>
-    public static Result<TError, T> FromNullable<T>(T? value, TError errorIfNull) where T : class =>
-        value is not null
-            ? Result<TError, T>.Success(value)
-            : Result<TError, T>.Error(errorIfNull);
+    /// <value><c>true</c> if the operation failed; otherwise, <c>false</c>.</value>
+    public bool IsFailure => !IsSuccess;
 
     /// <summary>
-    /// Creates a result from a nullable value type.
+    /// Gets the success value.
+    /// Throws an <see cref="InvalidOperationException"/> if the result is not a success.
     /// </summary>
-    /// <typeparam name="T">The type of the value.</typeparam>
-    /// <param name="value">The nullable value.</param>
-    /// <param name="errorIfNull">The error value to use if the value is null.</param>
-    public static Result<TError, T> FromNullableStruct<T>(T? value, TError errorIfNull) where T : struct =>
-        value.HasValue
-            ? Result<TError, T>.Success(value.Value)
-            : Result<TError, T>.Error(errorIfNull);
-
-    // Properties
-    /// <summary>
-    /// Checks if the result represents an error.
-    /// </summary>
-    public bool IsError => IsT0;
+    /// <value>The success value.</value>
+    /// <exception cref="InvalidOperationException">If the result represents a failure.</exception>
+    public TSuccess AsSuccess =>
+        IsFailure
+            ? throw new InvalidOperationException("Result is not a success.")
+            : _success;
 
     /// <summary>
-    /// Checks if the result represents a success.
+    /// Gets the error value.
+    /// Throws an <see cref="InvalidOperationException"/> if the result is not an error.
     /// </summary>
-    public bool IsSuccess => IsT1;
-
-    // Public Methods
-    /// <summary>
-    /// Gets the error value if this result represents an error.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when the result is a success.</exception>
-    public TError ErrorValue() =>
-        !IsError
-            ? throw new InvalidOperationException("Cannot access error value on a success result")
-            : AsT0.Value;
+    /// <value>The error value.</value>
+    /// <exception cref="InvalidOperationException">If the result represents a success.</exception>
+    public TError AsError =>
+        IsSuccess
+            ? throw new InvalidOperationException("Result is not an error.")
+            : _error;
 
     /// <summary>
-    /// Gets the success value if this result represents a success.
+    /// Creates a new <see cref="Result{TSuccess,TError}"/> representing a successful operation.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when the result is an error.</exception>
-    public TSuccess SuccessValue() =>
-        !IsSuccess
-            ? throw new InvalidOperationException("Cannot access success value on an error result")
-            : AsT1.Value;
+    /// <param name="success">The success value.</param>
+    /// <returns>A new instance of <see cref="Result{TSuccess,TError}"/> in a success state.</returns>
+    public static Result<TSuccess, TError> Success(TSuccess success) => new(true, success: success);
 
     /// <summary>
-    /// Attempts to get the success value from this result.
+    /// Creates a new <see cref="Result{TSuccess,TError}"/> representing a failed operation.
     /// </summary>
-    /// <param name="value">The success value if present, default otherwise.</param>
-    public bool TryGetSuccess([MaybeNullWhen(false)] out TSuccess value) {
-        value = IsSuccess ? AsT1.Value : default;
+    /// <param name="error">The error value.</param>
+    /// <returns>A new instance of <see cref="Result{TSuccess,TError}"/> in an error state.</returns>
+    public static Result<TSuccess, TError> Error(TError error) => new(false, error: error);
+
+    /// <summary>
+    /// Attempts to get the success value.
+    /// </summary>
+    /// <param name="success">When this method returns, contains the success value if the operation was successful;
+    /// otherwise, the default value for <typeparamref name="TSuccess"/>.</param>
+    /// <returns><c>true</c> if the operation was successful and <paramref name="success"/> contains the success value;
+    /// otherwise, <c>false</c>.</returns>
+    public bool TryGetSuccess([MaybeNullWhen(false)] out TSuccess success) {
+        success = IsSuccess ? _success : default;
         return IsSuccess;
     }
 
     /// <summary>
-    /// Attempts to get the error value from this result.
+    /// Attempts to get the error value.
     /// </summary>
-    /// <param name="value">The error value if present, default otherwise.</param>
-    public bool TryGetError([MaybeNullWhen(false)] out TError value) {
-        value = IsError ? AsT0.Value : default;
-        return IsError;
+    /// <param name="error">When this method returns, contains the error value if the operation failed;
+    /// otherwise, the default value for <typeparamref name="TError"/>.</param>
+    /// <returns><c>true</c> if the operation failed and <paramref name="error"/> contains the error value;
+    /// otherwise, <c>false</c>.</returns>
+    public bool TryGetError([MaybeNullWhen(false)] out TError error) {
+        error = !IsSuccess ? _error : default;
+        return !IsSuccess;
     }
 
     /// <summary>
-    /// Transforms a success result using the specified binding function.
+    /// Transforms the success value of this result using the specified mapping function.
+    /// If this result is an error, the error is propagated.
     /// </summary>
-    /// <typeparam name="TOut">The type of the output success value.</typeparam>
-    /// <param name="binder">A function that takes the success value and returns a new result.</param>
-    public Result<TError, TOut> Then<TOut>(Func<TSuccess, Result<TError, TOut>> binder) =>
-        Match<Result<TError, TOut>>(
-            error   => Result<TError, TOut>.Error(error.Value),
-            success => binder(success.Value)
-        );
+    /// <typeparam name="TOut">The type of the new success value.</typeparam>
+    /// <param name="mapper">A function to transform the success value.</param>
+    /// <returns>A new <see cref="Result{TOut, TError}"/> containing the transformed success value or the original error.</returns>
+    public Result<TOut, TError> Map<TOut>(Func<TSuccess, TOut> mapper) =>
+        IsSuccess ? Result<TOut, TError>.Success(mapper(_success)) : Result<TOut, TError>.Error(_error);
 
     /// <summary>
-    /// Transforms a success result using the specified binding function, passing state to the function.
+    /// Transforms the success value of this result using the specified mapping function, passing additional state.
+    /// If this result is an error, the error is propagated.
     /// </summary>
-    /// <typeparam name="TOut">The type of the output success value.</typeparam>
-    /// <typeparam name="TState">The type of the state to pass to the function.</typeparam>
-    /// <param name="binder">A function that takes the success value and state, and returns a new result.</param>
-    /// <param name="state">The state to pass to the function.</param>
-    public Result<TError, TOut> Then<TOut, TState>(Func<TSuccess, TState, Result<TError, TOut>> binder, TState state) =>
-        Match<Result<TError, TOut>>(
-            error   => Result<TError, TOut>.Error(error.Value),
-            success => binder(success.Value, state)
-        );
+    /// <typeparam name="TOut">The type of the new success value.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the mapper.</typeparam>
+    /// <param name="mapper">A function to transform the success value, taking additional state.</param>
+    /// <param name="state">The state to pass to the mapper.</param>
+    /// <returns>A new <see cref="Result{TOut, TError}"/> containing the transformed success value or the original error.</returns>
+    public Result<TOut, TError> Map<TOut, TState>(Func<TSuccess, TState, TOut> mapper, TState state) =>
+        IsSuccess ? Result<TOut, TError>.Success(mapper(_success, state)) : Result<TOut, TError>.Error(_error);
 
     /// <summary>
-    /// Transforms an error result using the specified binding function.
+    /// Chains a new operation based on the success value of this result using the specified binding function.
+    /// If this result is an error, the error is propagated.
+    /// This is also known as 'flatMap' or 'SelectMany'.
     /// </summary>
-    /// <typeparam name="TOut">The type of the output error value.</typeparam>
-    /// <param name="binder">A function that takes the error value and returns a new result.</param>
-    public Result<TOut, TSuccess> OrElse<TOut>(Func<TError, Result<TOut, TSuccess>> binder) =>
-        Match<Result<TOut, TSuccess>>(
-            error   => binder(error.Value),
-            success => Result<TOut, TSuccess>.Success(success.Value)
-        );
+    /// <typeparam name="TOut">The type of the success value of the result returned by the binder.</typeparam>
+    /// <param name="binder">A function that takes the success value and returns a new <see cref="Result{TOut, TError}"/>.</param>
+    /// <returns>The result of the <paramref name="binder"/> function if this result is a success; otherwise, a new result with the original error.</returns>
+    public Result<TOut, TError> Then<TOut>(Func<TSuccess, Result<TOut, TError>> binder) =>
+        IsSuccess ? binder(_success) : Result<TOut, TError>.Error(_error);
 
     /// <summary>
-    /// Transforms an error result using the specified binding function, passing state to the function.
+    /// Chains a new operation based on the success value of this result using the specified binding function, passing additional state.
+    /// If this result is an error, the error is propagated.
     /// </summary>
-    /// <typeparam name="TOut">The type of the output error value.</typeparam>
-    /// <typeparam name="TState">The type of the state to pass to the function.</typeparam>
-    /// <param name="binder">A function that takes the error value and state, and returns a new result.</param>
-    /// <param name="state">The state to pass to the function.</param>
-    public Result<TOut, TSuccess> OrElse<TOut, TState>(Func<TError, TState, Result<TOut, TSuccess>> binder, TState state) =>
-        Match<Result<TOut, TSuccess>>(
-            error   => binder(error.Value, state),
-            success => Result<TOut, TSuccess>.Success(success.Value)
-        );
+    /// <typeparam name="TOut">The type of the success value of the result returned by the binder.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the binder.</typeparam>
+    /// <param name="binder">A function that takes the success value and state, and returns a new <see cref="Result{TOut, TError}"/>.</param>
+    /// <param name="state">The state to pass to the binder.</param>
+    /// <returns>The result of the <paramref name="binder"/> function if this result is a success; otherwise, a new result with the original error.</returns>
+    public Result<TOut, TError> Then<TOut, TState>(Func<TSuccess, TState, Result<TOut, TError>> binder, TState state) =>
+        IsSuccess ? binder(_success, state) : Result<TOut, TError>.Error(_error);
 
     /// <summary>
-    /// Maps the success value using the specified mapping function.
+    /// Executes one of the two provided functions depending on whether this result is a success or an error, returning a new value.
     /// </summary>
-    /// <typeparam name="TOut">The type of the output success value.</typeparam>
-    /// <param name="mapSuccess">A function that transforms the success value.</param>
-    public Result<TError, TOut> Map<TOut>(Func<TSuccess, TOut> mapSuccess) =>
-        Match<Result<TError, TOut>>(
-            error   => Result<TError, TOut>.Error(error.Value),
-            success => Result<TError, TOut>.Success(mapSuccess(success.Value))
-        );
+    /// <typeparam name="TResult">The type of the value returned by the matching functions.</typeparam>
+    /// <param name="onSuccess">The function to execute if the result is a success. It takes the success value as input.</param>
+    /// <param name="onError">The function to execute if the result is an error. It takes the error value as input.</param>
+    /// <returns>The value returned by the executed function (<paramref name="onSuccess"/> or <paramref name="onError"/>).</returns>
+    public TResult Match<TResult>(Func<TSuccess, TResult> onSuccess, Func<TError, TResult> onError) =>
+        IsSuccess ? onSuccess(_success) : onError(_error);
 
     /// <summary>
-    /// Maps the success value using the specified mapping function, passing state to the function.
+    /// Executes one of the two provided functions depending on whether this result is a success or an error, returning a new value and passing additional state.
     /// </summary>
-    /// <typeparam name="TOut">The type of the output success value.</typeparam>
-    /// <typeparam name="TState">The type of the state to pass to the function.</typeparam>
-    /// <param name="mapSuccess">A function that transforms the success value, taking state.</param>
-    /// <param name="state">The state to pass to the function.</param>
-    public Result<TError, TOut> Map<TOut, TState>(Func<TSuccess, TState, TOut> mapSuccess, TState state) =>
-        Match<Result<TError, TOut>>(
-            error   => Result<TError, TOut>.Error(error.Value),
-            success => Result<TError, TOut>.Success(mapSuccess(success.Value, state))
-        );
+    /// <typeparam name="TResult">The type of the value returned by the matching functions.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the functions.</typeparam>
+    /// <param name="onSuccess">The function to execute if the result is a success. It takes the success value and state as input.</param>
+    /// <param name="onError">The function to execute if the result is an error. It takes the error value and state as input.</param>
+    /// <param name="state">The state to pass to the functions.</param>
+    /// <returns>The value returned by the executed function (<paramref name="onSuccess"/> or <paramref name="onError"/>).</returns>
+    public TResult Match<TResult, TState>(Func<TSuccess, TState, TResult> onSuccess, Func<TError, TState, TResult> onError, TState state) =>
+        IsSuccess ? onSuccess(_success, state) : onError(_error, state);
 
     /// <summary>
-    /// Maps the error value using the specified mapping function.
+    /// Executes one of the two provided actions depending on whether this result is a success or an error.
+    /// This method is for side-effects and does not return a value.
     /// </summary>
-    /// <typeparam name="TOut">The type of the output error value.</typeparam>
-    /// <param name="mapError">A function that transforms the error value.</param>
-    public Result<TOut, TSuccess> MapError<TOut>(Func<TError, TOut> mapError) =>
-        Match<Result<TOut, TSuccess>>(
-            error   => Result<TOut, TSuccess>.Error(mapError(error.Value)),
-            success => Result<TOut, TSuccess>.Success(success.Value)
-        );
-
-    /// <summary>
-    /// Maps the error value using the specified mapping function, passing state to the function.
-    /// </summary>
-    /// <typeparam name="TOut">The type of the output error value.</typeparam>
-    /// <typeparam name="TState">The type of the state to pass to the function.</typeparam>
-    /// <param name="mapError">A function that transforms the error value, taking state.</param>
-    /// <param name="state">The state to pass to the function.</param>
-    public Result<TOut, TSuccess> MapError<TOut, TState>(Func<TError, TState, TOut> mapError, TState state) =>
-        Match<Result<TOut, TSuccess>>(
-            error   => Result<TOut, TSuccess>.Error(mapError(error.Value, state)),
-            success => Result<TOut, TSuccess>.Success(success.Value)
-        );
-
-    /// <summary>
-    /// Performs an action on the success value if this result is a success.
-    /// </summary>
-    /// <param name="action">The action to perform on the success value.</param>
-    public Result<TError, TSuccess> OnSuccess(Action<TSuccess> action) {
-        if (IsSuccess)
-            action(SuccessValue());
-
-        return this;
+    /// <param name="onSuccess">The action to execute if the result is a success. It takes the success value as input.</param>
+    /// <param name="onError">The action to execute if the result is an error. It takes the error value as input.</param>
+    public void Switch(Action<TSuccess> onSuccess, Action<TError> onError) {
+        if (IsSuccess) onSuccess(_success);
+        else onError(_error);
     }
 
     /// <summary>
-    /// Performs an action on the success value if this result is a success, passing state to the action.
+    /// Executes one of the two provided actions depending on whether this result is a success or an error, passing additional state.
+    /// This method is for side-effects and does not return a value.
     /// </summary>
-    /// <typeparam name="TState">The type of the state to pass to the action.</typeparam>
-    /// <param name="action">The action to perform on the success value, taking state.</param>
-    /// <param name="state">The state to pass to the action.</param>
-    public Result<TError, TSuccess> OnSuccess<TState>(Action<TSuccess, TState> action, TState state) {
-        if (IsSuccess)
-            action(SuccessValue(), state);
-
-        return this;
+    /// <typeparam name="TState">The type of the state to pass to the actions.</typeparam>
+    /// <param name="onSuccess">The action to execute if the result is a success. It takes the success value and state as input.</param>
+    /// <param name="onError">The action to execute if the result is an error. It takes the error value and state as input.</param>
+    /// <param name="state">The state to pass to the actions.</param>
+    public void Switch<TState>(Action<TSuccess, TState> onSuccess, Action<TError, TState> onError, TState state) {
+        if (IsSuccess) onSuccess(_success, state);
+        else onError(_error, state);
     }
 
     /// <summary>
-    /// Performs an action on the error value if this result is an error.
+    /// Gets the success value if the result is a success; otherwise, returns a fallback value computed from the error.
     /// </summary>
-    /// <param name="action">The action to perform on the error value.</param>
-    public Result<TError, TSuccess> OnError(Action<TError> action) {
-        if (IsError)
-            action(ErrorValue());
-
-        return this;
-    }
-
-    /// <summary>
-    /// Performs an action on the error value if this result is an error, passing state to the action.
-    /// </summary>
-    /// <typeparam name="TState">The type of the state to pass to the action.</typeparam>
-    /// <param name="action">The action to perform on the error value, taking state.</param>
-    /// <param name="state">The state to pass to the action.</param>
-    public Result<TError, TSuccess> OnError<TState>(Action<TError, TState> action, TState state) {
-        if (IsError)
-            action(ErrorValue(), state);
-
-        return this;
-    }
-
-    /// <summary>
-    /// Returns the success value, or falls back to a value derived from the error.
-    /// </summary>
-    /// <param name="fallback">A function to transform the error into a success value.</param>
+    /// <param name="fallback">A function that takes the error value and returns a fallback success value.</param>
+    /// <returns>The success value if <see cref="IsSuccess"/> is <c>true</c>; otherwise, the result of the <paramref name="fallback"/> function.</returns>
     public TSuccess GetValueOrElse(Func<TError, TSuccess> fallback) =>
-        Match<TSuccess>(
-            error   => fallback(error.Value),
-            success => success.Value
-        );
+        IsSuccess ? _success : fallback(_error);
 
     /// <summary>
-    /// Returns the success value, or falls back to a value derived from the error, passing state to the fallback function.
+    /// Gets the success value if the result is a success; otherwise, returns a fallback value computed from the error, passing additional state.
     /// </summary>
     /// <typeparam name="TState">The type of the state to pass to the fallback function.</typeparam>
-    /// <param name="fallback">A function to transform the error into a success value, taking state.</param>
+    /// <param name="fallback">A function that takes the error value and state, and returns a fallback success value.</param>
     /// <param name="state">The state to pass to the fallback function.</param>
+    /// <returns>The success value if <see cref="IsSuccess"/> is <c>true</c>; otherwise, the result of the <paramref name="fallback"/> function.</returns>
     public TSuccess GetValueOrElse<TState>(Func<TError, TState, TSuccess> fallback, TState state) =>
-        Match<TSuccess>(
-            error   => fallback(error.Value, state),
-            success => success.Value
-        );
+        IsSuccess ? _success : fallback(_error, state);
 
     /// <summary>
-    /// Transforms this result into a value of a different type based on whether it's an error or success.
+    /// Performs the specified action on the success value if the result is a success.
+    /// Returns the original result, allowing for fluent chaining.
     /// </summary>
-    /// <typeparam name="TOut">The type of the output value.</typeparam>
-    /// <param name="caseError">A function to transform the error value.</param>
-    /// <param name="caseSuccess">A function to transform the success value.</param>
-    public TOut Fold<TOut>(Func<TError, TOut> caseError, Func<TSuccess, TOut> caseSuccess) =>
-        Match<TOut>(
-            error   => caseError(error.Value),
-            success => caseSuccess(success.Value)
-        );
-
-    /// <summary>
-    /// Transforms this result into a value of a different type based on whether it's an error or success, passing state to the functions.
-    /// </summary>
-    /// <typeparam name="TOut">The type of the output value.</typeparam>
-    /// <typeparam name="TState">The type of the state to pass to the functions.</typeparam>
-    /// <param name="caseError">A function to transform the error value, taking state.</param>
-    /// <param name="caseSuccess">A function to transform the success value, taking state.</param>
-    /// <param name="state">The state to pass to the functions.</param>
-    public TOut Fold<TOut, TState>(Func<TError, TState, TOut> caseError, Func<TSuccess, TState, TOut> caseSuccess, TState state) =>
-        Match<TOut>(
-            error   => caseError(error.Value, state),
-            success => caseSuccess(success.Value, state)
-        );
-
-    /// <summary>
-    /// Combines this result with another using the specified combining function.
-    /// </summary>
-    /// <typeparam name="TSuccessOut">The output success type.</typeparam>
-    /// <typeparam name="TSuccessOther">The success type of the other result.</typeparam>
-    /// <param name="other">The result to combine with this one.</param>
-    /// <param name="combine">A function to combine the success values.</param>
-    public Result<TError, TSuccessOut> Zip<TSuccessOut, TSuccessOther>(
-        Result<TError, TSuccessOther> other,
-        Func<TSuccess, TSuccessOther, TSuccessOut> combine
-    ) {
-        if (!IsSuccess)
-            return ErrorValue();
-
-        if (!other.IsSuccess)
-            return other.ErrorValue();
-
-        return combine(SuccessValue(), other.SuccessValue());
+    /// <param name="action">The action to perform on the success value.</param>
+    /// <returns>The current <see cref="Result{TSuccess,TError}"/> instance.</returns>
+    public Result<TSuccess, TError> OnSuccess(Action<TSuccess> action) {
+        if (IsSuccess) action(_success);
+        return this;
     }
 
     /// <summary>
-    /// Combines this result with two others using the specified combining function.
+    /// Performs the specified action on the success value if the result is a success, passing additional state.
+    /// Returns the original result, allowing for fluent chaining.
     /// </summary>
-    /// <param name="firstOther">The first result to combine with this one.</param>
-    /// <param name="secondOther">The second result to combine with this one.</param>
-    /// <param name="combine">A function to combine the success values.</param>
-    public Result<TError, TSuccessOut> Zip<TSuccessOut, TSuccessFirstOther, TSuccessSecondOther>(
-        Result<TError, TSuccessFirstOther> firstOther,
-        Result<TError, TSuccessSecondOther> secondOther,
-        Func<TSuccess, TSuccessFirstOther, TSuccessSecondOther, TSuccessOut> combine
-    ) {
-        if (!IsSuccess)
-            return ErrorValue();
-
-        if (!firstOther.IsSuccess)
-            return firstOther.ErrorValue();
-
-        if (!secondOther.IsSuccess)
-            return secondOther.ErrorValue();
-
-        return combine(SuccessValue(), firstOther.SuccessValue(), secondOther.SuccessValue());
+    /// <typeparam name="TState">The type of the state to pass to the action.</typeparam>
+    /// <param name="action">The action to perform on the success value, taking additional state.</param>
+    /// <param name="state">The state to pass to the action.</param>
+    /// <returns>The current <see cref="Result{TSuccess,TError}"/> instance.</returns>
+    public Result<TSuccess, TError> OnSuccess<TState>(Action<TSuccess, TState> action, TState state) {
+        if (IsSuccess) action(_success, state);
+        return this;
     }
 
     /// <summary>
-    /// Combines this result with three others using the specified combining function.
+    /// Performs the specified action on the error value if the result is an error.
+    /// Returns the original result, allowing for fluent chaining.
     /// </summary>
-    /// <param name="firstOther">The first result to combine with this one.</param>
-    /// <param name="secondOther">The second result to combine with this one.</param>
-    /// <param name="thirdOther">The third result to combine with this one.</param>
-    /// <param name="combine">A function to combine the success values.</param>
-    public Result<TError, TSuccessOut> Zip<TSuccessOut, TSuccessFirstOther, TSuccessSecondOther, TSuccessThirdOther>(
-        Result<TError, TSuccessFirstOther> firstOther,
-        Result<TError, TSuccessSecondOther> secondOther,
-        Result<TError, TSuccessThirdOther> thirdOther,
-        Func<TSuccess, TSuccessFirstOther, TSuccessSecondOther, TSuccessThirdOther, TSuccessOut> combine
-    ) {
-        if (!IsSuccess)
-            return ErrorValue();
-
-        if (!firstOther.IsSuccess)
-            return firstOther.ErrorValue();
-
-        if (!secondOther.IsSuccess)
-            return secondOther.ErrorValue();
-
-        if (!thirdOther.IsSuccess)
-            return thirdOther.ErrorValue();
-
-        return combine(
-            SuccessValue(),
-            firstOther.SuccessValue(),
-            secondOther.SuccessValue(),
-            thirdOther.SuccessValue()
-        );
+    /// <param name="action">The action to perform on the error value.</param>
+    /// <returns>The current <see cref="Result{TSuccess,TError}"/> instance.</returns>
+    public Result<TSuccess, TError> OnError(Action<TError> action) {
+        if (!IsSuccess) action(_error);
+        return this;
     }
 
     /// <summary>
-    /// Combines this result with four others using the specified combining function.
+    /// Performs the specified action on the error value if the result is an error, passing additional state.
+    /// Returns the original result, allowing for fluent chaining.
     /// </summary>
-    /// <param name="firstOther">The first result to combine with this one.</param>
-    /// <param name="secondOther">The second result to combine with this one.</param>
-    /// <param name="thirdOther">The third result to combine with this one.</param>
-    /// <param name="fourthOther">The fourth result to combine with this one.</param>
-    /// <param name="combine">A function to combine the success values.</param>
-    public Result<TError, TSuccessOut> Zip<TSuccessOut, TSuccessFirstOther, TSuccessSecondOther, TSuccessThirdOther, TSuccessFourthOther>(
-        Result<TError, TSuccessFirstOther> firstOther,
-        Result<TError, TSuccessSecondOther> secondOther,
-        Result<TError, TSuccessThirdOther> thirdOther,
-        Result<TError, TSuccessFourthOther> fourthOther,
-        Func<TSuccess, TSuccessFirstOther, TSuccessSecondOther, TSuccessThirdOther, TSuccessFourthOther, TSuccessOut> combine
-    ) {
-        if (!IsSuccess)
-            return ErrorValue();
-
-        if (!firstOther.IsSuccess)
-            return firstOther.ErrorValue();
-
-        if (!secondOther.IsSuccess)
-            return secondOther.ErrorValue();
-
-        if (!thirdOther.IsSuccess)
-            return thirdOther.ErrorValue();
-
-        if (!fourthOther.IsSuccess)
-            return fourthOther.ErrorValue();
-
-        return combine(
-            SuccessValue(),
-            firstOther.SuccessValue(),
-            secondOther.SuccessValue(),
-            thirdOther.SuccessValue(),
-            fourthOther.SuccessValue()
-        );
+    /// <typeparam name="TState">The type of the state to pass to the action.</typeparam>
+    /// <param name="action">The action to perform on the error value, taking additional state.</param>
+    /// <param name="state">The state to pass to the action.</param>
+    /// <returns>The current <see cref="Result{TSuccess,TError}"/> instance.</returns>
+    public Result<TSuccess, TError> OnError<TState>(Action<TError, TState> action, TState state) {
+        if (!IsSuccess) action(_error, state);
+        return this;
     }
+
+    /// <summary>
+    /// Implicitly converts a success value to a <see cref="Result{TSuccess,TError}"/>.
+    /// </summary>
+    /// <param name="success">The success value to convert.</param>
+    /// <returns>A <see cref="Result{TSuccess,TError}"/> representing success.</returns>
+    public static implicit operator Result<TSuccess, TError>(TSuccess success) => Success(success);
+
+    /// <summary>
+    /// Implicitly converts an error value to a <see cref="Result{TSuccess,TError}"/>.
+    /// </summary>
+    /// <param name="error">The error value to convert.</param>
+    /// <returns>A <see cref="Result{TSuccess,TError}"/> representing an error.</returns>
+    public static implicit operator Result<TSuccess, TError>(TError error) => Error(error);
+
+    /// <summary>
+    /// Implicitly converts the result to a boolean indicating success.
+    /// </summary>
+    /// <param name="result">The result to convert.</param>
+    /// <returns><c>true</c> if the result is a success; otherwise, <c>false</c>.</returns>
+    public static implicit operator bool(Result<TSuccess, TError> result) => result.IsSuccess;
+
+    /// <summary>
+    /// Explicitly converts the result to its success value.
+    /// </summary>
+    /// <param name="result">The result to convert.</param>
+    /// <returns>The success value if the result is a success.</returns>
+    /// <exception cref="InvalidOperationException">If the result is not a success (i.e., it's an error).</exception>
+    public static explicit operator TSuccess(Result<TSuccess, TError> result) => result.AsSuccess;
+
+    /// <summary>
+    /// Explicitly converts the result to its error value.
+    /// </summary>
+    /// <param name="result">The result to convert.</param>
+    /// <returns>The error value if the result is an error.</returns>
+    /// <exception cref="InvalidOperationException">If the result is not an error (i.e., it's a success).</exception>
+    public static explicit operator TError(Result<TSuccess, TError> result) => result.AsError;
+
+    /// <summary>
+    /// Provides a string representation suitable for debugging purposes.
+    /// </summary>
+    /// <returns>A string representation of the result.</returns>
+    public string ToDebugString() =>
+        IsSuccess
+            ? $"Success: {_success?.ToString() ?? "null"}"
+            : $"Error: {_error?.ToString() ?? "null"}";
 }

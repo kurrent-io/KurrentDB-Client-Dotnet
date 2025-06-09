@@ -13,8 +13,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.Tests", "tes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.Testing", "test\Kurrent.Client.Testing\Kurrent.Client.Testing.csproj", "{400203E4-A80F-4B69-854E-EF730216DA71}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client", "src\Kurrent.Client\Kurrent.Client.csproj", "{FFB5B486-EEE7-41A6-9CDA-32A522DE1DE2}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole", "src\TestConsole\TestConsole.csproj", "{03459F62-1CE6-4AF4-9651-1DCC9874F318}"
 EndProject
 Global
@@ -46,10 +44,6 @@ Global
 		{400203E4-A80F-4B69-854E-EF730216DA71}.Debug|x64.Build.0 = Debug|Any CPU
 		{400203E4-A80F-4B69-854E-EF730216DA71}.Release|x64.ActiveCfg = Release|Any CPU
 		{400203E4-A80F-4B69-854E-EF730216DA71}.Release|x64.Build.0 = Release|Any CPU
-		{FFB5B486-EEE7-41A6-9CDA-32A522DE1DE2}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{FFB5B486-EEE7-41A6-9CDA-32A522DE1DE2}.Debug|x64.Build.0 = Debug|Any CPU
-		{FFB5B486-EEE7-41A6-9CDA-32A522DE1DE2}.Release|x64.ActiveCfg = Release|Any CPU
-		{FFB5B486-EEE7-41A6-9CDA-32A522DE1DE2}.Release|x64.Build.0 = Release|Any CPU
 		{03459F62-1CE6-4AF4-9651-1DCC9874F318}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{03459F62-1CE6-4AF4-9651-1DCC9874F318}.Debug|x64.Build.0 = Debug|Any CPU
 		{03459F62-1CE6-4AF4-9651-1DCC9874F318}.Release|x64.ActiveCfg = Release|Any CPU

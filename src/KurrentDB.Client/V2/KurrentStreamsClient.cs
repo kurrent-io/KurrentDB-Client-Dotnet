@@ -13,8 +13,6 @@ using Kurrent.Client.SchemaRegistry.Serialization.Json;
 using Kurrent.Client.SchemaRegistry.Serialization.Protobuf;
 using KurrentDB.Client;
 using KurrentDB.Client.Legacy;
-using OneOf;
-using OneOf.Types;
 using static KurrentDB.Protocol.Streams.V2.StreamsService;
 using Contracts = KurrentDB.Protocol.Streams.V2;
 using ErrorDetails = Kurrent.Client.Model.ErrorDetails;
@@ -172,7 +170,7 @@ public class KurrentStreamsClient {
 
 	#region . Read .
 
-	internal async IAsyncEnumerable<ReadResult> Read(
+	internal async IAsyncEnumerable<ReadMessage> Read(
 		LogPosition startPosition,
 		long limit,
 		ReadFilter? filter = null,
@@ -180,7 +178,7 @@ public class KurrentStreamsClient {
 		HeartbeatOptions? heartbeatOptions = null,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default
 	) {
-		var channel = Channel.CreateUnbounded<ReadResult>(new() {
+		var channel = Channel.CreateUnbounded<ReadMessage>(new() {
 			SingleReader = true,
 			SingleWriter = true,
 		});
@@ -247,7 +245,7 @@ public class KurrentStreamsClient {
 		}
 	}
 
-	public IAsyncEnumerable<ReadResult> Read(
+	public IAsyncEnumerable<ReadMessage> Read(
 		LogPosition startPosition,
 		long limit,
 		ReadFilter filter,
@@ -270,7 +268,7 @@ public class KurrentStreamsClient {
 		return session;
 	}
 
-	public async IAsyncEnumerable<ReadResult> ReadAll(
+	public async IAsyncEnumerable<ReadMessage> ReadAll(
 		LogPosition startPosition, long limit, Direction direction,
 		ReadFilter filter, HeartbeatOptions heartbeatOptions,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default
@@ -293,7 +291,7 @@ public class KurrentStreamsClient {
 		}
 	}
 
-	public async IAsyncEnumerable<ReadResult> ReadStream(
+	public async IAsyncEnumerable<ReadMessage> ReadStream(
 		string stream, StreamRevision revision, long limit, Direction direction,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default
 	) {
@@ -315,7 +313,7 @@ public class KurrentStreamsClient {
 		}
 	}
 
-	public async IAsyncEnumerable<ReadResult> ReadStream(
+	public async IAsyncEnumerable<ReadMessage> ReadStream(
 		string stream, LogPosition startPosition, long limit, Direction direction,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default
 	) {
@@ -426,7 +424,7 @@ public class KurrentStreamsClient {
 
 	#region . Subscribe .
 
-	public IAsyncEnumerable<SubscribeResult> UnifiedSubscribe(
+	public IAsyncEnumerable<SubscribeMessage> UnifiedSubscribe(
 		LogPosition startPosition, ReadFilter filter, HeartbeatOptions heartbeatOptions,
 		CancellationToken cancellationToken = default
 	) {
@@ -443,7 +441,7 @@ public class KurrentStreamsClient {
 		return session;
 	}
 
-	public async IAsyncEnumerable<SubscribeResult> SubscribeToAll(
+	public async IAsyncEnumerable<SubscribeMessage> SubscribeToAll(
 
 		LogPosition startPosition, ReadFilter filter, HeartbeatOptions heartbeatOptions,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default
@@ -497,7 +495,7 @@ public class KurrentStreamsClient {
 		}
 	}
 
-	public async IAsyncEnumerable<SubscribeResult> SubscribeToStream(
+	public async IAsyncEnumerable<SubscribeMessage> SubscribeToStream(
 		string stream, StreamRevision startRevision, ReadFilter filter,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default
 	) {
@@ -588,7 +586,7 @@ public class KurrentStreamsClient {
 		}
 	}
 
-	public async IAsyncEnumerable<SubscribeResult> SubscribeToStream(
+	public async IAsyncEnumerable<SubscribeMessage> SubscribeToStream(
 		string stream, LogPosition startPosition, ReadFilter filter,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default
 	) {
@@ -617,7 +615,7 @@ public class KurrentStreamsClient {
     /// The optional <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
     /// </param>
     /// <returns></returns>
-    public ValueTask<Result<DeleteError, LogPosition>> Delete(string stream, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) =>
+    public ValueTask<DeleteResult> Delete(string stream, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) =>
          DeleteCore(stream, expectedState, hardDelete: false, cancellationToken);
 
     /// <summary>
@@ -632,10 +630,10 @@ public class KurrentStreamsClient {
     /// The optional <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
     /// </param>
     /// <returns></returns>
-    public ValueTask<Result<DeleteError, LogPosition>> Tombstone(string stream, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) =>
+    public ValueTask<DeleteResult> Tombstone(string stream, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) =>
          DeleteCore(stream, expectedState, hardDelete: true, cancellationToken);
 
-    async ValueTask<Result<DeleteError, LogPosition>> DeleteCore(string stream, ExpectedStreamState expectedState, bool hardDelete = false, CancellationToken cancellationToken = default) {
+    async ValueTask<DeleteResult> DeleteCore(string stream, ExpectedStreamState expectedState, bool hardDelete = false, CancellationToken cancellationToken = default) {
         var legacyExpectedState = expectedState switch {
             _ when expectedState == ExpectedStreamState.Any          => StreamState.Any,
             _ when expectedState == ExpectedStreamState.NoStream     => StreamState.NoStream,
@@ -656,26 +654,38 @@ public class KurrentStreamsClient {
             return result.LogPosition.ConvertToLogPosition();
         }
         catch (Exception ex) {
-            return Result<DeleteError, LogPosition>.Error(ex switch {
+            return DeleteResult.Error(ex switch {
                 StreamNotFoundException => new ErrorDetails.StreamNotFound(stream),
                 StreamDeletedException  => new ErrorDetails.StreamDeleted(stream),
                 AccessDeniedException   => new ErrorDetails.AccessDenied(),
                 _                       => throw new Exception($"Unexpected error while deleting stream {stream}: {ex.Message}", ex)
             });
+
+
+            // // but this commented out code works
+            DeleteError error = ex switch {
+                StreamNotFoundException => new ErrorDetails.StreamNotFound(stream),
+                StreamDeletedException  => new ErrorDetails.StreamDeleted(stream),
+                AccessDeniedException   => new ErrorDetails.AccessDenied(),
+                _                       => throw new Exception($"Unexpected error while deleting stream {stream}: {ex.Message}", ex)
+            };
+
+            return error;
         }
     }
 
+    public class DeleteResult : Result<LogPosition, DeleteError> {
+        protected DeleteResult(bool isSuccess, LogPosition success = default, DeleteError? error = null)
+            : base(isSuccess, success, error) { }
 
-    // [PublicAPI]
-    // [GenerateOneOf]
-    // public partial class DeleteResult : OneOfBase<LogPosition, DeleteError>;
-    //
+        public new static DeleteResult Success(LogPosition _) => new(true, success: _);
+        public new static DeleteResult Error(DeleteError _)   => new(false, error: _);
 
-    public class DeleteResult : Result<DeleteError, LogPosition> {
-        protected DeleteResult(OneOf<Error<DeleteError>, Success<LogPosition>> _) : base(_) { }
-        protected DeleteResult(object value, bool isSuccess) : base(value, isSuccess) { }
+        public static implicit operator DeleteResult(LogPosition _) => new(true, success: _);
+        public static explicit operator LogPosition(DeleteResult _) => _.AsSuccess;
+        public static implicit operator DeleteResult(DeleteError _) => new(false, error: _);
+        public static explicit operator DeleteError(DeleteResult _) => _.AsError;
     }
-
 
     #endregion
 
@@ -828,8 +838,6 @@ public record StreamMetadata {
     /// </summary>
     public JsonDocument? CustomMetadata { get; init; }
 
-    public StreamRevision? MetadataRevision { get; init; }
-
     public bool IsDeleted { get; init; }
 
     // /// <summary>
@@ -837,60 +845,72 @@ public record StreamMetadata {
     // /// </summary>
     // public StreamAcl? Acl { get; init; }
 
-    public bool HasMaxAge           => MaxAge.HasValue && MaxAge > TimeSpan.Zero;
-    public bool HasTruncateBefore   => TruncateBefore is not null;
-    public bool HasCacheControl     => CacheControl.HasValue && CacheControl.Value > TimeSpan.Zero;
-    public bool HasMaxCount         => MaxCount is > 0;
-    public bool HasCustomMetadata   => CustomMetadata is not null && CustomMetadata.RootElement.ValueKind != JsonValueKind.Undefined;
-    public bool HasMetadataRevision => MetadataRevision is not null;
+    public bool HasMaxAge         => MaxAge.HasValue && MaxAge > TimeSpan.Zero;
+    public bool HasTruncateBefore => TruncateBefore is not null;
+    public bool HasCacheControl   => CacheControl.HasValue && CacheControl.Value > TimeSpan.Zero;
+    public bool HasMaxCount       => MaxCount is > 0;
+    public bool HasCustomMetadata => CustomMetadata is not null && CustomMetadata.RootElement.ValueKind != JsonValueKind.Undefined;
 }
 
 public record StreamInfo {
-    /// <summary>
-    /// The optional maximum age of events allowed in the stream.
-    /// </summary>
-    public TimeSpan? MaxAge { get; init; }
+    public StreamMetadata? Metadata { get; init; } = null;
 
-    /// <summary>
-    /// The optional <see cref="StreamRevision"/> from which previous events can be scavenged.
-    /// This is used to implement soft-deletion of streams.
-    /// </summary>
-    public StreamRevision? TruncateBefore { get; init; }
-
-    /// <summary>
-    /// The optional amount of time for which the stream head is cacheable.
-    /// </summary>
-    public TimeSpan? CacheControl { get; init; }
-
-    /// <summary>
-    /// The optional maximum number of events allowed in the stream.
-    /// </summary>
-    public int? MaxCount { get; init; }
-
-    /// <summary>
-    /// The optional <see cref="JsonDocument"/> of user provided metadata.
-    /// </summary>
-    public JsonDocument? CustomMetadata { get; init; }
-
-    public StreamRevision? MetadataRevision { get; init; }
+    public StreamRevision MetadataRevision { get; init; } = StreamRevision.Unset;
 
     public bool IsDeleted { get; init; }
 
-    public StreamRevision LastStreamRevision { get; init; }
-    public LogPosition    LastStreamPosition { get; init; }
+    public StreamRevision LastStreamRevision { get; init; } = StreamRevision.Unset;
+    public LogPosition    LastStreamPosition { get; init; } = LogPosition.Unset;
 
-    // /// <summary>
-    // /// The optional <see cref="StreamAcl"/> for the stream.
-    // /// </summary>
-    // public StreamAcl? Acl { get; init; }
-
-    public bool HasMaxAge           => MaxAge.HasValue && MaxAge > TimeSpan.Zero;
-    public bool HasTruncateBefore   => TruncateBefore is not null;
-    public bool HasCacheControl     => CacheControl.HasValue && CacheControl.Value > TimeSpan.Zero;
-    public bool HasMaxCount         => MaxCount is > 0;
-    public bool HasCustomMetadata   => CustomMetadata is not null && CustomMetadata.RootElement.ValueKind != JsonValueKind.Undefined;
-    public bool HasMetadataRevision => MetadataRevision is not null;
+    public bool HasMetadata => Metadata is not null;
 }
+
+// public record StreamInfo {
+//     /// <summary>
+//     /// The optional maximum age of events allowed in the stream.
+//     /// </summary>
+//     public TimeSpan? MaxAge { get; init; }
+//
+//     /// <summary>
+//     /// The optional <see cref="StreamRevision"/> from which previous events can be scavenged.
+//     /// This is used to implement soft-deletion of streams.
+//     /// </summary>
+//     public StreamRevision? TruncateBefore { get; init; }
+//
+//     /// <summary>
+//     /// The optional amount of time for which the stream head is cacheable.
+//     /// </summary>
+//     public TimeSpan? CacheControl { get; init; }
+//
+//     /// <summary>
+//     /// The optional maximum number of events allowed in the stream.
+//     /// </summary>
+//     public int? MaxCount { get; init; }
+//
+//     /// <summary>
+//     /// The optional <see cref="JsonDocument"/> of user provided metadata.
+//     /// </summary>
+//     public JsonDocument? CustomMetadata { get; init; }
+//
+//     public StreamRevision? MetadataRevision { get; init; }
+//
+//     public bool IsDeleted { get; init; }
+//
+//     public StreamRevision LastStreamRevision { get; init; }
+//     public LogPosition    LastStreamPosition { get; init; }
+//
+//     // /// <summary>
+//     // /// The optional <see cref="StreamAcl"/> for the stream.
+//     // /// </summary>
+//     // public StreamAcl? Acl { get; init; }
+//
+//     public bool HasMaxAge           => MaxAge.HasValue && MaxAge > TimeSpan.Zero;
+//     public bool HasTruncateBefore   => TruncateBefore is not null;
+//     public bool HasCacheControl     => CacheControl.HasValue && CacheControl.Value > TimeSpan.Zero;
+//     public bool HasMaxCount         => MaxCount is > 0;
+//     public bool HasCustomMetadata   => CustomMetadata is not null && CustomMetadata.RootElement.ValueKind != JsonValueKind.Undefined;
+//     public bool HasMetadataRevision => MetadataRevision is not null;
+// }
 
 // public class DeleteResult : Result<DeleteError, LogPosition> {
 //     protected DeleteResult(OneOf<Error<DeleteError>, Success<LogPosition>> _) : base(_) { }

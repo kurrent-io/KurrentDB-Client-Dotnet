@@ -18,6 +18,16 @@ public class KurrentClientTestFixture : TestFixture {
 
 	protected KurrentClient Client => _lazyClient.Value;
 
+    readonly Lazy<KurrentClient> _lazyFullClient = new(() => {
+        var settings = KurrentDBClientSettings
+            .Create(KurrentDBContainerAutoWireUp.Container.AuthenticatedConnectionString)
+            .With(x => { x.LoggerFactory = new SerilogLoggerFactory(Log.Logger); });
+
+        return KurrentClient.Create(settings);
+    });
+
+    protected KurrentClient FullClient => _lazyFullClient.Value;
+
 	public string GetStreamName([CallerMemberName] string? testMethod = null) =>
 		$"stream-{testMethod}-{Guid.NewGuid():N}";
 }
