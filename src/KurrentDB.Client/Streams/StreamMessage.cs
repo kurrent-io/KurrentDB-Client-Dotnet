@@ -62,15 +62,15 @@ namespace KurrentDB.Client {
 		/// <summary>
 		/// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that the subscription is live.
 		/// </summary>
-		public record CaughtUp : StreamMessage {
-			internal static readonly CaughtUp Instance = new();
+		public record CaughtUp(DateTime? Date, long? StreamRevision, Position? Position) : StreamMessage {
+			internal static readonly CaughtUp Empty = new(null, null, null);
 		}
 
 		/// <summary>
 		/// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that the subscription has switched to catch up mode.
 		/// </summary>
-		public record FellBehind : StreamMessage {
-			internal static readonly FellBehind Instance = new();
+		public record FellBehind(DateTime? Date, long? StreamRevision, Position? Position): StreamMessage {
+			internal static readonly FellBehind Empty = new(null, null, null);
 		}
 
 		/// <summary>
