@@ -41,7 +41,7 @@ public class Metadata : IDictionary<string, object?> {
 		_dictionary = items.ToDictionary(k => k.Key, v => v.Value, StringComparer.OrdinalIgnoreCase);
 	}
 
-	#region IDictionary Implementation
+	#region . IDictionary .
 
 	/// <summary>
 	/// Gets the number of elements in the collection.
@@ -153,7 +153,7 @@ public class Metadata : IDictionary<string, object?> {
 
 	#endregion
 
-	#region Value Retrieval Methods
+	#region . Value Retrieval Methods .
 
 	/// <summary>
 	/// Tries to get a typed value from the metadata, with automatic conversion from strings.
@@ -247,7 +247,7 @@ public class Metadata : IDictionary<string, object?> {
 
 	#endregion
 
-	#region Modification Methods
+	#region . Modification Methods .
 
 	/// <summary>
 	/// Adds or updates a key-value pair in the metadata.
@@ -334,7 +334,7 @@ public class Metadata : IDictionary<string, object?> {
 
 	#endregion
 
-	#region Conditional Modification Methods
+	#region . Conditional Modification Methods .
 
 	/// <summary>
 	/// Adds or updates a key-value pair in the metadata only if a condition is true.

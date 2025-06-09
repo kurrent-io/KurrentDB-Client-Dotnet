@@ -7,7 +7,7 @@ namespace Kurrent.Client.Tests.Balancer.Resolvers;
 /// <summary>
 /// A test implementation of IGossipClient for unit testing the GossipResolver.
 /// </summary>
-public class TestGossipClient : IGossipClient {
+class TestGossipClient : IGossipClient {
 	readonly Func<CancellationToken, ValueTask<BalancerAddress[]>> _getTopologyFunc;
 
 	bool _isDisposed;

@@ -7,20 +7,20 @@ public enum NodePreference {
 	/// <summary>
 	/// When attempting connection, prefers leader node.
 	/// </summary>
-	Leader,
+	Leader = 0,
 
 	/// <summary>
 	/// When attempting connection, prefers follower node.
 	/// </summary>
-	Follower,
+	Follower = 1,
 
 	/// <summary>
 	/// When attempting connection, has no node preference.
 	/// </summary>
-	Random,
+	Random = 2,
 
 	/// <summary>
 	/// When attempting connection, prefers read only replicas.
 	/// </summary>
-	ReadOnlyReplica
+	ReadOnlyReplica = 3
 }

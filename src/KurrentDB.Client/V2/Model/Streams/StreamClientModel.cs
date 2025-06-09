@@ -5,79 +5,95 @@ using OneOf;
 
 namespace Kurrent.Client.Model;
 
-[PublicAPI]
-[method: SetsRequiredMembers]
-public record AppendStreamSuccess(string Stream, long Position, long StreamRevision) {
-	public required string Stream         { get; init; } = Stream;
-	public required long   Position       { get; init; } = Position;
-	public required long   StreamRevision { get; init; } = StreamRevision;
+/// <summary>
+/// Base exception class for all KurrentDB client exceptions.
+/// </summary>
+public class KurrentClientException : Exception {
+    public KurrentClientException(string errorCode, string message, Exception? innerException = null) : base(message, innerException) { }
+
+    public static void Throw<T>(T error, Exception? innerException = null) =>
+        throw new KurrentClientException(typeof(T).Name, error!.ToString()!, innerException);
 }
 
 /// <summary>
 /// Provides a set of error detail types for representing specific append operation failures in a stream.
 /// </summary>
 [PublicAPI]
-public static class AppendErrorDetails {
-	/// <summary>
-	/// Represents an error indicating that the specified stream could not be found.
-	/// </summary>
-	/// <param name="Stream">The name of the stream that could not be located.</param>
-	public readonly record struct StreamNotFound(string Stream);
+public static class ErrorDetails {
+    /// <summary>
+    /// Represents an error indicating that the specified stream could not be found.
+    /// </summary>
+    /// <param name="Stream">The name of the stream that could not be located.</param>
+    public readonly record struct StreamNotFound(string Stream) {
+        public override string ToString() => $"Stream '{Stream}' not found.";
+    }
 
-	/// <summary>
-	/// Represents an error indicating that the specified stream has been deleted.
-	/// </summary>
-	/// <param name="Stream">The name of the stream that has been deleted.</param>
-	public readonly record struct StreamDeleted(string Stream);
+    /// <summary>
+    /// Represents an error indicating that the specified stream has been deleted.
+    /// </summary>
+    /// <param name="Stream">The name of the stream that has been deleted.</param>
+    public readonly record struct StreamDeleted(string Stream) {
+        public override string ToString() => $"Stream '{Stream}' has been deleted.";
+    }
 
-	/// <summary>
-	/// Represents an error indicating that access to the requested resource has been denied.
-	/// </summary>
-	[StructLayout(LayoutKind.Sequential, Size = 1)]
-	public readonly struct AccessDenied {
-		public static readonly AccessDenied Value = new();
-	}
+    /// <summary>
+    /// Represents an error indicating that access to the requested resource has been denied.
+    /// </summary>
+    public readonly struct AccessDenied(string Stream) {
+        public override string ToString() => $"Stream '{Stream}' access denied.";
+    }
 
-	/// <summary>
-	/// Indicates an error where the maximum allowable size of a transaction has been exceeded.
-	/// </summary>
-	/// <param name="MaxSize">The maximum allowed size of the transaction.</param>
-	public readonly record struct TransactionMaxSizeExceeded(uint MaxSize);
+    /// <summary>
+    /// Indicates an error where the maximum allowable size of a transaction has been exceeded.
+    /// </summary>
+    /// <param name="MaxSize">The maximum allowed size of the transaction.</param>
+    public readonly record struct TransactionMaxSizeExceeded(uint MaxSize) {
+        public override string ToString() => $"Transaction size exceeded. Maximum allowed size: {MaxSize}.";
+    }
 
-	/// <summary>
-	/// Represents a failure due to an unexpected revision conflict during an append operation.
-	/// </summary>
-	/// <param name="StreamRevision">The actual revision of the stream.</param>
-	public readonly record struct WrongExpectedRevision(string Stream, long StreamRevision);
+    /// <summary>
+    /// Represents a failure due to an unexpected revision conflict during an append operation.
+    /// </summary>
+    /// <param name="StreamRevision">The actual revision of the stream.</param>
+    public readonly record struct WrongExpectedRevision(string Stream, StreamRevision StreamRevision) {
+        public override string ToString() => $"Stream '{Stream}' operation failed due to revision conflict. Actual revision: {StreamRevision}.";
+    }
+
+    // public readonly record struct WrongExpectedRevision(string Stream, ExpectedStreamState ExpectedStreamState, StreamRevision StreamRevision) {
+    //     public override string ToString() => $"Stream '{Stream}' operation failed due to revision conflict. Expected revision: {ExpectedStreamState}, actual revision: {StreamRevision}.";
+    // }
+}
+
+[PublicAPI]
+[method: SetsRequiredMembers]
+public record AppendStreamSuccess(string Stream, LogPosition Position, StreamRevision StreamRevision) {
+    public required string         Stream         { get; init; } = Stream;
+    public required LogPosition    Position       { get; init; } = Position;
+    public required StreamRevision StreamRevision { get; init; } = StreamRevision;
 }
 
 [PublicAPI]
 [GenerateOneOf]
-public partial class AppendStreamFailure : OneOfBase<AppendErrorDetails.StreamNotFound, AppendErrorDetails.StreamDeleted, AppendErrorDetails.AccessDenied, AppendErrorDetails.TransactionMaxSizeExceeded,
-	AppendErrorDetails.WrongExpectedRevision> {
-	public bool IsStreamNotFound             => IsT0;
-	public bool IsStreamDeleted              => IsT1;
-	public bool IsAccessDenied               => IsT2;
-	public bool IsTransactionMaxSizeExceeded => IsT3;
-	public bool IsWrongExpectedRevision      => IsT4;
+public partial class AppendStreamFailure : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.TransactionMaxSizeExceeded, ErrorDetails.WrongExpectedRevision> {
+    public bool IsStreamNotFound             => IsT0;
+    public bool IsStreamDeleted              => IsT1;
+    public bool IsAccessDenied               => IsT2;
+    public bool IsTransactionMaxSizeExceeded => IsT3;
+    public bool IsWrongExpectedRevision      => IsT4;
 
-	public AppendErrorDetails.StreamNotFound             StreamNotFound             => AsT0;
-	public AppendErrorDetails.StreamDeleted              StreamDeleted              => AsT1;
-	public AppendErrorDetails.AccessDenied               AccessDenied               => AsT2;
-	public AppendErrorDetails.TransactionMaxSizeExceeded TransactionMaxSizeExceeded => AsT3;
-	public AppendErrorDetails.WrongExpectedRevision      WrongExpectedRevision      => AsT4;
-}
+    public ErrorDetails.StreamNotFound             AsStreamNotFound             => AsT0;
+    public ErrorDetails.StreamDeleted              AsStreamDeleted              => AsT1;
+    public ErrorDetails.AccessDenied               AsAccessDenied               => AsT2;
+    public ErrorDetails.TransactionMaxSizeExceeded AsTransactionMaxSizeExceeded => AsT3;
+    public ErrorDetails.WrongExpectedRevision      AsWrongExpectedRevision      => AsT4;
 
-[PublicAPI]
-public class AppendStreamSuccesses : List<AppendStreamSuccess> {
-	public AppendStreamSuccesses() { }
-	public AppendStreamSuccesses(IEnumerable<AppendStreamSuccess> input) : base(input) { }
-}
-
-[PublicAPI]
-public class AppendStreamFailures : List<AppendStreamFailure> {
-	public AppendStreamFailures() { }
-	public AppendStreamFailures(IEnumerable<AppendStreamFailure> input) : base(input) { }
+    public void Throw() => Switch(
+        notFound         => KurrentClientException.Throw(notFound),
+        deleted          => KurrentClientException.Throw(deleted),
+        accessDenied     => KurrentClientException.Throw(accessDenied),
+        maxSizeExceeded  => KurrentClientException.Throw(maxSizeExceeded),
+        revisionConflict => KurrentClientException.Throw(revisionConflict)
+    );
 }
 
 [PublicAPI]
@@ -92,11 +108,30 @@ public record AppendStreamRequest(string Stream, ExpectedStreamState ExpectedSta
 
 [PublicAPI]
 [GenerateOneOf]
-public partial class AppendStreamResult : OneOfBase<AppendStreamSuccess, AppendStreamFailure>;
+public partial class AppendStreamResult : OneOfBase<AppendStreamSuccess, AppendStreamFailure> {
+    public bool IsSuccess => IsT0;
+    public bool IsFailure => IsT1;
+
+    public AppendStreamSuccess AsSuccess => AsT0;
+    public AppendStreamFailure AsFailure => AsT1;
+}
+
+
+[PublicAPI]
+public class AppendStreamSuccesses : List<AppendStreamSuccess> {
+    public AppendStreamSuccesses() { }
+    public AppendStreamSuccesses(IEnumerable<AppendStreamSuccess> input) : base(input) { }
+}
+
+[PublicAPI]
+public class AppendStreamFailures : List<AppendStreamFailure> {
+    public AppendStreamFailures() { }
+    public AppendStreamFailures(IEnumerable<AppendStreamFailure> input) : base(input) { }
+}
 
 [PublicAPI]
 public record MultiStreamAppendRequest {
-	public IEnumerable<AppendStreamRequest> Requests { get; init; } = [];
+    public IEnumerable<AppendStreamRequest> Requests { get; init; } = [];
 }
 
 [PublicAPI]
@@ -110,18 +145,8 @@ public partial class MultiStreamAppendResult : OneOfBase<AppendStreamSuccesses, 
 }
 
 [PublicAPI]
-[method: SetsRequiredMembers]
-public readonly record struct HeartbeatOptions(bool Enable, int RecordsThreshold) {
-	public static readonly HeartbeatOptions Disabled = new(false, 0);
-	public static readonly HeartbeatOptions Default  = new(true, 1000);
-
-	public required bool Enable           { get; init; } = Enable;
-	public required int  RecordsThreshold { get; init; } = RecordsThreshold;
-}
-
-[PublicAPI]
 public class AppendStreamRequestBuilder {
-	ExpectedStreamState  _expectedState   = ExpectedStreamState.Any.Instance;
+	ExpectedStreamState  _expectedState   = ExpectedStreamState.Any;
 	List<MessageBuilder> _messageBuilders = [];
 
 	string _stream = "";
@@ -159,6 +184,16 @@ public class AppendStreamRequestBuilder {
 }
 
 [PublicAPI]
+[method: SetsRequiredMembers]
+public readonly record struct HeartbeatOptions(bool Enable, int RecordsThreshold) {
+    public static readonly HeartbeatOptions Disabled = new(false, 0);
+    public static readonly HeartbeatOptions Default  = new(true, 1000);
+
+    public required bool Enable           { get; init; } = Enable;
+    public required int  RecordsThreshold { get; init; } = RecordsThreshold;
+}
+
+[PublicAPI]
 [GenerateOneOf]
 public partial class ReadResult : OneOfBase<Record, Heartbeat> {
 	public bool IsRecord    => IsT0;
@@ -176,4 +211,91 @@ public partial class SubscribeResult : OneOfBase<Record, Heartbeat> {
 
 	public Record    AsRecord    => AsT0;
 	public Heartbeat AsHeartbeat => AsT1;
+}
+
+/// <summary>
+/// Represents the result of a delete operation on a stream in KurrentDB.
+/// </summary>
+[PublicAPI]
+[GenerateOneOf]
+public partial class DeleteError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.WrongExpectedRevision> {
+    public bool IsStreamNotFound        => IsT0;
+    public bool IsStreamDeleted         => IsT1;
+    public bool IsAccessDenied          => IsT2;
+    public bool IsWrongExpectedRevision => IsT3;
+
+    public ErrorDetails.StreamNotFound        AsStreamNotFound        => AsT0;
+    public ErrorDetails.StreamDeleted         AsStreamDeleted         => AsT1;
+    public ErrorDetails.AccessDenied          AsAccessDenied          => AsT2;
+    public ErrorDetails.WrongExpectedRevision AsWrongExpectedRevision => AsT3;
+
+    public void Throw() => Switch(
+        notFound         => KurrentClientException.Throw(notFound),
+        deleted          => KurrentClientException.Throw(deleted),
+        accessDenied     => KurrentClientException.Throw(accessDenied),
+        revisionConflict => KurrentClientException.Throw(revisionConflict)
+    );
+}
+
+/// <summary>
+/// Represents the result of a tombstone operation on a stream in KurrentDB.
+/// </summary>
+[PublicAPI]
+[GenerateOneOf]
+public partial class TombstoneError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.WrongExpectedRevision> {
+    public bool IsStreamNotFound        => IsT0;
+    public bool IsStreamDeleted         => IsT1;
+    public bool IsAccessDenied          => IsT2;
+    public bool IsWrongExpectedRevision => IsT3;
+
+    public ErrorDetails.StreamNotFound        AsStreamNotFound        => AsT0;
+    public ErrorDetails.StreamDeleted         AsStreamDeleted         => AsT1;
+    public ErrorDetails.AccessDenied          AsAccessDenied          => AsT2;
+    public ErrorDetails.WrongExpectedRevision AsWrongExpectedRevision => AsT3;
+
+    public void Throw() => Switch(
+        notFound         => KurrentClientException.Throw(notFound),
+        deleted          => KurrentClientException.Throw(deleted),
+        accessDenied     => KurrentClientException.Throw(accessDenied),
+        revisionConflict => KurrentClientException.Throw(revisionConflict)
+    );
+}
+
+[PublicAPI]
+[GenerateOneOf]
+public abstract partial class GetStreamInfoError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied> {
+    public bool IsStreamNotFound => IsT0;
+    public bool IsStreamDeleted  => IsT1;
+    public bool IsAccessDenied   => IsT2;
+
+    public ErrorDetails.StreamNotFound AsStreamNotFound => AsT0;
+    public ErrorDetails.StreamDeleted  AsStreamDeleted  => AsT1;
+    public ErrorDetails.AccessDenied   AsAccessDenied   => AsT2;
+
+    public void Throw() => Switch(
+        notFound         => KurrentClientException.Throw(notFound),
+        deleted          => KurrentClientException.Throw(deleted),
+        accessDenied     => KurrentClientException.Throw(accessDenied)
+    );
+}
+
+[PublicAPI]
+[GenerateOneOf]
+public abstract partial class SetStreamInfoError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.WrongExpectedRevision> {
+    public bool IsStreamNotFound        => IsT0;
+    public bool IsStreamDeleted         => IsT1;
+    public bool IsAccessDenied          => IsT2;
+    public bool IsWrongExpectedRevision => IsT3;
+
+    public ErrorDetails.StreamNotFound        AsStreamNotFound        => AsT0;
+    public ErrorDetails.StreamDeleted         AsStreamDeleted         => AsT1;
+    public ErrorDetails.AccessDenied          AsAccessDenied          => AsT2;
+    public ErrorDetails.WrongExpectedRevision AsWrongExpectedRevision => AsT3;
+
+    public void Throw() => Switch(
+        notFound         => KurrentClientException.Throw(notFound),
+        deleted          => KurrentClientException.Throw(deleted),
+        accessDenied     => KurrentClientException.Throw(accessDenied),
+        revisionConflict => KurrentClientException.Throw(revisionConflict)
+    );
 }

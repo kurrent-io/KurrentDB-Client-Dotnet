@@ -31,8 +31,8 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
     /// </param>
     internal KurrentDBLegacyCallInvoker(LegacyClusterClient legacyClient, bool disposeClient = true) {
 	    _legacyClient        = legacyClient;
-	    _disposeClient  = disposeClient;
-	    _currentCapabilities = null!;
+        _disposeClient       = disposeClient;
+        _currentCapabilities = null!;
     }
 
     /// <summary>

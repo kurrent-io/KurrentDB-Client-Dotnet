@@ -1,12 +1,12 @@
 using Grpc.Core;
 using Grpc.Net.Client.Configuration;
 
-namespace Kurrent.Client;
+namespace KurrentDB.Client;
 
 /// <summary>
 /// Defines retry configuration for gRPC operations.
 /// </summary>
-public record KurrentClientRetrySettings {
+public record KurrentDBClientRetrySettings {
 	/// <summary>
 	/// Gets or sets whether retry is enabled.
 	/// </summary>
@@ -45,27 +45,27 @@ public record KurrentClientRetrySettings {
 	/// <summary>
 	/// Default retry settings with the default values.
 	/// </summary>
-	public static KurrentClientRetrySettings Default => new();
+	public static KurrentDBClientRetrySettings Default => new();
 
 	/// <summary>
 	/// Retry settings with retry disabled.
 	/// </summary>
-	public static KurrentClientRetrySettings NoRetry => new() { IsEnabled = false };
+	public static KurrentDBClientRetrySettings NoRetry => new() { IsEnabled = false };
 
-	internal MethodConfig GetRetryMethodConfig() {
-		var retryPolicy = new RetryPolicy {
-			MaxAttempts       = MaxAttempts,
-			InitialBackoff    = InitialBackoff,
-			MaxBackoff        = MaxBackoff,
-			BackoffMultiplier = BackoffMultiplier
-		};
+    internal MethodConfig GetRetryMethodConfig() {
+        var retryPolicy = new RetryPolicy {
+            MaxAttempts       = MaxAttempts,
+            InitialBackoff    = InitialBackoff,
+            MaxBackoff        = MaxBackoff,
+            BackoffMultiplier = BackoffMultiplier
+        };
 
-		foreach (var statusCode in RetryableStatusCodes)
-			retryPolicy.RetryableStatusCodes.Add(statusCode);
+        foreach (var statusCode in RetryableStatusCodes)
+            retryPolicy.RetryableStatusCodes.Add(statusCode);
 
-		return new() {
-			Names       = { MethodName.Default },
-			RetryPolicy = retryPolicy
-		};
-	}
+        return new() {
+            Names       = { MethodName.Default },
+            RetryPolicy = retryPolicy
+        };
+    }
 }

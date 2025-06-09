@@ -111,11 +111,11 @@ static class StreamsMapper {
 
 	public static AppendStreamFailure Map(this Contracts.AppendStreamFailure source) =>
 		source.ErrorCase switch {
-			Contracts.AppendStreamFailure.ErrorOneofCase.StreamNotFound             => new AppendErrorDetails.StreamNotFound(source.Stream),
-			Contracts.AppendStreamFailure.ErrorOneofCase.StreamDeleted              => new AppendErrorDetails.StreamDeleted(source.Stream),
-			Contracts.AppendStreamFailure.ErrorOneofCase.WrongExpectedRevision      => new AppendErrorDetails.WrongExpectedRevision(source.Stream, source.WrongExpectedRevision.StreamRevision),
-			Contracts.AppendStreamFailure.ErrorOneofCase.AccessDenied               => new AppendErrorDetails.AccessDenied(),
-			Contracts.AppendStreamFailure.ErrorOneofCase.TransactionMaxSizeExceeded => new AppendErrorDetails.TransactionMaxSizeExceeded(source.TransactionMaxSizeExceeded.MaxSize),
+			Contracts.AppendStreamFailure.ErrorOneofCase.StreamNotFound             => new ErrorDetails.StreamNotFound(source.Stream),
+			Contracts.AppendStreamFailure.ErrorOneofCase.StreamDeleted              => new ErrorDetails.StreamDeleted(source.Stream),
+			Contracts.AppendStreamFailure.ErrorOneofCase.WrongExpectedRevision      => new ErrorDetails.WrongExpectedRevision(source.Stream, source.WrongExpectedRevision.StreamRevision),
+			Contracts.AppendStreamFailure.ErrorOneofCase.AccessDenied               => new ErrorDetails.AccessDenied(),
+			Contracts.AppendStreamFailure.ErrorOneofCase.TransactionMaxSizeExceeded => new ErrorDetails.TransactionMaxSizeExceeded(source.TransactionMaxSizeExceeded.MaxSize),
 			_                                                                       => throw new UnreachableException($"Unexpected append stream failure error case: {source.ErrorCase}")
 		};
 

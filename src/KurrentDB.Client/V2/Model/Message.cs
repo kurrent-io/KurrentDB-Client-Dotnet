@@ -47,6 +47,8 @@ public class MessageBuilder {
 	}
 
 	public MessageBuilder WithValue(object value) {
+        if (value is null)
+            throw new ArgumentNullException(nameof(value), "Message value cannot be null");
 		_message = _message with { Value = value };
 		return this;
 	}
@@ -62,16 +64,12 @@ public class MessageBuilder {
 	}
 
 	public MessageBuilder WithMetadata<T>(string key, T value) {
-		_message = _message with { Metadata = new Metadata(_message.Metadata).With(key, value) };
+		_message = _message with { Metadata = _message.Metadata.With(key, value) };
 		return this;
 	}
 
-	public MessageBuilder WithMetadata(IDictionary<string, object> entries) {
-		var newMetadata = new Metadata(_message.Metadata);
-		foreach (var (key, value) in entries)
-			newMetadata[key] = value;
-
-		_message = _message with { Metadata = newMetadata };
+	public MessageBuilder WithMetadata(IDictionary<string, object?> entries) {
+		_message = _message with { Metadata = _message.Metadata.WithMany(entries) };
 		return this;
 	}
 

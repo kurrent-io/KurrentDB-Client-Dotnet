@@ -13,8 +13,6 @@ public readonly record struct Record() {
 	/// </summary>
 	public LogPosition Position { get; init; } = long.MaxValue;
 
-	public long SequenceNumber { get; init; } = long.MaxValue;
-
 	/// <summary>
 	/// Represents the stream associated with the record.
 	/// </summary>
@@ -56,8 +54,8 @@ public readonly record struct Record() {
 	/// </summary>
 	public RecordSchemaInfo Schema => new RecordSchemaInfo(
 		Metadata.TryGet<string>(SystemMetadataKeys.SchemaName, out var schemaName) ? SchemaName.From(schemaName!) : SchemaName.None,
-		Metadata.Get<SchemaDataFormat>(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Unspecified),
-		Metadata.Get<Guid>(SystemMetadataKeys.SchemaVersionId, Guid.Empty)
+		Metadata.Get(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Unspecified),
+		Metadata.Get(SystemMetadataKeys.SchemaVersionId, Guid.Empty)
 	);
 
 	public bool IsDecoded => Value is not null

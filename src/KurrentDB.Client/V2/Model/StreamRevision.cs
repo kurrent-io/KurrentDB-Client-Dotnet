@@ -4,16 +4,16 @@ namespace Kurrent.Client.Model;
 
 [PublicAPI]
 [DebuggerDisplay("{ToDebugString()}")]
-public readonly record struct StreamRevision : IComparable<StreamRevision>, IComparable {
+public record StreamRevision : IComparable<StreamRevision>, IComparable {
 	/// <summary>
 	/// A special value that refers to an invalid, unassigned or default revision.
 	/// </summary>
-	public static readonly StreamRevision Unset = new(-1000);
+	public static readonly StreamRevision Unset = new StreamRevision((long)-1000);
 
 	/// <summary>
 	/// The beginning (i.e., the first event) of a stream.
 	/// </summary>
-	public static readonly StreamRevision Min = new(0);
+	public static readonly StreamRevision Min = new((long)0);
 
 	/// <summary>
 	/// The end of a stream. Use this when reading a stream backwards, or subscribing live to a stream.
@@ -33,6 +33,7 @@ public readonly record struct StreamRevision : IComparable<StreamRevision>, ICom
 
 	public static implicit operator long(StreamRevision _)   => _.Value;
 	public static implicit operator StreamRevision(long _)   => From(_);
+    public static implicit operator ExpectedStreamState(StreamRevision _) => new(_.Value);
 
 	public override string ToString() => Value.ToString();
 

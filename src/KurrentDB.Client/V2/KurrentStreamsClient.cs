@@ -2,6 +2,7 @@
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Threading.Channels;
 using Grpc.Core;
 using Kurrent.Client.Model;
@@ -12,8 +13,11 @@ using Kurrent.Client.SchemaRegistry.Serialization.Json;
 using Kurrent.Client.SchemaRegistry.Serialization.Protobuf;
 using KurrentDB.Client;
 using KurrentDB.Client.Legacy;
+using OneOf;
+using OneOf.Types;
 using static KurrentDB.Protocol.Streams.V2.StreamsService;
 using Contracts = KurrentDB.Protocol.Streams.V2;
+using ErrorDetails = Kurrent.Client.Model.ErrorDetails;
 
 namespace Kurrent.Client;
 
@@ -40,21 +44,53 @@ public class KurrentStreamsClient {
 			)
 		]);
 
-		LegacyClient = new KurrentDBClient(settings);
+        LegacyClient        = new KurrentDBClient(settings);
 
 		LegacyConverter = new KurrentDBLegacyConverter(
 			SerializerProvider,
-			Settings.MetadataDecoder,
+			new MetadataDecoder(),
 			SchemaRegistryPolicy.NoRequirements
 		);
 	}
 
-	KurrentDBClientSettings   Settings            { get; }
-	StreamsServiceClient      ServiceClient       { get; }
-	KurrentRegistryClient     Registry            { get; }
-	ISchemaSerializerProvider SerializerProvider  { get; }
-	KurrentDBClient           LegacyClient        { get; }
-	KurrentDBLegacyConverter       LegacyConverter { get; }
+    internal KurrentStreamsClient(CallInvoker callInvoker, KurrentClientOptions options) {
+        Settings = options.ConvertToLegacySettings();
+
+        ServiceClient = new StreamsServiceClient(callInvoker);
+        Registry      = new KurrentRegistryClient(callInvoker);
+
+        var typeMapper     = new MessageTypeMapper();
+        var schemaExporter = new SchemaExporter();
+        var schemaManager  = new SchemaManager(Registry, schemaExporter, typeMapper);
+
+        SerializerProvider = new SchemaSerializerProvider([
+            new BytesPassthroughSerializer(),
+            new JsonSchemaSerializer(
+                options: new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap },
+                schemaManager: schemaManager
+            ),
+            new ProtobufSchemaSerializer(
+                options: new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap },
+                schemaManager: schemaManager
+            )
+        ]);
+
+        LegacyClient = new KurrentDBClient(Settings);
+
+        LegacyConverter = new KurrentDBLegacyConverter(
+            SerializerProvider,
+            options.MetadataDecoder,
+            SchemaRegistryPolicy.NoRequirements
+        );
+    }
+
+    KurrentDBClientSettings   Settings           { get; }
+    StreamsServiceClient      ServiceClient      { get; }
+    KurrentRegistryClient     Registry           { get; }
+    ISchemaSerializerProvider SerializerProvider { get; }
+
+    KurrentDBClient          LegacyClient    { get; }
+    KurrentDBLegacyConverter LegacyConverter { get; }
 
 	#region . Append .
 
@@ -121,6 +157,16 @@ public class KurrentStreamsClient {
 	/// <returns>An <see cref="AppendStreamResult"/> containing the outcome of the append operation, including success or failure details.</returns>
 	public ValueTask<AppendStreamResult> Append(string stream, ExpectedStreamState expectedState, IEnumerable<Message> messages, CancellationToken cancellationToken) =>
 		Append(new AppendStreamRequest(stream, expectedState, messages), cancellationToken);
+
+    public ValueTask<AppendStreamResult> Append(string stream, ExpectedStreamState expectedState, Message message, CancellationToken cancellationToken) =>
+        Append(new AppendStreamRequest(stream, expectedState, [message]), cancellationToken);
+
+    public ValueTask<AppendStreamResult> Append<T>(string stream, ExpectedStreamState expectedState, T message, CancellationToken cancellationToken) =>
+        Append(new AppendStreamRequest(stream, expectedState, [new Message{ Value = message ?? throw new ArgumentNullException(nameof(message))}]), cancellationToken);
+
+    public ValueTask<AppendStreamResult> Append<T>(string stream, T message, CancellationToken cancellationToken) =>
+        Append(new AppendStreamRequest(stream, ExpectedStreamState.Any, [new Message{ Value = message ?? throw new ArgumentNullException(nameof(message))}]), cancellationToken);
+
 
 	#endregion
 
@@ -559,4 +605,294 @@ public class KurrentStreamsClient {
 	}
 
 	#endregion
+
+    #region . Delete .
+
+    /// <summary>
+    /// Deletes a stream asynchronously.
+    /// </summary>
+    /// <param name="stream">The name of the stream to delete.</param>
+    /// <param name="expectedState">The expected <see cref="ExpectedStreamState"/> of the stream to be deleted.</param>
+    /// <param name="cancellationToken">
+    /// The optional <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
+    /// </param>
+    /// <returns></returns>
+    public ValueTask<Result<DeleteError, LogPosition>> Delete(string stream, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) =>
+         DeleteCore(stream, expectedState, hardDelete: false, cancellationToken);
+
+    /// <summary>
+    /// Tombstones a stream asynchronously.
+    /// <remarks>
+    /// Tombstoned streams can never be recreated.
+    /// </remarks>
+    /// </summary>
+    /// <param name="stream">The name of the stream to Tombstone.</param>
+    /// <param name="expectedState">The expected <see cref="ExpectedStreamState"/> of the stream to be Tombstoned.</param>
+    /// <param name="cancellationToken">
+    /// The optional <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
+    /// </param>
+    /// <returns></returns>
+    public ValueTask<Result<DeleteError, LogPosition>> Tombstone(string stream, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) =>
+         DeleteCore(stream, expectedState, hardDelete: true, cancellationToken);
+
+    async ValueTask<Result<DeleteError, LogPosition>> DeleteCore(string stream, ExpectedStreamState expectedState, bool hardDelete = false, CancellationToken cancellationToken = default) {
+        var legacyExpectedState = expectedState switch {
+            _ when expectedState == ExpectedStreamState.Any          => StreamState.Any,
+            _ when expectedState == ExpectedStreamState.NoStream     => StreamState.NoStream,
+            _ when expectedState == ExpectedStreamState.StreamExists => StreamState.StreamExists,
+            _                                                        => StreamState.StreamRevision(expectedState),
+        };
+
+        try {
+            var result = hardDelete switch {
+                true => await LegacyClient
+                    .TombstoneAsync(stream, legacyExpectedState, cancellationToken: cancellationToken)
+                    .ConfigureAwait(false),
+                false => await LegacyClient
+                    .DeleteAsync(stream, legacyExpectedState, cancellationToken: cancellationToken)
+                    .ConfigureAwait(false)
+            };
+
+            return result.LogPosition.ConvertToLogPosition();
+        }
+        catch (Exception ex) {
+            return Result<DeleteError, LogPosition>.Error(ex switch {
+                StreamNotFoundException => new ErrorDetails.StreamNotFound(stream),
+                StreamDeletedException  => new ErrorDetails.StreamDeleted(stream),
+                AccessDeniedException   => new ErrorDetails.AccessDenied(),
+                _                       => throw new Exception($"Unexpected error while deleting stream {stream}: {ex.Message}", ex)
+            });
+        }
+    }
+
+
+    // [PublicAPI]
+    // [GenerateOneOf]
+    // public partial class DeleteResult : OneOfBase<LogPosition, DeleteError>;
+    //
+
+    public class DeleteResult : Result<DeleteError, LogPosition> {
+        protected DeleteResult(OneOf<Error<DeleteError>, Success<LogPosition>> _) : base(_) { }
+        protected DeleteResult(object value, bool isSuccess) : base(value, isSuccess) { }
+    }
+
+
+    #endregion
+
+    #region . Meta .
+
+    // public async ValueTask<Result<StreamMetadataError, StreamMetadata>> GetStreamMetadata(string stream, CancellationToken cancellationToken = default) {
+    //     try {
+    //         var result = await LegacyClient
+    //             .GetStreamMetadataAsync(stream, cancellationToken: cancellationToken)
+    //             .ConfigureAwait(false);
+    //
+    //         StreamMetadata metadata = new() {
+    //             MaxAge           = result.Metadata.MaxAge,
+    //             TruncateBefore   = result.Metadata.TruncateBefore?.ConvertToStreamRevision(),
+    //             CacheControl     = result.Metadata.CacheControl,
+    //             MaxCount         = result.Metadata.MaxCount,
+    //             CustomMetadata   = result.Metadata.CustomMetadata,
+    //             MetadataRevision = result.MetastreamRevision?.ConvertToStreamRevision(),
+    //             IsDeleted        = result.StreamDeleted
+    //         };
+    //
+    //         return metadata;
+    //     }
+    //     catch (Exception ex) {
+    //         return Result<StreamMetadataError, StreamMetadata>.Error(ex switch {
+    //             StreamNotFoundException => new ErrorDetails.StreamNotFound(stream),
+    //             StreamDeletedException  => new ErrorDetails.StreamDeleted(stream),
+    //             AccessDeniedException   => new ErrorDetails.AccessDenied(),
+    //             _                       => throw new Exception($"Unexpected error {stream}: {ex.Message}", ex)
+    //         });
+    //     }
+    // }
+
+    // public async ValueTask<Result<StreamInfoOperationError, StreamInfo>> GetStreamInfo(string stream, CancellationToken cancellationToken = default) {
+    //     try {
+    //         var result = await LegacyClient
+    //             .GetStreamMetadataAsync(stream, cancellationToken: cancellationToken)
+    //             .ConfigureAwait(false);
+    //
+    //         var record = await ReadLastStreamRecord(stream, cancellationToken).ConfigureAwait(false);
+    //
+    //         StreamInfo metadata = new() {
+    //             MaxAge             = result.Metadata.MaxAge,
+    //             TruncateBefore     = result.Metadata.TruncateBefore?.ConvertToStreamRevision(),
+    //             CacheControl       = result.Metadata.CacheControl,
+    //             MaxCount           = result.Metadata.MaxCount,
+    //             CustomMetadata     = result.Metadata.CustomMetadata,
+    //             MetadataRevision   = result.MetastreamRevision?.ConvertToStreamRevision(),
+    //             IsDeleted          = result.StreamDeleted,
+    //             LastStreamRevision = record.StreamRevision,
+    //             LastStreamPosition = record.Position,
+    //         };
+    //
+    //         return metadata;
+    //     }
+    //     catch (Exception ex) {
+    //         return Result<StreamInfoOperationError, StreamMetadata>.Error(ex switch {
+    //             StreamNotFoundException => new ErrorDetails.StreamNotFound(stream),
+    //             StreamDeletedException  => new ErrorDetails.StreamDeleted(stream),
+    //             AccessDeniedException   => new ErrorDetails.AccessDenied(),
+    //             _                       => throw new Exception($"Unexpected error {stream}: {ex.Message}", ex)
+    //         });
+    //     }
+    // }
+
+    // public async ValueTask<Result<StreamMetadataError, StreamMetadata>> SetStreamMetadata(string stream, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) {
+    //     var legacyExpectedState = expectedState.Match(
+    //         streamRevision => StreamState.StreamRevision((ulong)streamRevision.Value),
+    //         _ => StreamState.Any,
+    //         _ => StreamState.NoStream,
+    //         _ => StreamState.StreamExists
+    //     );
+    //
+    //     var legacyMetadata = new KurrentDB.Client.StreamMetadata(
+    //         maxAge:           null,
+    //         truncateBefore:   null,
+    //         cacheControl:     null,
+    //         maxCount:         null,
+    //         customMetadata:   null
+    //     );
+    //
+    //     /// <summary>
+    //     /// Asynchronously sets the metadata for a stream.
+    //     /// </summary>
+    //     /// <param name="streamName">The name of the stream to set metadata for.</param>
+    //     /// <param name="expectedState">The <see cref="StreamState"/> of the stream to append to.</param>
+    //     /// <param name="metadata">A <see cref="StreamMetadata"/> representing the new metadata.</param>
+    //     /// <param name="configureOperationOptions">An <see cref="Action{KurrentDBClientOperationOptions}"/> to configure the operation's options.</param>
+    //     /// <param name="deadline"></param>
+    //     /// <param name="userCredentials">The optional <see cref="UserCredentials"/> to perform operation with.</param>
+    //     /// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
+    //     /// <returns></returns>
+    //     // public Task<IWriteResult> SetStreamMetadataAsync(string streamName, StreamState expectedState,
+    //                                                  //    StreamMetadata metadata,
+    //
+    //     try {
+    //         var result = await LegacyClient
+    //             .SetStreamMetadataAsync(stream, legacyExpectedState, cancellationToken: cancellationToken)
+    //             .ConfigureAwait(false);
+    //
+    //         StreamMetadata metadata = new() {
+    //             MaxAge           = result.Metadata.MaxAge,
+    //             TruncateBefore   = result.Metadata.TruncateBefore?.ConvertToStreamRevision(),
+    //             CacheControl     = result.Metadata.CacheControl,
+    //             MaxCount         = result.Metadata.MaxCount,
+    //             CustomMetadata   = result.Metadata.CustomMetadata,
+    //             MetadataRevision = result.MetastreamRevision?.ConvertToStreamRevision(),
+    //             IsDeleted        = result.StreamDeleted
+    //         };
+    //
+    //         return metadata;
+    //     }
+    //     catch (Exception ex) {
+    //         return Result<StreamMetadataError, StreamMetadata>.Error(ex switch {
+    //             StreamNotFoundException => new ErrorDetails.StreamNotFound(stream),
+    //             StreamDeletedException  => new ErrorDetails.StreamDeleted(stream),
+    //             AccessDeniedException   => new ErrorDetails.AccessDenied(),
+    //             _                       => throw new Exception($"Unexpected error {stream}: {ex.Message}", ex)
+    //         });
+    //     }
+    // }
+
+    #endregion
 }
+
+public record StreamMetadata {
+    /// <summary>
+    /// The optional maximum age of events allowed in the stream.
+    /// </summary>
+    public TimeSpan? MaxAge { get; init; }
+
+    /// <summary>
+    /// The optional <see cref="StreamRevision"/> from which previous events can be scavenged.
+    /// This is used to implement soft-deletion of streams.
+    /// </summary>
+    public StreamRevision? TruncateBefore { get; init; }
+
+    /// <summary>
+    /// The optional amount of time for which the stream head is cacheable.
+    /// </summary>
+    public TimeSpan? CacheControl { get; init; }
+
+    /// <summary>
+    /// The optional maximum number of events allowed in the stream.
+    /// </summary>
+    public int? MaxCount { get; init; }
+
+    /// <summary>
+    /// The optional <see cref="JsonDocument"/> of user provided metadata.
+    /// </summary>
+    public JsonDocument? CustomMetadata { get; init; }
+
+    public StreamRevision? MetadataRevision { get; init; }
+
+    public bool IsDeleted { get; init; }
+
+    // /// <summary>
+    // /// The optional <see cref="StreamAcl"/> for the stream.
+    // /// </summary>
+    // public StreamAcl? Acl { get; init; }
+
+    public bool HasMaxAge           => MaxAge.HasValue && MaxAge > TimeSpan.Zero;
+    public bool HasTruncateBefore   => TruncateBefore is not null;
+    public bool HasCacheControl     => CacheControl.HasValue && CacheControl.Value > TimeSpan.Zero;
+    public bool HasMaxCount         => MaxCount is > 0;
+    public bool HasCustomMetadata   => CustomMetadata is not null && CustomMetadata.RootElement.ValueKind != JsonValueKind.Undefined;
+    public bool HasMetadataRevision => MetadataRevision is not null;
+}
+
+public record StreamInfo {
+    /// <summary>
+    /// The optional maximum age of events allowed in the stream.
+    /// </summary>
+    public TimeSpan? MaxAge { get; init; }
+
+    /// <summary>
+    /// The optional <see cref="StreamRevision"/> from which previous events can be scavenged.
+    /// This is used to implement soft-deletion of streams.
+    /// </summary>
+    public StreamRevision? TruncateBefore { get; init; }
+
+    /// <summary>
+    /// The optional amount of time for which the stream head is cacheable.
+    /// </summary>
+    public TimeSpan? CacheControl { get; init; }
+
+    /// <summary>
+    /// The optional maximum number of events allowed in the stream.
+    /// </summary>
+    public int? MaxCount { get; init; }
+
+    /// <summary>
+    /// The optional <see cref="JsonDocument"/> of user provided metadata.
+    /// </summary>
+    public JsonDocument? CustomMetadata { get; init; }
+
+    public StreamRevision? MetadataRevision { get; init; }
+
+    public bool IsDeleted { get; init; }
+
+    public StreamRevision LastStreamRevision { get; init; }
+    public LogPosition    LastStreamPosition { get; init; }
+
+    // /// <summary>
+    // /// The optional <see cref="StreamAcl"/> for the stream.
+    // /// </summary>
+    // public StreamAcl? Acl { get; init; }
+
+    public bool HasMaxAge           => MaxAge.HasValue && MaxAge > TimeSpan.Zero;
+    public bool HasTruncateBefore   => TruncateBefore is not null;
+    public bool HasCacheControl     => CacheControl.HasValue && CacheControl.Value > TimeSpan.Zero;
+    public bool HasMaxCount         => MaxCount is > 0;
+    public bool HasCustomMetadata   => CustomMetadata is not null && CustomMetadata.RootElement.ValueKind != JsonValueKind.Undefined;
+    public bool HasMetadataRevision => MetadataRevision is not null;
+}
+
+// public class DeleteResult : Result<DeleteError, LogPosition> {
+//     protected DeleteResult(OneOf<Error<DeleteError>, Success<LogPosition>> _) : base(_) { }
+//     protected DeleteResult(object value, bool isSuccess) : base(value, isSuccess) { }
+// }

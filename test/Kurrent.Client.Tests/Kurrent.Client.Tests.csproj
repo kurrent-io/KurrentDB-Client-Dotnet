@@ -15,7 +15,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.5" />
     <PackageReference Include="Shouldly" Version="4.3.0" />
-    <PackageReference Include="TUnit" Version="0.22.0" />
+    <PackageReference Include="TUnit" Version="0.25.6" />
   </ItemGroup>
 
   <ItemGroup>

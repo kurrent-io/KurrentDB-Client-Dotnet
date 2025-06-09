@@ -6,19 +6,33 @@ namespace Kurrent.Client;
 
 [PublicAPI]
 public class KurrentClient : IAsyncDisposable {
-	public KurrentClient(KurrentDBClientSettings? settings) {
-		Settings = settings ?? new();
+    KurrentClient(KurrentClientOptions options) {
+        Options = options;
 
-		Settings.ConnectionName ??= $"conn-{Guid.NewGuid():D}";
+        var settings = Options.ConvertToLegacySettings();
 
-		LegacyCallInvoker = new KurrentDBLegacyCallInvoker(new LegacyClusterClient(Settings));
+        LegacyCallInvoker = new KurrentDBLegacyCallInvoker(new LegacyClusterClient(settings));
 
-		Streams  = new KurrentStreamsClient(LegacyCallInvoker, Settings);
-		Registry = new KurrentRegistryClient(LegacyCallInvoker);
-		Features = new KurrentFeaturesClient(LegacyCallInvoker);
-	}
+        Streams  = new KurrentStreamsClient(LegacyCallInvoker, settings);
+        Registry = new KurrentRegistryClient(LegacyCallInvoker);
+        Features = new KurrentFeaturesClient(LegacyCallInvoker);
+    }
 
-	KurrentDBClientSettings    Settings          { get; }
+    // public KurrentClient(KurrentDBClientSettings? settings) {
+    //     settings ??= new();
+    //
+    //     settings.ConnectionName ??= $"conn-{Guid.NewGuid():D}";
+    //
+    //     LegacyCallInvoker = new KurrentDBLegacyCallInvoker(new LegacyClusterClient(settings));
+    //
+    //     Options = null!;
+    //
+    //     Streams  = new KurrentStreamsClient(LegacyCallInvoker, settings);
+    //     Registry = new KurrentRegistryClient(LegacyCallInvoker);
+    //     Features = new KurrentFeaturesClient(LegacyCallInvoker);
+    // }
+
+    KurrentClientOptions       Options           { get; }
 	KurrentDBLegacyCallInvoker LegacyCallInvoker { get; }
 
 	public KurrentStreamsClient  Streams  { get; }
@@ -35,4 +49,16 @@ public class KurrentClient : IAsyncDisposable {
 
 	public ValueTask DisposeAsync() =>
 		LegacyCallInvoker.DisposeAsync();
+
+
+
+    public static KurrentClient Create(KurrentClientOptions? options = null) =>
+        new(options ?? new KurrentClientOptions());
+
+    public static KurrentClient Create(string connectionString) =>
+        Create(KurrentDBConnectionString.Parse(connectionString).ToClientOptions());
+
+    public static KurrentClient Create(KurrentDBClientSettings settings) =>
+        throw new NotSupportedException("Use KurrentClientOptions instead of KurrentDBClientSettings. The legacy settings are no longer supported.");
+
 }

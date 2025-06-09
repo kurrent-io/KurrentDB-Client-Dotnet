@@ -200,7 +200,7 @@ public partial class GossipResolver : PollingResolver {
 		catch (OperationCanceledException) when (timeoutToken.IsCancellationRequested) {
 			return GossipErrors.GossipTimeout.Value;
 		}
-		catch (ObjectDisposedException ex) {
+		catch (ObjectDisposedException) {
 			throw;
 		}
 		catch (Exception ex) {

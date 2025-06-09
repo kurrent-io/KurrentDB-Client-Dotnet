@@ -7,8 +7,6 @@ namespace KurrentDB.Client;
 /// A class used to describe how to connect to an instance of KurrentDB.
 /// </summary>
 public class KurrentDBClientConnectivitySettings {
-	public static KurrentDBClientConnectivitySettingsBuilder Builder => new();
-
 	/// <summary>
 	/// The default port used for connecting to KurrentDB.
 	/// </summary>
@@ -122,11 +120,11 @@ public class KurrentDBClientConnectivitySettings {
 	/// </summary>
 	public X509Certificate2? ClientCertificate { get; set; }
 
-	/// <summary>
-	/// Configuration for SSL/TLS credentials, including client and root certificates,
-	/// as well as server certificate verification settings.
-	/// </summary>
-	public SslCredentialsSettings SslCredentials { get; set; } = new();
+	// /// <summary>
+	// /// Configuration for SSL/TLS credentials, including client and root certificates,
+	// /// as well as server certificate verification settings.
+	// /// </summary>
+	// public SslCredentialsSettings SslCredentials { get; set; } = new();
 
 	/// <summary>
 	/// The default <see cref="KurrentDBClientConnectivitySettings"/>.
@@ -138,8 +136,7 @@ public class KurrentDBClientConnectivitySettings {
 		NodePreference      = NodePreference.Leader,
 		KeepAliveInterval   = TimeSpan.FromSeconds(10),
 		KeepAliveTimeout    = TimeSpan.FromSeconds(10),
-		TlsVerifyCert       = true,
-		SslCredentials      = new()
+		TlsVerifyCert       = true
 	};
 
 	/// <summary>
@@ -158,47 +155,6 @@ public class KurrentDBClientConnectivitySettings {
 		TlsVerifyCert       = TlsVerifyCert,
 		TlsCaFile           = TlsCaFile,
 		ClientCertificate   = ClientCertificate,
-		Insecure            = Insecure,
-		SslCredentials      = SslCredentials
+		Insecure            = Insecure
 	};
-}
-
-public record SslCredentialsSettings {
-	/// <summary>
-	/// Path to the client certificate file for mTLS.
-	/// </summary>
-	public string? ClientCertificatePath { get; init; }
-
-	/// <summary>
-	/// Path to the client private key file for mTLS.
-	/// </summary>
-	public string? ClientCertificateKeyPath { get; init; }
-
-	/// <summary>
-	/// Path to the root CA certificate for server validation.
-	/// </summary>
-	public string? RootCertificatePath { get; init; }
-
-	/// <summary>
-	/// Whether to verify the server certificate.
-	/// </summary>
-	public bool VerifyServerCertificate { get; init; } = true;
-
-	/// <summary>
-	/// Indicates whether a client certificate is available based on the absence of paths for the certificate
-	/// and its associated key.
-	/// </summary>
-	public bool HasClientCertificate =>
-		string.IsNullOrWhiteSpace(ClientCertificatePath) && string.IsNullOrWhiteSpace(ClientCertificateKeyPath);
-
-	/// <summary>
-	/// Indicates whether a root certificate is specified for the connection.
-	/// </summary>
-	public bool HasRootCertificate =>
-		string.IsNullOrWhiteSpace(RootCertificatePath);
-
-	/// <summary>
-	/// Indicates whether SSL credentials are required based on the presence of client or root certificates.
-	/// </summary>
-	public bool Required => HasClientCertificate || HasRootCertificate;
 }

@@ -2,7 +2,7 @@ using Grpc.Core;
 
 namespace KurrentDB.Client;
 
-static class MetadataExtensions {
+static class GrpcMetadataExtensions {
 	public static bool TryGetValue(this Metadata metadata, string key, out string? value) {
 		value = null;
 

@@ -6,6 +6,7 @@ using Kurrent.Client.Model;
 using Kurrent.Client.SchemaRegistry;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 using Contracts = KurrentDB.Protocol.Registry.V2;
+using ErrorDetails = Kurrent.Client.SchemaRegistry.ErrorDetails;
 
 namespace Kurrent.Client;
 

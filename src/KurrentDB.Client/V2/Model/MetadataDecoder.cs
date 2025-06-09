@@ -38,7 +38,7 @@ public abstract class MetadataDecoderBase : IMetadataDecoder {
 }
 
 [PublicAPI]
-public class MetadataDecoder : MetadataDecoderBase {
+public sealed class MetadataDecoder : MetadataDecoderBase {
     // public static IMetadataDecoder Instance { get; private set; } = new MetadataDecoder();
     //
     // /// <summary>

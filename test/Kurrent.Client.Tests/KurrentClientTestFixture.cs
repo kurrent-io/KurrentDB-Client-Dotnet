@@ -13,7 +13,7 @@ public class KurrentClientTestFixture : TestFixture {
 			.Create(KurrentDBContainerAutoWireUp.Container.AuthenticatedConnectionString)
 			.With(x => { x.LoggerFactory = new SerilogLoggerFactory(Log.Logger); });
 
-		return new KurrentClient(settings);
+		return KurrentClient.Create(settings);
 	});
 
 	protected KurrentClient Client => _lazyClient.Value;

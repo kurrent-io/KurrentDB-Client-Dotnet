@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Kurrent.Client;
 
 namespace KurrentDB.Client;
@@ -8,6 +9,18 @@ namespace KurrentDB.Client;
 /// </summary>
 static class SystemTypes {
 	public static readonly Type MissingType = Type.Missing.GetType();
+
+    /// <summary>
+    /// Checks if the specified type is the placeholder type representing a missing type.
+    /// </summary>
+    /// <param name="source">
+    /// The <see cref="Type"/> to check.
+    /// </param>
+    /// <returns>
+    /// <c>true</c> if the type is the placeholder for a missing type; otherwise, <c>false</c>.
+    /// </returns>
+    [DebuggerStepThrough]
+    public static bool IsMissing(this Type source) => source == MissingType;
 
 	/// <summary>
 	/// Resolves and retrieves a <see cref="Type"/> by its fully qualified name.
@@ -20,6 +33,11 @@ static class SystemTypes {
 		Type.GetType(fullName) ?? AssemblyScanner.System.Scan()
 			.InstancesWithFullName(fullName)
 			.FirstOrMissing();
+
+    public static Type ResolveTypeOrThrow(string fullName) =>
+        Type.GetType(fullName)
+     ?? AssemblyScanner.System.Scan().InstancesWithFullName(fullName).FirstOrDefault()
+     ?? throw new InvalidOperationException($"Type '{fullName}' could not be resolved. Ensure the type is defined in a loaded assembly or scanned assemblies.");
 
 	/// <summary>
 	/// Attempts to resolve and retrieve a <see cref="Type"/> by its fully qualified name.

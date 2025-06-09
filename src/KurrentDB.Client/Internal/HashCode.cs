@@ -4,7 +4,7 @@ namespace KurrentDB.Client;
 /// <summary>
 /// Provides functionality for combining hash codes in a way that's compatible with .NET Framework 4.8.
 /// </summary>
-public readonly struct HashCode {
+readonly struct HashCode {
 	readonly int _value;
 
 	HashCode(int value) => _value = value;
