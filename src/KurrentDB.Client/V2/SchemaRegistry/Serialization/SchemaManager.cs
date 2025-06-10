@@ -220,7 +220,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistryClient, ISchemaEx
 		if (CompatibleVersions.TryGetValue(messageType, out var versions))
 			return versions.Last().VersionId;
 
-		var definition = SchemaExporter.Export(messageType, SchemaDataFormat.Json);
+		var definition = SchemaExporter.Export(messageType, dataFormat);
 
 		var result = await SchemaRegistryClient
 			.CheckSchemaCompatibility(schemaName, definition, dataFormat, cancellationToken)
