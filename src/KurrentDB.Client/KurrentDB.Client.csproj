@@ -83,6 +83,12 @@
 		<Protobuf Update="Core\protos\usermanagement.proto">
 		  <Generator>MSBuild:Compile</Generator>
 		</Protobuf>
+		<Protobuf Update="Core\protos\stream.v2.proto">
+			<Generator>MSBuild:Compile</Generator>
+		</Protobuf>
+		<Protobuf Update="Core\protos\dynamic-value.proto">
+			<Generator>MSBuild:Compile</Generator>
+		</Protobuf>
 
 		<!--       -->
 		<!--        <Protobuf-->
