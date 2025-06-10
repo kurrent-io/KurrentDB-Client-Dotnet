@@ -7,6 +7,8 @@ namespace Kurrent.Client;
 [PublicAPI]
 public class KurrentClient : IAsyncDisposable {
     KurrentClient(KurrentClientOptions options) {
+        options.EnsureConfigIsValid();
+
         Options = options;
 
         var settings = Options.ConvertToLegacySettings();

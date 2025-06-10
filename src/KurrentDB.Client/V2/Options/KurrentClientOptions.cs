@@ -84,6 +84,7 @@ public record KurrentClientOptions : KurrentClientOptionsBase {
             }
 
             // If we're using discovery, we don't have a direct address
+            // we already validated that we must have endpoints
             return new Uri($"{KurrentConnectionScheme.Discover.Description()}://{Guids.CreateVersion7()}");
         }
     }

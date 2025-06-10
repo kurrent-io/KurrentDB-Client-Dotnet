@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using Grpc.Core;
 using Grpc.Net.Client.Balancer;
 using Humanizer;
-using KurrentDB.Client;
+using Kurrent.Client;
 using Microsoft.Extensions.Logging;
 using OneOf;
 

@@ -1,4 +1,4 @@
-namespace KurrentDB.Client;
+namespace Kurrent.Grpc;
 
 /// <summary>
 /// Provides methods to create timers that avoid capturing the current <see cref="ExecutionContext"/> and <see cref="AsyncLocal{T}"/> instances.

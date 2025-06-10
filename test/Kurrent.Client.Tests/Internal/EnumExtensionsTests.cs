@@ -1,6 +1,6 @@
 using System.ComponentModel;
 
-namespace Kurrent.Client.Tests;
+namespace Kurrent.Client.Tests.Internal;
 
 public class EnumExtensionsTests {
     [Test]

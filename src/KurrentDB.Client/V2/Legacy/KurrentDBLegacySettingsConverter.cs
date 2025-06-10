@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Kurrent.Client;
 using Kurrent.Client.Security;
+using KurrentDB.Client.Next;
 
 namespace KurrentDB.Client.Legacy;
 
@@ -20,7 +21,7 @@ public static class KurrentDBLegacySettingsConverter {
     public static KurrentDBClientSettings ConvertToLegacySettings(this KurrentClientOptions options) {
         var connectivitySettings = new KurrentDBClientConnectivitySettings {
             // Gossip configuration
-            GossipSeeds         = options.Endpoints.ToArray(),
+            GossipSeeds         = options.ConnectionScheme == KurrentConnectionScheme.Discover ? options.Endpoints : [],
             MaxDiscoverAttempts = options.Gossip.MaxDiscoverAttempts,
             DiscoveryInterval   = options.Gossip.DiscoveryInterval,
             GossipTimeout       = options.Gossip.Timeout,
@@ -62,11 +63,8 @@ public static class KurrentDBLegacySettingsConverter {
         if (options.Security.Authentication.Value is X509CertificateCredentials x509Credentials)
             connectivitySettings.ClientCertificate = x509Credentials.Certificate;
 
-        // Set address if provided (single node)
-        // How to identify this?
-        if (options.Address is not null) {
+        if (options.ConnectionScheme == KurrentConnectionScheme.Direct)
             connectivitySettings.Address = options.Address;
-        }
 
         // Convert retry settings
         var retrySettings = new KurrentDBClientRetrySettings {

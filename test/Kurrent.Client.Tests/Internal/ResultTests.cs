@@ -1,7 +1,7 @@
 using Bogus;
 using TicTacToe;
 
-namespace Kurrent.Client.Tests.Fast;
+namespace Kurrent.Client.Tests.Internal;
 
 public class ResultTests {
     Faker Faker { get; } = new();

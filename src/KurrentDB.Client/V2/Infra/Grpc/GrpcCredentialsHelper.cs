@@ -1,6 +1,6 @@
 using Grpc.Core;
 
-namespace Kurrent.Client.Infra;
+namespace Kurrent.Grpc;
 
 public static class GrpcCredentialsHelper {
 	/// <summary>

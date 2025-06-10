@@ -1,3 +1,5 @@
+// ReSharper disable CheckNamespace
+
 namespace Company.Logistics.Events {
 	public record OrderShipped {
 		public record Details(string ItemId, int Quantity);

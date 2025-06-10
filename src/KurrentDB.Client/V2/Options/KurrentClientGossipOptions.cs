@@ -96,39 +96,4 @@ public record KurrentClientGossipOptions : KurrentClientOptionsBase {
         Timeout             = TimeSpan.FromSeconds(5),
         ReadPreference      = NodePreference.Random
     };
-
-    // /// <summary>
-    // /// Ensures the gossip options configuration is valid.
-    // /// </summary>
-    // /// <param name="loggerFactory">
-    // /// Optional logger factory for logging warnings during validation.
-    // /// </param>
-    // /// <returns>The same instance if validation passes.</returns>
-    // /// <exception cref="InvalidOperationException">Thrown when validation fails.</exception>
-    // [Obsolete("Use EnsureValid() without parameters instead. This method will be removed in a future version.")]
-    // public KurrentClientGossipOptions EnsureValid(ILoggerFactory? loggerFactory = null) {
-    //     var logger = loggerFactory is null
-    //         ? NullLogger<KurrentClientGossipOptions>.Instance
-    //         : loggerFactory.CreateLogger<KurrentClientGossipOptions>();
-    //
-    //     if (MaxDiscoverAttempts <= 0 && MaxDiscoverAttempts != -1)
-    //         throw new InvalidOperationException("MaxDiscoverAttempts must be greater than 0 or -1 for infinite retries.");
-    //
-    //     if (DiscoveryInterval < TimeSpan.FromMilliseconds(10))
-    //         throw new InvalidOperationException("DiscoveryInterval must be at least 10ms.");
-    //
-    //     if (DiscoveryInterval > TimeSpan.FromSeconds(60))
-    //         throw new InvalidOperationException("DiscoveryInterval must not exceed 60 seconds.");
-    //
-    //     if (Timeout <= DiscoveryInterval)
-    //         throw new InvalidOperationException("Timeout must be greater than DiscoveryInterval.");
-    //
-    //     if (Timeout < TimeSpan.FromMilliseconds(100))
-    //         throw new InvalidOperationException("Timeout must be at least 100ms.");
-    //
-    //     if (Timeout > TimeSpan.FromSeconds(60))
-    //         logger.LogWarning("Gossip.Timeout exceeds 60 seconds. This may result in delayed failure detection.");
-    //
-    //     return this;
-    // }
 }

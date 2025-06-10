@@ -1,12 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <LangVersion>preview</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnablePreviewFeatures>true</EnablePreviewFeatures>
-		<TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
-		<TestingPlatformShowTestsFailure>true</TestingPlatformShowTestsFailure>
+    <RootNamespace>Kurrent.Client.Tests</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,10 +15,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="FluentValidation" Version="12.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.5" />
     <PackageReference Include="Shouldly" Version="4.3.0" />
-    <PackageReference Include="TUnit" Version="0.25.21" />
+    <PackageReference Include="TUnit" Version="0.25.6" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,7 +32,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Client\" />
-    <Folder Include="Infra\" />
+    <Folder Include="Schema\" />
   </ItemGroup>
+
 </Project>

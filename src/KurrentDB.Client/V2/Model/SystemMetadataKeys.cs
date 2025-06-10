@@ -7,10 +7,10 @@ public static class SystemMetadataKeys {
     public static bool IsSystemMetadataKey(string key) =>
 	    key.StartsWith(SystemPrefix, StringComparison.Ordinal);
 
-    public const string SchemaName       = $"{SystemPrefix}schema.name";
-    public const string SchemaDataFormat = $"{SystemPrefix}schema.data-format";
-    public const string SchemaVersionId  = $"{SystemPrefix}schema.version-id";
-    public const string SchemaUrn        = $"{SystemPrefix}schema.urn"; // NEW represents the schema name + format + version id
+    public const string SchemaName         = $"{SystemPrefix}schema.name";
+    public const string SchemaDataFormat   = $"{SystemPrefix}schema.data-format";
+    public const string SchemaVersionId    = $"{SystemPrefix}schema.version-id";
+    public const string SchemaUrn          = $"{SystemPrefix}schema.urn"; // NEW represents the schema name + format + version id
 
     #region . internal .
 

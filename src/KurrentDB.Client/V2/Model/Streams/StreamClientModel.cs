@@ -102,9 +102,7 @@ public record AppendStreamRequest(string Stream, ExpectedStreamState ExpectedSta
 }
 
 [PublicAPI]
-public partial class AppendStreamResult : Result<AppendStreamSuccess, AppendStreamFailure> {
-    // Constructor removed - will be generated
-}
+public partial class AppendStreamResult : Result<AppendStreamSuccess, AppendStreamFailure>;
 
 [PublicAPI]
 public class AppendStreamSuccesses : List<AppendStreamSuccess> {
@@ -124,9 +122,7 @@ public record MultiStreamAppendRequest {
 }
 
 [PublicAPI]
-public partial class MultiStreamAppendResult : Result<AppendStreamSuccesses, AppendStreamFailures> {
-    // Constructor removed - will be generated
-}
+public partial class MultiStreamAppendResult : Result<AppendStreamSuccesses, AppendStreamFailures>;
 
 [PublicAPI]
 public class AppendStreamRequestBuilder {
@@ -275,9 +271,9 @@ public partial class SetMetadataError : OneOfBase<ErrorDetails.StreamNotFound, E
     public bool IsStreamRevisionConflict => IsT3;
 
     public ErrorDetails.StreamNotFound         AsStreamNotFound         => AsT0;
-    public ErrorDetails.StreamDeleted          AsStreamDeleted          => AsT1; 
-    public ErrorDetails.AccessDenied           AsAccessDenied           => AsT2; 
-    public ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict => AsT3; 
+    public ErrorDetails.StreamDeleted          AsStreamDeleted          => AsT1;
+    public ErrorDetails.AccessDenied           AsAccessDenied           => AsT2;
+    public ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict => AsT3;
 
     public void Throw() =>
         Switch(

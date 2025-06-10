@@ -3,27 +3,42 @@ using TicTacToe;
 
 namespace Kurrent.Client.Tests;
 
-public class StreamsAppendTests : KurrentClientTestFixture {
+public class AppendTests : KurrentClientTestFixture {
     [Test]
-    public async Task appends_message_to_new_stream_with_expected_revision(CancellationToken ct) {
+    public async Task appends_message_to_new_stream_with_no_stream_expected_state(CancellationToken ct) {
         // Arrange
         var stream = $"Game-{Guid.NewGuid().ToString().Substring(24, 12)}";
 
         var msg = new GameStarted(Guid.NewGuid(), Player.X);
 
-        // Act
-        var appendResult = await Client.Streams
-            .Append(stream, ExpectedStreamState.NoStream, msg, ct)
-            .ConfigureAwait(false);
+        // var thing = new List<AppendStreamRequest>(
+        //     [
+        //         new AppendStreamRequest(
+        //             stream, ExpectedStreamState.NoStream, [
+        //                 new Message {
+        //                     Value = msg
+        //                 }
+        //             ]
+        //         )
+        //     ]
+        // ).ToAsyncEnumerable();
+                   // Act
+                   var appendTask = Client.Streams
+            .Append(stream, StreamRevision.From(1), msg, ct)
+            .AsTask();
+
+        await Should.NotThrowAsync(() => appendTask);
+
+        var result = await appendTask;
 
         // Assert
-        appendResult.Switch(
+        result.Switch(
             success => {
                 success.Stream.ShouldBe(stream);
                 success.StreamRevision.ShouldBeGreaterThanOrEqualTo(StreamRevision.Min);
                 success.Position.ShouldBeGreaterThanOrEqualTo(LogPosition.Earliest);
             },
-            failure => Assert.Fail(failure.Value.ToString()!)
+            failure => failure.Throw()
         );
     }
 

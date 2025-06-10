@@ -35,6 +35,18 @@ public class Result<TSuccess, TError> {
         }
     }
 
+    // protected Result(TSuccess success) {
+    //     IsSuccess = true;
+    //     _success  = success!;
+    //     _error    = default!;
+    // }
+    //
+    // protected Result(TError error) {
+    //     IsSuccess = false;
+    //     _success  = default!;
+    //     _error    = error!;
+    // }
+
     /// <summary>
     /// Gets a value indicating whether the operation was successful.
     /// </summary>

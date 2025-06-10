@@ -5,11 +5,6 @@ using ValidationResult = FluentValidation.Results.ValidationResult;
 
 namespace Kurrent.Client;
 
-// static class ValidatorExtensions {
-//     public static ValidationResult ThrowOnFailure(this ValidationResult result) =>
-//         !result.IsValid ? throw new ValidationException(result.Errors) : result;
-// }
-
 public abstract record KurrentClientOptionsBase {
     Lazy<dynamic> LazyValidator => new(() => {
         var validatorTypeName = $"{GetType().FullName}Validator";
@@ -21,7 +16,7 @@ public abstract record KurrentClientOptionsBase {
             .GetField("Instance", BindingFlags.Public | BindingFlags.Static)?
             .GetValue(null);
 
-        return validator ?? throw new InvalidOperationException($"Static `Instance` property not found on {validatorTypeName}?!");
+        return validator ?? throw new InvalidOperationException($"Static `Instance` property not found on {validatorTypeName}?! Please put it there dude!");
     });
 
     dynamic Validator => LazyValidator.Value;

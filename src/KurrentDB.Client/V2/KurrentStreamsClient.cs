@@ -63,19 +63,17 @@ public partial class KurrentStreamsClient { // Made partial
         var schemaExporter = new SchemaExporter();
         var schemaManager  = new SchemaManager(Registry, schemaExporter, typeMapper);
 
-        SerializerProvider = new SchemaSerializerProvider(
-            [
-                new BytesPassthroughSerializer(),
-                new JsonSchemaSerializer(
-                    new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap },
-                    schemaManager
-                ),
-                new ProtobufSchemaSerializer(
-                    new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap },
-                    schemaManager
-                )
-            ]
-        );
+        SerializerProvider = new SchemaSerializerProvider([
+            new BytesPassthroughSerializer(),
+            new JsonSchemaSerializer(
+                new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap },
+                schemaManager
+            ),
+            new ProtobufSchemaSerializer(
+                new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap },
+                schemaManager
+            )
+        ]);
 
         LegacyClient = new KurrentDBClient(Settings);
 
@@ -842,8 +840,6 @@ public record StreamMetadata {
     /// The optional <see cref="JsonDocument"/> of user provided metadata.
     /// </summary>
     public JsonDocument? CustomMetadata { get; init; }
-
-    public bool IsDeleted { get; init; }
 
     // /// <summary>
     // /// The optional <see cref="StreamAcl"/> for the stream.

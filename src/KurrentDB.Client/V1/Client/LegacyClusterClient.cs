@@ -4,32 +4,11 @@ using System.Net;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Kurrent.Client;
-using Kurrent.Client.Infra.Interceptors;
+using Kurrent.Grpc;
 using KurrentDB.Client.Interceptors;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Client;
-//
-// interface ILegacyClusterClient : IAsyncDisposable {
-// 	/// <summary>
-// 	///  Gets the scheme used by the resolver for establishing connections to the cluster.
-// 	///  It can be either "kurrentdb" for single-node connections or "kurrentdb+discover" for multi-node clusters with discovery.
-// 	/// </summary>
-// 	string ResolverScheme { get; }
-//
-// 	/// <summary>
-// 	/// Establishes a connection to the cluster and retrieves the current channel information and server capabilities.
-// 	/// If already connected, it returns the existing channel information.
-// 	/// </summary>
-// 	/// <param name="cancellationToken">A token to observe while waiting for the connection operation to complete.</param>
-// 	ValueTask<ChannelInfo> Connect(CancellationToken cancellationToken);
-//
-// 	/// <summary>
-// 	/// Forces a refresh of the cluster information by initiating rediscovery.
-// 	/// If rediscovery is already in progress, it will proceed without being restarted.
-// 	/// </summary>
-// 	ValueTask<ChannelInfo> ForceReconnect(DnsEndPoint? leaderEndpoint = null);
-// }
 
 /// <summary>
 /// Just an attempt to make the components a bit more usable and readable until we can
@@ -71,7 +50,7 @@ class LegacyClusterClient {
 		var token = _cancellator.Token;
 
 		_channelInfoProvider = new SharingProvider<ReconnectionRequired, ChannelInfo>(
-			factory: async (reconnectionRequired, reconnect) => {
+			factory: async (reconnectionRequired, _) => {
 				var channel = reconnectionRequired switch {
 					ReconnectionRequired.Rediscover => await channelSelector.SelectChannelAsync(token).ConfigureAwait(false),
 					ReconnectionRequired.NewLeader (var endpoint) => channelSelector.SelectEndpointChannel(endpoint)
@@ -109,7 +88,6 @@ class LegacyClusterClient {
 		return await _channelInfoProvider.CurrentAsync.ConfigureAwait(false);
 	}
 
-	/// <inheritdoc />
 	public async ValueTask DisposeAsync() {
 		if (_disposed)
 			return;

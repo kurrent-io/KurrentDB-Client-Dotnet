@@ -8,7 +8,7 @@ class KurrentClientGossipOptionsValidator : AbstractValidator<KurrentClientGossi
     public KurrentClientGossipOptionsValidator() {
         // MaxDiscoverAttempts validation
         RuleFor(options => options.MaxDiscoverAttempts)
-            .Must(attempts => attempts > 0 || attempts == -1)
+            .Must(attempts => attempts is > 0 or -1)
             .WithMessage("MaxDiscoverAttempts must be greater than 0 or -1 for infinite retries.")
             .WithSeverity(Severity.Error);
 

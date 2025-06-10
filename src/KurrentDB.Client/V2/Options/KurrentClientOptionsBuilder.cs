@@ -228,7 +228,7 @@ public sealed class KurrentClientOptionsBuilder {
     /// The security options to set. If provided, this will override the existing security options.
     /// </param>
     /// <returns>The builder instance for method chaining.</returns>
-    public KurrentClientOptionsBuilder WithSecurityOptions(KurrentClientSecurityOptions securityOptions) =>
+    public KurrentClientOptionsBuilder WithSecurity(KurrentClientSecurityOptions securityOptions) =>
         With(options => options with { Security =  securityOptions });
 
     /// <summary>
@@ -238,7 +238,7 @@ public sealed class KurrentClientOptionsBuilder {
     /// A function to configure the existing <see cref="KurrentClientSecurityOptions"/>.
     /// </param>
     /// <returns>The builder instance for method chaining.</returns>
-    public KurrentClientOptionsBuilder WithSecurityOptions(Func<KurrentClientSecurityOptions, KurrentClientSecurityOptions> configure) =>
+    public KurrentClientOptionsBuilder WithSecurity(Func<KurrentClientSecurityOptions, KurrentClientSecurityOptions> configure) =>
         With(options => options with { Security = configure(options.Security) });
 
     /// <summary>

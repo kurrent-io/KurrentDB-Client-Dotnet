@@ -141,6 +141,16 @@ public class KurrentRegistryClient {
 
 			return Schema.FromProto(response.Schema);
 		}
+        // catch (Exception ex) {
+        //     return DeleteResult.Error(
+        //         ex switch {
+        //             StreamNotFoundException => new ErrorDetails.StreamNotFound(stream),
+        //             StreamDeletedException  => new ErrorDetails.StreamDeleted(stream),
+        //             AccessDeniedException   => new ErrorDetails.AccessDenied(stream), // Added stream parameter
+        //             _                       => throw new Exception($"Unexpected error while deleting stream {stream}: {ex.Message}", ex)
+        //         }
+        //     );
+        // }
 		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
 			return ErrorDetails.SchemaNotFound.Value;
 		}

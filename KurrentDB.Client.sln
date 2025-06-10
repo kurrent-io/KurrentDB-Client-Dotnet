@@ -17,6 +17,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole", "src\TestCons
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.SourceGenerators", "src\Kurrent.Client.SourceGenerators\Kurrent.Client.SourceGenerators.csproj", "{4C4E9633-270B-4BF2-A480-6B6D9E2BF433}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Whatever", "src\Whatever\Whatever.csproj", "{E35FC9A2-5A97-494B-B84D-5CED23762883}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Whatever.SourceGenerators", "src\Whatever.SourceGenerators\Whatever.SourceGenerators.csproj", "{926107C3-EA1D-48AB-8C5A-B097A0D53DEB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Whatever.Tests", "test\Whatever.Tests\Whatever.Tests.csproj", "{FE062A56-9FAA-4963-A560-DADF250C76F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.Integration.Tests", "test\Kurrent.Client.Integration.Tests\Kurrent.Client.Integration.Tests.csproj", "{7EC03CE3-A2DD-46E4-983C-FDA4BFFDCABB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{1BD9B8F6-3497-4A76-BC26-D01F0E6D4848}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Grpc", "src\Kurrent.Grpc\Kurrent.Grpc.csproj", "{62BE0134-39F0-4A47-9849-A6ADE4AA45DD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -54,6 +66,26 @@ Global
 		{4C4E9633-270B-4BF2-A480-6B6D9E2BF433}.Debug|x64.Build.0 = Debug|Any CPU
 		{4C4E9633-270B-4BF2-A480-6B6D9E2BF433}.Release|x64.ActiveCfg = Release|Any CPU
 		{4C4E9633-270B-4BF2-A480-6B6D9E2BF433}.Release|x64.Build.0 = Release|Any CPU
+		{E35FC9A2-5A97-494B-B84D-5CED23762883}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E35FC9A2-5A97-494B-B84D-5CED23762883}.Debug|x64.Build.0 = Debug|Any CPU
+		{E35FC9A2-5A97-494B-B84D-5CED23762883}.Release|x64.ActiveCfg = Release|Any CPU
+		{E35FC9A2-5A97-494B-B84D-5CED23762883}.Release|x64.Build.0 = Release|Any CPU
+		{926107C3-EA1D-48AB-8C5A-B097A0D53DEB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{926107C3-EA1D-48AB-8C5A-B097A0D53DEB}.Debug|x64.Build.0 = Debug|Any CPU
+		{926107C3-EA1D-48AB-8C5A-B097A0D53DEB}.Release|x64.ActiveCfg = Release|Any CPU
+		{926107C3-EA1D-48AB-8C5A-B097A0D53DEB}.Release|x64.Build.0 = Release|Any CPU
+		{FE062A56-9FAA-4963-A560-DADF250C76F9}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FE062A56-9FAA-4963-A560-DADF250C76F9}.Debug|x64.Build.0 = Debug|Any CPU
+		{FE062A56-9FAA-4963-A560-DADF250C76F9}.Release|x64.ActiveCfg = Release|Any CPU
+		{FE062A56-9FAA-4963-A560-DADF250C76F9}.Release|x64.Build.0 = Release|Any CPU
+		{7EC03CE3-A2DD-46E4-983C-FDA4BFFDCABB}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7EC03CE3-A2DD-46E4-983C-FDA4BFFDCABB}.Debug|x64.Build.0 = Debug|Any CPU
+		{7EC03CE3-A2DD-46E4-983C-FDA4BFFDCABB}.Release|x64.ActiveCfg = Release|Any CPU
+		{7EC03CE3-A2DD-46E4-983C-FDA4BFFDCABB}.Release|x64.Build.0 = Release|Any CPU
+		{62BE0134-39F0-4A47-9849-A6ADE4AA45DD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{62BE0134-39F0-4A47-9849-A6ADE4AA45DD}.Debug|x64.Build.0 = Debug|Any CPU
+		{62BE0134-39F0-4A47-9849-A6ADE4AA45DD}.Release|x64.ActiveCfg = Release|Any CPU
+		{62BE0134-39F0-4A47-9849-A6ADE4AA45DD}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
