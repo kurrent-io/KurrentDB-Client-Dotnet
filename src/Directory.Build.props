@@ -1,50 +1,50 @@
 <Project>
-    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
-    <PropertyGroup>
-        <Title>KurrentDB .NET Client</Title>
-        <Product>KurrentDB .NET Client</Product>
-        <Description>The base GRPC client library for the Kurrent Platform. Get the open source or commercial versions of KurrentDB from https://kurrent.io/</Description>
+  <PropertyGroup>
+    <Title>KurrentDB .NET Client</Title>
+    <Product>KurrentDB .NET Client</Product>
+    <Description>The base GRPC client library for the Kurrent Platform. Get the open source or commercial versions of KurrentDB from https://kurrent.io/</Description>
 
-        <PackageIcon>ouro.png</PackageIcon>
-        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-        <PackageProjectUrl>https://kurrent.io</PackageProjectUrl>
-        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <PackageReleaseNotes>https://kurrent.io/blog/</PackageReleaseNotes>
-        <PackageTags>KurrentDB Client gRPC Kurrent</PackageTags>
-        <Authors>Kurrent, Inc</Authors>
-        <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Kurrent, Inc</Copyright>
-        <MinVerTagPrefix>v</MinVerTagPrefix>
+    <PackageIcon>ouro.png</PackageIcon>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <PackageProjectUrl>https://kurrent.io</PackageProjectUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReleaseNotes>https://kurrent.io/blog/</PackageReleaseNotes>
+    <PackageTags>KurrentDB Client gRPC Kurrent</PackageTags>
+    <Authors>Kurrent, Inc</Authors>
+    <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Kurrent, Inc</Copyright>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
 
-        <!-- Exclude all .DotSettings files from being included -->
-        <DefaultItemExcludes>$(DefaultItemExcludes);**/*.DotSettings</DefaultItemExcludes>
-    </PropertyGroup>
+    <!-- Exclude all .DotSettings files from being included -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);**/*.DotSettings</DefaultItemExcludes>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
-        <None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
-    </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" PrivateAssets="All" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
-        <PackageReference Include="MinVer" Version="6.0.0" PrivateAssets="All" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" PrivateAssets="All" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+    <PackageReference Include="MinVer" Version="6.0.0" PrivateAssets="All" />
+  </ItemGroup>
 
-    <ItemGroup>
-<!--        <InternalsVisibleTo Include="$(ProjectName)" />-->
-<!--        <InternalsVisibleTo Include="$(ProjectName).Operations.Tests" />-->
-<!--        <InternalsVisibleTo Include="$(ProjectName).PersistentSubscriptions.Tests" />-->
-<!--        <InternalsVisibleTo Include="$(ProjectName).ProjectionManagement.Tests" />-->
-<!--        <InternalsVisibleTo Include="$(ProjectName).Streams.Tests" />-->
-<!--        <InternalsVisibleTo Include="$(ProjectName).UserManagement.Tests" />-->
-<!--        <InternalsVisibleTo Include="$(ProjectName).Extensions.OpenTelemetry" />-->
-<!--        <InternalsVisibleTo Include="$(ProjectName).Tests" />-->
-<!--        <InternalsVisibleTo Include="$(ProjectName).Common.Tests" />-->
-<!--        <InternalsVisibleTo Include="$(ProjectName).Tests.Common" />-->
-    </ItemGroup>
+  <ItemGroup>
+    <!--        <InternalsVisibleTo Include="$(ProjectName)" />-->
+    <!--        <InternalsVisibleTo Include="$(ProjectName).Operations.Tests" />-->
+    <!--        <InternalsVisibleTo Include="$(ProjectName).PersistentSubscriptions.Tests" />-->
+    <!--        <InternalsVisibleTo Include="$(ProjectName).ProjectionManagement.Tests" />-->
+    <!--        <InternalsVisibleTo Include="$(ProjectName).Streams.Tests" />-->
+    <!--        <InternalsVisibleTo Include="$(ProjectName).UserManagement.Tests" />-->
+    <!--        <InternalsVisibleTo Include="$(ProjectName).Extensions.OpenTelemetry" />-->
+    <!--        <InternalsVisibleTo Include="$(ProjectName).Tests" />-->
+    <!--        <InternalsVisibleTo Include="$(ProjectName).Common.Tests" />-->
+    <!--        <InternalsVisibleTo Include="$(ProjectName).Tests.Common" />-->
+  </ItemGroup>
 
-    <ItemGroup>
-        <Using Include="JetBrains.Annotations" />
-    </ItemGroup>
+  <ItemGroup>
+    <Using Include="JetBrains.Annotations" />
+  </ItemGroup>
 </Project>

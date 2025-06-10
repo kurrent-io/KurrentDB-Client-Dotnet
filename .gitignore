@@ -360,8 +360,12 @@ MigrationBackup/
 .idea/
 
 # Generated Certificates
-
 certs/
 certs-cluster/
 .DS_Store
 docs/public
+
+# Ignore docs/dev folder and all its contents
+docs/dev/**
+
+CLAUDE.md

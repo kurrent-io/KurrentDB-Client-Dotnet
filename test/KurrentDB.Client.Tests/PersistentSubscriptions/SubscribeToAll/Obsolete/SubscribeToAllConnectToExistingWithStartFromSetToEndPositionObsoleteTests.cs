@@ -12,13 +12,12 @@ public class SubscribeToAllConnectToExistingWithStartFromSetToEndPositionObsolet
 
 		TaskCompletionSource<ResolvedEvent> firstNonSystemEventSource = new();
 
-		foreach (var @event in Fixture.CreateTestEvents(10)) {
+		foreach (var @event in Fixture.CreateTestEvents(10))
 			await Fixture.Streams.AppendToStreamAsync(
 				stream,
 				StreamState.Any,
 				[@event]
 			);
-		}
 
 		await Fixture.Subscriptions.CreateToAllAsync(group, new(startFrom: Position.End), userCredentials: TestCredentials.Root);
 

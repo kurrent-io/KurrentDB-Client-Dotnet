@@ -10,8 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FakeItEasy" Version="8.3.0" />
+    <PackageReference Include="FakeItEasy.Analyzer.CSharp" Version="6.1.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.5" />
-    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="Shouldly" Version="4.3.0" />
     <PackageReference Include="TUnit" Version="0.20.18" />
   </ItemGroup>
@@ -19,10 +23,16 @@
   <ItemGroup>
     <Using Include="Shouldly" />
     <Using Include="TUnit" />
+    <Using Include="FakeItEasy" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\KurrentDB.Client\KurrentDB.Client.csproj" />
     <ProjectReference Include="..\Kurrent.Client.Testing\Kurrent.Client.Testing.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Other\" />
+    <Folder Include="Slow\" />
   </ItemGroup>
 </Project>

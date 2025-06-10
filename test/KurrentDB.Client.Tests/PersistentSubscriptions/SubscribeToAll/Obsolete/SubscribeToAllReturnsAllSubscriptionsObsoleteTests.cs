@@ -34,8 +34,6 @@ public class SubscribeToAllReturnsAllSubscriptionsObsoleteTests(ITestOutputHelpe
 	}
 
 	public class CustomFixture : KurrentDBTemporaryFixture {
-		public CustomFixture() {
-			SkipPsWarmUp = true;
-		}
+		public CustomFixture() => SkipPsWarmUp = true;
 	}
 }

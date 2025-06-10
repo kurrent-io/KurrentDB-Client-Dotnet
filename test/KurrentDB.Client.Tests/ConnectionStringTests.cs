@@ -5,28 +5,6 @@ using AutoFixture;
 
 namespace KurrentDB.Client.Tests;
 
-// public class RagingConnectionStringTests {
-// 	[Fact]
-// 	public void RagingConnectionStringTest() {
-// 		var connString = "kurrentdb://admin:changeit@localhost:2113/?tls=true&maxDiscoverAttempts=5";
-//
-// 		var connectionString = KurrentDBConnectionString.Parse(connString);
-//
-// 		var settings = connectionString.ToClientSettings();
-// 		var (channel, invoker) = settings.CreateGrpcChannel();
-//
-// 		// GrpcChannel grpcClient = GrpcChannel.ForAddress(
-// 		// 	settings.ConnectivitySettings.ResolvedAddressOrDefault.ToString()
-// 		// );
-// 		//
-// 		// var callInvoker = grpcClient.CreateCallInvoker();
-//
-//
-// 		Assert.NotNull(settings);
-// 	}
-// }
-
-
 [Trait("Category", "Target:Misc")]
 public class ConnectionStringTests {
 	public static IEnumerable<object?[]> ValidCases() {

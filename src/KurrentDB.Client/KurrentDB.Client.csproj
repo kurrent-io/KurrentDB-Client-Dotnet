@@ -2,23 +2,24 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <PackageId>KurrentDB.Client</PackageId>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Protobuf" Version="3.31.0" />
-    <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
+    <PackageReference Include="FluentValidation" Version="12.0.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.31.1" />
     <PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0" />
     <PackageReference Include="Humanizer.Core" Version="2.14.1" />
     <PackageReference Include="LruCacheNet" Version="1.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
     <PackageReference Include="NJsonSchema" Version="11.3.2" />
-    <PackageReference Include="NJsonSchema.CodeGeneration.CSharp" Version="11.3.2" />
     <PackageReference Include="OneOf" Version="3.0.271" />
-    <PackageReference Include="OneOf.SourceGenerator" Version="3.0.271" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="OpenTelemetry.Api" Version="1.12.0" />
 
+    <PackageReference Include="OneOf.SourceGenerator" Version="3.0.271">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="Grpc.Tools" Version="2.72.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -46,9 +47,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Kurrent.Client.SourceGenerators\Kurrent.Client.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Kurrent.Client" />
     <InternalsVisibleTo Include="Kurrent.Client.Tests" />
-
     <InternalsVisibleTo Include="KurrentDB.Client.Tests" />
     <InternalsVisibleTo Include="KurrentDB.Client.Tests.Common" />
     <InternalsVisibleTo Include="KurrentDB.Client.Operations.Tests" />
@@ -58,9 +62,4 @@
     <InternalsVisibleTo Include="KurrentDB.Client.UserManagement.Tests" />
     <InternalsVisibleTo Include="KurrentDB.Client.Extensions.OpenTelemetry" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Kurrent.Grpc\Kurrent.Grpc.csproj" />
-  </ItemGroup>
-
 </Project>

@@ -37,6 +37,7 @@ using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
 using Ductus.FluentDocker.Services.Extensions;
+using Kurrent.Client;
 using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
 using Serilog.Extensions.Logging;

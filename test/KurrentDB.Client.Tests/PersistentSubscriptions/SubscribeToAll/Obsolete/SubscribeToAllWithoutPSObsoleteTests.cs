@@ -7,9 +7,8 @@ public class SubscribeToAllWithoutPSObsoleteTests(ITestOutputHelper output, Kurr
 	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	[RetryFact]
 	public async Task list_without_persistent_subscriptions() {
-		await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
-			async () =>
-				await Fixture.Subscriptions.ListToAllAsync(userCredentials: TestCredentials.Root)
+		await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(async () =>
+			await Fixture.Subscriptions.ListToAllAsync(userCredentials: TestCredentials.Root)
 		);
 	}
 }

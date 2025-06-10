@@ -8,37 +8,34 @@ namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 public class SubscribeToAllGetInfoObsoleteTests(SubscribeToAllGetInfoObsoleteTests.CustomFixture fixture)
 	: IClassFixture<SubscribeToAllGetInfoObsoleteTests.CustomFixture> {
 	static readonly PersistentSubscriptionSettings Settings = new(
-		resolveLinkTos: true,
-		startFrom: Position.Start,
-		extraStatistics: true,
-		messageTimeout: TimeSpan.FromSeconds(9),
-		maxRetryCount: 11,
-		liveBufferSize: 303,
-		readBatchSize: 30,
-		historyBufferSize: 909,
-		checkPointAfter: TimeSpan.FromSeconds(1),
-		checkPointLowerBound: 1,
-		checkPointUpperBound: 1,
-		maxSubscriberCount: 500,
-		consumerStrategyName: SystemConsumerStrategies.Pinned
+		true,
+		Position.Start,
+		true,
+		TimeSpan.FromSeconds(9),
+		11,
+		303,
+		30,
+		909,
+		TimeSpan.FromSeconds(1),
+		1,
+		1,
+		500,
+		SystemConsumerStrategies.Pinned
 	);
 
 	[RetryFact]
 	public async Task throws_with_non_existing_subscription() {
 		var group = $"NonExisting-{fixture.GetGroupName()}";
 
-		await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
-			async () => await fixture.Subscriptions.GetInfoToAllAsync(group, userCredentials: TestCredentials.Root)
-		);
+		await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(async () => await fixture.Subscriptions.GetInfoToAllAsync(group, userCredentials: TestCredentials.Root));
 	}
 
 	[Fact]
 	public async Task throws_with_no_credentials() {
 		var group = $"NonExisting-{fixture.GetGroupName()}";
 
-		await Assert.ThrowsAsync<AccessDeniedException>(
-			async () =>
-				await fixture.Subscriptions.GetInfoToAllAsync(group)
+		await Assert.ThrowsAsync<AccessDeniedException>(async () =>
+			await fixture.Subscriptions.GetInfoToAllAsync(group)
 		);
 	}
 
@@ -46,9 +43,8 @@ public class SubscribeToAllGetInfoObsoleteTests(SubscribeToAllGetInfoObsoleteTes
 	public async Task throws_with_non_existing_user() {
 		var group = $"NonExisting-{fixture.GetGroupName()}";
 
-		await Assert.ThrowsAsync<NotAuthenticatedException>(
-			async () =>
-				await fixture.Subscriptions.GetInfoToAllAsync(group, userCredentials: TestCredentials.TestBadUser)
+		await Assert.ThrowsAsync<NotAuthenticatedException>(async () =>
+			await fixture.Subscriptions.GetInfoToAllAsync(group, userCredentials: TestCredentials.TestBadUser)
 		);
 	}
 
@@ -60,8 +56,6 @@ public class SubscribeToAllGetInfoObsoleteTests(SubscribeToAllGetInfoObsoleteTes
 	}
 
 	public class CustomFixture : KurrentDBTemporaryFixture {
-		public string Group { get; }
-
 		public CustomFixture() : base(x => x.WithoutDefaultCredentials()) {
 			Group = GetGroupName();
 
@@ -92,5 +86,7 @@ public class SubscribeToAllGetInfoObsoleteTests(SubscribeToAllGetInfoObsoleteTes
 				);
 			};
 		}
+
+		public string Group { get; }
 	};
 }

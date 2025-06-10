@@ -17,7 +17,7 @@ static class X509Certificates {
 	}
 }
 
-public static class RsaExtensions {
+static class RsaExtensions {
 	public static RSA ImportPrivateKeyFromFile(this RSA rsa, string privateKeyPath) {
 		var (content, label) = LoadPemKeyFile(privateKeyPath);
 
