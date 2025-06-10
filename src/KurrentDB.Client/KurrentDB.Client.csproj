@@ -78,11 +78,6 @@
     <InternalsVisibleTo Include="KurrentDB.Client.Extensions.OpenTelemetry" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Kurrent.Client\" />
-    <Folder Include="KurrentDB.Client\" />
-  </ItemGroup>
-
   <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">
     <ItemGroup>
       <ReferencedAssemblies Include="bin\$(Configuration)\**\*.dll" />
