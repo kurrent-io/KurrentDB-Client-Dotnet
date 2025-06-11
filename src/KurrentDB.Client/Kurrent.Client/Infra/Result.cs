@@ -66,9 +66,7 @@ public class Result<TSuccess, TError> {
     /// <value>The success value.</value>
     /// <exception cref="InvalidOperationException">If the result represents a failure.</exception>
     public TSuccess AsSuccess =>
-        IsError
-            ? throw new InvalidOperationException("Result is not a success.")
-            : _success;
+        IsError ? throw new InvalidOperationException("Result is not a success.") : _success;
 
     /// <summary>
     /// Gets the error value.
@@ -77,9 +75,7 @@ public class Result<TSuccess, TError> {
     /// <value>The error value.</value>
     /// <exception cref="InvalidOperationException">If the result represents a success.</exception>
     public TError AsError =>
-        IsSuccess
-            ? throw new InvalidOperationException("Result is not an error.")
-            : _error;
+        IsSuccess ? throw new InvalidOperationException("Result is not an error.") : _error;
 
     /// <summary>
     /// Creates a new <see cref="Result{TSuccess,TError}"/> representing a successful operation.
@@ -186,6 +182,24 @@ public class Result<TSuccess, TError> {
     public TResult Match<TResult, TState>(Func<TSuccess, TState, TResult> onSuccess, Func<TError, TState, TResult> onError, TState state) =>
         IsSuccess ? onSuccess(_success, state) : onError(_error, state);
 
+    public Task<TResult> Match<TResult, TState>(Func<TSuccess, TState, Task<TResult>> onSuccess, Func<TError, TState, Task<TResult>> onError, TState state) =>
+        IsSuccess ? onSuccess(_success, state) : onError(_error, state);
+
+    public Task<TResult> Match<TResult, TState>(Func<TSuccess, TState, TResult> onSuccess, Func<TError, TState, Task<TResult>> onError, TState state) =>
+        IsSuccess ? Task.FromResult(onSuccess(_success, state)) : onError(_error, state);
+
+    public Task<TResult> Match<TResult, TState>(Func<TSuccess, TState, Task<TResult>> onSuccess, Func<TError, TState, TResult> onError, TState state) =>
+        IsSuccess ? onSuccess(_success, state) : Task.FromResult(onError(_error, state));
+
+    public ValueTask<TResult> Match<TResult, TState>(Func<TSuccess, TState, ValueTask<TResult>> onSuccess, Func<TError, TState, ValueTask<TResult>> onError, TState state) =>
+        IsSuccess ? onSuccess(_success, state) : onError(_error, state);
+
+    public ValueTask<TResult> Match<TResult, TState>(Func<TSuccess, TState, TResult> onSuccess, Func<TError, TState, ValueTask<TResult>> onError, TState state) =>
+        IsSuccess ? ValueTask.FromResult(onSuccess(_success, state)) : onError(_error, state);
+
+    public ValueTask<TResult> Match<TResult, TState>(Func<TSuccess, TState, ValueTask<TResult>> onSuccess, Func<TError, TState, TResult> onError, TState state) =>
+        IsSuccess ? onSuccess(_success, state) : ValueTask.FromResult(onError(_error, state));
+
     /// <summary>
     /// Executes one of the two provided actions depending on whether this result is a success or an error.
     /// This method is for side-effects and does not return a value.
@@ -208,6 +222,46 @@ public class Result<TSuccess, TError> {
     public void Switch<TState>(Action<TSuccess, TState> onSuccess, Action<TError, TState> onError, TState state) {
         if (IsSuccess) onSuccess(_success, state);
         else onError(_error, state);
+    }
+
+    public Task Switch<TState>(Func<TSuccess, TState, Task> onSuccess, Func<TError, TState, Task> onError, TState state) =>
+        IsSuccess ? onSuccess(_success, state) : onError(_error, state);
+
+    public Task Switch<TState>(Action<TSuccess, TState> onSuccess, Func<TError, TState, Task> onError, TState state) {
+        if (IsSuccess) {
+            onSuccess(_success, state);
+            return Task.CompletedTask;
+        }
+
+        return onError(_error, state);
+    }
+
+    public Task Switch<TState>(Func<TSuccess, TState, Task> onSuccess, Action<TError, TState> onError, TState state) {
+        if (IsSuccess)
+            return onSuccess(_success, state);
+
+        onError(_error, state);
+        return Task.CompletedTask;
+    }
+
+    public ValueTask Switch<TState>(Func<TSuccess, TState, ValueTask> onSuccess, Func<TError, TState, ValueTask> onError, TState state) =>
+        IsSuccess ? onSuccess(_success, state) : onError(_error, state);
+
+    public ValueTask Switch<TState>(Action<TSuccess, TState> onSuccess, Func<TError, TState, ValueTask> onError, TState state) {
+        if (IsSuccess) {
+            onSuccess(_success, state);
+            return ValueTask.CompletedTask;
+        }
+
+        return onError(_error, state);
+    }
+
+    public ValueTask Switch<TState>(Func<TSuccess, TState, ValueTask> onSuccess, Action<TError, TState> onError, TState state) {
+        if (IsSuccess)
+            return onSuccess(_success, state);
+
+        onError(_error, state);
+        return ValueTask.CompletedTask;
     }
 
     /// <summary>

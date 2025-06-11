@@ -1,6 +1,7 @@
 using Grpc.Core;
+using KurrentDB.Client;
 
-namespace KurrentDB.Client.Legacy;
+namespace Kurrent.Client.Legacy;
 
 /// <summary>
 /// A gRPC CallInvoker implementation that delegates to the LegacyClusterClient to obtain

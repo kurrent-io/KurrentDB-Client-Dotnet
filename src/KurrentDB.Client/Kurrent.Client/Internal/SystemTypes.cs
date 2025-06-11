@@ -1,7 +1,6 @@
 using System.Diagnostics;
-using Kurrent.Client;
 
-namespace KurrentDB.Client;
+namespace Kurrent.Client;
 
 /// <summary>
 /// Provides functionality to resolve and retrieve types by their full names,

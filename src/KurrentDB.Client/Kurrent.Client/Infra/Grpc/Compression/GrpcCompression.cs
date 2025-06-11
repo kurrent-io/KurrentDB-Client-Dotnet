@@ -3,7 +3,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Grpc.Net.Compression;
 
-namespace Kurrent.Grpc.Compression;
+namespace Kurrent.Client.Grpc.Compression;
 
 public static class GrpcCompression {
 	public const string CompressionRequestAlgorithmHeader = "grpc-internal-encoding-request";

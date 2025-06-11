@@ -1,4 +1,4 @@
-namespace KurrentDB.Client;
+namespace Kurrent.Client;
 
 public static class UriDataStringExtensions {
     public static string UnescapeDataStringIfNeeded(this string source) {

@@ -1,5 +1,6 @@
 using Grpc.Core;
 using Grpc.Net.Client.Balancer;
+using Kurrent.Client.Grpc.Balancer;
 using Kurrent.Grpc.Balancer;
 using Microsoft.Extensions.Logging;
 

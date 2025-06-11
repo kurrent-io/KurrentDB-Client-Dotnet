@@ -1,5 +1,3 @@
-// ReSharper disable CheckNamespace
-
 namespace Kurrent.Client.Model;
 
 public readonly record struct ExpectedStreamState {

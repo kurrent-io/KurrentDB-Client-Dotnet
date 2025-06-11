@@ -10,7 +10,7 @@ namespace Kurrent.Client;
 /// <remarks>
 /// If using .NET 9.0 or later, it utilizes the built-in `Guid.CreateVersion7` method for generating version 7 UUIDs.
 /// </remarks>
-static class Guids {
+static partial class Guids {
 	/// <summary>
 	/// Creates a new version 7 UUID using the current UTC timestamp.
 	/// </summary>
@@ -83,4 +83,43 @@ static class Guids {
 
 		return guid;
 	}
+}
+
+static partial class Guids {
+    public static Guid CreateFromSignificantBits(long mostSignificantBits, long leastSignificantBits) {
+        if (!BitConverter.IsLittleEndian)
+            throw new NotSupportedException("This method requires little-endian byte order.");
+
+        Span<byte> data = stackalloc byte[16];
+        if (!BitConverter.TryWriteBytes(data, mostSignificantBits) ||
+            !BitConverter.TryWriteBytes(data[8..], leastSignificantBits))
+            throw new InvalidOperationException();
+
+        data[..8].Reverse();
+        data[..4].Reverse();
+        data.Slice(4, 2).Reverse();
+        data.Slice(6, 2).Reverse();
+        data[8..].Reverse();
+
+        return new Guid(data);
+    }
+
+    public static (long MostSignificantBits, long LeastSignificantBits) ToSignificantBits(this Guid guid) {
+        if (!BitConverter.IsLittleEndian)
+            throw new NotSupportedException("This method requires little-endian byte order.");
+
+        Span<byte> data = stackalloc byte[16];
+        guid.TryWriteBytes(data);
+
+        data[..8].Reverse();
+        data[..2].Reverse();
+        data.Slice(2, 2).Reverse();
+        data.Slice(4, 4).Reverse();
+        data[8..].Reverse();
+
+        var mostSignificantBits  = BitConverter.ToInt64(data[..8]);
+        var leastSignificantBits = BitConverter.ToInt64(data[8..]);
+
+        return (mostSignificantBits, leastSignificantBits);
+    }
 }

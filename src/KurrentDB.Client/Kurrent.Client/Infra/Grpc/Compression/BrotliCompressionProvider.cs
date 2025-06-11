@@ -1,7 +1,7 @@
 using System.IO.Compression;
 using Grpc.Net.Compression;
 
-namespace Kurrent.Grpc.Compression;
+namespace Kurrent.Client.Grpc.Compression;
 
 /// <summary>
 /// Provides Brotli compression and decompression functionality

@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Kurrent.Grpc.Balancer;
+namespace Kurrent.Client.Grpc.Balancer.Resolvers;
 
 public class DnsEndPointEqualityComparer : IEqualityComparer<DnsEndPoint> {
 	public static readonly DnsEndPointEqualityComparer Default = new();

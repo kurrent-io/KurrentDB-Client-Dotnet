@@ -1,9 +1,10 @@
 using Grpc.Core;
 using Grpc.Net.ClientFactory;
+using KurrentDB.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace KurrentDB.Client.Legacy;
+namespace Kurrent.Client.Legacy;
 
 /// <summary>
 /// Extension methods for registering the legacy call invoker with dependency injection.

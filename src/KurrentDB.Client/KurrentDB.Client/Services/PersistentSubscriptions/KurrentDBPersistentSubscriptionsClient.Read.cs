@@ -4,6 +4,7 @@ using EventStore.Client.PersistentSubscriptions;
 using KurrentDB.Client.Diagnostics;
 using Grpc.Core;
 using static EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase;
+using AsyncStreamReaderExtensions = Kurrent.Client.AsyncStreamReaderExtensions;
 
 namespace KurrentDB.Client;
 
@@ -254,7 +255,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 
 					await _call.RequestStream.WriteAsync(_request).ConfigureAwait(false);
 
-					await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
+					await foreach (var response in AsyncStreamReaderExtensions.ReadAllAsync(_call.ResponseStream, _cts.Token).ConfigureAwait(false)) {
 						PersistentSubscriptionMessage subscriptionMessage = response.ContentCase switch {
 							SubscriptionConfirmation => new PersistentSubscriptionMessage.SubscriptionConfirmation(
 								response.SubscriptionConfirmation.SubscriptionId

@@ -53,20 +53,26 @@ public record StreamRevision : IComparable<StreamRevision>, IComparable {
 
 	#region . relational members .
 
-	public int CompareTo(StreamRevision other) => Value.CompareTo(other.Value);
+    public int CompareTo(StreamRevision? other) {
+        if (ReferenceEquals(this, other)) return 0;
+        return other is null ? 1 : Value.CompareTo(other.Value);
+    }
 
-	public int CompareTo(object? obj) {
-		if (ReferenceEquals(null, obj)) return 1;
+    public int CompareTo(object? obj) {
+        if (obj is null) return 1;
+        if (ReferenceEquals(this, obj)) return 0;
 
-		return obj is StreamRevision other ? CompareTo(other) : throw new ArgumentException($"Object must be of type {nameof(StreamRevision)}");
-	}
+        return obj is StreamRevision other
+            ? CompareTo(other)
+            : throw new ArgumentException($"Object must be of type {nameof(StreamRevision)}");
+    }
 
-	public static bool operator <(StreamRevision left, StreamRevision right) => left.CompareTo(right) < 0;
-	public static bool operator >(StreamRevision left, StreamRevision right) => left.CompareTo(right) > 0;
-	public static bool operator <=(StreamRevision left, StreamRevision right) => left.CompareTo(right) <= 0;
-	public static bool operator >=(StreamRevision left, StreamRevision right) => left.CompareTo(right) >= 0;
+    public static bool operator <(StreamRevision? left, StreamRevision? right) => Comparer<StreamRevision>.Default.Compare(left, right) < 0;
+    public static bool operator >(StreamRevision? left, StreamRevision? right) => Comparer<StreamRevision>.Default.Compare(left, right) > 0;
+    public static bool operator <=(StreamRevision? left, StreamRevision? right) => Comparer<StreamRevision>.Default.Compare(left, right) <= 0;
+    public static bool operator >=(StreamRevision? left, StreamRevision? right) => Comparer<StreamRevision>.Default.Compare(left, right) >= 0;
 
-	#endregion
+    #endregion
 }
 
 public class InvalidStreamRevision(long value) : Exception($"Stream revision is invalid: {value}");

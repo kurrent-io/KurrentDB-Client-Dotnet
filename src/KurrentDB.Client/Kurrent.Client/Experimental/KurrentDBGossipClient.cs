@@ -4,12 +4,40 @@ using EventStore.Client.Gossip;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Grpc.Net.Client.Balancer;
-using Kurrent.Grpc.Balancer;
+using Kurrent.Client.Grpc.Balancer;
+using Kurrent.Client.Grpc.Balancer.Resolvers;
+using KurrentDB.Client;
+using IGossipClient = Kurrent.Client.Grpc.Balancer.Resolvers.IGossipClient;
 using VNodeState = EventStore.Client.Gossip.MemberInfo.Types.VNodeState;
 
-namespace KurrentDB.Client;
+namespace Kurrent.Client.Experimental;
 
-public class KurrentDBGossipClient(IClusterNodeSelector nodeSelector, GrpcChannel channel) : Kurrent.Grpc.Balancer.IGossipClient {
+/// <summary>
+/// Indicates the preferred KurrentDB node type to read from.
+/// </summary>
+enum NodeReadPreference {
+    /// <summary>
+    /// When attempting connection, prefers leader node.
+    /// </summary>
+    Leader = 0,
+
+    /// <summary>
+    /// When attempting connection, prefers follower node.
+    /// </summary>
+    Follower = 1,
+
+    /// <summary>
+    /// When attempting connection, has no node preference.
+    /// </summary>
+    Random = 2,
+
+    /// <summary>
+    /// When attempting connection, prefers read only replicas.
+    /// </summary>
+    ReadOnlyReplica = 3
+}
+
+class KurrentDBGossipClient(IClusterNodeSelector nodeSelector, GrpcChannel channel) : IGossipClient {
 	static readonly Empty EmptyRequest = new Empty();
 
 	Gossip.GossipClient ServiceClient { get; } = new(channel);
@@ -40,11 +68,11 @@ public class KurrentDBGossipClient(IClusterNodeSelector nodeSelector, GrpcChanne
 	public void Dispose() => Channel.Dispose();
 }
 
-public class KurrentDBGossipClientFactory(KurrentDBClusterNodeSelector nodeSelector, GrpcChannelOptions channelOptions) : IGossipClientFactory {
-	public KurrentDBGossipClientFactory(NodePreference nodePreference, GrpcChannelOptions channelOptions)
+class KurrentDBGossipClientFactory(KurrentDBClusterNodeSelector nodeSelector, GrpcChannelOptions channelOptions) : IGossipClientFactory {
+	public KurrentDBGossipClientFactory(NodeReadPreference nodePreference, GrpcChannelOptions channelOptions)
 		: this(new KurrentDBClusterNodeSelector(nodePreference), channelOptions) { }
 
-	public Kurrent.Grpc.Balancer.IGossipClient Create(DnsEndPoint endpoint) {
+	public Kurrent.Client.Grpc.Balancer.Resolvers.IGossipClient Create(DnsEndPoint endpoint) {
 		var insecure = channelOptions.Credentials == ChannelCredentials.Insecure; // not sure if this will work 100%. must test.
 		var scheme   = insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps;
 		var address  = new Uri($"{scheme}://{endpoint}");
@@ -53,7 +81,7 @@ public class KurrentDBGossipClientFactory(KurrentDBClusterNodeSelector nodeSelec
 	}
 }
 
-public class KurrentDBClusterNodeSelector(NodePreference nodePreference) : IClusterNodeSelector {
+class KurrentDBClusterNodeSelector(NodeReadPreference nodePreference) : IClusterNodeSelector {
 	static readonly VNodeState[] NotAllowedStates = [
 		VNodeState.Manager, VNodeState.ShuttingDown,
 		VNodeState.Shutdown, VNodeState.Unknown,
@@ -64,10 +92,10 @@ public class KurrentDBClusterNodeSelector(NodePreference nodePreference) : IClus
 	];
 
 	IComparer<VNodeState> VNodeStateComparer { get; } = nodePreference switch {
-		NodePreference.Leader          => VNodeStatePreferenceComparer.Leader,
-		NodePreference.Follower        => VNodeStatePreferenceComparer.Follower,
-		NodePreference.ReadOnlyReplica => VNodeStatePreferenceComparer.ReadOnlyReplica,
-		_                              => VNodeStatePreferenceComparer.None
+        NodeReadPreference.Leader          => VNodeStatePreferenceComparer.Leader,
+        NodeReadPreference.Follower        => VNodeStatePreferenceComparer.Follower,
+        NodeReadPreference.ReadOnlyReplica => VNodeStatePreferenceComparer.ReadOnlyReplica,
+		_                                  => VNodeStatePreferenceComparer.None
 	};
 
 	public BalancerAddress[] Select(BalancerAddress[] nodes) {

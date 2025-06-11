@@ -2,7 +2,7 @@ using Grpc.Core;
 using Kurrent.Client.Features;
 using static EventStore.Client.ServerFeatures.ServerFeatures;
 
-namespace KurrentDB.Client;
+namespace Kurrent.Client;
 
 [PublicAPI]
 public class KurrentFeaturesClient {

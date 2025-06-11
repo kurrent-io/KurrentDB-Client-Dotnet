@@ -1,6 +1,6 @@
 using Grpc.Net.Client.Balancer;
 
-namespace Kurrent.Grpc.Balancer;
+namespace Kurrent.Client.Grpc.Balancer.Resolvers;
 
 sealed class ExponentialBackoffPolicy(long initialBackoffTicks, long maxBackoffTicks) : IBackoffPolicy {
 	internal const double Multiplier = 1.6;

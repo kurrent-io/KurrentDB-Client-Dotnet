@@ -1,6 +1,6 @@
 using Grpc.Net.Client.Balancer;
 
-namespace Kurrent.Grpc.Balancer;
+namespace Kurrent.Client.Grpc.Balancer.Resolvers;
 
 /// <summary>
 /// Defines a mechanism for selecting nodes from a cluster based on custom criteria.

@@ -2,7 +2,7 @@ using Grpc.Core;
 using Grpc.Net.Client.Balancer;
 using Microsoft.Extensions.Logging;
 
-namespace Kurrent.Grpc.Balancer;
+namespace Kurrent.Client.Grpc.Balancer.Resolvers;
 
 /// <summary>
 /// An implementation of <see cref="Resolver"/> that supports asynchronous polling logic with scheduled refresh capability.

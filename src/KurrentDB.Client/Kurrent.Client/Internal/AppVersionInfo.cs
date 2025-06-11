@@ -5,7 +5,7 @@ namespace Kurrent.Client;
 /// <summary>
 /// Provides detailed version and attribute information for an assembly.
 /// </summary>
-class AppVersionInfo() {
+class AppVersionInfo {
 	public static readonly AppVersionInfo Current = GetCurrent();
 
 	/// <summary>

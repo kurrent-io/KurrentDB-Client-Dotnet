@@ -1,10 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
-using KurrentDB.Client;
 using OneOf;
 
-namespace Kurrent.Client.Security;
+namespace Kurrent.Client;
 
 /// <summary>
 /// Comprehensive security configuration for KurrentDB client connections.

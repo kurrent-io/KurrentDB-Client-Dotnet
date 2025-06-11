@@ -1,5 +1,4 @@
 using System.Net;
-using Kurrent.Client.Security;
 using KurrentDB.Client;
 
 namespace Kurrent.Client.Tests.Options;

@@ -1,5 +1,3 @@
-using KurrentDB.Client;
-
 namespace Kurrent.Client.SchemaRegistry;
 
 /// <summary>

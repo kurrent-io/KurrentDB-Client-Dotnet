@@ -5,6 +5,7 @@
     <PackageId>KurrentDB.Client</PackageId>
     <IsPackable>true</IsPackable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <RootNamespace />
   </PropertyGroup>
 
   <ItemGroup>

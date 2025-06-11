@@ -1,5 +1,3 @@
-// ReSharper disable CheckNamespace
-
 using Google.Protobuf;
 using Grpc.Core;
 using Kurrent.Client.Model;
@@ -73,7 +71,7 @@ public class KurrentRegistryClient {
 			return new SchemaVersionDescriptor(Guid.Parse(response.SchemaVersionId), response.VersionNumber);
 		}
 		catch (RpcException ex) when (ex.StatusCode == StatusCode.AlreadyExists) {
-			return ErrorDetails.SchemaAlreadyExists.Value;
+			return new ErrorDetails.SchemaAlreadyExists(schemaName);
 		}
 	}
 
@@ -152,7 +150,7 @@ public class KurrentRegistryClient {
         //     );
         // }
 		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
-			return ErrorDetails.SchemaNotFound.Value;
+			return new ErrorDetails.SchemaNotFound(schemaName);
 		}
 	}
 
@@ -190,7 +188,7 @@ public class KurrentRegistryClient {
 			return SchemaVersion.FromProto(response.Version);
 		}
 		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
-			return ErrorDetails.SchemaNotFound.Value;
+            return new ErrorDetails.SchemaNotFound(schemaName);
 		}
 	}
 
@@ -222,7 +220,7 @@ public class KurrentRegistryClient {
 			return SchemaVersion.FromProto(response.Version);
 		}
 		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
-			return ErrorDetails.SchemaNotFound.Value;
+            return new ErrorDetails.SchemaNotFound(schemaVersionId);
 		}
 	}
 
@@ -252,10 +250,10 @@ public class KurrentRegistryClient {
 				.DeleteSchemaAsync(request, cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
 
-			return Success.Value;
+			return Success.Instance;
 		}
 		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
-			return ErrorDetails.SchemaNotFound.Value;
+            return new ErrorDetails.SchemaNotFound(schemaName);
 		}
 	}
 
@@ -297,12 +295,14 @@ public class KurrentRegistryClient {
 
 			return response.ResultCase switch {
 				Contracts.CheckSchemaCompatibilityResponse.ResultOneofCase.Success => SchemaVersionId.From(response.Success.SchemaVersionId),
-				Contracts.CheckSchemaCompatibilityResponse.ResultOneofCase.Failure => SchemaCompatibilityErrors.FromProto(response.Failure.Errors),
-				_                                                                  => ErrorDetails.SchemaNotFound.Value
-			};
+                Contracts.CheckSchemaCompatibilityResponse.ResultOneofCase.Failure => SchemaCompatibilityErrors.FromProto(response.Failure.Errors),
+                _                                                                  => identifier.IsSchemaName ? new ErrorDetails.SchemaNotFound(identifier.AsSchemaName) : new ErrorDetails.SchemaNotFound(identifier.AsSchemaVersionId)
+            };
 		}
 		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
-			return ErrorDetails.SchemaNotFound.Value;
-		}
+            return identifier.IsSchemaName
+                ? new ErrorDetails.SchemaNotFound(identifier.AsSchemaName)
+                : new ErrorDetails.SchemaNotFound(identifier.AsSchemaVersionId);
+        }
 	}
 }

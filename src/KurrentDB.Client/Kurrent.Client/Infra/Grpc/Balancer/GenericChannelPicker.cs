@@ -1,6 +1,6 @@
 using Grpc.Net.Client.Balancer;
 
-namespace Kurrent.Grpc.Balancer;
+namespace Kurrent.Client.Grpc.Balancer;
 
 public delegate PickResult PickBalancerChannel(IReadOnlyList<Subchannel> subchannels, PickContext context);
 /// <summary>

@@ -1,7 +1,7 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
-namespace Kurrent.Grpc;
+namespace Kurrent.Client.Grpc.Interceptors;
 
 /// <summary>
 /// A generic gRPC interceptor that adds custom headers to all requests

@@ -1,7 +1,9 @@
 using System.Threading.Channels;
 using EventStore.Client.Streams;
 using Grpc.Core;
+using Kurrent.Client;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
+using AsyncStreamReaderExtensions = Kurrent.Client.AsyncStreamReaderExtensions;
 
 namespace KurrentDB.Client;
 
@@ -169,7 +171,7 @@ public partial class KurrentDBClient {
 					var client      = new Streams.StreamsClient(callInvoker);
 
 					using var call = client.Read(request, callOptions);
-					await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken)
+					await foreach (var response in AsyncStreamReaderExtensions.ReadAllAsync(call.ResponseStream, linkedCancellationToken)
 						               .ConfigureAwait(false)) {
 						await _channel.Writer.WriteAsync(
 							response.ContentCase switch {
@@ -372,7 +374,7 @@ public partial class KurrentDBClient {
 
 					using var call = client.Read(request, callOptions);
 
-					await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken).ConfigureAwait(false)) {
+					await foreach (var response in AsyncStreamReaderExtensions.ReadAllAsync(call.ResponseStream, linkedCancellationToken).ConfigureAwait(false)) {
 						if (!firstMessageRead) {
 							firstMessageRead = true;
 

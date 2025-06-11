@@ -1,5 +1,4 @@
 using FluentValidation;
-using Kurrent.Client.Security;
 
 namespace Kurrent.Client;
 

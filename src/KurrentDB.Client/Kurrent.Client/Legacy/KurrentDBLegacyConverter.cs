@@ -3,9 +3,10 @@ using Kurrent.Client.Model;
 using Kurrent.Client.SchemaRegistry;
 using Kurrent.Client.SchemaRegistry.Serialization;
 using Kurrent.Client.SchemaRegistry.Serialization.Json;
+using KurrentDB.Client;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
-namespace KurrentDB.Client.Legacy;
+namespace Kurrent.Client.Legacy;
 
 class KurrentDBLegacyConverter(ISchemaSerializerProvider serializerProvider, IMetadataDecoder metadataDecoder, SchemaRegistryPolicy registryPolicy) {
 	ISchemaSerializerProvider SerializerProvider { get; } = serializerProvider;

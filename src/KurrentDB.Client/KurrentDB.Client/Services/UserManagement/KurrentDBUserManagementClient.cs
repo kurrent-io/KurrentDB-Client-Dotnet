@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using EventStore.Client.Users;
 using Grpc.Core;
+using AsyncStreamReaderExtensions = Kurrent.Client.AsyncStreamReaderExtensions;
 
 namespace KurrentDB.Client;
 
@@ -184,8 +185,7 @@ public sealed class KurrentDBUserManagementClient : KurrentDBClientBase {
 			channelInfo.CallInvoker).Details(new DetailsReq(),
 			KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
-		await foreach (var userDetail in call.ResponseStream
-			               .ReadAllAsync(cancellationToken)
+		await foreach (var userDetail in AsyncStreamReaderExtensions.ReadAllAsync(call.ResponseStream, cancellationToken)
 			               .Select(x => ConvertUserDetails(x.UserDetails))
 			               .WithCancellation(cancellationToken)
 			               .ConfigureAwait(false)) {

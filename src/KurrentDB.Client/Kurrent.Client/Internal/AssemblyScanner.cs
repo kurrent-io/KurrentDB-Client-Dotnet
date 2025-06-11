@@ -21,22 +21,22 @@ class AssemblyScanner {
 
     static readonly string[] DefaultExcludePatterns = [
 	    // Microsoft and .NET Framework libraries
-	    "system.",      // Core .NET Framework libraries and namespaces
-	    "microsoft.",   // Microsoft libraries and frameworks
-	    "windows.",     // Windows-specific functionality
-	    "netstandard.", // .NET Standard libraries
-	    "mscorlib.",    // Core .NET runtime library
-	    "dotnet.",      // .NET Core specific libraries
-	    "runtime.",     // Runtime-related libraries
-	    "blazor.",      // Microsoft Blazor framework
+	    "system.",              // Core .NET Framework libraries and namespaces
+        "microsoft.",           // Microsoft libraries and frameworks
+        "windows.",             // Windows-specific functionality
+        "netstandard.",         // .NET Standard libraries
+        "mscorlib.",            // Core .NET runtime library
+        "dotnet.",              // .NET Core specific libraries
+        "runtime.",             // Runtime-related libraries
+        "blazor.",              // Microsoft Blazor framework
 
-	    // Others
-	    "serilog.",             // Structured logging library
-	    "nlog.",                // Flexible logging platform
-	    "log4net.",             // Logging framework for .NET
-	    "newtonsoft.",          // JSON.NET serialization library
-	    "njsonschema.",         // JSON Schema validation
-	    "protobuf.",            // Protocol Buffers serialization
+        // Others
+        "serilog.",             // Structured logging library
+        "nlog.",                // Flexible logging platform
+        "log4net.",             // Logging framework for .NET
+        "newtonsoft.",          // JSON.NET serialization library
+        "njsonschema.",         // JSON Schema validation
+        "protobuf.",            // Protocol Buffers serialization
 	    "grpc.core.",           // gRPC communication framework
 	    "grpc.net.",            // gRPC communication framework
 	    "rabbitmq.",            // RabbitMQ client

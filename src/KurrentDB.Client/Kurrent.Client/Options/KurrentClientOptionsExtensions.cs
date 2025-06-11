@@ -1,5 +1,4 @@
 using System.Text;
-using Kurrent.Client.Security;
 using KurrentDB.Client;
 
 namespace Kurrent.Client;

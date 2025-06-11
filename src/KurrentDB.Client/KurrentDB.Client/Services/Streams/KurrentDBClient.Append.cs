@@ -9,6 +9,7 @@ using KurrentDB.Diagnostics;
 using KurrentDB.Diagnostics.Telemetry;
 using KurrentDB.Diagnostics.Tracing;
 using KurrentDB.Client.Diagnostics;
+using AsyncStreamReaderExtensions = Kurrent.Client.AsyncStreamReaderExtensions;
 
 namespace KurrentDB.Client;
 
@@ -298,7 +299,7 @@ public partial class KurrentDBClient {
 				if (_call is null) return;
 
 				try {
-					await foreach (var response in _call.ResponseStream.ReadAllAsync(_cancellationToken).ConfigureAwait(false)) {
+					await foreach (var response in AsyncStreamReaderExtensions.ReadAllAsync(_call.ResponseStream, _cancellationToken).ConfigureAwait(false)) {
 						if (!_pendingRequests.TryRemove(Uuid.FromDto(response.CorrelationId), out var writeResult)) {
 							continue; // TODO: Log?
 						}

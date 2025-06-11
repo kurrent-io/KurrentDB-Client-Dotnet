@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 
-namespace KurrentDB.Client;
+namespace Kurrent.Client;
 
 static class EnumerableTaskExtensions {
 	[DebuggerStepThrough]

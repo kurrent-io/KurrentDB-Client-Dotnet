@@ -2,7 +2,6 @@
 
 using System.Diagnostics;
 using Kurrent.Client.Model;
-using Kurrent.Client.SchemaRegistry;
 
 namespace Kurrent.Client.SchemaRegistry.Serialization;
 

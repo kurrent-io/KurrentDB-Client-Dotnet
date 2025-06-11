@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
+using Kurrent.Client;
 
 namespace KurrentDB.Client.Tests.TestNode;
 

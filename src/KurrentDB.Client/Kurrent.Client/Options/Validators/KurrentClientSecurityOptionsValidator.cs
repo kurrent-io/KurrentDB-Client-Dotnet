@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Kurrent.Client.Security;
+namespace Kurrent.Client;
 
 class KurrentClientSecurityOptionsValidator : AbstractValidator<KurrentClientSecurityOptions> {
     public static readonly KurrentClientSecurityOptionsValidator Instance = new();

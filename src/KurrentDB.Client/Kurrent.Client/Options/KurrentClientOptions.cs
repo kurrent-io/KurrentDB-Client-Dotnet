@@ -2,7 +2,6 @@ using System.ComponentModel;
 using System.Net;
 using Grpc.Core.Interceptors;
 using Kurrent.Client.Model;
-using Kurrent.Client.Security;
 using KurrentDB.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;

@@ -1,7 +1,6 @@
 using System.Net;
 using Grpc.Core.Interceptors;
 using Kurrent.Client.Model;
-using Kurrent.Client.Security;
 using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Client;

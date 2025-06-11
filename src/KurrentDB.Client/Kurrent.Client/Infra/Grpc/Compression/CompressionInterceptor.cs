@@ -1,7 +1,7 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 
-namespace Kurrent.Grpc.Compression;
+namespace Kurrent.Client.Grpc.Compression;
 
 /// <summary>
 /// A gRPC interceptor that applies compression to outgoing requests using the specified compression provider.

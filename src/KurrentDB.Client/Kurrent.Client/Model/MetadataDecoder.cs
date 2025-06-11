@@ -39,18 +39,6 @@ public abstract class MetadataDecoderBase : IMetadataDecoder {
 
 [PublicAPI]
 public sealed class MetadataDecoder : MetadataDecoderBase {
-    // public static IMetadataDecoder Instance { get; private set; } = new MetadataDecoder();
-    //
-    // /// <summary>
-    // /// Sets the default decoder instance used for decoding metadata, and then freezes the decoder to prevent further changes.
-    // /// </summary>
-    // /// <param name="decoder">The implementation of <see cref="IMetadataDecoder"/> to set as the default decoder.</param>
-    // public static void SetDefaultDecoder(IMetadataDecoder decoder) {
-	   //  Instance = Instance is not MetadataDecoder
-		  //   ? throw new InvalidOperationException("Default metadata decoder can only be set once.")
-		  //   : decoder;
-    // }
-
     protected override Metadata DecodeCore(ReadOnlyMemory<byte> bytes) =>
 	    JsonSerializer.Deserialize<Metadata>(bytes.Span, JsonSchemaSerializerOptions.DefaultJsonSerializerOptions)
 	 ?? throw new MetadataDecodingException("Decoded metadata cannot be null");

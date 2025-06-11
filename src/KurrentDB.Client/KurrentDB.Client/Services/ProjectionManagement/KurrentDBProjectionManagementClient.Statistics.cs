@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using EventStore.Client;
 using EventStore.Client.Projections;
 using Grpc.Core;
+using AsyncStreamReaderExtensions = Kurrent.Client.AsyncStreamReaderExtensions;
 
 namespace KurrentDB.Client;
 
@@ -78,8 +79,7 @@ public partial class KurrentDBProjectionManagementClient {
 			Options = options
 		}, callOptions);
 
-		await foreach (var projectionDetails in call.ResponseStream
-			               .ReadAllAsync(cancellationToken)
+		await foreach (var projectionDetails in AsyncStreamReaderExtensions.ReadAllAsync(call.ResponseStream, cancellationToken)
 			               .Select(ConvertToProjectionDetails)
 			               .WithCancellation(cancellationToken)
 			               .ConfigureAwait(false)) {

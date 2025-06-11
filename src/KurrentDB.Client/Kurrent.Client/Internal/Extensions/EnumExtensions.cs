@@ -6,7 +6,6 @@ using System.Runtime.CompilerServices;
 namespace Kurrent.Client;
 
 static class EnumExtensions {
-    // Typed cache using enum type as key and a nested dictionary for values
     static readonly ConcurrentDictionary<Type, ConcurrentDictionary<Enum, string>> Cache = new();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

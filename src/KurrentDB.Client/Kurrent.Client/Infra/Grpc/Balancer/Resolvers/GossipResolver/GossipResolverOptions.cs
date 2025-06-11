@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace Kurrent.Grpc.Balancer;
+namespace Kurrent.Client.Grpc.Balancer.Resolvers;
 
 /// <summary>
 /// Represents configuration options for the Gossip-based resolver that is used

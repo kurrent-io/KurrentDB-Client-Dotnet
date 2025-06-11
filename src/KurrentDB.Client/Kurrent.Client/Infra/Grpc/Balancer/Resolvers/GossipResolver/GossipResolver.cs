@@ -6,6 +6,8 @@ using Grpc.Core;
 using Grpc.Net.Client.Balancer;
 using Humanizer;
 using Kurrent.Client;
+using Kurrent.Client.Grpc;
+using Kurrent.Client.Grpc.Balancer.Resolvers;
 using Microsoft.Extensions.Logging;
 using OneOf;
 

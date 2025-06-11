@@ -4,6 +4,7 @@ using System.Net;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Kurrent.Client;
+using Kurrent.Client.Grpc.Interceptors;
 using Kurrent.Grpc;
 using KurrentDB.Client.Interceptors;
 using Microsoft.Extensions.Logging;

@@ -3,16 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 namespace Kurrent.Client.Model;
 
 /// <summary>
-/// Represents the type of a heartbeat message.
-/// A heartbeat indicates progress or a significant event in a sequence of operations.
-/// </summary>
-public enum HeartbeatType {
-	Unspecified = 0,
-	Checkpoint  = 1,
-	CaughtUp    = 2,
-}
-
-/// <summary>
 /// Represents a heartbeat message providing information about the state or progress of processing.
 /// </summary>
 /// <param name="Type">
@@ -65,4 +55,14 @@ public readonly record struct Heartbeat(HeartbeatType Type, LogPosition Position
 
 	public static Heartbeat CreateCaughtUp(LogPosition position, DateTimeOffset timestamp) =>
 		new(HeartbeatType.CaughtUp, position, timestamp);
+}
+
+/// <summary>
+/// Represents the type of a heartbeat message.
+/// A heartbeat indicates progress or a significant event in a sequence of operations.
+/// </summary>
+public enum HeartbeatType {
+    Unspecified = 0,
+    Checkpoint  = 1,
+    CaughtUp    = 2,
 }

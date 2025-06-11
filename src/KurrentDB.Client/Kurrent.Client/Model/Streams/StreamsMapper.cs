@@ -1,6 +1,5 @@
 #pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
-// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
-// ReSharper disable CheckNamespace
+// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault // ReSharper disable CheckNamespace
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
