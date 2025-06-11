@@ -1,0 +1,36 @@
+namespace Kurrent.Client.Model;
+
+/// <summary>
+/// Represents information about a stream in KurrentDB.
+/// </summary>
+public record StreamInfo {
+    /// <summary>
+    /// The metadata associated with the stream.
+    /// </summary>
+    public StreamMetadata? Metadata { get; init; } // = StreamMetadata.None;
+
+    /// <summary>
+    /// The revision of the metadata stream
+    /// </summary>
+    public StreamRevision MetadataRevision { get; init; } = StreamRevision.Unset;
+
+    /// <summary>
+    /// Indicates whether the stream has been deleted.
+    /// </summary>
+    public bool IsDeleted { get; init; }
+
+    /// <summary>
+    ///  The last stream revision of the stream.
+    /// </summary>
+    public StreamRevision LastStreamRevision { get; init; } = StreamRevision.Unset;
+
+    /// <summary>
+    /// The last position in the stream.
+    /// </summary>
+    public LogPosition LastStreamPosition { get; init; } = LogPosition.Unset;
+
+    /// <summary>
+    /// Indicates whether the stream has metadata associated with it.
+    /// </summary>
+    public bool HasMetadata => Metadata is not null;
+}

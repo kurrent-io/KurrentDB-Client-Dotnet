@@ -26,14 +26,7 @@ public partial class AppendStreamFailure : OneOfBase<ErrorDetails.StreamNotFound
     public ErrorDetails.TransactionMaxSizeExceeded AsTransactionMaxSizeExceeded => AsT3;
     public ErrorDetails.StreamRevisionConflict     AsStreamRevisionConflict     => AsT4;
 
-    public void Throw() =>
-        Switch(
-            notFound => KurrentClientException.Throw(notFound),
-            deleted => KurrentClientException.Throw(deleted),
-            accessDenied => KurrentClientException.Throw(accessDenied),
-            maxSizeExceeded => KurrentClientException.Throw(maxSizeExceeded),
-            revisionConflict => KurrentClientException.Throw(revisionConflict)
-        );
+    public void Throw() => ((ErrorDetailsBase)Value).Throw();
 }
 
 [PublicAPI]
@@ -153,13 +146,7 @@ public partial class DeleteError : OneOfBase<ErrorDetails.StreamNotFound, ErrorD
     public ErrorDetails.AccessDenied           AsAccessDenied           => AsT2;
     public ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict => AsT3;
 
-    public void Throw() =>
-        Switch(
-            notFound => KurrentClientException.Throw(notFound),
-            deleted => KurrentClientException.Throw(deleted),
-            accessDenied => KurrentClientException.Throw(accessDenied),
-            revisionConflict => KurrentClientException.Throw(revisionConflict)
-        );
+    public void Throw() => ((ErrorDetailsBase)Value).Throw();
 }
 
 /// <summary>
@@ -178,37 +165,28 @@ public partial class TombstoneError : OneOfBase<ErrorDetails.StreamNotFound, Err
     public ErrorDetails.AccessDenied           AsAccessDenied           => AsT2;
     public ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict => AsT3;
 
-    public void Throw() =>
-        Switch(
-            notFound => KurrentClientException.Throw(notFound),
-            deleted => KurrentClientException.Throw(deleted),
-            accessDenied => KurrentClientException.Throw(accessDenied),
-            revisionConflict => KurrentClientException.Throw(revisionConflict)
-        );
+    public void Throw() => ((ErrorDetailsBase)Value).Throw();
 }
+
+
+public partial class GetStreamInfoResult : Result<StreamInfo, GetStreamInfoError>;
 
 [PublicAPI]
 [GenerateOneOf]
-public partial class GetStreamInfoError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied> {
+public partial class GetStreamInfoError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.AccessDenied> {
     public bool IsStreamNotFound => IsT0;
-    public bool IsStreamDeleted  => IsT1;
-    public bool IsAccessDenied   => IsT2;
+    public bool IsAccessDenied   => IsT1;
 
     public ErrorDetails.StreamNotFound AsStreamNotFound => AsT0;
-    public ErrorDetails.StreamDeleted  AsStreamDeleted  => AsT1;
-    public ErrorDetails.AccessDenied   AsAccessDenied   => AsT2;
+    public ErrorDetails.AccessDenied   AsAccessDenied   => AsT1;
 
-    public void Throw() =>
-        Switch(
-            notFound => KurrentClientException.Throw(notFound),
-            deleted => KurrentClientException.Throw(deleted),
-            accessDenied => KurrentClientException.Throw(accessDenied)
-        );
+    public void Throw() => ((ErrorDetailsBase)Value).Throw();
 }
 
-[PublicAPI]
+public partial class SetStreamMetadataResult : Result<StreamRevision, SetStreamMetadataError>;
+
 [GenerateOneOf]
-public partial class SetMetadataError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.StreamRevisionConflict> {
+public partial class SetStreamMetadataError : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.StreamRevisionConflict> {
     public bool IsStreamNotFound         => IsT0;
     public bool IsStreamDeleted          => IsT1;
     public bool IsAccessDenied           => IsT2;
@@ -219,11 +197,5 @@ public partial class SetMetadataError : OneOfBase<ErrorDetails.StreamNotFound, E
     public ErrorDetails.AccessDenied           AsAccessDenied           => AsT2;
     public ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict => AsT3;
 
-    public void Throw() =>
-        Switch(
-            notFound => KurrentClientException.Throw(notFound),
-            deleted => KurrentClientException.Throw(deleted),
-            accessDenied => KurrentClientException.Throw(accessDenied),
-            revisionConflict => KurrentClientException.Throw(revisionConflict)
-        );
+    public void Throw() => ((ErrorDetailsBase)Value).Throw();
 }

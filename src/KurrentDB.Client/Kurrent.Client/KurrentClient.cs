@@ -1,7 +1,6 @@
 using Kurrent.Client.Features;
 using Kurrent.Client.Legacy;
 using KurrentDB.Client;
-using KurrentDB.Client.Legacy;
 
 namespace Kurrent.Client;
 

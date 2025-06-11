@@ -12,7 +12,7 @@ public static class ErrorDetails {
     /// <summary>
     ///  Represents an error indicating that the specified schema or schema version was not found.
     /// </summary>
-    public readonly struct SchemaNotFound : IErrorDetails {
+    public record SchemaNotFound : ErrorDetailsBase {
 
         /// <summary>
         /// Represents an error indicating that the specified schema or schema version was not found.
@@ -38,7 +38,7 @@ public static class ErrorDetails {
     /// Represents an error indicating that the specified stream already exists.
     /// </summary>
     /// <param name="Stream">The name of the stream.</param>
-    public readonly struct SchemaAlreadyExists(SchemaName Stream) : IErrorDetails {
+    public record SchemaAlreadyExists(SchemaName Stream) : ErrorDetailsBase {
         public override string ToString() => $"Stream '{Stream}' already exists.";
     }
 }

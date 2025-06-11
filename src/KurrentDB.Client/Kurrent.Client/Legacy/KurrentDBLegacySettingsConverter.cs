@@ -80,15 +80,6 @@ public static class KurrentDBLegacySettingsConverter {
             ? new UserCredentials(credentials.Username ?? string.Empty, credentials.Password ?? string.Empty)
             : UserCredentials.Empty;
 
-        // // Create operation options
-        // var operationOptions = KurrentDBClientOperationOptions.Default;
-
-        // // If we have user credentials, set up the authentication header function
-        // if (defaultCredentials != UserCredentials.Empty) {
-        //     operationOptions.GetAuthenticationHeaderValue = (_, _) =>
-        //         ValueTask.FromResult($"Basic {Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"{credentials.Username}:{credentials.Password ?? string.Empty}"))}");
-        // }
-
         return new KurrentDBClientSettings {
             ConnectionName       = options.ConnectionName,
             DefaultDeadline      = options.Resilience.Deadline,
