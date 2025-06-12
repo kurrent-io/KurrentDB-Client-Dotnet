@@ -4,10 +4,9 @@ using EventStore.Client.Gossip;
 using Grpc.Core;
 using Grpc.Net.Client;
 using Grpc.Net.Client.Balancer;
-using Kurrent.Client.Grpc.Balancer;
-using Kurrent.Client.Grpc.Balancer.Resolvers;
+using Kurrent.Grpc.Balancer;
 using KurrentDB.Client;
-using IGossipClient = Kurrent.Client.Grpc.Balancer.Resolvers.IGossipClient;
+using IGossipClient = Kurrent.Grpc.Balancer.IGossipClient;
 using VNodeState = EventStore.Client.Gossip.MemberInfo.Types.VNodeState;
 
 namespace Kurrent.Client.Experimental;
@@ -72,7 +71,7 @@ class KurrentDBGossipClientFactory(KurrentDBClusterNodeSelector nodeSelector, Gr
 	public KurrentDBGossipClientFactory(NodeReadPreference nodePreference, GrpcChannelOptions channelOptions)
 		: this(new KurrentDBClusterNodeSelector(nodePreference), channelOptions) { }
 
-	public Kurrent.Client.Grpc.Balancer.Resolvers.IGossipClient Create(DnsEndPoint endpoint) {
+	public IGossipClient Create(DnsEndPoint endpoint) {
 		var insecure = channelOptions.Credentials == ChannelCredentials.Insecure; // not sure if this will work 100%. must test.
 		var scheme   = insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps;
 		var address  = new Uri($"{scheme}://{endpoint}");

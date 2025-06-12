@@ -8,9 +8,9 @@ public class ResultCollectionsTests
         // Arrange
         var successResults = new[]
         {
-            Kurrent.Client.Result<int, string>.Success(1),
-            Kurrent.Client.Result<int, string>.Success(2),
-            Kurrent.Client.Result<int, string>.Success(3)
+            Result<int, string>.Success(1),
+            Result<int, string>.Success(2),
+            Result<int, string>.Success(3)
         };
 
         // Act
@@ -27,9 +27,9 @@ public class ResultCollectionsTests
         // Arrange
         var mixedResults = new[]
         {
-            Kurrent.Client.Result<int, string>.Success(1),
-            Kurrent.Client.Result<int, string>.Error("First error"),
-            Kurrent.Client.Result<int, string>.Error("Second error")
+            Result<int, string>.Success(1),
+            Result<int, string>.Error("First error"),
+            Result<int, string>.Error("Second error")
         };
 
         // Act
@@ -59,7 +59,7 @@ public class ResultCollectionsTests
     {
         // Arrange
         var source = new[] { 1, 2, 3 };
-        Result<int, string> Map(int i) => Kurrent.Client.Result<int, string>.Success(i * 2);
+        Result<int, string> Map(int i) => Result<int, string>.Success(i * 2);
 
         // Act
         var finalResult = source.Traverse(Map);
@@ -74,7 +74,7 @@ public class ResultCollectionsTests
     {
         // Arrange
         var source = new[] { 1, 2, 3 };
-        Result<int, string> Map(int i) => i == 2 ? Kurrent.Client.Result<int, string>.Error("Error on 2") : Kurrent.Client.Result<int, string>.Success(i);
+        Result<int, string> Map(int i) => i == 2 ? Result<int, string>.Error("Error on 2") : Result<int, string>.Success(i);
 
         // Act
         var finalResult = source.Traverse(Map);
@@ -90,8 +90,8 @@ public class ResultCollectionsTests
         // Arrange
         var tasks = new[]
         {
-            ValueTask.FromResult(Kurrent.Client.Result<int, string>.Success(1)),
-            ValueTask.FromResult(Kurrent.Client.Result<int, string>.Success(2))
+            ValueTask.FromResult(Result<int, string>.Success(1)),
+            ValueTask.FromResult(Result<int, string>.Success(2))
         };
 
         // Act
@@ -108,9 +108,9 @@ public class ResultCollectionsTests
         // Arrange
         var tasks = new[]
         {
-            ValueTask.FromResult(Kurrent.Client.Result<int, string>.Success(1)),
-            ValueTask.FromResult(Kurrent.Client.Result<int, string>.Error("First error")),
-            ValueTask.FromResult(Kurrent.Client.Result<int, string>.Error("Second error"))
+            ValueTask.FromResult(Result<int, string>.Success(1)),
+            ValueTask.FromResult(Result<int, string>.Error("First error")),
+            ValueTask.FromResult(Result<int, string>.Error("Second error"))
         };
 
         // Act
@@ -126,7 +126,7 @@ public class ResultCollectionsTests
     {
         // Arrange
         var source = new[] { 1, 2, 3 };
-        ValueTask<Result<int, string>> MapAsync(int i) => ValueTask.FromResult(Kurrent.Client.Result<int, string>.Success(i * 2));
+        ValueTask<Result<int, string>> MapAsync(int i) => ValueTask.FromResult(Result<int, string>.Success(i * 2));
 
         // Act
         var finalResult = await source.TraverseAsync(MapAsync);
@@ -142,8 +142,8 @@ public class ResultCollectionsTests
         // Arrange
         var source = new[] { 1, 2, 3 };
         ValueTask<Result<int, string>> MapAsync(int i) => i == 2
-            ? ValueTask.FromResult(Kurrent.Client.Result<int, string>.Error("Async error on 2"))
-            : ValueTask.FromResult(Kurrent.Client.Result<int, string>.Success(i));
+            ? ValueTask.FromResult(Result<int, string>.Error("Async error on 2"))
+            : ValueTask.FromResult(Result<int, string>.Success(i));
 
         // Act
         var finalResult = await source.TraverseAsync(MapAsync);

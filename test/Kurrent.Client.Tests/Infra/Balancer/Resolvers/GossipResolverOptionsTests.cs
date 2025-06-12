@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Sockets;
-using Kurrent.Client.Grpc.Balancer.Resolvers;
 using Kurrent.Grpc.Balancer;
 
 namespace Kurrent.Client.Tests;

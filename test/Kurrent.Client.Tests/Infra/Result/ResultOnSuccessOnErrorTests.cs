@@ -12,11 +12,11 @@ public class ResultOnSuccessOnErrorTests {
     public void on_success_executes_action_and_returns_same_instance_when_called_on_success_result() {
         // Arrange
         GameStarted successValue = new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>());
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> originalResult = Kurrent.Client.Result<GameStarted, InvalidMoveError>.Success(successValue);
+        Result<GameStarted, InvalidMoveError> originalResult = Result<GameStarted, InvalidMoveError>.Success(successValue);
         bool actionExecuted = false;
 
         // Act
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> returnedResult = originalResult.OnSuccess(_ => actionExecuted = true);
+        Result<GameStarted, InvalidMoveError> returnedResult = originalResult.OnSuccess(_ => actionExecuted = true);
 
         // Assert
         actionExecuted.ShouldBeTrue();
@@ -27,11 +27,11 @@ public class ResultOnSuccessOnErrorTests {
     public void on_success_does_not_execute_action_and_returns_same_instance_when_called_on_error_result() {
         // Arrange
         InvalidMoveError errorValue = new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence());
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> originalResult = Kurrent.Client.Result<GameStarted, InvalidMoveError>.Error(errorValue);
+        Result<GameStarted, InvalidMoveError> originalResult = Result<GameStarted, InvalidMoveError>.Error(errorValue);
         bool actionExecuted = false;
 
         // Act
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> returnedResult = originalResult.OnSuccess(_ => actionExecuted = true);
+        Result<GameStarted, InvalidMoveError> returnedResult = originalResult.OnSuccess(_ => actionExecuted = true);
 
         // Assert
         actionExecuted.ShouldBeFalse();
@@ -42,11 +42,11 @@ public class ResultOnSuccessOnErrorTests {
     public void on_error_executes_action_and_returns_same_instance_when_called_on_error_result() {
         // Arrange
         InvalidMoveError errorValue = new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence());
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> originalResult = Kurrent.Client.Result<GameStarted, InvalidMoveError>.Error(errorValue);
+        Result<GameStarted, InvalidMoveError> originalResult = Result<GameStarted, InvalidMoveError>.Error(errorValue);
         bool actionExecuted = false;
 
         // Act
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> returnedResult = originalResult.OnError(_ => actionExecuted = true);
+        Result<GameStarted, InvalidMoveError> returnedResult = originalResult.OnError(_ => actionExecuted = true);
 
         // Assert
         actionExecuted.ShouldBeTrue();
@@ -57,11 +57,11 @@ public class ResultOnSuccessOnErrorTests {
     public void on_error_does_not_execute_action_and_returns_same_instance_when_called_on_success_result() {
         // Arrange
         GameStarted successValue = new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>());
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> originalResult = Kurrent.Client.Result<GameStarted, InvalidMoveError>.Success(successValue);
+        Result<GameStarted, InvalidMoveError> originalResult = Result<GameStarted, InvalidMoveError>.Success(successValue);
         bool actionExecuted = false;
 
         // Act
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> returnedResult = originalResult.OnError(_ => actionExecuted = true);
+        Result<GameStarted, InvalidMoveError> returnedResult = originalResult.OnError(_ => actionExecuted = true);
 
         // Assert
         actionExecuted.ShouldBeFalse();
@@ -72,7 +72,7 @@ public class ResultOnSuccessOnErrorTests {
     public void on_success_passes_state_to_action_when_using_stateful_variant() {
         // Arrange
         GameStarted successValue = new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>());
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> originalResult = Kurrent.Client.Result<GameStarted, InvalidMoveError>.Success(successValue);
+        Result<GameStarted, InvalidMoveError> originalResult = Result<GameStarted, InvalidMoveError>.Success(successValue);
         string contextState = "Audit trail";
         string? capturedState = null;
 
@@ -87,7 +87,7 @@ public class ResultOnSuccessOnErrorTests {
     public void on_error_passes_state_to_action_when_using_stateful_variant() {
         // Arrange
         InvalidMoveError errorValue = new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence());
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> originalResult = Kurrent.Client.Result<GameStarted, InvalidMoveError>.Error(errorValue);
+        Result<GameStarted, InvalidMoveError> originalResult = Result<GameStarted, InvalidMoveError>.Error(errorValue);
         string contextState = "Error context";
         string? capturedState = null;
 
@@ -106,11 +106,11 @@ public class ResultOnSuccessOnErrorTests {
     public async Task on_success_async_executes_action_with_value_task() {
         // Arrange
         GameStarted successValue = new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>());
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> originalResult = Kurrent.Client.Result<GameStarted, InvalidMoveError>.Success(successValue);
+        Result<GameStarted, InvalidMoveError> originalResult = Result<GameStarted, InvalidMoveError>.Success(successValue);
         bool actionExecuted = false;
 
         // Act
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> returnedResult = await originalResult.OnSuccessAsync(async _ => {
+        Result<GameStarted, InvalidMoveError> returnedResult = await originalResult.OnSuccessAsync(async _ => {
             await Task.Delay(1);
             actionExecuted = true;
         });
@@ -124,11 +124,11 @@ public class ResultOnSuccessOnErrorTests {
     public async Task on_error_async_executes_action_with_value_task() {
         // Arrange
         InvalidMoveError errorValue = new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence());
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> originalResult = Kurrent.Client.Result<GameStarted, InvalidMoveError>.Error(errorValue);
+        Result<GameStarted, InvalidMoveError> originalResult = Result<GameStarted, InvalidMoveError>.Error(errorValue);
         bool actionExecuted = false;
 
         // Act
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> returnedResult = await originalResult.OnErrorAsync(async _ => {
+        Result<GameStarted, InvalidMoveError> returnedResult = await originalResult.OnErrorAsync(async _ => {
             await Task.Delay(1);
             actionExecuted = true;
         });
@@ -142,7 +142,7 @@ public class ResultOnSuccessOnErrorTests {
     public async Task on_success_async_passes_state_to_action_when_using_stateful_variant() {
         // Arrange
         GameStarted successValue = new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>());
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> originalResult = Kurrent.Client.Result<GameStarted, InvalidMoveError>.Success(successValue);
+        Result<GameStarted, InvalidMoveError> originalResult = Result<GameStarted, InvalidMoveError>.Success(successValue);
         string contextState = "Async audit trail";
         string? capturedState = null;
 
@@ -160,7 +160,7 @@ public class ResultOnSuccessOnErrorTests {
     public async Task on_error_async_passes_state_to_action_when_using_stateful_variant() {
         // Arrange
         InvalidMoveError errorValue = new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence());
-        Kurrent.Client.Result<GameStarted, InvalidMoveError> originalResult = Kurrent.Client.Result<GameStarted, InvalidMoveError>.Error(errorValue);
+        Result<GameStarted, InvalidMoveError> originalResult = Result<GameStarted, InvalidMoveError>.Error(errorValue);
         string contextState = "Async error context";
         string? capturedState = null;
 

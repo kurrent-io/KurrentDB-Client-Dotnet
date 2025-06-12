@@ -643,6 +643,7 @@ public partial class KurrentStreamsClient { // Made partial
                     .ConfigureAwait(false)
             };
 
+            throw new NotImplementedException("LegacyClient.DeleteAsync does not return a LogPosition, so we cannot convert it to LogPosition.");
             return DeleteResult.Success(result.LogPosition.ConvertToLogPosition());
         }
         catch (Exception ex) {
@@ -691,7 +692,7 @@ public partial class KurrentStreamsClient { // Made partial
             return GetStreamInfoResult.Error(ex switch {
                 StreamNotFoundException => new ErrorDetails.StreamNotFound(stream),
                 AccessDeniedException   => new ErrorDetails.AccessDenied(stream),
-                _                       => throw KurrentClientException.Unknown(nameof(SetStreamMetadata), ex)
+                _                       => throw KurrentClientException.CreateUnknown(nameof(SetStreamMetadata), ex)
             });
         }
     }
@@ -729,7 +730,7 @@ public partial class KurrentStreamsClient { // Made partial
                 StreamDeletedException        => new ErrorDetails.StreamDeleted(stream),
                 AccessDeniedException         => new ErrorDetails.AccessDenied(stream),
                 WrongExpectedVersionException => new ErrorDetails.StreamRevisionConflict(stream, expectedState),
-                _                             => throw KurrentClientException.Unknown(nameof(SetStreamMetadata), ex)
+                _                             => throw KurrentClientException.CreateUnknown(nameof(SetStreamMetadata), ex)
             });
         }
     }

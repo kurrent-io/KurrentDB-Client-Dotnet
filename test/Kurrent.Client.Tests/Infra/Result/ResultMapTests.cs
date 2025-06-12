@@ -96,7 +96,7 @@ public class ResultMapTests {
         mappedResult.OnSuccess(x => {
                 x.Player.ShouldBe(Player.O);
                 x.Position.ShouldBe(new Position(2, 1));
-                x.MoveDescription.ShouldContain(initialSuccess.Value.ToString());
+                x.MoveDescription!.ShouldContain(initialSuccess.Value.ToString());
             }
         );
     }

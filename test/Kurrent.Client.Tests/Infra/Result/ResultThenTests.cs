@@ -177,7 +177,7 @@ public class ResultThenTests {
 
         // Assert
         finalResult.IsSuccess.ShouldBeTrue();
-        finalResult.AsSuccess.MoveDescription.ShouldContain(initialSuccess.Value.ToString());
+        finalResult.AsSuccess.MoveDescription!.ShouldContain(initialSuccess.Value.ToString());
     }
 
     #endregion

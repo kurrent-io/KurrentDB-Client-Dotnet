@@ -212,8 +212,8 @@ public class WhateverGenerationTests {
         var                intActionCalled    = false;
 
         result.Switch(
-            s => stringActionCalled = true,
-            i => intActionCalled    = true
+            _ => stringActionCalled = true,
+            _ => intActionCalled    = true
         );
 
         stringActionCalled.ShouldBeTrue();
@@ -227,8 +227,8 @@ public class WhateverGenerationTests {
         var                intActionCalled    = false;
 
         result.Switch(
-            s => stringActionCalled = true,
-            i => intActionCalled    = true
+            _ => stringActionCalled = true,
+            _ => intActionCalled    = true
         );
 
         stringActionCalled.ShouldBeFalse();
@@ -278,7 +278,7 @@ public class WhateverGenerationTests {
 
         TestWhateverResult stringResult = "not_an_int";
         stringResult.TryPickInt(out pickedInt).ShouldBeFalse();
-        pickedInt.ShouldBe(default(int));
+        pickedInt.ShouldBe(0);
     }
 
     [Test]
@@ -305,7 +305,7 @@ public class WhateverGenerationTests {
 
     [Test]
     public void constructor_should_throw_argument_null_exception_for_null_reference_type() {
-        Should.Throw<ArgumentNullException>(() => new TestWhateverResult((string)null!));
+        Should.Throw<ArgumentNullException>(() => new TestWhateverResult(null!));
     }
 
     [Test]
@@ -314,6 +314,6 @@ public class WhateverGenerationTests {
         // The generator's null check is `if (parameterName == null)`, which doesn't apply to non-nullable value types.
         // So, this test effectively checks that the constructor for int doesn't throw.
         Should.NotThrow(() => new TestWhateverResult(0));
-        Should.NotThrow(() => new TestWhateverResult(default(int)));
+        Should.NotThrow(() => new TestWhateverResult(0));
     }
 }

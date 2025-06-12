@@ -12,7 +12,7 @@ public static class ErrorDetails {
     /// <summary>
     ///  Represents an error indicating that the specified schema or schema version was not found.
     /// </summary>
-    public record SchemaNotFound : ErrorDetailsBase {
+    public record SchemaNotFound : KurrentClientErrorDetails {
 
         /// <summary>
         /// Represents an error indicating that the specified schema or schema version was not found.
@@ -29,17 +29,16 @@ public static class ErrorDetails {
         }
 
         SchemaIdentifier SchemaIdentifier { get; }
-        string           ErrorMessage     { get; }
 
-        public override string ToString() => ErrorMessage;
+        public override string ErrorMessage { get; }
     }
 
     /// <summary>
     /// Represents an error indicating that the specified stream already exists.
     /// </summary>
     /// <param name="Stream">The name of the stream.</param>
-    public record SchemaAlreadyExists(SchemaName Stream) : ErrorDetailsBase {
-        public override string ToString() => $"Stream '{Stream}' already exists.";
+    public record SchemaAlreadyExists(SchemaName Stream) : KurrentClientErrorDetails {
+        public override string ErrorMessage => $"Stream '{Stream}' already exists.";
     }
 }
 

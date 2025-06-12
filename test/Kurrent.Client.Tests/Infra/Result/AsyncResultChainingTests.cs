@@ -13,7 +13,7 @@ public class AsyncResultChainingTests {
         // Arrange
         var         initialValue = new GameId(Faker.Random.Guid());
         var         task         = ValueTask.FromResult(initialValue);
-        GameUpdated mappedValue  = null;
+        GameUpdated mappedValue  = null!;
 
         // Act
         var finalResult = await task
@@ -32,7 +32,7 @@ public class AsyncResultChainingTests {
 
         // Assert
         finalResult.IsSuccess.ShouldBeTrue();
-        finalResult.AsSuccess.MoveDescription.ShouldContain(initialValue.Value.ToString());
+        finalResult.AsSuccess.MoveDescription!.ShouldContain(initialValue.Value.ToString());
         mappedValue.ShouldNotBeNull();
     }
 

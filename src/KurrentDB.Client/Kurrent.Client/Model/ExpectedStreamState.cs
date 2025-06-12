@@ -1,5 +1,8 @@
 namespace Kurrent.Client.Model;
 
+/// <summary>
+/// Represents the expected state of a stream when performing operations such as appending messages.
+/// </summary>
 public readonly record struct ExpectedStreamState {
     /// <summary>
 	/// The stream should not exist.

@@ -1,7 +1,6 @@
 using System.Net;
 using Grpc.Core;
 using Grpc.Net.Client.Balancer;
-using Kurrent.Client.Grpc.Balancer.Resolvers;
 using Kurrent.Client.Testing.Fixtures;
 using Kurrent.Client.Tests.Balancer.Resolvers;
 using Kurrent.Grpc.Balancer;

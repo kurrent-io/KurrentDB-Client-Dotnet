@@ -8,6 +8,9 @@ namespace Kurrent.Client.Model;
 public readonly record struct Record() {
 	public static readonly Record None = new();
 
+    /// <summary>
+    /// The unique identifier of the record.
+    /// </summary>
 	public Guid Id { get; init; } = Guid.Empty;
 
 	/// <summary>

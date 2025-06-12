@@ -66,7 +66,7 @@ public class KurrentClientTestFixture : TestFixture {
 
     #region Helpers
 
-    public async ValueTask<List<Record>> SeedTestMessagesAsync(
+    public async ValueTask<(LogPosition Position, StreamRevision Revision, List<Message> Messages)> SeedTestMessagesAsync(
         string streamName,
         Action<Metadata> transformMetadata,
         SchemaDataFormat dataFormat = SchemaDataFormat.Json,
@@ -78,10 +78,16 @@ public class KurrentClientTestFixture : TestFixture {
             .Append(streamName, messages, cancellationToken)
             .ConfigureAwait(false);
 
-        var records = result.Match<AppendStreamSuccess>(
+        var (stream, logPosition, streamRevision) = result.Match(
             success => success ,
-            error => error.Throw()
+            error =>  throw error.Throw()
         );
+
+        Log.Information(
+            "Seeded {Count} messages to stream {StreamName} at position {LogPosition} with revision {StreamRevision}",
+            messages.Count, stream, logPosition, streamRevision);
+
+        return (logPosition, streamRevision, messages);
     }
 
     /// <summary>
