@@ -55,10 +55,9 @@ public class AsyncResultChainingTests {
         var finalResult = await task
             .AsResultAsync(ex => new InvalidMoveError(initialError.GameId, ex.Message))
             .ThenAsync(gameId => {
-                    thenExecuted = true;
-                    return Result<GameUpdated, InvalidMoveError>.Success(new GameUpdated(gameId.Value, GameStatus.Ongoing));
-                }
-            );
+                thenExecuted = true;
+                return Result<GameUpdated, InvalidMoveError>.Success(new GameUpdated(gameId.Value, GameStatus.Ongoing));
+            });
 
         // Assert
         finalResult.IsError.ShouldBeTrue();

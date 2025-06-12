@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
-namespace KurrentDB.Client.SchemaRegistry.NameStrategies;
+namespace Kurrent.Client.SchemaRegistry;
 
 /// <summary>
 /// Represents a schema identifier using the URN format: urn:schemas-kurrent:{namespace}:{messageName}[:{guid}]

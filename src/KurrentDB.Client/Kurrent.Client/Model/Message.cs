@@ -2,14 +2,14 @@ namespace Kurrent.Client.Model;
 
 [PublicAPI]
 public record Message {
-	public static readonly Message Empty = new() {
+	public static readonly Message None = new() {
 		RecordId   = Guid.Empty,
 		Value      = null!,
 		DataFormat = SchemaDataFormat.Unspecified,
 		Metadata   = null!
 	};
 
-	public static MessageBuilder New() => new();
+	public static MessageBuilder New => new();
 
 	/// <summary>
 	/// The assigned record id.

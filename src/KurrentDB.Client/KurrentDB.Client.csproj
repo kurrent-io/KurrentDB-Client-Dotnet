@@ -81,6 +81,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Kurrent.Client\Infra\Grpc\" />
+    <Folder Include="Kurrent.Client\Infra\Result\" />
     <Folder Include="Kurrent.SchemaRegistry\" />
   </ItemGroup>
 

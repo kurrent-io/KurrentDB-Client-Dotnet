@@ -13,9 +13,7 @@ namespace Kurrent.Client.SchemaRegistry;
 /// <exception cref="ArgumentException">Thrown if the stream name is empty or white space.</exception>
 public class CategorySchemaNameStrategy(SchemaNameOutputFormat format = SchemaNameOutputFormat.None) : SchemaNameStrategyBase(format) {
 	protected override (string Namespace, string MessageName) Generate(Type messageType, string streamName) {
-		if (string.IsNullOrWhiteSpace(streamName))
-			throw new ArgumentException("Stream name cannot be empty or whitespace", nameof(streamName));
-
+		ArgumentException.ThrowIfNullOrWhiteSpace(streamName);
 		return (streamName.Split('-').First(), messageType.Name);
 	}
 }

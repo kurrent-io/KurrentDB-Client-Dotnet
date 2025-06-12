@@ -35,7 +35,8 @@
     <PackageReference Include="Serilog.Sinks.Seq" Version="9.0.0" />
     <PackageReference Include="Shouldly" Version="4.3.0" />
     <PackageReference Include="System.Reactive" Version="6.0.1" />
-    <PackageReference Include="TUnit.Core" Version="0.25.6" />
+    <PackageReference Include="TUnit" Version="0.25.21" />
+    <PackageReference Include="TUnit.Core" Version="0.25.21" />
     <PackageReference Include="Docker.DotNet" Version="3.125.15" />
     <PackageReference Include="DotNext" Version="5.22.0" />
     <PackageReference Include="Ductus.FluentDocker" Version="2.10.59" />

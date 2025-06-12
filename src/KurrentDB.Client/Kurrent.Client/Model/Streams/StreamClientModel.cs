@@ -1,4 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using Google.Protobuf.WellKnownTypes;
+using Kurrent.Whatever;
 using OneOf;
 
 namespace Kurrent.Client.Model;
@@ -12,21 +14,8 @@ public record AppendStreamSuccess(string Stream, LogPosition Position, StreamRev
 }
 
 [PublicAPI]
-[GenerateOneOf]
-public partial class AppendStreamFailure : OneOfBase<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.TransactionMaxSizeExceeded, ErrorDetails.StreamRevisionConflict> {
-    public bool IsStreamNotFound             => IsT0;
-    public bool IsStreamDeleted              => IsT1;
-    public bool IsAccessDenied               => IsT2;
-    public bool IsTransactionMaxSizeExceeded => IsT3;
-    public bool IsStreamRevisionConflict     => IsT4;
-
-    public ErrorDetails.StreamNotFound             AsStreamNotFound             => AsT0;
-    public ErrorDetails.StreamDeleted              AsStreamDeleted              => AsT1;
-    public ErrorDetails.AccessDenied               AsAccessDenied               => AsT2;
-    public ErrorDetails.TransactionMaxSizeExceeded AsTransactionMaxSizeExceeded => AsT3;
-    public ErrorDetails.StreamRevisionConflict     AsStreamRevisionConflict     => AsT4;
-
-    public void Throw() => ((ErrorDetailsBase)Value).Throw();
+public partial class AppendStreamFailure : IWhatever<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.TransactionMaxSizeExceeded, ErrorDetails.StreamRevisionConflict> {
+    public KurrentClientException Throw() => ((ErrorDetailsBase)Value).Throw();
 }
 
 [PublicAPI]

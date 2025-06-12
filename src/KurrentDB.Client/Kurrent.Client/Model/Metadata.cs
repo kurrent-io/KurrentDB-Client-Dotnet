@@ -582,7 +582,17 @@ public class Metadata : IDictionary<string, object?> {
 		return this;
 	}
 
-	/// <summary>
+    /// <summary>
+    /// Applies a transformation function to the metadata.
+    /// </summary>
+    /// <param name="transform">The transformation function to apply if the condition is true.</param>
+    /// <returns>This metadata instance for method chaining.</returns>
+    public Metadata Transform(Action<Metadata> transform) {
+        transform(this);
+        return this;
+    }
+
+    /// <summary>
 	/// Applies a transformation function to the metadata only if a condition is true.
 	/// </summary>
 	/// <param name="condition">The condition to evaluate.</param>

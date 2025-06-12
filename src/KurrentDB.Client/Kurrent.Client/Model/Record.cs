@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using Kurrent.Client.SchemaRegistry;
 
 namespace Kurrent.Client.Model;
 
 [PublicAPI]
+[DebuggerDisplay("{ToDebugString()}")]
 public readonly record struct Record() {
 	public static readonly Record None = new();
 

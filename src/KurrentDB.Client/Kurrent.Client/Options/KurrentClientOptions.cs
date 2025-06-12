@@ -31,6 +31,10 @@ public record KurrentClientOptions : KurrentClientOptionsBase {
 
     const string DefaultConnectionString = "kurrentdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false";
 
+
+    // public bool ThrowExceptionOnResultError { get; init; }
+
+
     /// <summary>
     /// When options were created from a connection string, this property holds
     /// the connection string used to connect to the KurrentDB cluster.

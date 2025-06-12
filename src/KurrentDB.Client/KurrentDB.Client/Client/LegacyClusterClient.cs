@@ -5,7 +5,6 @@ using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Kurrent.Client;
 using Kurrent.Client.Grpc.Interceptors;
-using Kurrent.Grpc;
 using KurrentDB.Client.Interceptors;
 using Microsoft.Extensions.Logging;
 
@@ -34,12 +33,14 @@ class LegacyClusterClient {
 
 		Interceptor[] interceptors = [
 			new TypedExceptionInterceptor(exceptionMap),
-			new HeadersInterceptor(new() {
-				{ Constants.Headers.ClientName, clientName },
-				{ Constants.Headers.ClientVersion, clientVersion },
-				{ Constants.Headers.ConnectionName, settings.ConnectionName! },
-				{ Constants.Headers.RequiresLeader, requiresLeader }
+            HeadersInterceptor.InjectHeaders(new() {
+                [Constants.Headers.ClientName]     = clientName,
+                [Constants.Headers.ClientVersion]  = clientVersion,
+                [Constants.Headers.ConnectionName] = settings.ConnectionName!,
 			}),
+            HeadersInterceptor.InjectHeaders(
+                Constants.Headers.RequiresLeader, requiresLeader,
+                operationsToExclude: "MultiStreamAppendSession"),
 			..settings.Interceptors,
 			new ClusterTopologyChangesInterceptor(this, settings.LoggerFactory.CreateLogger<ClusterTopologyChangesInterceptor>()),
 		];

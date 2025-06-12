@@ -6,7 +6,7 @@ namespace Kurrent.Client.Features;
 /// Represents a requirement for a feature with validation rules.
 /// </summary>
 public record FeatureRequirement {
-    public static readonly FeatureRequirement Empty = new() {
+    public static readonly FeatureRequirement None = new() {
         Name             = null!,
         Value            = false,
         EnforcementLevel = EnforcementLevel.Optional,

@@ -20,7 +20,7 @@ public static class ErrorDetails {
         /// <param name="identifier">
         /// The identifier of the schema that could not be located.
         /// </param>
-        public SchemaNotFound(SchemaIdentifier identifier) {
+        public SchemaNotFound(SchemaIdentifier identifier) : base() {
             SchemaIdentifier = identifier;
 
             ErrorMessage = SchemaIdentifier.IsSchemaName

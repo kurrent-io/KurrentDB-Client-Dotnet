@@ -18,7 +18,7 @@ public class ResultCollectionsTests
 
         // Assert
         finalResult.IsSuccess.ShouldBeTrue();
-        finalResult.AsSuccess.ShouldBe(new[] { 1, 2, 3 });
+        finalResult.AsSuccess.ShouldBe([1, 2, 3]);
     }
 
     [Test]
@@ -141,8 +141,8 @@ public class ResultCollectionsTests
     {
         // Arrange
         var source = new[] { 1, 2, 3 };
-        ValueTask<Result<int, string>> MapAsync(int i) => i == 2 
-            ? ValueTask.FromResult(Kurrent.Client.Result<int, string>.Error("Async error on 2")) 
+        ValueTask<Result<int, string>> MapAsync(int i) => i == 2
+            ? ValueTask.FromResult(Kurrent.Client.Result<int, string>.Error("Async error on 2"))
             : ValueTask.FromResult(Kurrent.Client.Result<int, string>.Success(i));
 
         // Act

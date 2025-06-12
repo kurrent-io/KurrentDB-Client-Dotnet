@@ -20,39 +20,6 @@ using StreamMetadata = Kurrent.Client.Model.StreamMetadata;
 namespace Kurrent.Client;
 
 public partial class KurrentStreamsClient { // Made partial
-    // internal KurrentStreamsClient(CallInvoker callInvoker, KurrentDBClientSettings legacySettings) {
-    //     LegacySettings = legacySettings;
-    //
-    //     ServiceClient = new StreamsServiceClient(callInvoker);
-    //     Registry      = new KurrentRegistryClient(callInvoker);
-    //
-    //     var typeMapper     = new MessageTypeMapper();
-    //     var schemaExporter = new SchemaExporter();
-    //     var schemaManager  = new SchemaManager(Registry, schemaExporter, typeMapper);
-    //
-    //     SerializerProvider = new SchemaSerializerProvider(
-    //         [
-    //             new BytesPassthroughSerializer(),
-    //             new JsonSchemaSerializer(
-    //                 new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap },
-    //                 schemaManager
-    //             ),
-    //             new ProtobufSchemaSerializer(
-    //                 new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap },
-    //                 schemaManager
-    //             )
-    //         ]
-    //     );
-    //
-    //     LegacyClient = new KurrentDBClient(legacySettings);
-    //
-    //     LegacyConverter = new KurrentDBLegacyConverter(
-    //         SerializerProvider,
-    //         new MetadataDecoder(),
-    //         SchemaRegistryPolicy.NoRequirements
-    //     );
-    // }
-
     internal KurrentStreamsClient(CallInvoker callInvoker, KurrentClientOptions options) {
         Options  = options;
 
@@ -74,7 +41,6 @@ public partial class KurrentStreamsClient { // Made partial
                 schemaManager
             )
         ]);
-
 
         LegacySettings = options.ConvertToLegacySettings();
         LegacyClient = new KurrentDBClient(LegacySettings);

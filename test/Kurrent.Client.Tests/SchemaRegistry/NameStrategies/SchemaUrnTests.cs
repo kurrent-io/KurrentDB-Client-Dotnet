@@ -1,4 +1,4 @@
-using KurrentDB.Client.SchemaRegistry.NameStrategies;
+using Kurrent.Client.SchemaRegistry;
 
 namespace Kurrent.Client.Tests.SchemaRegistry.NameStrategies;
 

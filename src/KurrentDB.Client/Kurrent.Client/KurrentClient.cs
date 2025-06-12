@@ -19,20 +19,6 @@ public class KurrentClient : IAsyncDisposable {
         Features = new KurrentFeaturesClient(LegacyCallInvoker);
     }
 
-    // public KurrentClient(KurrentDBClientSettings? settings) {
-    //     settings ??= new();
-    //
-    //     settings.ConnectionName ??= $"conn-{Guid.NewGuid():D}";
-    //
-    //     LegacyCallInvoker = new KurrentDBLegacyCallInvoker(new LegacyClusterClient(settings));
-    //
-    //     Options = null!;
-    //
-    //     Streams  = new KurrentStreamsClient(LegacyCallInvoker, settings);
-    //     Registry = new KurrentRegistryClient(LegacyCallInvoker);
-    //     Features = new KurrentFeaturesClient(LegacyCallInvoker);
-    // }
-
     KurrentClientOptions       Options           { get; }
 	KurrentDBLegacyCallInvoker LegacyCallInvoker { get; }
 
@@ -56,8 +42,4 @@ public class KurrentClient : IAsyncDisposable {
 
     public static KurrentClient Create(string connectionString) =>
         Create(KurrentDBConnectionString.Parse(connectionString).ToClientOptions());
-
-    public static KurrentClient Create(KurrentDBClientSettings settings) =>
-        throw new NotSupportedException("Use KurrentClientOptions instead of KurrentDBClientSettings. The legacy settings are no longer supported.");
-
 }
