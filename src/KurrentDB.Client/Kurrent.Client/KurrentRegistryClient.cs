@@ -250,7 +250,7 @@ public class KurrentRegistryClient {
 				.DeleteSchemaAsync(request, cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
 
-			return Success.Instance;
+			return SchemaRegistry.Success.Instance;
 		}
 		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
             return new ErrorDetails.SchemaNotFound(schemaName);

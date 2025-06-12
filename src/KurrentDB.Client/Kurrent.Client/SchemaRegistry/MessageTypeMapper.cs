@@ -1,3 +1,5 @@
+using static Kurrent.Client.SchemaRegistry.MessageTypeMapperErrors;
+
 namespace Kurrent.Client.SchemaRegistry;
 
 /// <summary>
@@ -10,8 +12,32 @@ public class MessageTypeMapper {
 
 	ConcurrentBidirectionalDictionary<string, Type> TypeMap { get; } = new();
 
-	/// <summary>
-	/// Attempts to add a mapping between a schema name and a message type.
+    /// <summary>
+    /// Attempts to add a mapping between a schema name and a message type.
+    /// </summary>
+    /// <param name="schemaName">The schema name to be mapped.</param>
+    /// <param name="messageType">The message type to associate with the schema name.</param>
+    /// <returns>
+    /// A result indicating whether the mapping was successful, a conflict with an existing mapping, or other states:
+    /// <c>true</c> if the mapping was successfully added;
+    /// <c>false</c> if the schema name was already mapped to the same message type;
+    /// <see cref="MessageTypeConflict"/> if the schema name was already mapped to a different message type.
+    /// </returns>
+    public Result<bool, MessageTypeConflict> Map(SchemaName schemaName, Type messageType) {
+        if (TypeMap.TryAdd(schemaName, messageType))
+            return true;
+
+        var mappedType = TypeMap[schemaName];
+        return mappedType != messageType
+            ? new MessageTypeConflict(schemaName, mappedType, messageType)
+            : false;
+    }
+
+
+    public Result<bool, MessageTypeConflict> Map<T>(SchemaName schemaName) => Map(schemaName, typeof(T));
+
+    /// <summary>
+    /// Attempts to add a mapping between a schema name and a message type.
 	/// </summary>
 	/// <param name="schemaName">The schema name to map.</param>
 	/// <param name="messageType">The message type to map to the schema name.</param>
@@ -231,4 +257,27 @@ public class MessageTypeResolutionException(SchemaName schemaName) : MessageType
 
 	static string FormatMessage(SchemaName schemaName) =>
 		$"Schema '{schemaName}' not mapped and does not match any known type";
+}
+
+public static class MessageTypeMapperErrors {
+    public readonly record struct MessageTypeAlreadyMapped(string schemaName, Type attemptedMessageType, Type registeredMessageType) {
+        public override string ToString() => $"Message '{attemptedMessageType.Name}' is already mapped with the name '{schemaName}' as '{registeredMessageType.FullName}'";
+    }
+
+    public readonly record struct SchemaNameMapNotFound(string schemaName) {
+        public override string ToString() => $"Schema '{schemaName}' not mapped";
+    }
+
+    public readonly record struct MessageTypeMapNotFound(Type messageType) {
+        public override string ToString() => $"Message '{messageType.Name}' not mapped";
+    }
+
+    public readonly record struct MessageTypeConflict(SchemaName schemaName, Type mappedType, Type attemptedType) {
+        public override string ToString() => $"Schema '{schemaName}' is already mapped with type '{mappedType.FullName}' "
+                                           + $"but attempted to use with incompatible type '{attemptedType.FullName}'";
+    }
+
+    public readonly record struct MessageTypeResolution(SchemaName schemaName) {
+        public override string ToString() => $"Schema '{schemaName}' not mapped and does not match any known type";
+    }
 }

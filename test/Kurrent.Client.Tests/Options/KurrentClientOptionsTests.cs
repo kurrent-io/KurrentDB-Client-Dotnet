@@ -29,7 +29,7 @@ public class KurrentClientOptionsTests {
         options.Gossip.ShouldBeEquivalentTo(KurrentClientGossipOptions.Default);
         options.Security.ShouldBe(KurrentClientSecurityOptions.Default);
         options.Resilience.ShouldBeEquivalentTo(KurrentClientResilienceOptions.NoResilience);
-        options.Schema.ShouldBeEquivalentTo(KurrentClientSchemaOptions.Default);
+        options.Schema.ShouldBeEquivalentTo(KurrentClientSchemaOptions.FullValidation);
         options.Interceptors.ShouldBeEmpty();
     }
 

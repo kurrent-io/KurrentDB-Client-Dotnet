@@ -68,7 +68,9 @@ public sealed partial class KurrentDBClient : KurrentDBClientBase {
 	/// <summary>
 	/// Constructs a new <see cref="KurrentDBClient"/>.
 	/// </summary>
-	/// <param name="settings"></param>
+	/// <param name="settings">
+	/// The settings to use for the client. If not provided, the default settings will be used.
+	/// </param>
 	public KurrentDBClient(KurrentDBClientSettings? settings = null) : base(settings, ExceptionMap) {
 		_log                 = Settings.LoggerFactory.CreateLogger<KurrentDBClient>();
 		_disposedTokenSource = new CancellationTokenSource();

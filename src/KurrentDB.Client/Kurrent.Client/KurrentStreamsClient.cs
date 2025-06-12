@@ -20,41 +20,41 @@ using StreamMetadata = Kurrent.Client.Model.StreamMetadata;
 namespace Kurrent.Client;
 
 public partial class KurrentStreamsClient { // Made partial
-    internal KurrentStreamsClient(CallInvoker callInvoker, KurrentDBClientSettings settings) {
-        Settings = settings;
-
-        ServiceClient = new StreamsServiceClient(callInvoker);
-        Registry      = new KurrentRegistryClient(callInvoker);
-
-        var typeMapper     = new MessageTypeMapper();
-        var schemaExporter = new SchemaExporter();
-        var schemaManager  = new SchemaManager(Registry, schemaExporter, typeMapper);
-
-        SerializerProvider = new SchemaSerializerProvider(
-            [
-                new BytesPassthroughSerializer(),
-                new JsonSchemaSerializer(
-                    new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap },
-                    schemaManager
-                ),
-                new ProtobufSchemaSerializer(
-                    new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap },
-                    schemaManager
-                )
-            ]
-        );
-
-        LegacyClient = new KurrentDBClient(settings);
-
-        LegacyConverter = new KurrentDBLegacyConverter(
-            SerializerProvider,
-            new MetadataDecoder(),
-            SchemaRegistryPolicy.NoRequirements
-        );
-    }
+    // internal KurrentStreamsClient(CallInvoker callInvoker, KurrentDBClientSettings legacySettings) {
+    //     LegacySettings = legacySettings;
+    //
+    //     ServiceClient = new StreamsServiceClient(callInvoker);
+    //     Registry      = new KurrentRegistryClient(callInvoker);
+    //
+    //     var typeMapper     = new MessageTypeMapper();
+    //     var schemaExporter = new SchemaExporter();
+    //     var schemaManager  = new SchemaManager(Registry, schemaExporter, typeMapper);
+    //
+    //     SerializerProvider = new SchemaSerializerProvider(
+    //         [
+    //             new BytesPassthroughSerializer(),
+    //             new JsonSchemaSerializer(
+    //                 new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap },
+    //                 schemaManager
+    //             ),
+    //             new ProtobufSchemaSerializer(
+    //                 new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap },
+    //                 schemaManager
+    //             )
+    //         ]
+    //     );
+    //
+    //     LegacyClient = new KurrentDBClient(legacySettings);
+    //
+    //     LegacyConverter = new KurrentDBLegacyConverter(
+    //         SerializerProvider,
+    //         new MetadataDecoder(),
+    //         SchemaRegistryPolicy.NoRequirements
+    //     );
+    // }
 
     internal KurrentStreamsClient(CallInvoker callInvoker, KurrentClientOptions options) {
-        Settings = options.ConvertToLegacySettings();
+        Options  = options;
 
         ServiceClient = new StreamsServiceClient(callInvoker);
         Registry      = new KurrentRegistryClient(callInvoker);
@@ -75,7 +75,9 @@ public partial class KurrentStreamsClient { // Made partial
             )
         ]);
 
-        LegacyClient = new KurrentDBClient(Settings);
+
+        LegacySettings = options.ConvertToLegacySettings();
+        LegacyClient = new KurrentDBClient(LegacySettings);
 
         LegacyConverter = new KurrentDBLegacyConverter(
             SerializerProvider,
@@ -84,13 +86,14 @@ public partial class KurrentStreamsClient { // Made partial
         );
     }
 
-    KurrentDBClientSettings   Settings           { get; }
-    StreamsServiceClient      ServiceClient      { get; }
-    KurrentRegistryClient     Registry           { get; }
-    ISchemaSerializerProvider SerializerProvider { get; }
+    internal KurrentClientOptions      Options            { get; }
+    internal StreamsServiceClient      ServiceClient      { get; }
+    internal KurrentRegistryClient     Registry           { get; }
+    internal ISchemaSerializerProvider SerializerProvider { get; }
 
-    KurrentDBClient          LegacyClient    { get; }
-    KurrentDBLegacyConverter LegacyConverter { get; }
+    internal KurrentDBClientSettings  LegacySettings  { get; }
+    internal KurrentDBClient          LegacyClient    { get; }
+    internal KurrentDBLegacyConverter LegacyConverter { get; }
 
     #region . Append .
 

@@ -11,11 +11,10 @@ public class KurrentClient : IAsyncDisposable {
 
         Options = options;
 
-        var settings = Options.ConvertToLegacySettings();
+        LegacyCallInvoker = new KurrentDBLegacyCallInvoker(
+            new LegacyClusterClient(Options.ConvertToLegacySettings()));
 
-        LegacyCallInvoker = new KurrentDBLegacyCallInvoker(new LegacyClusterClient(settings));
-
-        Streams  = new KurrentStreamsClient(LegacyCallInvoker, settings);
+        Streams  = new KurrentStreamsClient(LegacyCallInvoker, options);
         Registry = new KurrentRegistryClient(LegacyCallInvoker);
         Features = new KurrentFeaturesClient(LegacyCallInvoker);
     }
@@ -51,8 +50,6 @@ public class KurrentClient : IAsyncDisposable {
 
 	public ValueTask DisposeAsync() =>
 		LegacyCallInvoker.DisposeAsync();
-
-
 
     public static KurrentClient Create(KurrentClientOptions? options = null) =>
         new(options ?? new KurrentClientOptions());

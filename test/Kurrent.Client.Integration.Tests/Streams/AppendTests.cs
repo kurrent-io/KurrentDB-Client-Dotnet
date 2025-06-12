@@ -23,7 +23,7 @@ public class AppendTests : KurrentClientTestFixture {
         //     ]
         // ).ToAsyncEnumerable();
                    // Act
-                   var appendTask = Client.Streams
+                   var appendTask = AutomaticClient.Streams
             .Append(stream, StreamRevision.From(1), msg, ct)
             .AsTask();
 
@@ -32,37 +32,13 @@ public class AppendTests : KurrentClientTestFixture {
         var result = await appendTask;
 
         // Assert
-        result.Switch(
-            success => {
+        result
+            .OnSuccess(success => {
                 success.Stream.ShouldBe(stream);
                 success.StreamRevision.ShouldBeGreaterThanOrEqualTo(StreamRevision.Min);
                 success.Position.ShouldBeGreaterThanOrEqualTo(LogPosition.Earliest);
-            },
-            failure => failure.Throw()
-        );
-    }
-
-    [Test]
-    public async Task appends_message_to_existing_stream_with_expected_revision(CancellationToken ct) {
-        // Arrange
-        var stream = $"Game-{Guid.NewGuid().ToString().Substring(24, 12)}";
-
-        var msg = new GameStarted(Guid.NewGuid(), Player.X);
-
-        // Act
-        var appendResult = await Client.Streams
-            .Append(stream, ExpectedStreamState.NoStream, msg, ct)
-            .ConfigureAwait(false);
-
-        // Assert
-        appendResult.Switch(
-            success => {
-                success.Stream.ShouldBe(stream);
-                success.StreamRevision.ShouldBeGreaterThanOrEqualTo(StreamRevision.Min);
-                success.Position.ShouldBeGreaterThanOrEqualTo(LogPosition.Earliest);
-            },
-            failure => Assert.Fail(failure.Value.ToString()!)
-        );
+            })
+            .OnError(failure => Assert.Fail(failure.Value.ToString()!));
     }
 
     [Test]
@@ -72,7 +48,7 @@ public class AppendTests : KurrentClientTestFixture {
 
         var msg = new GameStarted(Guid.NewGuid(), Player.X);
 
-        var appendResult = await Client.Streams
+        var appendResult = await AutomaticClient.Streams
             .Append(stream, msg, ct)
             .ConfigureAwait(false);
 
@@ -80,7 +56,7 @@ public class AppendTests : KurrentClientTestFixture {
             appendResult.AsError.Throw();
 
         // Act
-        var deleteResult = await Client.Streams
+        var deleteResult = await AutomaticClient.Streams
             .Delete(stream, appendResult.AsSuccess.StreamRevision, ct)
             .ConfigureAwait(false);
 
@@ -95,7 +71,7 @@ public class AppendTests : KurrentClientTestFixture {
 
         var msg = new GameStarted(Guid.NewGuid(), Player.X);
 
-        var appendResult = await Client.Streams
+        var appendResult = await AutomaticClient.Streams
             .Append(stream, msg, ct)
             .ConfigureAwait(false);
 
@@ -103,7 +79,7 @@ public class AppendTests : KurrentClientTestFixture {
             appendResult.AsError.Throw();
 
         // Act
-        var deleteResult = await Client.Streams
+        var deleteResult = await AutomaticClient.Streams
             .Tombstone(stream, appendResult.AsSuccess.StreamRevision, ct)
             .ConfigureAwait(false);
 

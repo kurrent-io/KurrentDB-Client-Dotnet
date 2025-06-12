@@ -65,4 +65,18 @@ static class SystemTypes {
 	/// <returns><c>true</c> if the type's full name matches the specified name; otherwise, <c>false</c>.</returns>
 	public static bool MatchesFullName(this Type type, string name) =>
 		type.FullName?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false;
+
+    /// <summary>
+    /// Determines whether the namespace of the specified <see cref="Type"/> matches the given namespace prefix.
+    /// </summary>
+    /// <param name="type">
+    /// The <see cref="Type"/> whose namespace is to be compared.
+    /// </param>
+    /// <param name="namespacePrefix">
+    /// The namespace prefix to compare with the namespace of the specified type.
+    /// </param>
+    /// <returns>
+    /// <c>true</c> if the namespace of the specified type matches the namespace prefix; otherwise, <c>false</c>.
+    /// </returns>
+    public static bool MatchesNamespace(this Type type, string namespacePrefix) => type.Namespace?.Equals(namespacePrefix, StringComparison.OrdinalIgnoreCase) ?? false;
 }

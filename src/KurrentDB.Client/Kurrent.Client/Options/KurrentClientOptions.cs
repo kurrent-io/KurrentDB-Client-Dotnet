@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Net;
 using Grpc.Core.Interceptors;
 using Kurrent.Client.Model;
+using Kurrent.Client.SchemaRegistry;
 using KurrentDB.Client;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -93,7 +94,11 @@ public record KurrentClientOptions : KurrentClientOptionsBase {
     /// </summary>
     public DnsEndPoint[] Endpoints { get; init; } = [new DnsEndPoint("localhost", 2113)];
 
-
+    /// <summary>
+    /// Represents the configuration options for gossip-based discovery in the KurrentDB cluster.
+    /// This property provides settings such as discovery intervals, timeouts, and preferences
+    /// for selecting nodes during communication in the cluster.
+    /// </summary>
     public KurrentClientGossipOptions Gossip { get; init; } = KurrentClientGossipOptions.Default;
 
     /// <summary>
@@ -139,7 +144,16 @@ public record KurrentClientOptions : KurrentClientOptionsBase {
     /// Controls how the client handles event schemas and versioning.
     /// </para>
     /// </remarks>
-    public KurrentClientSchemaOptions Schema { get; init; } = KurrentClientSchemaOptions.Default;
+    public KurrentClientSchemaOptions Schema { get; init; } = KurrentClientSchemaOptions.FullValidation;
+
+    /// <summary>
+    /// Provides a mechanism for mapping message types to their corresponding schemas.
+    /// </summary>
+    /// <remarks>
+    /// The mapper is used to associate specific message types with their schemas in the schema registry.
+    /// This ensures that the correct schema is utilized when producing or consuming messages.
+    /// </remarks>
+    public MessageTypeMapper Mapper { get; init; } = new();
 
 	/// <summary>
 	/// An optional list of <see cref="Interceptor"/>s to use.

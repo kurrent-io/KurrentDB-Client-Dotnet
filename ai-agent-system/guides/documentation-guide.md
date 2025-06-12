@@ -26,7 +26,7 @@ Last updated: 2025-06-09
 - **Document edge cases and error conditions** that aren't obvious from the method signature
 - **Cross-reference related functionality** to help developers discover related features
 
-## ?? XML Documentation Requirements
+## XML Documentation Requirements
 
 ### Special Comment Tags
 

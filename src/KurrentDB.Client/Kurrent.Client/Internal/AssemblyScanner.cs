@@ -198,4 +198,13 @@ static class AssemblyScannerExtensions {
 	/// <returns>The first <see cref="Type"/> in the query or a placeholder type if no types are found.</returns>
 	internal static Type FirstOrMissing(this ParallelQuery<Type> scan) =>
 		scan.FirstOrDefault() ?? SystemTypes.MissingType;
+
+    /// <summary>
+    /// Filters the scanned types to include only those within the specified namespace prefix.
+    /// </summary>
+    /// <param name="scan">A <see cref="ParallelQuery{Type}"/> containing types to be filtered.</param>
+    /// <param name="namespacePrefix">The namespace prefix to be matched against the namespaces of the types.</param>
+    /// <returns>A <see cref="ParallelQuery{Type}"/> containing types that match the given namespace prefix.</returns>
+    internal static ParallelQuery<Type> InstancesInNamespace(this ParallelQuery<Type> scan, string namespacePrefix) =>
+        scan.Where(t => t.MatchesNamespace(namespacePrefix));
 }

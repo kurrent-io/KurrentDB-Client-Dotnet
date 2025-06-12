@@ -1,6 +1,7 @@
 using System.Net;
 using Grpc.Core.Interceptors;
 using Kurrent.Client.Model;
+using Kurrent.Client.SchemaRegistry;
 using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Client;
@@ -258,24 +259,6 @@ public sealed class KurrentClientOptionsBuilder {
     public KurrentClientOptionsBuilder ConfigureResilience(Func<KurrentClientResilienceOptions, KurrentClientResilienceOptions> configure) =>
         With(options => options with { Resilience = configure(options.Resilience) });
 
-    // /// <summary>
-    // /// Sets the retry options for resilience.
-    // /// </summary>
-    // /// <param name="retryOptions">The retry configuration options.</param>
-    // /// <returns>The builder instance for method chaining.</returns>
-    // public KurrentClientOptionsBuilder WithRetryOptions(KurrentClientResilienceOptions.RetryOptions retryOptions) =>
-    //     With(options => options with { Resilience = options.Resilience with { Retry = retryOptions } });
-    //
-    // /// <summary>
-    // /// Configures the existing retry options.
-    // /// </summary>
-    // /// <param name="configure">
-    // /// A function to configure the existing <see cref="KurrentClientResilienceOptions.RetryOptions"/>.
-    // /// </param>
-    // /// <returns>The builder instance for method chaining.</returns>
-    // public KurrentClientOptionsBuilder WithRetryOptions(Func<KurrentClientResilienceOptions.RetryOptions, KurrentClientResilienceOptions.RetryOptions> configure) =>
-    //     With(options => options with { Resilience = options.Resilience with { Retry = configure(options.Resilience.Retry) } });
-
     /// <summary>
     /// Sets the schema options.
     /// </summary>
@@ -283,6 +266,17 @@ public sealed class KurrentClientOptionsBuilder {
     /// <returns>The builder instance for method chaining.</returns>
     public KurrentClientOptionsBuilder WithSchema(KurrentClientSchemaOptions schemaOptions) =>
         With(options => options with { Schema = schemaOptions });
+
+
+    public KurrentClientOptionsBuilder WithMessages(Action<MessageMappingBuilder> configure) {
+        if (configure == null)
+            throw new ArgumentNullException(nameof(configure));
+
+        var mappingBuilder = new MessageMappingBuilder();
+        configure(mappingBuilder);
+
+        return With(options => options with { Mapper = mappingBuilder.Build() });
+    }
 
     /// <summary>
     /// Configures the existing schema options.

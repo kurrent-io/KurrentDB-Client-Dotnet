@@ -36,7 +36,7 @@ public class ResultMethodsGenerator : ISourceGenerator {
         }
     }
 
-    bool InheritsFromResult(INamedTypeSymbol classSymbol, out ITypeSymbol? successType, out ITypeSymbol? errorType) {
+    static bool InheritsFromResult(INamedTypeSymbol classSymbol, out ITypeSymbol? successType, out ITypeSymbol? errorType) {
         successType = null;
         errorType   = null;
 
@@ -57,7 +57,7 @@ public class ResultMethodsGenerator : ISourceGenerator {
         return false;
     }
 
-    string GenerateSource(INamedTypeSymbol classSymbol, ITypeSymbol successType, ITypeSymbol errorType) {
+    static string GenerateSource(INamedTypeSymbol classSymbol, ITypeSymbol successType, ITypeSymbol errorType) {
         var className                   = classSymbol.Name;
         var successTypeName             = successType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var errorTypeName               = errorType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);

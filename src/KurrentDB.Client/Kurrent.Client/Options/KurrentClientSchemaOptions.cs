@@ -19,8 +19,8 @@ namespace Kurrent.Client;
 /// schemas are automatically registered, validated, and how schema names are generated.
 /// </para>
 /// <para>
-/// Several predefined configurations are available as static properties: <see cref="Default"/>,
-/// <see cref="NoAutoRegister"/>, <see cref="NoValidation"/>, and <see cref="Disabled"/>.
+/// Several predefined configurations are available as static properties: <see cref="FullValidation"/>,
+/// <see cref="NoAutomaticRegistration"/>, <see cref="NoValidation"/>, and <see cref="Disabled"/>.
 /// </para>
 /// </remarks>
 /// <example>
@@ -113,7 +113,7 @@ public record KurrentClientSchemaOptions : KurrentClientOptionsBase {
 	/// <returns>
 	/// A new <see cref="KurrentClientSchemaOptions"/> instance with default settings.
 	/// </returns>
-	public static KurrentClientSchemaOptions Default => new();
+	public static KurrentClientSchemaOptions FullValidation => new();
 
 	/// <summary>
 	/// Schema options with automatic registration disabled.
@@ -131,7 +131,7 @@ public record KurrentClientSchemaOptions : KurrentClientOptionsBase {
 	/// <returns>
 	/// A new <see cref="KurrentClientSchemaOptions"/> instance with auto-registration disabled.
 	/// </returns>
-	public static KurrentClientSchemaOptions NoAutoRegister => new() {
+	public static KurrentClientSchemaOptions NoAutomaticRegistration => new() {
 		AutoRegister = false
 	};
 

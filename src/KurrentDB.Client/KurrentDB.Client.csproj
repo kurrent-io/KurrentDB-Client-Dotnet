@@ -52,8 +52,8 @@
 
   <ItemGroup>
     <!-- Source Generators: Embed as analyzer, don't propagate as dependency -->
-    <ProjectReference Include="..\Kurrent.Client.SourceGenerators\Kurrent.Client.SourceGenerators.csproj" 
-                      OutputItemType="Analyzer" 
+    <ProjectReference Include="..\Kurrent.Client.SourceGenerators\Kurrent.Client.SourceGenerators.csproj"
+                      OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
 
     <ProjectReference Include="..\Whatever.SourceGenerators\Whatever.SourceGenerators.csproj"
@@ -69,6 +69,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Kurrent.Client" />
     <InternalsVisibleTo Include="Kurrent.Client.Tests" />
+    <InternalsVisibleTo Include="Kurrent.Client.Integration.Tests" />
     <InternalsVisibleTo Include="KurrentDB.Client.Tests" />
     <InternalsVisibleTo Include="KurrentDB.Client.Tests.Common" />
     <InternalsVisibleTo Include="KurrentDB.Client.Operations.Tests" />
@@ -77,6 +78,10 @@
     <InternalsVisibleTo Include="KurrentDB.Client.Streams.Tests" />
     <InternalsVisibleTo Include="KurrentDB.Client.UserManagement.Tests" />
     <InternalsVisibleTo Include="KurrentDB.Client.Extensions.OpenTelemetry" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Kurrent.SchemaRegistry\" />
   </ItemGroup>
 
   <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">
@@ -144,5 +149,3 @@
 <!--  </Target>-->
 
 </Project>
-
-
