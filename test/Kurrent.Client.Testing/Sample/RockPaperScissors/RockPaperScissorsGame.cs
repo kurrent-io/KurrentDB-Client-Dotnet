@@ -108,25 +108,17 @@ public record Game {
         };
 
         // Handle game completion if necessary
-        if (IsGameComplete(
-                updatedRounds, player1Score, player2Score,
-                out var gameWinner
-            )) {
-            var gameStatus = gameWinner == null
-                ? GameStatus.Draw
-                : gameWinner == Player.Player1
-                    ? GameStatus.Player1Won
-                    : GameStatus.Player2Won;
+        if (IsGameComplete(updatedRounds, player1Score, player2Score, out var gameWinner)) {
+            var gameStatus = gameWinner switch {
+                null           => GameStatus.Draw,
+                Player.Player1 => GameStatus.Player1Won,
+                _              => GameStatus.Player2Won
+            };
 
             if (gameStatus == GameStatus.Draw)
                 events.Add(new GameDraw(Id, player1Score)); // Scores are equal
             else
-                events.Add(
-                    new GameWon(
-                        Id, gameWinner.Value, player1Score,
-                        player2Score
-                    )
-                );
+                events.Add(new GameWon(Id, gameWinner!.Value, player1Score, player2Score));
 
             newGame = newGame with { Status = gameStatus, Winner = gameWinner };
         }

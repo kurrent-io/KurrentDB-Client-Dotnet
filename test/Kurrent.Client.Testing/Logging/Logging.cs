@@ -24,7 +24,7 @@ public static class Logging {
 
     static Subject<LogEvent> OnNext { get; } = new();
 
-    static IConfiguration Configuration { get; set; }
+    static IConfiguration Configuration { get; set; } = null!;
 
     public static void Initialize(IConfiguration configuration) {
 	    Configuration =	configuration;

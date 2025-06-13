@@ -11,7 +11,7 @@ namespace Kurrent;
 /// <typeparam name="TError">The type of the error value.</typeparam>
 [PublicAPI]
 [DebuggerDisplay("{ToString(),nq}")]
-public partial class Result<TSuccess, TError> {
+public partial class Result<TSuccess, TError> : IEquatable<Result<TSuccess, TError>> {
     readonly TSuccess? _success;
     readonly TError?   _error;
 
@@ -29,6 +29,16 @@ public partial class Result<TSuccess, TError> {
             _success = success;
         else
             _error  = error;
+    }
+
+    protected Result(TSuccess success) {
+        IsSuccess = true;
+        _success  = success;
+    }
+
+    protected Result(TError error) {
+        IsSuccess = false;
+        _error    = error;
     }
 
     /// <summary>
@@ -55,6 +65,33 @@ public partial class Result<TSuccess, TError> {
     public TError AsError =>
         IsError ? _error! : throw new InvalidOperationException("Result is not an error.");
 
+    public override string ToString() => IsSuccess ? $"Success({AsSuccess})" : $"Failure({AsError})";
+
+    #region . equality members .
+
+    public bool Equals(Result<TSuccess, TError>? other) {
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+
+        return IsSuccess == other.IsSuccess
+            && EqualityComparer<TSuccess?>.Default.Equals(_success, other._success)
+            && EqualityComparer<TError?>.Default.Equals(_error, other._error);
+    }
+
+    public override bool Equals(object? obj) {
+        if (obj is null) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != GetType()) return false;
+        return Equals((Result<TSuccess, TError>)obj);
+    }
+
+    public override int GetHashCode() => HashCode.Combine(_success, _error, IsSuccess);
+
+    public static bool operator ==(Result<TSuccess, TError>? left, Result<TSuccess, TError>? right) => Equals(left, right);
+    public static bool operator !=(Result<TSuccess, TError>? left, Result<TSuccess, TError>? right) => !Equals(left, right);
+
+    #endregion
+
     /// <summary>
     /// Creates a new <see cref="Result{TSuccess,TError}"/> representing a successful operation.
     /// </summary>
@@ -65,9 +102,8 @@ public partial class Result<TSuccess, TError> {
     /// </summary>
     public static Result<TSuccess, TError> Error(TError error) => new(false, default, error);
 
-    public override string ToString() => IsSuccess ? $"Success({AsSuccess})" : $"Failure({AsError})";
 
-    #region . Implicit and Explicit Conversions .
+    #region . implicit and explicit conversions .
 
     /// <summary>
     /// Implicitly converts a success value to a <see cref="Result{TSuccess,TError}"/>.

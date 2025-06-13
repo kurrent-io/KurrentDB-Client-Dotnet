@@ -1,72 +1,85 @@
 #pragma warning disable CA1822 // Mark members as static
 
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
 using Kurrent.Client.Model;
 using Kurrent.Client.Testing.Fixtures;
+using Kurrent.Client.Testing.Sample;
 using KurrentDB.Client;
+using RockPaperScissors;
 using Serilog;
 using Serilog.Extensions.Logging;
 using TicTacToe;
+using GameDraw = TicTacToe.GameDraw;
+using GameWon = TicTacToe.GameWon;
 
 namespace Kurrent.Client.Tests;
 
 [PublicAPI]
 public class KurrentClientTestFixture : TestFixture {
-	readonly Lazy<KurrentClient> _lazyAutomaticClient = new(() => KurrentClientOptions
-        .FromConnectionString(KurrentDBContainerAutoWireUp.Container.AuthenticatedConnectionString)
-        .WithLoggerFactory(new SerilogLoggerFactory(Log.Logger))
-        .WithSchema(KurrentClientSchemaOptions.NoValidation)
-        .WithResilience(KurrentClientResilienceOptions.NoResilience)
-        .CreateClient()
-    );
+    readonly Lazy<KurrentClient> _lazyLightweightClient    = new(() => CreateClient());
+    readonly Lazy<KurrentClient> _lazyAutomaticClient      = new(() => CreateClient(options => options.WithSchema(KurrentClientSchemaOptions.NoValidation)));
+    readonly Lazy<KurrentClient> _lazyCorpoClient = new(() => CreateClient(options => options.WithSchema(KurrentClientSchemaOptions.FullValidation)));
+
 
     /// <summary>
-    /// Client with automatic serialization and deserialization of messages and no validation.
+    /// Lightweight client with automatic serde and without any schema integration configured
+    /// </summary>
+    protected KurrentClient LightweightClient => _lazyAutomaticClient.Value;
+
+    /// <summary>
+    /// Lightweight client with automatic schema registration enabled.
     /// </summary>
 	protected KurrentClient AutomaticClient => _lazyAutomaticClient.Value;
 
-    readonly Lazy<KurrentClient> _lazyFullValidationClient = new(() => KurrentClientOptions
-        .FromConnectionString(KurrentDBContainerAutoWireUp.Container.AuthenticatedConnectionString)
-        .WithLoggerFactory(new SerilogLoggerFactory(Log.Logger))
-        .WithSchema(KurrentClientSchemaOptions.FullValidation)
-        .WithResilience(KurrentClientResilienceOptions.NoResilience)
-        .CreateClient()
-    );
+    /// <summary>
+    /// Client with full schema integration enabled, which includes schema auto registration and validation.
+    /// </summary>
+    protected KurrentClient CorpoClient => _lazyCorpoClient.Value;
 
     /// <summary>
-    /// A client configured for full validation during testing.
+    /// Creates a new instance of <see cref="KurrentClient"/> with the specified configuration options.
     /// </summary>
-    /// <remarks>
-    /// This client performs comprehensive validation and is utilized for scenarios where stricter
-    /// verification of interactions with the database or system under test is required.
-    /// </remarks>
-    protected KurrentClient FullValidationClient => _lazyFullValidationClient.Value;
+    /// <param name="configure">
+    /// An optional action to configure the <see cref="KurrentClientOptionsBuilder"/>. If not provided, default options will be used.
+    /// </param>
+    /// <returns>
+    /// A new instance of <see cref="KurrentClient"/> configured with the specified options.
+    /// </returns>
+    public static KurrentClient CreateClient(Action<KurrentClientOptionsBuilder>? configure = null) {
+        var options = KurrentClientOptions
+            .FromConnectionString(KurrentDBContainerAutoWireUp.Container.AuthenticatedConnectionString)
+            .WithLoggerFactory(new SerilogLoggerFactory(Log.Logger))
+            .WithSchema(KurrentClientSchemaOptions.Disabled)
+            .WithResilience(KurrentClientResilienceOptions.NoResilience);
 
-    // readonly Lazy<KurrentDBClient> _lazyLegacyClient = new(() => {
-    //     var settings = KurrentDBClientSettings
-    //         .Create(KurrentDBContainerAutoWireUp.Container.AuthenticatedConnectionString)
-    //         .With(x => { x.LoggerFactory = new SerilogLoggerFactory(Log.Logger); });
-    //
-    //     return new KurrentDBClient(settings);
-    // });
-    //
-    // /// <summary>
-    // /// The legacy client used for interacting with KurrentDB streams.
-    // /// </summary>
-    // protected KurrentDBClient LegacyClient => _lazyLegacyClient.Value;
+        configure?.Invoke(options);
+
+        return options.CreateClient();
+    }
 
     /// <summary>
     /// Creates a unique stream name for KurrentDB operations, combining the given category with the last part of a randomly generated guid.
     /// </summary>
     /// <param name="category">The category associated with the stream name.</param>
     /// <returns>A StreamName instance containing the generated stream name.</returns>
-
     public StreamName CreateStreamName(string category) =>
         StreamName.From($"{category}-{Guid.NewGuid().ToString().Substring(24, 12)}");
 
-    #region Helpers
+    /// <summary>
+    /// Creates a unique stream name for KurrentDB operations, combining the given category with the last part of a randomly generated guid.
+    /// </summary>
+    /// <param name="game">
+    /// The game for which the stream name is being created. This will be used to generate a stream name specific to the game type.
+    /// </param>
+    /// <returns>A StreamName instance containing the generated stream name.</returns>
+    public StreamName CreateGameStreamName(GamesAvailable game) =>
+        CreateStreamName(game.ToString());
 
-    public async ValueTask<(LogPosition Position, StreamRevision Revision, List<Message> Messages)> SeedTestMessagesAsync(
+    #region . helpers
+
+    public async ValueTask<(LogPosition Position, StreamRevision Revision, List<Message> Messages)> SeedTestMessages(
         string streamName,
         Action<Metadata> transformMetadata,
         SchemaDataFormat dataFormat = SchemaDataFormat.Json,
@@ -76,11 +89,15 @@ public class KurrentClientTestFixture : TestFixture {
 
         var result = await AutomaticClient.Streams
             .Append(streamName, messages, cancellationToken)
+            .OnErrorAsync(err => err.Throw())
+            .MatchAsync(
+                 Result.Success<AppendStreamSuccess, AppendStreamFailure>,
+                 Result.Failure<AppendStreamSuccess, AppendStreamFailure>)
             .ConfigureAwait(false);
 
         var (stream, logPosition, streamRevision) = result.Match(
             success => success ,
-            error =>  throw error.Throw()
+            error   => throw error.ToException()
         );
 
         Log.Information(
@@ -88,6 +105,86 @@ public class KurrentClientTestFixture : TestFixture {
             messages.Count, stream, logPosition, streamRevision);
 
         return (logPosition, streamRevision, messages);
+    }
+
+    public async IAsyncEnumerable<(Guid GameId, StreamName Stream, List<Message> GameEvents, LogPosition Position, StreamRevision Revision)> SeedGameSimulations(
+        int simulationsCount,
+        Action<Metadata>? transformMetadata = null,
+        SchemaDataFormat dataFormat = SchemaDataFormat.Json,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default
+    ) {
+        transformMetadata ??= _ => { };
+
+        foreach (var i in Enumerable.Range(0, simulationsCount)) {
+            var simulatedGame = (i % 2) switch {
+                0 => SimulateGame(GamesAvailable.TicTacToe, transformMetadata, dataFormat),
+                _ => SimulateGame(GamesAvailable.RockPaperScissors, transformMetadata, dataFormat)
+            };
+
+            var result = await AutomaticClient.Streams
+                .Append(simulatedGame.Stream, simulatedGame.GameEvents, cancellationToken)
+                .OnErrorAsync(err => err.Throw())
+                .MatchAsync(
+                    Result.Success<AppendStreamSuccess, AppendStreamFailure>,
+                    Result.Failure<AppendStreamSuccess, AppendStreamFailure>)
+                .ConfigureAwait(false);
+
+            var (_, logPosition, streamRevision) = result.Match(
+                success => success ,
+                error   => throw error.ToException()
+            );
+
+            Log.Debug(
+                "Simulated game {GameId} and with {Count} events to stream {StreamName} at position {LogPosition} with revision {StreamRevision}",
+                simulatedGame.GameId, simulatedGame.GameEvents.Count, simulatedGame.Stream, logPosition, streamRevision);
+
+            yield return (
+                simulatedGame.GameId,
+                simulatedGame.Stream,
+                simulatedGame.GameEvents,
+                logPosition,
+                streamRevision
+            );
+        }
+    }
+
+    public (Guid GameId, StreamName Stream, List<Message> GameEvents) SimulateGame(GamesAvailable game, Action<Metadata>? transformMetadata = null, SchemaDataFormat dataFormat = SchemaDataFormat.Json) {
+        var simulatedGame = SimulatedGame();
+        var metadata = new Metadata().Transform(transformMetadata ?? (_ => { }));
+
+        var messages = simulatedGame.GameEvents.Aggregate(new List<Message>(), (acc, evt) => {
+            var moveId = Guids.CreateVersion7();
+            acc.Add(Message.New
+                .WithRecordId(moveId)
+                .WithValue(evt)
+                .WithMetadata(metadata
+                    .With("$tests.game.id", simulatedGame.GameId)
+                    .With("$tests.game.name", nameof(TicTacToe))
+                    .With("$tests.game.stream", simulatedGame.Stream)
+                    .With("$tests.game.move-id", moveId)
+                    .With("$tests.game.move-sequence", acc.Count + 1))
+                .WithDataFormat(dataFormat)
+                .Build());
+
+            return acc;
+        });
+
+        return (simulatedGame.GameId, simulatedGame.Stream, messages);
+
+        (Guid GameId, StreamName Stream, List<object> GameEvents) SimulatedGame() {
+            if (game == GamesAvailable.TicTacToe) {
+                var (id, events, _) = TicTacToeSimulator.SimulateGame();
+                simulatedGame       = (id, CreateGameStreamName(game), events);
+            }
+            else if (game == GamesAvailable.RockPaperScissors) {
+                var (id, events, _) = RockPaperScissorsSimulator.SimulateGame();
+                simulatedGame       = (id, CreateGameStreamName(game), events);
+            }
+            else
+                throw new UnreachableException($"The game '{game}' is not recognized or supported.");
+
+            return simulatedGame;
+        }
     }
 
     /// <summary>

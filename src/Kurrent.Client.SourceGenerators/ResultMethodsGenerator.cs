@@ -42,8 +42,7 @@ public class ResultMethodsGenerator : ISourceGenerator {
 
         var baseType = classSymbol.BaseType;
         while (baseType != null) {
-            if (baseType.IsGenericType &&
-                baseType.Name == "Result" &&
+            if (baseType is { IsGenericType: true, Name: "Result" } &&
                 baseType.ContainingNamespace.ToDisplayString() == "Kurrent")
                 if (baseType.TypeArguments.Length == 2) {
                     successType = baseType.TypeArguments[0];

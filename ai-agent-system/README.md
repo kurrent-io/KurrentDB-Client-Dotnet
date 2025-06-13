@@ -145,7 +145,7 @@ This system works with:
 ## ? Project Instructions Versioning
 
 ### Versioning Strategy
-- Use semantic versioning: `project-instructions-[PROJECT]-v1.2.md`
+- Use semantic versioning: `project-instructions-v1.2.md`
 - Update version when architecture changes significantly
 - Keep changelog of major updates in project instructions file
 - Archive old versions when creating new major versions

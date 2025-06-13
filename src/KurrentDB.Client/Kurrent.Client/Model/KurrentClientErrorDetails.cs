@@ -35,7 +35,7 @@ public abstract record KurrentClientErrorDetails {
     /// </summary>
     /// <param name="innerException">The exception that is the cause of the current exception, or a null reference if no inner exception is specified.</param>
     /// <returns>A new <see cref="KurrentClientException"/> instance populated with details from this error definition.</returns>
-    public KurrentClientException GetException(Exception? innerException = null) {
+    public KurrentClientException CreateException(Exception? innerException = null) {
         Debug.Assert(
             !string.IsNullOrWhiteSpace(ErrorMessage),
             $"ErrorMessage cannot be empty. If you see this, ensure that "
@@ -50,7 +50,7 @@ public abstract record KurrentClientErrorDetails {
     /// <returns>This method always throws an exception and does not return a value.</returns>
     /// <exception cref="KurrentClientException">Always thrown by this method, encapsulating the error details defined in this record.</exception>
     public KurrentClientException Throw(Exception? innerException = null) =>
-        throw GetException(innerException);
+        throw CreateException(innerException);
 
     public override string ToString() => $"({ErrorCode}) {ErrorMessage}";
 }

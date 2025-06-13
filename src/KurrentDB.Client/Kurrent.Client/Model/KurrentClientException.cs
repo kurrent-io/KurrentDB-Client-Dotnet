@@ -1,3 +1,5 @@
+using Kurrent.Whatever;
+
 namespace Kurrent.Client.Model;
 
 /// <summary>
@@ -47,4 +49,20 @@ public class KurrentClientException(string errorCode, string message, Exception?
     /// <exception cref="ArgumentException"><paramref name="operation"/> is empty or consists only of white-space characters.</exception>
     public static KurrentClientException ThrowUnknown(string operation, Exception innerException) =>
         throw CreateUnknown(operation, innerException);
+}
+
+public static class KurrentClientExceptionExtensions {
+    public static KurrentClientException ToException(this IWhatever whateverError, Exception? innerException = null) {
+        if (whateverError.Value is KurrentClientErrorDetails error)
+            return error.CreateException(innerException);
+
+        var invalidEx = new InvalidOperationException(
+            $"The error value is not a KurrentClientErrorDetails instance but rather " +
+            $"{whateverError.Value.GetType().FullName}", innerException);
+
+        return KurrentClientException.CreateUnknown("KurrentClientExceptionExtensions.Throw", invalidEx);
+    }
+
+    public static KurrentClientException Throw(this IWhatever whateverError, Exception? innerException = null) =>
+        throw whateverError.ToException(innerException);
 }

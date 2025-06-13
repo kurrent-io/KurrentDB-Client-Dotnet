@@ -1,10 +1,10 @@
 # Repository Analysis & Project Instructions Generator
 
-## Your Task
+## ? Your Task
 
 Analyze this repository thoroughly and create customized project instructions using the provided Project Instructions Template. You'll need to understand the codebase architecture, patterns, domain concepts, and implementation approaches to fill out the template accurately.
 
-## Project Type Analysis
+## ? Project Type Analysis
 
 Before beginning the detailed analysis, identify the project type to adapt your analysis approach:
 
@@ -38,7 +38,7 @@ Before beginning the detailed analysis, identify the project type to adapt your 
 - **Priorities**: Throughput, data quality, pipeline reliability, resource efficiency
 - **Special Considerations**: Data validation, error handling, backpressure, batch vs streaming
 
-## Analysis Phase
+## ? Analysis Phase
 
 ### Step 1: Repository Structure Analysis
 - Examine the overall directory structure and organization
@@ -88,7 +88,7 @@ Before beginning the detailed analysis, identify the project type to adapt your 
 - Note mocking strategies and test data management
 - Identify testing anti-patterns to avoid
 
-## Template Completion Phase
+## ? Template Completion Phase
 
 Using your analysis, fill out the **Project Instructions Template** by replacing all `[BRACKETED_PLACEHOLDERS]` with project-specific information:
 
@@ -140,31 +140,31 @@ Using your analysis, fill out the **Project Instructions Template** by replacing
 - Note any trade-offs that were made consciously
 - **Adapt priorities based on project type** (see Project Type Analysis section)
 
-## Quality Criteria
+## ? Quality Criteria
 
 Your analysis should result in project instructions that:
 
-### Accuracy
+### ? Accuracy
 - Correctly represent the actual codebase structure and patterns
 - Use terminology consistent with the project's documentation
 - Reflect the actual implementation approaches used
 
-### Completeness
+### ? Completeness
 - Cover all major architectural components and patterns
 - Include domain-specific knowledge that would be non-obvious to newcomers
 - Address both happy-path and edge-case considerations
 
-### Specificity
+### ? Specificity
 - Provide concrete, actionable guidance
 - Avoid generic advice that could apply to any project
 - Include specific examples relevant to this codebase
 
-### Developer Focus
+### ? Developer Focus
 - Help developers understand how to work effectively in this codebase
 - Identify the patterns they should follow and pitfalls they should avoid
 - Provide context for architectural decisions
 
-## Example Quality Indicators
+## ? Example Quality Indicators
 
 **Good:** "Events are immutable facts representing changes in the system. The event log is the source of truth, not the current state. Use optimistic concurrency for handling conflicting writes."
 
@@ -174,7 +174,7 @@ Your analysis should result in project instructions that:
 
 **Bad:** "Use the client library to interact with the system."
 
-## Output Format
+## ? Output Format
 
 Provide the completed Project Instructions by:
 1. **Project Type Identification**: Clearly state the project type and analysis approach used
@@ -184,7 +184,7 @@ Provide the completed Project Instructions by:
 5. **Assumptions**: Note any areas where you needed to make assumptions due to limited information
 6. **Adaptation Notes**: Explain how the analysis was adapted for the specific project type
 
-## Final Checklist
+## ? Final Checklist
 
 Before submitting, verify that:
 - [ ] **Project type has been correctly identified** and analysis adapted accordingly
@@ -197,11 +197,11 @@ Before submitting, verify that:
 - [ ] All sections provide actionable, specific guidance
 - [ ] **Project type considerations** are reflected in principles and anti-patterns
 
-## Cross-References
+## ? Cross-References
 
 **After completing analysis**, mention relevant specialized guides:
-- For performance-critical projects: Recommend loading `guides/performance-guide.md`
-- For projects with extensive testing: Recommend loading `guides/testing-guide.md` 
-- For library/SDK projects: Recommend loading `guides/documentation-guide.md`
+- For performance-critical projects ? Recommend loading `guides/performance-guide.md`
+- For projects with extensive testing ? Recommend loading `guides/testing-guide.md` 
+- For library/SDK projects ? Recommend loading `guides/documentation-guide.md`
 
 Begin your analysis now.

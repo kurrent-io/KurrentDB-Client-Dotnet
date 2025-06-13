@@ -13,7 +13,8 @@ public static class ErrorDetails {
         /// <summary>
         /// Gets the error message indicating that the stream was not found.
         /// </summary>
-        public override string ErrorMessage => $"Stream '{Stream}' not found.";
+        public override string ErrorMessage =>
+            $"Stream '{Stream}' not found.";
     }
 
     /// <summary>
@@ -24,7 +25,8 @@ public static class ErrorDetails {
         /// <summary>
         /// Gets the error message indicating that the stream has been deleted.
         /// </summary>
-        public override string ErrorMessage => $"Stream '{Stream}' has been deleted.";
+        public override string ErrorMessage =>
+            $"Stream '{Stream}' has been deleted.";
     }
 
     /// <summary>
@@ -35,7 +37,8 @@ public static class ErrorDetails {
         /// <summary>
         /// Gets the error message indicating that access to the stream was denied.
         /// </summary>
-        public override string ErrorMessage => $"Stream '{Stream}' access denied.";
+        public override string ErrorMessage =>
+            $"Stream '{Stream}' access denied.";
     }
 
     /// <summary>
@@ -46,7 +49,8 @@ public static class ErrorDetails {
         /// <summary>
         /// Gets the error message indicating that the transaction size limit was exceeded.
         /// </summary>
-        public override string ErrorMessage => $"Transaction size exceeded. Maximum allowed size: {MaxSize}";
+        public override string ErrorMessage =>
+            $"Transaction size exceeded. Maximum allowed size: {MaxSize}";
     }
 
     /// <summary>
@@ -58,6 +62,7 @@ public static class ErrorDetails {
         /// <summary>
         /// Gets the error message indicating a stream revision conflict.
         /// </summary>
-        public override string ErrorMessage => $"Stream '{Stream}' operation failed due to revision conflict. Actual revision: {StreamRevision}.";
+        public override string ErrorMessage =>
+            $"Stream '{Stream}' operation failed due to revision conflict. Actual revision: {StreamRevision}.";
     }
 }

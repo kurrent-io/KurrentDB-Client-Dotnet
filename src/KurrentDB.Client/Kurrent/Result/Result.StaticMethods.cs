@@ -77,7 +77,7 @@ public static partial class Result {
     /// If the operation succeeds, the result contains the success value.
     /// If the operation fails, the result contains the mapped error.
     /// </returns>
-    public static async Task<Result<TSuccess, TError>> Try<TSuccess, TError>(Func<Task<TSuccess>> func, Func<Exception, TError> errorHandler) where TSuccess : notnull where TError : notnull {
+    public static async Task<Result<TSuccess, TError>> TryAsync<TSuccess, TError>(Func<Task<TSuccess>> func, Func<Exception, TError> errorHandler) where TSuccess : notnull where TError : notnull {
         try {
             var result = await func().ConfigureAwait(false);
             return Success<TSuccess, TError>(result);
@@ -100,7 +100,7 @@ public static partial class Result {
     /// If the operation succeeds, the result contains the success value.
     /// If the operation fails, the result contains the mapped error.
     /// </returns>
-    public static async ValueTask<Result<TSuccess, TError>> Try<TSuccess, TError>(Func<ValueTask<TSuccess>> func, Func<Exception, TError> errorHandler) where TSuccess : notnull where TError : notnull {
+    public static async ValueTask<Result<TSuccess, TError>> TryAsync<TSuccess, TError>(Func<ValueTask<TSuccess>> func, Func<Exception, TError> errorHandler) where TSuccess : notnull where TError : notnull {
         try {
             var result = await func().ConfigureAwait(false);
             return Success<TSuccess, TError>(result);
@@ -117,7 +117,7 @@ public static partial class Result {
     /// <param name="action">The asynchronous action to execute.</param>
     /// <param name="errorHandler">A function to handle any exception thrown by <paramref name="action"/>, returning an error of type <typeparamref name="TError"/>.</param>
     /// <returns>A result object representing either the success or the error of the executed action.</returns>
-    public static async ValueTask<Result<Unit, TError>> Try<TError>(Func<ValueTask> action, Func<Exception, TError> errorHandler) where TError : notnull {
+    public static async ValueTask<Result<Unit, TError>> TryAsync<TError>(Func<ValueTask> action, Func<Exception, TError> errorHandler) where TError : notnull {
         try {
             await action().ConfigureAwait(false);
             return Success<Unit, TError>(Unit.Value);

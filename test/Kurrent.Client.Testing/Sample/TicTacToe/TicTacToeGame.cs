@@ -70,7 +70,7 @@ public record Game {
     }
 
     public static bool CheckWin(Board board, Player player, out Position[] winningLine) {
-        CellState playerMark = player switch {
+        var playerMark = player switch {
             Player.X => CellState.X,
             Player.O => CellState.O,
             _        => throw new ArgumentOutOfRangeException(nameof(player), "Invalid player value for win check")

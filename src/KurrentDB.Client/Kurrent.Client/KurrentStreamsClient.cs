@@ -92,7 +92,8 @@ public partial class KurrentStreamsClient { // Made partial
         return response.ResultCase switch {
             Contracts.MultiStreamAppendResponse.ResultOneofCase.Success => MultiStreamAppendResult.Success(response.Success.Map()),
             Contracts.MultiStreamAppendResponse.ResultOneofCase.Failure => MultiStreamAppendResult.Error(response.Failure.Map()),
-            _                                                           => throw new UnreachableException($"Unexpected result while multi-stream appending: {response.ResultCase}")
+            _                                                => throw KurrentClientException.CreateUnknown(
+                nameof(Append), new UnreachableException($"Unreachable error while appending stream: {response.ResultCase}"))
         };
     }
 
@@ -105,13 +106,12 @@ public partial class KurrentStreamsClient { // Made partial
     /// </summary>
     /// <param name="request">The request object that specifies the stream, expected state, and messages to append.</param>
     /// <param name="cancellationToken">A token to cancel the operation if needed.</param>
-    /// <returns>An <see cref="AppendStreamResult"/> representing the result of the append operation.</returns>
-    public async ValueTask<AppendStreamResult> Append(AppendStreamRequest request, CancellationToken cancellationToken) {
+    public async ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append(AppendStreamRequest request, CancellationToken cancellationToken) {
         var result = await Append([request], cancellationToken).ConfigureAwait(false);
 
-        return result.Match<AppendStreamResult>(
-            success => AppendStreamResult.Success(success.First()),
-            failure => AppendStreamResult.Error(failure.First())
+        return result.Match<Result<AppendStreamSuccess, AppendStreamFailure>>(
+            success => success.First(),
+            failure => failure.First()
         );
     }
 
@@ -123,15 +123,15 @@ public partial class KurrentStreamsClient { // Made partial
     /// <param name="messages">A collection of messages to be appended to the stream.</param>
     /// <param name="cancellationToken">A token to observe while waiting for the operation to complete, allowing for cancellation if needed.</param>
     /// <returns>An <see cref="AppendStreamResult"/> containing the outcome of the append operation, including success or failure details.</returns>
-    public ValueTask<AppendStreamResult> Append(string stream, ExpectedStreamState expectedState, IEnumerable<Message> messages, CancellationToken cancellationToken) =>
+    public ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append(string stream, ExpectedStreamState expectedState, IEnumerable<Message> messages, CancellationToken cancellationToken) =>
         Append(new AppendStreamRequest(stream, expectedState, messages), cancellationToken);
 
-    public ValueTask<AppendStreamResult> Append(string stream, ExpectedStreamState expectedState, Message message, CancellationToken cancellationToken) => Append(new AppendStreamRequest(stream, expectedState, [message]), cancellationToken);
+    public ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append(string stream, ExpectedStreamState expectedState, Message message, CancellationToken cancellationToken) => Append(new AppendStreamRequest(stream, expectedState, [message]), cancellationToken);
 
-    public ValueTask<AppendStreamResult> Append<T>(string stream, ExpectedStreamState expectedState, T message, CancellationToken cancellationToken) =>
+    public ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append<T>(string stream, ExpectedStreamState expectedState, T message, CancellationToken cancellationToken) =>
         Append(new AppendStreamRequest(stream, expectedState, [new Message { Value = message ?? throw new ArgumentNullException(nameof(message)) }]), cancellationToken);
 
-    public ValueTask<AppendStreamResult> Append<T>(string stream, T message, CancellationToken cancellationToken) =>
+    public ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append<T>(string stream, T message, CancellationToken cancellationToken) =>
         Append(new AppendStreamRequest(stream, ExpectedStreamState.Any, [new Message { Value = message ?? throw new ArgumentNullException(nameof(message)) }]), cancellationToken);
 
     #endregion
@@ -174,7 +174,8 @@ public partial class KurrentStreamsClient { // Made partial
                             Contracts.ReadResponse.ResultOneofCase.Success   => HandleSuccess(response),
                             Contracts.ReadResponse.ResultOneofCase.Heartbeat => HandleHeartbeat(response),
                             Contracts.ReadResponse.ResultOneofCase.Failure   => HandleFailure(response),
-                            _                                                => throw new UnreachableException($"Unexpected result while reading stream: {response.ResultCase}")
+                            _                                                => throw KurrentClientException.CreateUnknown(
+                                nameof(Read), new UnreachableException($"Unreachable error while reading stream: {response.ResultCase}"))
                         });
                     }
 
@@ -205,7 +206,9 @@ public partial class KurrentStreamsClient { // Made partial
             Exception ex = response.Failure.ErrorCase switch {
                 Contracts.ReadFailure.ErrorOneofCase.AccessDenied  => new AccessDeniedException(),
                 Contracts.ReadFailure.ErrorOneofCase.StreamDeleted => new StreamDeletedException(response.Failure.StreamDeleted.Stream),
-                _                                                  => new UnreachableException($"Unexpected error while reading stream: {response.Failure.ErrorCase}")
+                _                                                  => throw KurrentClientException.CreateUnknown(
+                    nameof(Read), new UnreachableException($"Unreachable error while reading stream: {response.Failure.ErrorCase}"))
+
             };
 
             channel.Writer.TryComplete(ex);
@@ -251,7 +254,7 @@ public partial class KurrentStreamsClient { // Made partial
             cancellationToken: cancellationToken
         );
 
-// what about checkpoints (aka heartbeats), only with new protocol?
+        // what about checkpoints (aka heartbeats), only with new protocol?
         await foreach (var re in session.ConfigureAwait(false)) {
             var record = await LegacyConverter
                 .ConvertToRecord(re, cancellationToken)
@@ -265,15 +268,15 @@ public partial class KurrentStreamsClient { // Made partial
         string stream, StreamRevision revision, long limit, Direction direction,
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     ) {
-// will throw if stream is not found or deleted
-// and ignores all other message types.
+        // will throw if stream is not found or deleted
+        // and ignores all other message types.
         var session = LegacyClient.ReadStreamAsync(
             direction, stream,
             revision.ConvertToLegacyStreamPosition(), limit,
             cancellationToken: cancellationToken
         );
 
-// what about checkpoints (aka heartbeats), only with new protocol?
+        // what about checkpoints (aka heartbeats), only with new protocol?
         await foreach (var re in session.ConfigureAwait(false)) {
             var record = await LegacyConverter
                 .ConvertToRecord(re, cancellationToken)
@@ -590,7 +593,65 @@ public partial class KurrentStreamsClient { // Made partial
 
     #endregion
 
-    #region . Delete .
+    #region . Delete / Truncate .
+
+    public ValueTask<Result<StreamRevision, TruncateStreamError>> Truncate(StreamName stream, StreamRevision truncateRevision, ExpectedStreamState expectedState, CancellationToken cancellationToken) {
+        return SetStreamMetadata(stream, new() { TruncateBefore = truncateRevision }, expectedState, cancellationToken)
+            .MapErrorAsync(err =>
+                err.Match<TruncateStreamError>(
+                    notFound => notFound,
+                    deleted => deleted,
+                    denied => denied,
+                    conflict => conflict
+                )
+            );
+
+            // return result.Match(
+            //     success => success,
+            //     failure => Result.Failure<StreamRevision, TruncateStreamError>(
+            //         failure.Value switch {
+            //             ErrorDetails.StreamNotFound         => failure.AsStreamNotFound,
+            //             ErrorDetails.StreamDeleted          => failure.AsStreamDeleted,
+            //             ErrorDetails.AccessDenied           => failure.AsAccessDenied,
+            //             ErrorDetails.StreamRevisionConflict => failure.AsStreamRevisionConflict
+            //         }
+            //     )
+            // );
+
+            // return result.Match<Result<StreamRevision, TruncateStreamError>>(
+            //     success => success,
+            //     failure => failure.Match<TruncateStreamError>(
+            //         notFound => notFound,
+            //         deleted => deleted,
+            //         accessDenied => accessDenied,
+            //         revisionConflict => revisionConflict
+            //     )
+            // );
+
+            // return result.Match<Result<StreamRevision, TruncateStreamError>>(
+            //     ok => ok,
+            //     ko => ko.Match<TruncateStreamError>(
+            //         StreamNotFound => StreamNotFound,
+            //         StreamDeleted => StreamDeleted,
+            //         AccessDenied => AccessDenied,
+            //         StreamRevisionConflict => StreamRevisionConflict
+            //     )
+            // );
+
+            // return result.MapError(err =>
+            //     err.Match<TruncateStreamError>(
+            //         notFound => notFound,
+            //         deleted => deleted,
+            //         denied => denied,
+            //         conflict => conflict
+            //     )
+            // );
+    }
+
+    public ValueTask<Result<StreamRevision, TruncateStreamError>> Truncate(StreamName stream, StreamRevision truncateRevision, CancellationToken cancellationToken) =>
+        GetStreamInfo(stream, cancellationToken).MatchAsync(
+            success => Truncate(stream, truncateRevision, success.MetadataRevision, cancellationToken),
+            failure => failure.Match<TruncateStreamError>(notFound => notFound, denied => denied));
 
     /// <summary>
     /// Deletes a stream asynchronously.
@@ -601,11 +662,30 @@ public partial class KurrentStreamsClient { // Made partial
     /// The optional <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
     /// </param>
     /// <returns></returns>
-    public ValueTask<DeleteResult> Delete(string stream, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) =>
-        DeleteCore(
-            stream, expectedState, false,
-            cancellationToken
-        );
+    public async ValueTask<Result<LogPosition, DeleteStreamError>> Delete(string stream, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) {
+        var legacyExpectedState = expectedState switch {
+            _ when expectedState == ExpectedStreamState.Any          => StreamState.Any,
+            _ when expectedState == ExpectedStreamState.NoStream     => StreamState.NoStream,
+            _ when expectedState == ExpectedStreamState.StreamExists => StreamState.StreamExists,
+            _                                                        => StreamState.StreamRevision(expectedState)
+        };
+
+        try {
+            var result = await LegacyClient
+                .DeleteAsync(stream, legacyExpectedState, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return Result<LogPosition, DeleteStreamError>.Success(result.LogPosition.ConvertToLogPosition());
+        }
+        catch (Exception ex) {
+            return Result<LogPosition, DeleteStreamError>.Error(ex switch {
+                StreamNotFoundException       => new ErrorDetails.StreamNotFound(stream),
+                AccessDeniedException         => new ErrorDetails.AccessDenied(stream),
+                WrongExpectedVersionException => new ErrorDetails.StreamRevisionConflict(stream, expectedState),
+                _                             => throw KurrentClientException.CreateUnknown(nameof(Delete), ex)
+            });
+        }
+    }
 
     /// <summary>
     /// Tombstones a stream asynchronously.
@@ -619,13 +699,7 @@ public partial class KurrentStreamsClient { // Made partial
     /// The optional <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
     /// </param>
     /// <returns></returns>
-    public ValueTask<DeleteResult> Tombstone(string stream, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) =>
-        DeleteCore(
-            stream, expectedState, true,
-            cancellationToken
-        );
-
-    async ValueTask<DeleteResult> DeleteCore(string stream, ExpectedStreamState expectedState, bool hardDelete = false, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<LogPosition, TombstoneStreamError>> Tombstone(string stream, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) {
         var legacyExpectedState = expectedState switch {
             _ when expectedState == ExpectedStreamState.Any          => StreamState.Any,
             _ when expectedState == ExpectedStreamState.NoStream     => StreamState.NoStream,
@@ -634,35 +708,34 @@ public partial class KurrentStreamsClient { // Made partial
         };
 
         try {
-            var result = hardDelete switch {
-                true => await LegacyClient
-                    .TombstoneAsync(stream, legacyExpectedState, cancellationToken: cancellationToken)
-                    .ConfigureAwait(false),
-                false => await LegacyClient
-                    .DeleteAsync(stream, legacyExpectedState, cancellationToken: cancellationToken)
-                    .ConfigureAwait(false)
-            };
+            var result = await LegacyClient
+                .TombstoneAsync(stream, legacyExpectedState, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-            throw new NotImplementedException("LegacyClient.DeleteAsync does not return a LogPosition, so we cannot convert it to LogPosition.");
-            return DeleteResult.Success(result.LogPosition.ConvertToLogPosition());
+            return Result<LogPosition, TombstoneStreamError>.Success(result.LogPosition.ConvertToLogPosition());
         }
         catch (Exception ex) {
-            return DeleteResult.Error(ex switch {
+            return Result<LogPosition, TombstoneStreamError>.Error(ex switch {
                 StreamNotFoundException       => new ErrorDetails.StreamNotFound(stream),
                 AccessDeniedException         => new ErrorDetails.AccessDenied(stream),
                 WrongExpectedVersionException => new ErrorDetails.StreamRevisionConflict(stream, expectedState),
-                _                             => throw new Exception($"Unexpected error {stream}: {ex.Message}", ex)
+                _                             => throw KurrentClientException.CreateUnknown(nameof(Tombstone), ex)
             });
         }
     }
-
-    public partial class DeleteResult : Result<LogPosition, DeleteError>;
 
     #endregion
 
     #region . Stream Info & Metadata .
 
-    public async ValueTask<GetStreamInfoResult> GetStreamInfo(string stream, CancellationToken cancellationToken = default) {
+    // public async Task<Result<bool, GetStreamInfoError>> StreamExists(StreamName stream, CancellationToken cancellationToken = default) {
+    //     var read = LegacyClient.ReadStreamAsync(Direction.Backwards, stream, StreamPosition.End, 1, cancellationToken: cancellationToken);
+    //     using var readState = read.ReadState;
+    //     var state = await readState.ConfigureAwait(false);
+    //     return state == ReadState.Ok;
+    // }
+
+    public async ValueTask<Result<StreamInfo, GetStreamInfoError>> GetStreamInfo(string stream, CancellationToken cancellationToken = default) {
         try {
             var result = await LegacyClient
                 .GetStreamMetadataAsync(stream, cancellationToken: cancellationToken)
@@ -689,15 +762,15 @@ public partial class KurrentStreamsClient { // Made partial
             return info;
         }
         catch (Exception ex) {
-            return GetStreamInfoResult.Error(ex switch {
+            return Result<StreamInfo, GetStreamInfoError>.Error(ex switch {
                 StreamNotFoundException => new ErrorDetails.StreamNotFound(stream),
                 AccessDeniedException   => new ErrorDetails.AccessDenied(stream),
-                _                       => throw KurrentClientException.CreateUnknown(nameof(SetStreamMetadata), ex)
+                _                       => throw KurrentClientException.CreateUnknown(nameof(GetStreamInfo), ex)
             });
         }
     }
 
-    public async ValueTask<SetStreamMetadataResult> SetStreamMetadata(string stream, StreamMetadata metadata, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<StreamRevision, SetStreamMetadataError>> SetStreamMetadata(string stream, StreamMetadata metadata, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) {
         var legacyExpectedState = expectedState switch {
             _ when expectedState == ExpectedStreamState.Any          => StreamState.Any,
             _ when expectedState == ExpectedStreamState.NoStream     => StreamState.NoStream,
@@ -725,7 +798,7 @@ public partial class KurrentStreamsClient { // Made partial
             return StreamRevision.From(result.NextExpectedStreamState.ToInt64());
         }
         catch (Exception ex) {
-            return SetStreamMetadataResult.Error(ex switch {
+            return Result<StreamRevision, SetStreamMetadataError>.Error(ex switch {
                 StreamNotFoundException       => new ErrorDetails.StreamNotFound(stream),
                 StreamDeletedException        => new ErrorDetails.StreamDeleted(stream),
                 AccessDeniedException         => new ErrorDetails.AccessDenied(stream),

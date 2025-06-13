@@ -73,7 +73,7 @@ public class ResultStaticMethodsTests {
         var func          = () => ValueTask.FromResult(expectedValue);
 
         // Act
-        var result = await Kurrent.Result.Try(func, ex => ex.Message);
+        var result = await Kurrent.Result.TryAsync(func, ex => ex.Message);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -87,7 +87,7 @@ public class ResultStaticMethodsTests {
         var func         = () => ValueTask.FromException<GameId>(new InvalidOperationException(errorMessage));
 
         // Act
-        var result = await Kurrent.Result.Try(func, ex => ex.Message);
+        var result = await Kurrent.Result.TryAsync(func, ex => ex.Message);
 
         // Assert
         result.IsError.ShouldBeTrue();
@@ -100,7 +100,7 @@ public class ResultStaticMethodsTests {
         var action = () => ValueTask.CompletedTask;
 
         // Act
-        var result = await Kurrent.Result.Try(action, ex => ex.Message);
+        var result = await Kurrent.Result.TryAsync(action, ex => ex.Message);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
@@ -114,7 +114,7 @@ public class ResultStaticMethodsTests {
         var action       = () => ValueTask.FromException(new InvalidOperationException(errorMessage));
 
         // Act
-        var result = await Kurrent.Result.Try(action, ex => ex.Message);
+        var result = await Kurrent.Result.TryAsync(action, ex => ex.Message);
 
         // Assert
         result.IsError.ShouldBeTrue();

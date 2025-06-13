@@ -63,17 +63,23 @@ public class KurrentRegistryClient {
 			SchemaDefinition = ByteString.CopyFromUtf8(schemaDefinition)
 		};
 
-		try {
-			var response = await ServiceClient
-				.CreateSchemaAsync(request, cancellationToken: cancellationToken)
-				.ConfigureAwait(false);
+        try {
+            var response = await ServiceClient
+                .CreateSchemaAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-			return new SchemaVersionDescriptor(Guid.Parse(response.SchemaVersionId), response.VersionNumber);
-		}
-		catch (RpcException ex) when (ex.StatusCode == StatusCode.AlreadyExists) {
-			return new ErrorDetails.SchemaAlreadyExists(schemaName);
-		}
-	}
+            return new SchemaVersionDescriptor(Guid.Parse(response.SchemaVersionId), response.VersionNumber);
+        }
+        catch (RpcException ex) when (ex.StatusCode == StatusCode.AlreadyExists) {
+            return new ErrorDetails.SchemaAlreadyExists(schemaName);
+        }
+        catch (RpcException ex) {
+            throw new KurrentClientException(ex.StatusCode.ToString(), $"An error occurred while creating the schema: {ex.Message}", ex);
+        }
+        catch (Exception ex) {
+            throw new KurrentClientException("CreateSchema", "An error occurred while creating the schema.", ex);
+        }
+    }
 
 	/// <summary>
 	/// Creates a new schema in the registry with the provided details.

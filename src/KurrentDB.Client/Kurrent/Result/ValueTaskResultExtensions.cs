@@ -222,4 +222,322 @@ public static class ValueTaskResultExtensions {
         var result = await resultTask.ConfigureAwait(false);
         return await result.OnErrorAsync(asyncAction);
     }
+
+    /// <summary>
+    /// Asynchronously transforms the error value of the result in the <see cref="ValueTask"/> using the specified mapping function.
+    /// If this result is a success, the success value is propagated.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TCurrent">The type of the current error value.</typeparam>
+    /// <typeparam name="TNext">The type of the next error value.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="mapper">A function to transform the error value.</param>
+    /// <returns>A <see cref="ValueTask{Result}"/> containing the original success value or the transformed error.</returns>
+    public static async ValueTask<Result<TSuccess, TNext>> MapErrorAsync<TSuccess, TCurrent, TNext>(
+        this ValueTask<Result<TSuccess, TCurrent>> resultTask,
+        Func<TCurrent, TNext> mapper) where TSuccess : notnull where TCurrent : notnull where TNext : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        return result.MapError(mapper);
+    }
+
+    /// <summary>
+    /// Asynchronously transforms the error value of the result in the <see cref="ValueTask"/> using the specified asynchronous mapping function.
+    /// If this result is a success, the success value is propagated.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TCurrent">The type of the current error value.</typeparam>
+    /// <typeparam name="TNext">The type of the next error value.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="asyncMapper">An asynchronous function to transform the error value.</param>
+    /// <returns>A <see cref="ValueTask{Result}"/> containing the original success value or the transformed error.</returns>
+    public static async ValueTask<Result<TSuccess, TNext>> MapErrorAsync<TSuccess, TCurrent, TNext>(
+        this ValueTask<Result<TSuccess, TCurrent>> resultTask,
+        Func<TCurrent, ValueTask<TNext>> asyncMapper) where TSuccess : notnull where TCurrent : notnull where TNext : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        return result.IsSuccess ? result.AsSuccess : Result<TSuccess, TNext>.Error(await asyncMapper(result.AsError).ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// Asynchronously transforms the error value of the result in the <see cref="ValueTask"/> using the specified mapping function, passing additional state.
+    /// If this result is a success, the success value is propagated.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TCurrent">The type of the current error value.</typeparam>
+    /// <typeparam name="TNext">The type of the next error value.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the mapper.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="mapper">A function to transform the error value, taking additional state.</param>
+    /// <param name="state">The state to pass to the mapper.</param>
+    /// <returns>A <see cref="ValueTask{Result}"/> containing the original success value or the transformed error.</returns>
+    public static async ValueTask<Result<TSuccess, TNext>> MapErrorAsync<TSuccess, TCurrent, TNext, TState>(
+        this ValueTask<Result<TSuccess, TCurrent>> resultTask,
+        Func<TCurrent, TState, TNext> mapper, TState state
+    ) where TSuccess : notnull where TCurrent : notnull where TNext : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        return result.IsSuccess ? result.AsSuccess : Result<TSuccess, TNext>.Error(mapper(result.AsError, state));
+    }
+
+    /// <summary>
+    /// Asynchronously transforms the error value of the result in the <see cref="ValueTask"/> using the specified asynchronous mapping function, passing additional state.
+    /// If this result is a success, the success value is propagated.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TCurrent">The type of the current error value.</typeparam>
+    /// <typeparam name="TNext">The type of the next error value.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the mapper.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="asyncMapper">An asynchronous function to transform the error value, taking additional state.</param>
+    /// <param name="state">The state to pass to the mapper.</param>
+    /// <returns>A <see cref="ValueTask{Result}"/> containing the original success value or the transformed error.</returns>
+    public static async ValueTask<Result<TSuccess, TNext>> MapErrorAsync<TSuccess, TCurrent, TNext, TState>(
+        this ValueTask<Result<TSuccess, TCurrent>> resultTask,
+        Func<TCurrent, TState, ValueTask<TNext>> asyncMapper, TState state
+    ) where TSuccess : notnull where TCurrent : notnull where TNext : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        return result.IsSuccess ? result.AsSuccess : Result<TSuccess, TNext>.Error(await asyncMapper(result.AsError, state).ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided functions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, returning a new value.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TOut">The type of the value returned by the matching functions.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The function to execute if the result is a success. It takes the success value as input.</param>
+    /// <param name="onError">The function to execute if the result is an error. It takes the error value as input.</param>
+    /// <returns>A <see cref="ValueTask{TOut}"/> representing the asynchronous operation with the value returned by the executed function.</returns>
+    public static async ValueTask<TOut> MatchAsync<TSuccess, TError, TOut>(
+        this ValueTask<Result<TSuccess, TError>> resultTask,
+        Func<TSuccess, TOut> onSuccess,
+        Func<TError, TOut> onError) where TSuccess : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        return result.Match(onSuccess, onError);
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided asynchronous functions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, returning a new value.
+    /// Both functions are asynchronous and return <see cref="ValueTask{TOut}"/>.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TOut">The type of the value returned by the matching functions.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The asynchronous function to execute if the result is a success. It takes the success value as input.</param>
+    /// <param name="onError">The asynchronous function to execute if the result is an error. It takes the error value as input.</param>
+    /// <returns>A <see cref="ValueTask{TOut}"/> representing the asynchronous operation with the value returned by the executed function.</returns>
+    public static async ValueTask<TOut> MatchAsync<TSuccess, TError, TOut>(
+        this ValueTask<Result<TSuccess, TError>> resultTask,
+        Func<TSuccess, ValueTask<TOut>> onSuccess,
+        Func<TError, ValueTask<TOut>> onError) where TSuccess : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        return await result.MatchAsync(onSuccess, onError).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided functions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, returning a new value.
+    /// The success function is synchronous while the error function is asynchronous.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TOut">The type of the value returned by the matching functions.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The synchronous function to execute if the result is a success. It takes the success value as input.</param>
+    /// <param name="onError">The asynchronous function to execute if the result is an error. It takes the error value as input.</param>
+    /// <returns>A <see cref="ValueTask{TOut}"/> representing the asynchronous operation with the value returned by the executed function.</returns>
+    public static async ValueTask<TOut> MatchAsync<TSuccess, TError, TOut>(
+        this ValueTask<Result<TSuccess, TError>> resultTask,
+        Func<TSuccess, TOut> onSuccess,
+        Func<TError, ValueTask<TOut>> onError) where TSuccess : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        return await result.MatchAsync(onSuccess, onError).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided functions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, returning a new value.
+    /// The success function is asynchronous while the error function is synchronous.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TOut">The type of the value returned by the matching functions.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The asynchronous function to execute if the result is a success. It takes the success value as input.</param>
+    /// <param name="onError">The synchronous function to execute if the result is an error. It takes the error value as input.</param>
+    /// <returns>A <see cref="ValueTask{TOut}"/> representing the asynchronous operation with the value returned by the executed function.</returns>
+    public static async ValueTask<TOut> MatchAsync<TSuccess, TError, TOut>(
+        this ValueTask<Result<TSuccess, TError>> resultTask,
+        Func<TSuccess, ValueTask<TOut>> onSuccess,
+        Func<TError, TOut> onError) where TSuccess : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        return await result.MatchAsync(onSuccess, onError).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided functions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, returning a new value and passing additional state.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TOut">The type of the value returned by the matching functions.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the functions.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The function to execute if the result is a success. It takes the success value and state as input.</param>
+    /// <param name="onError">The function to execute if the result is an error. It takes the error value and state as input.</param>
+    /// <param name="state">The state to pass to the functions.</param>
+    /// <returns>A <see cref="ValueTask{TOut}"/> representing the asynchronous operation with the value returned by the executed function.</returns>
+    public static async ValueTask<TOut> MatchAsync<TSuccess, TError, TOut, TState>(
+        this ValueTask<Result<TSuccess, TError>> resultTask,
+        Func<TSuccess, TState, TOut> onSuccess,
+        Func<TError, TState, TOut> onError,
+        TState state) where TSuccess : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        return result.Match(onSuccess, onError, state);
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided asynchronous functions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, returning a new value and passing additional state.
+    /// Both functions are asynchronous and return <see cref="ValueTask{TOut}"/>.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TOut">The type of the value returned by the matching functions.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the functions.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The asynchronous function to execute if the result is a success. It takes the success value and state as input.</param>
+    /// <param name="onError">The asynchronous function to execute if the result is an error. It takes the error value and state as input.</param>
+    /// <param name="state">The state to pass to the functions.</param>
+    /// <returns>A <see cref="ValueTask{TOut}"/> representing the asynchronous operation with the value returned by the executed function.</returns>
+    public static async ValueTask<TOut> MatchAsync<TSuccess, TError, TOut, TState>(
+        this ValueTask<Result<TSuccess, TError>> resultTask,
+        Func<TSuccess, TState, ValueTask<TOut>> onSuccess,
+        Func<TError, TState, ValueTask<TOut>> onError,
+        TState state) where TSuccess : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        return await result.MatchAsync(onSuccess, onError, state).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided functions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, returning a new value and passing additional state.
+    /// The success function is synchronous while the error function is asynchronous.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TOut">The type of the value returned by the matching functions.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the functions.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The synchronous function to execute if the result is a success. It takes the success value and state as input.</param>
+    /// <param name="onError">The asynchronous function to execute if the result is an error. It takes the error value and state as input.</param>
+    /// <param name="state">The state to pass to the functions.</param>
+    /// <returns>A <see cref="ValueTask{TOut}"/> representing the asynchronous operation with the value returned by the executed function.</returns>
+    public static async ValueTask<TOut> MatchAsync<TSuccess, TError, TOut, TState>(
+        this ValueTask<Result<TSuccess, TError>> resultTask,
+        Func<TSuccess, TState, TOut> onSuccess,
+        Func<TError, TState, ValueTask<TOut>> onError,
+        TState state) where TSuccess : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        return await result.MatchAsync(onSuccess, onError, state).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided functions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, returning a new value and passing additional state.
+    /// The success function is asynchronous while the error function is synchronous.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TOut">The type of the value returned by the matching functions.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the functions.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The asynchronous function to execute if the result is a success. It takes the success value and state as input.</param>
+    /// <param name="onError">The synchronous function to execute if the result is an error. It takes the error value and state as input.</param>
+    /// <param name="state">The state to pass to the functions.</param>
+    /// <returns>A <see cref="ValueTask{TOut}"/> representing the asynchronous operation with the value returned by the executed function.</returns>
+    public static async ValueTask<TOut> MatchAsync<TSuccess, TError, TOut, TState>(
+        this ValueTask<Result<TSuccess, TError>> resultTask,
+        Func<TSuccess, TState, ValueTask<TOut>> onSuccess,
+        Func<TError, TState, TOut> onError,
+        TState state) where TSuccess : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        return await result.MatchAsync(onSuccess, onError, state).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously applies a synchronous action to the <see cref="Result{TSuccess, TError}"/> within the <see cref="ValueTask"/>
+    /// and returns the original result, allowing for fluent chaining.
+    /// This is useful for performing side effects, like logging, based on the result.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="action">The synchronous action to perform, which accepts the <see cref="Result{TSuccess, TError}"/>.</param>
+    /// <returns>The original <see cref="ValueTask{Result}"/>, allowing for fluent chaining.</returns>
+    public static async ValueTask<Result<TSuccess, TError>> ApplyAsync<TSuccess, TError>(
+        this ValueTask<Result<TSuccess, TError>> resultTask,
+        Action<Result<TSuccess, TError>> action)
+        where TSuccess : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        action(result);
+        return result;
+    }
+
+    /// <summary>
+    /// Asynchronously applies an asynchronous action to the <see cref="Result{TSuccess, TError}"/> within the <see cref="ValueTask"/>
+    /// and returns the original result, allowing for fluent chaining.
+    /// This is useful for performing asynchronous side effects, like logging, based on the result.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="asyncAction">The asynchronous action to perform, which accepts the <see cref="Result{TSuccess, TError}"/> and returns a <see cref="ValueTask"/>.</param>
+    /// <returns>The original <see cref="ValueTask{Result}"/>, allowing for fluent chaining.</returns>
+    public static async ValueTask<Result<TSuccess, TError>> ApplyAsync<TSuccess, TError>(
+        this ValueTask<Result<TSuccess, TError>> resultTask,
+        Func<Result<TSuccess, TError>, ValueTask> asyncAction)
+        where TSuccess : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        await asyncAction(result).ConfigureAwait(false);
+        return result;
+    }
+
+    /// <summary>
+    /// Asynchronously applies a synchronous action to the <see cref="Result{TSuccess, TError}"/> within the <see cref="ValueTask"/>,
+    /// passing additional state, and returns the original result, allowing for fluent chaining.
+    /// This is useful for performing side effects with state, like logging, based on the result.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the action.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="action">The synchronous action to perform, which accepts the <see cref="Result{TSuccess, TError}"/> and state.</param>
+    /// <param name="state">The state to pass to the action.</param>
+    /// <returns>The original <see cref="ValueTask{Result}"/>, allowing for fluent chaining.</returns>
+    public static async ValueTask<Result<TSuccess, TError>> ApplyAsync<TSuccess, TError, TState>(
+        this ValueTask<Result<TSuccess, TError>> resultTask,
+        Action<Result<TSuccess, TError>, TState> action,
+        TState state)
+        where TSuccess : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        action(result, state);
+        return result;
+    }
+
+    /// <summary>
+    /// Asynchronously applies an asynchronous action to the <see cref="Result{TSuccess, TError}"/> within the <see cref="ValueTask"/>,
+    /// passing additional state, and returns the original result, allowing for fluent chaining.
+    /// This is useful for performing asynchronous side effects with state, like logging, based on the result.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the action.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="asyncAction">The asynchronous action to perform, which accepts the <see cref="Result{TSuccess, TError}"/> and state, and returns a <see cref="ValueTask"/>.</param>
+    /// <param name="state">The state to pass to the action.</param>
+    /// <returns>The original <see cref="ValueTask{Result}"/>, allowing for fluent chaining.</returns>
+    public static async ValueTask<Result<TSuccess, TError>> ApplyAsync<TSuccess, TError, TState>(
+        this ValueTask<Result<TSuccess, TError>> resultTask,
+        Func<Result<TSuccess, TError>, TState, ValueTask> asyncAction,
+        TState state)
+        where TSuccess : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        await asyncAction(result, state).ConfigureAwait(false);
+        return result;
+    }
 }

@@ -200,8 +200,8 @@ Before submitting, verify that:
 ## Cross-References
 
 **After completing analysis**, mention relevant specialized guides:
-- For performance-critical projects: Recommend loading `guides/performance-guide.md`
-- For projects with extensive testing: Recommend loading `guides/testing-guide.md` 
-- For library/SDK projects: Recommend loading `guides/documentation-guide.md`
+- For performance-critical projects: Recommend loading `performance.instructions.md`
+- For projects with extensive testing: Recommend loading `testing.instructions.md` 
+- For library/SDK projects: Recommend loading `documentation.instructions.md`
 
 Begin your analysis now.

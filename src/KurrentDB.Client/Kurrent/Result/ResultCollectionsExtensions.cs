@@ -103,4 +103,161 @@ public static class ResultCollectionsExtensions {
         var tasks = source.Select(map);
         return await tasks.SequenceAsync().ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Evaluates an asynchronous sequence of <see cref="Result{TSuccess,TError}"/> instances.
+    /// If all results in the sequence are successes, returns a <see cref="Result{TSuccess,TError}"/> containing a read-only list of all success values.
+    /// If any result in the sequence is an error, returns the first encountered error.
+    /// This method processes the <see cref="IAsyncEnumerable{T}"/> sequentially.
+    /// </summary>
+    /// <typeparam name="TSuccess">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <param name="source">The asynchronous sequence of results to evaluate.</param>
+    /// <returns>
+    /// A <see cref="ValueTask{Result}"/> which, upon completion, yields:
+    /// - A <see cref="Result{TSuccess,TError}"/> containing an <see cref="IReadOnlyList{TSuccess}"/> of all success values, if all results in the sequence were successes.
+    /// - The first <see cref="Result{TSuccess,TError}"/> that was an error, if any error was encountered.
+    /// </returns>
+    public static async ValueTask<Result<IReadOnlyList<TSuccess>, TError>> SequenceAsync<TSuccess, TError>(
+        this IAsyncEnumerable<Result<TSuccess, TError>> source)
+        where TSuccess : notnull where TError : notnull {
+        var successValues = new List<TSuccess>();
+        await foreach (var result in source.ConfigureAwait(false)) {
+            if (result.IsError) {
+                return Result<IReadOnlyList<TSuccess>, TError>.Error(result.AsError);
+            }
+            successValues.Add(result.AsSuccess);
+        }
+        return Result<IReadOnlyList<TSuccess>, TError>.Success(successValues);
+    }
+
+    /// <summary>
+    /// Asynchronously projects each element of an <see cref="IAsyncEnumerable{TSource}"/> sequence to a <see cref="Result{TNext,TError}"/>
+    /// using a synchronous selector function, and collects the success values into a read-only list.
+    /// If any projection results in an error, the operation short-circuits and returns that error.
+    /// This method processes the <see cref="IAsyncEnumerable{TSource}"/> sequentially.
+    /// </summary>
+    /// <typeparam name="TSource">The type of the elements of <paramref name="source"/>.</typeparam>
+    /// <typeparam name="TNext">The type of the success value of the <see cref="Result{TNext,TError}"/> returned by <paramref name="selector"/>.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <param name="source">An asynchronous sequence of values to project.</param>
+    /// <param name="selector">A transform function to apply to each element.</param>
+    /// <returns>
+    /// A <see cref="ValueTask{Result}"/> which, upon completion, yields:
+    /// - A <see cref="Result{TSuccess,TError}"/> containing an <see cref="IReadOnlyList{TNext}"/> of the transformed success values, if all transformations were successful.
+    /// - The first <see cref="Result{TSuccess,TError}"/> that was an error from the selector, if any transformation failed.
+    /// </returns>
+    public static async ValueTask<Result<IReadOnlyList<TNext>, TError>> TraverseAsync<TSource, TNext, TError>(
+        this IAsyncEnumerable<TSource> source,
+        Func<TSource, Result<TNext, TError>> selector)
+        where TNext : notnull where TError : notnull {
+        var successValues = new List<TNext>();
+        await foreach (var item in source.ConfigureAwait(false)) {
+            var result = selector(item);
+            if (result.IsError) {
+                return Result<IReadOnlyList<TNext>, TError>.Error(result.AsError);
+            }
+            successValues.Add(result.AsSuccess);
+        }
+        return Result<IReadOnlyList<TNext>, TError>.Success(successValues);
+    }
+
+    /// <summary>
+    /// Asynchronously projects each element of an <see cref="IAsyncEnumerable{TSource}"/> sequence to a <see cref="Result{TNext,TError}"/>
+    /// using an asynchronous selector function, and collects the success values into a read-only list.
+    /// If any projection results in an error, the operation short-circuits and returns that error.
+    /// This method processes the <see cref="IAsyncEnumerable{TSource}"/> sequentially.
+    /// </summary>
+    /// <typeparam name="TSource">The type of the elements of <paramref name="source"/>.</typeparam>
+    /// <typeparam name="TNext">The type of the success value of the <see cref="Result{TNext,TError}"/> returned by <paramref name="asyncSelector"/>.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <param name="source">An asynchronous sequence of values to project.</param>
+    /// <param name="asyncSelector">An asynchronous transform function to apply to each element.</param>
+    /// <returns>
+    /// A <see cref="ValueTask{Result}"/> which, upon completion, yields:
+    /// - A <see cref="Result{TSuccess,TError}"/> containing an <see cref="IReadOnlyList{TNext}"/> of the transformed success values, if all transformations were successful.
+    /// - The first <see cref="Result{TSuccess,TError}"/> that was an error from the selector, if any transformation failed.
+    /// </returns>
+    public static async ValueTask<Result<IReadOnlyList<TNext>, TError>> TraverseAsync<TSource, TNext, TError>(
+        this IAsyncEnumerable<TSource> source,
+        Func<TSource, ValueTask<Result<TNext, TError>>> asyncSelector)
+        where TNext : notnull where TError : notnull {
+        var successValues = new List<TNext>();
+        await foreach (var item in source.ConfigureAwait(false)) {
+            var result = await asyncSelector(item).ConfigureAwait(false);
+            if (result.IsError) {
+                return Result<IReadOnlyList<TNext>, TError>.Error(result.AsError);
+            }
+            successValues.Add(result.AsSuccess);
+        }
+        return Result<IReadOnlyList<TNext>, TError>.Success(successValues);
+    }
+
+    /// <summary>
+    /// Asynchronously projects each element of an <see cref="IAsyncEnumerable{TSource}"/> sequence to a <see cref="Result{TNext,TError}"/>
+    /// using a synchronous selector function that also accepts a state parameter, and collects the success values into a read-only list.
+    /// If any projection results in an error, the operation short-circuits and returns that error.
+    /// This method processes the <see cref="IAsyncEnumerable{TSource}"/> sequentially.
+    /// </summary>
+    /// <typeparam name="TSource">The type of the elements of <paramref name="source"/>.</typeparam>
+    /// <typeparam name="TNext">The type of the success value of the <see cref="Result{TNext,TError}"/> returned by <paramref name="selector"/>.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the selector.</typeparam>
+    /// <param name="source">An asynchronous sequence of values to project.</param>
+    /// <param name="selector">A transform function to apply to each element, accepting state.</param>
+    /// <param name="state">The state to pass to the selector function.</param>
+    /// <returns>
+    /// A <see cref="ValueTask{Result}"/> which, upon completion, yields:
+    /// - A <see cref="Result{TSuccess,TError}"/> containing an <see cref="IReadOnlyList{TNext}"/> of the transformed success values, if all transformations were successful.
+    /// - The first <see cref="Result{TSuccess,TError}"/> that was an error from the selector, if any transformation failed.
+    /// </returns>
+    public static async ValueTask<Result<IReadOnlyList<TNext>, TError>> TraverseAsync<TSource, TNext, TError, TState>(
+        this IAsyncEnumerable<TSource> source,
+        Func<TSource, TState, Result<TNext, TError>> selector,
+        TState state)
+        where TNext : notnull where TError : notnull {
+        var successValues = new List<TNext>();
+        await foreach (var item in source.ConfigureAwait(false)) {
+            var result = selector(item, state);
+            if (result.IsError) {
+                return Result<IReadOnlyList<TNext>, TError>.Error(result.AsError);
+            }
+            successValues.Add(result.AsSuccess);
+        }
+        return Result<IReadOnlyList<TNext>, TError>.Success(successValues);
+    }
+
+    /// <summary>
+    /// Asynchronously projects each element of an <see cref="IAsyncEnumerable{TSource}"/> sequence to a <see cref="Result{TNext,TError}"/>
+    /// using an asynchronous selector function that also accepts a state parameter, and collects the success values into a read-only list.
+    /// If any projection results in an error, the operation short-circuits and returns that error.
+    /// This method processes the <see cref="IAsyncEnumerable{TSource}"/> sequentially.
+    /// </summary>
+    /// <typeparam name="TSource">The type of the elements of <paramref name="source"/>.</typeparam>
+    /// <typeparam name="TNext">The type of the success value of the <see cref="Result{TNext,TError}"/> returned by <paramref name="asyncSelector"/>.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the selector.</typeparam>
+    /// <param name="source">An asynchronous sequence of values to project.</param>
+    /// <param name="asyncSelector">An asynchronous transform function to apply to each element, accepting state.</param>
+    /// <param name="state">The state to pass to the selector function.</param>
+    /// <returns>
+    /// A <see cref="ValueTask{Result}"/> which, upon completion, yields:
+    /// - A <see cref="Result{TSuccess,TError}"/> containing an <see cref="IReadOnlyList{TNext}"/> of the transformed success values, if all transformations were successful.
+    /// - The first <see cref="Result{TSuccess,TError}"/> that was an error from the selector, if any transformation failed.
+    /// </returns>
+    public static async ValueTask<Result<IReadOnlyList<TNext>, TError>> TraverseAsync<TSource, TNext, TError, TState>(
+        this IAsyncEnumerable<TSource> source,
+        Func<TSource, TState, ValueTask<Result<TNext, TError>>> asyncSelector,
+        TState state)
+        where TNext : notnull where TError : notnull {
+        var successValues = new List<TNext>();
+        await foreach (var item in source.ConfigureAwait(false)) {
+            var result = await asyncSelector(item, state).ConfigureAwait(false);
+            if (result.IsError) {
+                return Result<IReadOnlyList<TNext>, TError>.Error(result.AsError);
+            }
+            successValues.Add(result.AsSuccess);
+        }
+        return Result<IReadOnlyList<TNext>, TError>.Success(successValues);
+    }
 }
