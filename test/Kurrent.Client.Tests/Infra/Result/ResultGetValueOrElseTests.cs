@@ -13,7 +13,7 @@ public class ResultGetValueOrElseTests {
         var result       = Result<GameId, InvalidMoveError>.Success(successValue);
 
         // Act
-        var value = result.GetValueOrElse(_ => new GameId(Faker.Random.Guid()));
+        var value = result.GetValueOrDefault(_ => new GameId(Faker.Random.Guid()));
 
         // Assert
         value.ShouldBe(successValue);
@@ -27,7 +27,7 @@ public class ResultGetValueOrElseTests {
         var fallbackValue = new GameId(Faker.Random.Guid());
 
         // Act
-        var value = result.GetValueOrElse(err => {
+        var value = result.GetValueOrDefault(err => {
                 err.ShouldBe(errorValue);
                 return fallbackValue;
             }
@@ -45,7 +45,7 @@ public class ResultGetValueOrElseTests {
         var stateStatus  = Faker.PickRandom<GameStatus>(); // State not used in success path for GetValueOrElse
 
         // Act
-        var value = result.GetValueOrElse((_, _) => new GameId(Faker.Random.Guid()), stateStatus);
+        var value = result.GetValueOrDefault((_, _) => new GameId(Faker.Random.Guid()), stateStatus);
 
         // Assert
         value.ShouldBe(successValue);
@@ -60,7 +60,7 @@ public class ResultGetValueOrElseTests {
         var contextState  = "Fallback context";
 
         // Act
-        var value = result.GetValueOrElse(
+        var value = result.GetValueOrDefault(
             (err, state) => {
                 err.ShouldBe(errorValue);
                 state.ShouldBe(contextState);
@@ -80,7 +80,7 @@ public class ResultGetValueOrElseTests {
         var result = Result<GameId, InvalidMoveError>.Success(successValue);
 
         // Act
-        var value = await result.GetValueOrElseAsync(_ => ValueTask.FromResult(new GameId(Faker.Random.Guid())));
+        var value = await result.GetValueOrDefaultAsync(_ => ValueTask.FromResult(new GameId(Faker.Random.Guid())));
 
         // Assert
         value.ShouldBe(successValue);
@@ -94,7 +94,7 @@ public class ResultGetValueOrElseTests {
         var fallbackValue = new GameId(Faker.Random.Guid());
 
         // Act
-        var value = await result.GetValueOrElseAsync(err => {
+        var value = await result.GetValueOrDefaultAsync(err => {
                 err.ShouldBe(errorValue);
                 return ValueTask.FromResult(fallbackValue);
             }

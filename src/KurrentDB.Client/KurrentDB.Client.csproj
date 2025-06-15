@@ -83,8 +83,6 @@
   <ItemGroup>
     <Folder Include="Kurrent.Client\Infra\Grpc\" />
     <Folder Include="Kurrent.Client\Infra\Result\" />
-    <Folder Include="Kurrent.Grpc\" />
-    <Folder Include="Kurrent.SchemaRegistry\" />
   </ItemGroup>
 
   <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">

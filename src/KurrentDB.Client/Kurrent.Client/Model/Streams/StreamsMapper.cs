@@ -30,7 +30,7 @@ static class StreamsMapper {
 
 		var data = await serializerProvider
 			.GetSerializer(source.DataFormat)
-			.Serialize(source, context)
+			.Serialize(source.Value, context)
 			.ConfigureAwait(false);
 
 		return new Contracts.AppendRecord {

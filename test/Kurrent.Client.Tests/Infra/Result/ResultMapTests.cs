@@ -19,8 +19,8 @@ public class ResultMapTests {
 
         // Assert
         mappedResult.IsSuccess.ShouldBeTrue();
-        mappedResult.AsSuccess.GameId.ShouldBe(initialSuccess.Value);
-        mappedResult.AsSuccess.NewStatus.ShouldBe(GameStatus.Draw);
+        mappedResult.Value.GameId.ShouldBe(initialSuccess.Value);
+        mappedResult.Value.NewStatus.ShouldBe(GameStatus.Draw);
     }
 
     [Test]
@@ -33,7 +33,7 @@ public class ResultMapTests {
         var mappedResult = result.Map(gameId => new GameUpdated(gameId.Value, GameStatus.Draw));
 
         // Assert
-        mappedResult.IsError.ShouldBeTrue();
+        mappedResult.IsFailure.ShouldBeTrue();
         mappedResult.AsError.ShouldBe(errorValue);
     }
 
@@ -53,9 +53,9 @@ public class ResultMapTests {
 
         // Assert
         mappedResult.IsSuccess.ShouldBeTrue();
-        mappedResult.AsSuccess.GameId.ShouldBe(successValue.Value);
-        mappedResult.AsSuccess.NewStatus.ShouldBe(GameStatus.Draw);
-        mappedResult.AsSuccess.UpdateNotes.ShouldBe(stateNotes);
+        mappedResult.Value.GameId.ShouldBe(successValue.Value);
+        mappedResult.Value.NewStatus.ShouldBe(GameStatus.Draw);
+        mappedResult.Value.UpdateNotes.ShouldBe(stateNotes);
     }
 
     [Test]
@@ -73,7 +73,7 @@ public class ResultMapTests {
         );
 
         // Assert
-        mappedResult.IsError.ShouldBeTrue();
+        mappedResult.IsFailure.ShouldBeTrue();
         mappedResult.AsError.ShouldBe(errorValue);
     }
 
@@ -111,7 +111,7 @@ public class ResultMapTests {
         var mappedResult = await result.MapAsync(gameId => { return ValueTask.FromResult(new PlayerTurn(Player.X, new Position(0, 0))); });
 
         // Assert
-        mappedResult.IsError.ShouldBeTrue();
+        mappedResult.IsFailure.ShouldBeTrue();
         mappedResult.AsError.ShouldBe(errorValue);
     }
 
@@ -127,9 +127,9 @@ public class ResultMapTests {
 
         // Assert
         mappedResult.IsSuccess.ShouldBeTrue();
-        mappedResult.AsSuccess.Player.ShouldBe(playerState);
-        mappedResult.AsSuccess.Position.ShouldBe(new Position(1, 1));
-        mappedResult.AsSuccess.MoveDescription.ShouldBe($"Stateful turn by {playerState}");
+        mappedResult.Value.Player.ShouldBe(playerState);
+        mappedResult.Value.Position.ShouldBe(new Position(1, 1));
+        mappedResult.Value.MoveDescription.ShouldBe($"Stateful turn by {playerState}");
     }
 
     [Test]
@@ -143,7 +143,7 @@ public class ResultMapTests {
         var mappedResult = await result.MapAsync((gameId, player) => ValueTask.FromResult(new PlayerTurn(player, new Position(2, 2))), playerState);
 
         // Assert
-        mappedResult.IsError.ShouldBeTrue();
+        mappedResult.IsFailure.ShouldBeTrue();
         mappedResult.AsError.ShouldBe(errorValue);
     }
 
@@ -163,7 +163,7 @@ public class ResultMapTests {
 
         // Assert
         mappedResult.IsSuccess.ShouldBeTrue();
-        mappedResult.AsSuccess.MoveDescription!.ShouldContain(initialValue.Value.ToString());
+        mappedResult.Value.MoveDescription!.ShouldContain(initialValue.Value.ToString());
     }
 
     [Test]
@@ -180,7 +180,7 @@ public class ResultMapTests {
         );
 
         // Assert
-        mappedResult.IsError.ShouldBeTrue();
+        mappedResult.IsFailure.ShouldBeTrue();
         mappedResult.AsError.ShouldBe(originalError);
         mappedResult.AsError.GameId.ShouldBe(originalError.GameId);
         mappedResult.AsError.Reason.ShouldBe(originalError.Reason);

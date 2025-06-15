@@ -18,7 +18,7 @@ public class ResultCollectionsTests
 
         // Assert
         finalResult.IsSuccess.ShouldBeTrue();
-        finalResult.AsSuccess.ShouldBe([1, 2, 3]);
+        finalResult.Value.ShouldBe([1, 2, 3]);
     }
 
     [Test]
@@ -36,7 +36,7 @@ public class ResultCollectionsTests
         var finalResult = mixedResults.Sequence();
 
         // Assert
-        finalResult.IsError.ShouldBeTrue();
+        finalResult.IsFailure.ShouldBeTrue();
         finalResult.AsError.ShouldBe("First error");
     }
 
@@ -51,7 +51,7 @@ public class ResultCollectionsTests
 
         // Assert
         finalResult.IsSuccess.ShouldBeTrue();
-        finalResult.AsSuccess.ShouldBeEmpty();
+        finalResult.Value.ShouldBeEmpty();
     }
 
     [Test]
@@ -66,7 +66,7 @@ public class ResultCollectionsTests
 
         // Assert
         finalResult.IsSuccess.ShouldBeTrue();
-        finalResult.AsSuccess.ShouldBe(new[] { 2, 4, 6 });
+        finalResult.Value.ShouldBe(new[] { 2, 4, 6 });
     }
 
     [Test]
@@ -80,7 +80,7 @@ public class ResultCollectionsTests
         var finalResult = source.Traverse(Map);
 
         // Assert
-        finalResult.IsError.ShouldBeTrue();
+        finalResult.IsFailure.ShouldBeTrue();
         finalResult.AsError.ShouldBe("Error on 2");
     }
 
@@ -99,7 +99,7 @@ public class ResultCollectionsTests
 
         // Assert
         finalResult.IsSuccess.ShouldBeTrue();
-        finalResult.AsSuccess.ShouldBe(new[] { 1, 2 });
+        finalResult.Value.ShouldBe(new[] { 1, 2 });
     }
 
     [Test]
@@ -117,7 +117,7 @@ public class ResultCollectionsTests
         var finalResult = await tasks.SequenceAsync();
 
         // Assert
-        finalResult.IsError.ShouldBeTrue();
+        finalResult.IsFailure.ShouldBeTrue();
         finalResult.AsError.ShouldBe("First error");
     }
 
@@ -133,7 +133,7 @@ public class ResultCollectionsTests
 
         // Assert
         finalResult.IsSuccess.ShouldBeTrue();
-        finalResult.AsSuccess.ShouldBe(new[] { 2, 4, 6 });
+        finalResult.Value.ShouldBe(new[] { 2, 4, 6 });
     }
 
     [Test]
@@ -149,7 +149,7 @@ public class ResultCollectionsTests
         var finalResult = await source.TraverseAsync(MapAsync);
 
         // Assert
-        finalResult.IsError.ShouldBeTrue();
+        finalResult.IsFailure.ShouldBeTrue();
         finalResult.AsError.ShouldBe("Async error on 2");
     }
 }

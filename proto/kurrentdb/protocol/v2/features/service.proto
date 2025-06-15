@@ -16,7 +16,7 @@ option java_multiple_files = true;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
-import "dynamic-values.proto";
+import "core.proto";
 
 /**
  * Service for retrieving information about the server, including features

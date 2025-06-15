@@ -29,8 +29,7 @@ public record KurrentClientOptions : KurrentClientOptionsBase {
     public static KurrentClientOptionsBuilder FromConnectionString(string connectionString) =>
         KurrentClientOptionsBuilder.FromConnectionString(connectionString);
 
-    const string DefaultConnectionString = "kurrentdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false";
-
+    public static readonly string DefaultConnectionString = "kurrentdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false";
 
     // public bool ThrowExceptionOnResultError { get; init; }
 

@@ -22,7 +22,7 @@ public class ResultThenTests {
 
         // Assert
         chainedResult.IsSuccess.ShouldBeTrue();
-        chainedResult.AsSuccess.ShouldBe(nextSuccess);
+        chainedResult.Value.ShouldBe(nextSuccess);
     }
 
     [Test]
@@ -38,7 +38,7 @@ public class ResultThenTests {
         );
 
         // Assert
-        chainedResult.IsError.ShouldBeTrue();
+        chainedResult.IsFailure.ShouldBeTrue();
         chainedResult.AsError.ShouldBe(nextError);
     }
 
@@ -54,7 +54,7 @@ public class ResultThenTests {
         );
 
         // Assert
-        chainedResult.IsError.ShouldBeTrue();
+        chainedResult.IsFailure.ShouldBeTrue();
         chainedResult.AsError.ShouldBe(initialError);
     }
 
@@ -75,8 +75,8 @@ public class ResultThenTests {
 
         // Assert
         chainedResult.IsSuccess.ShouldBeTrue();
-        chainedResult.AsSuccess.ShouldBe(nextSuccessWithState);
-        chainedResult.AsSuccess.UpdateNotes.ShouldBe(contextState);
+        chainedResult.Value.ShouldBe(nextSuccessWithState);
+        chainedResult.Value.UpdateNotes.ShouldBe(contextState);
     }
 
     #endregion
@@ -97,7 +97,7 @@ public class ResultThenTests {
 
         // Assert
         chainedResult.IsSuccess.ShouldBeTrue();
-        chainedResult.AsSuccess.ShouldBe(nextSuccess);
+        chainedResult.Value.ShouldBe(nextSuccess);
     }
 
     [Test]
@@ -113,7 +113,7 @@ public class ResultThenTests {
         );
 
         // Assert
-        chainedResult.IsError.ShouldBeTrue();
+        chainedResult.IsFailure.ShouldBeTrue();
         chainedResult.AsError.ShouldBe(nextError);
     }
 
@@ -129,7 +129,7 @@ public class ResultThenTests {
         );
 
         // Assert
-        chainedResult.IsError.ShouldBeTrue();
+        chainedResult.IsFailure.ShouldBeTrue();
         chainedResult.AsError.ShouldBe(initialError);
     }
 
@@ -151,8 +151,8 @@ public class ResultThenTests {
 
         // Assert
         chainedResult.IsSuccess.ShouldBeTrue();
-        chainedResult.AsSuccess.ShouldBe(nextSuccessWithState);
-        chainedResult.AsSuccess.UpdateNotes.ShouldBe(contextState);
+        chainedResult.Value.ShouldBe(nextSuccessWithState);
+        chainedResult.Value.UpdateNotes.ShouldBe(contextState);
     }
 
     [Test]
@@ -177,7 +177,7 @@ public class ResultThenTests {
 
         // Assert
         finalResult.IsSuccess.ShouldBeTrue();
-        finalResult.AsSuccess.MoveDescription!.ShouldContain(initialSuccess.Value.ToString());
+        finalResult.Value.MoveDescription!.ShouldContain(initialSuccess.Value.ToString());
     }
 
     #endregion

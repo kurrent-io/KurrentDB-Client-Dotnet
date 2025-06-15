@@ -1,14 +1,16 @@
 namespace Kurrent;
 
-public partial class Result<TSuccess, TError> {
+public readonly partial record struct Result<TValue, TError> {
+    #region . sync .
+
     /// <summary>
     /// Performs the specified action on the success value if the result is a success.
     /// Returns the original result, allowing for fluent chaining.
     /// </summary>
     /// <param name="action">The action to perform on the success value.</param>
-    /// <returns>The current <see cref="Result{TSuccess,TError}"/> instance.</returns>
-    public Result<TSuccess, TError> OnSuccess(Action<TSuccess> action) {
-        if (IsSuccess) action(AsSuccess);
+    /// <returns>The current <see cref="Result{TValue,TError}"/> instance.</returns>
+    public Result<TValue, TError> OnSuccess(Action<TValue> action) {
+        if (IsSuccess) action(Value);
         return this;
     }
 
@@ -19,9 +21,9 @@ public partial class Result<TSuccess, TError> {
     /// <typeparam name="TState">The type of the state to pass to the action.</typeparam>
     /// <param name="action">The action to perform on the success value, taking additional state.</param>
     /// <param name="state">The state to pass to the action.</param>
-    /// <returns>The current <see cref="Result{TSuccess,TError}"/> instance.</returns>
-    public Result<TSuccess, TError> OnSuccess<TState>(Action<TSuccess, TState> action, TState state) {
-        if (IsSuccess) action(AsSuccess, state);
+    /// <returns>The current <see cref="Result{TValue,TError}"/> instance.</returns>
+    public Result<TValue, TError> OnSuccess<TState>(Action<TValue, TState> action, TState state) {
+        if (IsSuccess) action(Value, state);
         return this;
     }
 
@@ -30,9 +32,9 @@ public partial class Result<TSuccess, TError> {
     /// Returns the original result, allowing for fluent chaining.
     /// </summary>
     /// <param name="action">The action to perform on the error value.</param>
-    /// <returns>The current <see cref="Result{TSuccess,TError}"/> instance.</returns>
-    public Result<TSuccess, TError> OnError(Action<TError> action) {
-        if (IsError) action(AsError);
+    /// <returns>The current <see cref="Result{TValue,TError}"/> instance.</returns>
+    public Result<TValue, TError> OnError(Action<TError> action) {
+        if (IsFailure) action(AsError);
         return this;
     }
 
@@ -43,20 +45,24 @@ public partial class Result<TSuccess, TError> {
     /// <typeparam name="TState">The type of the state to pass to the action.</typeparam>
     /// <param name="action">The action to perform on the error value, taking additional state.</param>
     /// <param name="state">The state to pass to the action.</param>
-    /// <returns>The current <see cref="Result{TSuccess,TError}"/> instance.</returns>
-    public Result<TSuccess, TError> OnError<TState>(Action<TError, TState> action, TState state) {
-        if (IsError) action(AsError, state);
+    /// <returns>The current <see cref="Result{TValue,TError}"/> instance.</returns>
+    public Result<TValue, TError> OnError<TState>(Action<TError, TState> action, TState state) {
+        if (IsFailure) action(AsError, state);
         return this;
     }
+
+    #endregion
+
+    #region . async .
 
     /// <summary>
     /// Asynchronously performs the specified action on the success value if the result is a success.
     /// Returns the original result, allowing for fluent chaining.
     /// </summary>
     /// <param name="action">The asynchronous action to perform on the success value.</param>
-    /// <returns>A <see cref="ValueTask{Result}"/> containing the current <see cref="Result{TSuccess,TError}"/> instance.</returns>
-    public async ValueTask<Result<TSuccess, TError>> OnSuccessAsync(Func<TSuccess, ValueTask> action) {
-        if (IsSuccess) await action(AsSuccess).ConfigureAwait(false);
+    /// <returns>A <see cref="ValueTask{Result}"/> containing the current <see cref="Result{TValue,TError}"/> instance.</returns>
+    public async ValueTask<Result<TValue, TError>> OnSuccessAsync(Func<TValue, ValueTask> action) {
+        if (IsSuccess) await action(Value).ConfigureAwait(false);
         return this;
     }
 
@@ -67,9 +73,9 @@ public partial class Result<TSuccess, TError> {
     /// <typeparam name="TState">The type of the state to pass to the action.</typeparam>
     /// <param name="action">The asynchronous action to perform on the success value, taking additional state.</param>
     /// <param name="state">The state to pass to the action.</param>
-    /// <returns>A <see cref="ValueTask{Result}"/> containing the current <see cref="Result{TSuccess,TError}"/> instance.</returns>
-    public async ValueTask<Result<TSuccess, TError>> OnSuccessAsync<TState>(Func<TSuccess, TState, ValueTask> action, TState state) {
-        if (IsSuccess) await action(AsSuccess, state).ConfigureAwait(false);
+    /// <returns>A <see cref="ValueTask{Result}"/> containing the current <see cref="Result{TValue,TError}"/> instance.</returns>
+    public async ValueTask<Result<TValue, TError>> OnSuccessAsync<TState>(Func<TValue, TState, ValueTask> action, TState state) {
+        if (IsSuccess) await action(Value, state).ConfigureAwait(false);
         return this;
     }
 
@@ -78,9 +84,9 @@ public partial class Result<TSuccess, TError> {
     /// Returns the original result, allowing for fluent chaining.
     /// </summary>
     /// <param name="action">The asynchronous action to perform on the error value.</param>
-    /// <returns>A <see cref="ValueTask{Result}"/> containing the current <see cref="Result{TSuccess,TError}"/> instance.</returns>
-    public async ValueTask<Result<TSuccess, TError>> OnErrorAsync(Func<TError, ValueTask> action) {
-        if (IsError) await action(AsError).ConfigureAwait(false);
+    /// <returns>A <see cref="ValueTask{Result}"/> containing the current <see cref="Result{TValue,TError}"/> instance.</returns>
+    public async ValueTask<Result<TValue, TError>> OnErrorAsync(Func<TError, ValueTask> action) {
+        if (IsFailure) await action(AsError).ConfigureAwait(false);
         return this;
     }
 
@@ -91,9 +97,11 @@ public partial class Result<TSuccess, TError> {
     /// <typeparam name="TState">The type of the state to pass to the action.</typeparam>
     /// <param name="action">The asynchronous action to perform on the error value, taking additional state.</param>
     /// <param name="state">The state to pass to the action.</param>
-    /// <returns>A <see cref="ValueTask{Result}"/> containing the current <see cref="Result{TSuccess,TError}"/> instance.</returns>
-    public async ValueTask<Result<TSuccess, TError>> OnErrorAsync<TState>(Func<TError, TState, ValueTask> action, TState state) {
-        if (IsError) await action(AsError, state).ConfigureAwait(false);
+    /// <returns>A <see cref="ValueTask{Result}"/> containing the current <see cref="Result{TValue,TError}"/> instance.</returns>
+    public async ValueTask<Result<TValue, TError>> OnErrorAsync<TState>(Func<TError, TState, ValueTask> action, TState state) {
+        if (IsFailure) await action(AsError, state).ConfigureAwait(false);
         return this;
     }
+
+    #endregion
 }

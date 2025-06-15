@@ -1,5 +1,4 @@
 using System.Reflection;
-using KurrentDB.Client;
 using ValidationException = FluentValidation.ValidationException;
 using ValidationResult = FluentValidation.Results.ValidationResult;
 
@@ -35,6 +34,7 @@ public abstract record KurrentClientOptionsBase {
     /// </exception>
     public void EnsureConfigIsValid() {
         var result = (ValidationResult)Validator.Validate((dynamic)this);
-        if (!result.IsValid) throw new ValidationException(result.Errors);
+        var isValid = result.Errors.Any(error => error.Severity < FluentValidation.Severity.Warning);
+        if (isValid) throw new ValidationException(result.Errors);
     }
 }

@@ -3,7 +3,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Google.Protobuf;
 using Kurrent.Client.SchemaRegistry.Serialization.Protobuf;
-using KurrentDB.Client;
 
 namespace Kurrent.Client.SchemaRegistry.Serialization.Json;
 
@@ -20,9 +19,32 @@ public class JsonSerializer(JsonSerializerOptions? options = null, bool useProto
 	public ReadOnlyMemory<byte> Serialize(object? value) {
 		var bytes = value is not IMessage protoMessage || !UseProtoFormatter
 			? System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(value, Options)
-			: protoMessage.ToUtf8JsonBytes();
+			: ProtobufToUtf8JsonBytes(protoMessage);
 
 		return bytes;
+
+        static ReadOnlyMemory<byte> ProtobufToUtf8JsonBytes(IMessage message) {
+            return Encoding.UTF8.GetBytes(
+                RemoveWhitespacesExceptInQuotes(JsonFormatter.Default.Format(message))
+            );
+
+            // simply because protobuf is so stupid that it adds spaces
+            // between property names and values. absurd...
+            static string RemoveWhitespacesExceptInQuotes(string json) {
+                var inQuotes = false;
+                var result   = new StringBuilder(json.Length);
+
+                foreach (var c in json) {
+                    if (c == '\"') {
+                        inQuotes = !inQuotes;
+                        result.Append(c); // Always include the quote characters
+                    } else if (inQuotes || (!inQuotes && !char.IsWhiteSpace(c)))
+                        result.Append(c);
+                }
+
+                return result.ToString();
+            }
+        }
 	}
 
 	public object? Deserialize(ReadOnlyMemory<byte> data, Type type) {

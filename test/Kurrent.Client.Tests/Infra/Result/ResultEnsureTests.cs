@@ -11,7 +11,7 @@ public class ResultEnsureTests {
 
         // Assert
         ensuredResult.IsSuccess.ShouldBeTrue();
-        ensuredResult.AsSuccess.ShouldBe(10);
+        ensuredResult.Value.ShouldBe(10);
     }
 
     [Test]
@@ -23,7 +23,7 @@ public class ResultEnsureTests {
         var ensuredResult = result.Ensure(x => x > 5, x => $"Value {x} is not greater than 5");
 
         // Assert
-        ensuredResult.IsError.ShouldBeTrue();
+        ensuredResult.IsFailure.ShouldBeTrue();
         ensuredResult.AsError.ShouldBe("Value 3 is not greater than 5");
     }
 
@@ -36,7 +36,7 @@ public class ResultEnsureTests {
         var ensuredResult = result.Ensure(x => x > 5, _ => "This error should not be used");
 
         // Assert
-        ensuredResult.IsError.ShouldBeTrue();
+        ensuredResult.IsFailure.ShouldBeTrue();
         ensuredResult.AsError.ShouldBe("Initial error");
     }
 
@@ -50,7 +50,7 @@ public class ResultEnsureTests {
 
         // Assert
         ensuredResult.IsSuccess.ShouldBeTrue();
-        ensuredResult.AsSuccess.ShouldBe(10);
+        ensuredResult.Value.ShouldBe(10);
     }
 
     [Test]
@@ -62,7 +62,7 @@ public class ResultEnsureTests {
         var ensuredResult = await result.EnsureAsync(x => new ValueTask<bool>(x > 5), x => $"Value {x} is not greater than 5");
 
         // Assert
-        ensuredResult.IsError.ShouldBeTrue();
+        ensuredResult.IsFailure.ShouldBeTrue();
         ensuredResult.AsError.ShouldBe("Value 3 is not greater than 5");
     }
 
@@ -75,7 +75,7 @@ public class ResultEnsureTests {
         var ensuredResult = await result.EnsureAsync(x => new ValueTask<bool>(x > 5), _ => "This error should not be used");
 
         // Assert
-        ensuredResult.IsError.ShouldBeTrue();
+        ensuredResult.IsFailure.ShouldBeTrue();
         ensuredResult.AsError.ShouldBe("Initial error");
     }
 
@@ -90,7 +90,7 @@ public class ResultEnsureTests {
 
         // Assert
         ensuredResult.IsSuccess.ShouldBeTrue();
-        ensuredResult.AsSuccess.ShouldBe(10);
+        ensuredResult.Value.ShouldBe(10);
     }
 
     [Test]
@@ -103,7 +103,7 @@ public class ResultEnsureTests {
         var ensuredResult = result.Ensure((x, s) => x > s, (x, s) => $"Value {x} is not greater than {s}", state);
 
         // Assert
-        ensuredResult.IsError.ShouldBeTrue();
+        ensuredResult.IsFailure.ShouldBeTrue();
         ensuredResult.AsError.ShouldBe("Value 3 is not greater than 5");
     }
 
@@ -118,7 +118,7 @@ public class ResultEnsureTests {
 
         // Assert
         ensuredResult.IsSuccess.ShouldBeTrue();
-        ensuredResult.AsSuccess.ShouldBe(10);
+        ensuredResult.Value.ShouldBe(10);
     }
 
     [Test]
@@ -131,7 +131,7 @@ public class ResultEnsureTests {
         var ensuredResult = await result.EnsureAsync((x, s) => new ValueTask<bool>(x > s), (x, s) => $"Value {x} is not greater than {s}", state);
 
         // Assert
-        ensuredResult.IsError.ShouldBeTrue();
+        ensuredResult.IsFailure.ShouldBeTrue();
         ensuredResult.AsError.ShouldBe("Value 3 is not greater than 5");
     }
 }

@@ -18,10 +18,10 @@ public class ResultCoreTests {
 
         // Assert
         resultGameId.IsSuccess.ShouldBeTrue();
-        resultGameId.AsSuccess.ShouldBe(gameId);
+        resultGameId.Value.ShouldBe(gameId);
 
         resultTicTacToe.IsSuccess.ShouldBeTrue();
-        resultTicTacToe.AsSuccess.ShouldBe(gameStartedEvent);
+        resultTicTacToe.Value.ShouldBe(gameStartedEvent);
     }
 
     [Test]
@@ -35,10 +35,10 @@ public class ResultCoreTests {
         var resultTicTacToe = Result<GameStarted, InvalidMoveError>.Error(ticTacToeError);
 
         // Assert
-        resultGameEnded.IsError.ShouldBeTrue();
+        resultGameEnded.IsFailure.ShouldBeTrue();
         resultGameEnded.AsError.ShouldBe(gameEndedError);
 
-        resultTicTacToe.IsError.ShouldBeTrue();
+        resultTicTacToe.IsFailure.ShouldBeTrue();
         resultTicTacToe.AsError.ShouldBe(ticTacToeError);
     }
 
@@ -48,11 +48,11 @@ public class ResultCoreTests {
         var successValue = new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>());
 
         // Act
-        var result = new TestResult<GameStarted, InvalidMoveError>(true, successValue);
+        var result = new Result<GameStarted, InvalidMoveError>(successValue);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.AsSuccess.ShouldBe(successValue);
+        result.Value.ShouldBe(successValue);
     }
 
     [Test]
@@ -61,10 +61,10 @@ public class ResultCoreTests {
         var errorValue = new InvalidMoveError(Faker.Random.Guid(), "Board full");
 
         // Act
-        var result = new TestResult<GameStarted, InvalidMoveError>(false, error: errorValue);
+        var result = new Result<GameStarted, InvalidMoveError>(errorValue);
 
         // Assert
-        result.IsError.ShouldBeTrue();
+        result.IsFailure.ShouldBeTrue();
         result.AsError.ShouldBe(errorValue);
     }
 
@@ -92,7 +92,7 @@ public class ResultCoreTests {
         var errorResult = Result<GameStarted, InvalidMoveError>.Error(new InvalidMoveError(Faker.Random.Guid(), "Test reason"));
 
         // Act & Assert
-        errorResult.IsError.ShouldBeTrue();
+        errorResult.IsFailure.ShouldBeTrue();
     }
 
     [Test]
@@ -101,7 +101,7 @@ public class ResultCoreTests {
         var successResult = Result<GameStarted, InvalidMoveError>.Success(new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>()));
 
         // Act & Assert
-        successResult.IsError.ShouldBeFalse();
+        successResult.IsFailure.ShouldBeFalse();
     }
 
     [Test]
@@ -111,7 +111,7 @@ public class ResultCoreTests {
         var successResult = Result<GameId, InvalidMoveError>.Success(successValue);
 
         // Act & Assert
-        successResult.AsSuccess.ShouldBe(successValue);
+        successResult.Value.ShouldBe(successValue);
     }
 
     [Test]
@@ -120,8 +120,7 @@ public class ResultCoreTests {
         var errorResult = Result<GameId, InvalidMoveError>.Error(new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence()));
 
         // Act & Assert
-        Should.Throw<InvalidOperationException>(() => errorResult.AsSuccess)
-            .Message.ShouldBe("Result is not a success.");
+        Should.Throw<InvalidOperationException>(() => errorResult.Value);
     }
 
     [Test]
@@ -140,8 +139,7 @@ public class ResultCoreTests {
         var successResult = Result<GameStarted, Position>.Success(new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>()));
 
         // Act & Assert
-        Should.Throw<InvalidOperationException>(() => successResult.AsError)
-            .Message.ShouldBe("Result is not an error.");
+        Should.Throw<InvalidOperationException>(() => successResult.AsError);
     }
 
     [Test]
@@ -154,7 +152,7 @@ public class ResultCoreTests {
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.AsSuccess.ShouldBe(successValue);
+        result.Value.ShouldBe(successValue);
     }
 
     [Test]
@@ -166,7 +164,7 @@ public class ResultCoreTests {
         Result<GameStarted, InvalidMoveError> result = errorValue;
 
         // Assert
-        result.IsError.ShouldBeTrue();
+        result.IsFailure.ShouldBeTrue();
         result.AsError.ShouldBe(errorValue);
     }
 
@@ -189,8 +187,7 @@ public class ResultCoreTests {
         var errorResult = Result<GameId, InvalidMoveError>.Error(new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence()));
 
         // Act & Assert
-        Should.Throw<InvalidOperationException>(() => (GameId)errorResult)
-            .Message.ShouldBe("Result is not a success.");
+        Should.Throw<InvalidOperationException>(() => (GameId)errorResult);
     }
 
     [Test]
@@ -212,12 +209,6 @@ public class ResultCoreTests {
         var successResult = Result<GameStarted, InvalidMoveError>.Success(new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>()));
 
         // Act & Assert
-        Should.Throw<InvalidOperationException>(() => (InvalidMoveError)successResult)
-            .Message.ShouldBe("Result is not an error.");
-    }
-
-    class TestResult<TSuccess, TError> : Result<TSuccess, TError> {
-        public TestResult(bool isSuccess, TSuccess? success = default, TError? error = default)
-            : base(isSuccess, success, error) { }
+        Should.Throw<InvalidOperationException>(() => (InvalidMoveError)successResult);
     }
 }

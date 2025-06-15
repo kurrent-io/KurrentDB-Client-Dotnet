@@ -11,13 +11,14 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
 
 import "streams/shared.proto";
+import "core.proto";
 
 service StreamsService {
-//  // Executes an atomic operation to append records to multiple streams.
-//  // This transactional method ensures that all appends either succeed
-//  // completely, or are entirely rolled back, thereby maintaining strict data
-//  // consistency across all involved streams.
-//  rpc MultiStreamAppend(MultiStreamAppendRequest) returns (MultiStreamAppendResponse);
+  // Executes an atomic operation to append records to multiple streams.
+  // This transactional method ensures that all appends either succeed
+  // completely, or are entirely rolled back, thereby maintaining strict data
+  // consistency across all involved streams.
+  rpc MultiStreamAppend(MultiStreamAppendRequest) returns (MultiStreamAppendResponse);
 
   // Streaming version of MultiStreamAppend that allows clients to send multiple
   // append requests over a single connection. When the stream completes, all

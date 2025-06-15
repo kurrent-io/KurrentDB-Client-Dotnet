@@ -1,6 +1,4 @@
 using KurrentDB.Client;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Kurrent.Client;
 

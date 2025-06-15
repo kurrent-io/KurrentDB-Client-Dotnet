@@ -20,7 +20,7 @@ public class ResultOnSuccessOnErrorTests {
 
         // Assert
         actionExecuted.ShouldBeTrue();
-        returnedResult.ShouldBeSameAs(originalResult);
+        returnedResult.ShouldBeEquivalentTo(originalResult);
     }
 
     [Test]
@@ -35,7 +35,7 @@ public class ResultOnSuccessOnErrorTests {
 
         // Assert
         actionExecuted.ShouldBeFalse();
-        returnedResult.ShouldBeSameAs(originalResult);
+        returnedResult.ShouldBeEquivalentTo(originalResult);
     }
 
     [Test]
@@ -50,7 +50,7 @@ public class ResultOnSuccessOnErrorTests {
 
         // Assert
         actionExecuted.ShouldBeTrue();
-        returnedResult.ShouldBeSameAs(originalResult);
+        returnedResult.ShouldBeEquivalentTo(originalResult);
     }
 
     [Test]
@@ -65,7 +65,7 @@ public class ResultOnSuccessOnErrorTests {
 
         // Assert
         actionExecuted.ShouldBeFalse();
-        returnedResult.ShouldBeSameAs(originalResult);
+        returnedResult.ShouldBeEquivalentTo(originalResult);
     }
 
     [Test]
@@ -117,7 +117,7 @@ public class ResultOnSuccessOnErrorTests {
 
         // Assert
         actionExecuted.ShouldBeTrue();
-        returnedResult.ShouldBeSameAs(originalResult);
+        returnedResult.ShouldBeEquivalentTo(originalResult);
     }
 
     [Test]
@@ -135,7 +135,7 @@ public class ResultOnSuccessOnErrorTests {
 
         // Assert
         actionExecuted.ShouldBeTrue();
-        returnedResult.ShouldBeSameAs(originalResult);
+        returnedResult.ShouldBeEquivalentTo(originalResult);
     }
 
     [Test]

@@ -7,117 +7,85 @@ namespace Kurrent;
 /// This class provides a functional approach to error handling, avoiding exceptions for expected failures.
 /// It supports direct instantiation, inheritance for domain-specific result types, and a fluent API for transformations.
 /// </summary>
-/// <typeparam name="TSuccess">The type of the success value.</typeparam>
+/// <typeparam name="TValue">The type of the success value.</typeparam>
 /// <typeparam name="TError">The type of the error value.</typeparam>
 [PublicAPI]
 [DebuggerDisplay("{ToString(),nq}")]
-public partial class Result<TSuccess, TError> : IEquatable<Result<TSuccess, TError>> {
-    readonly TSuccess? _success;
-    readonly TError?   _error;
+public readonly partial record struct Result<TValue, TError> {
+    readonly TValue? _value;
+    readonly TError? _error;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Result{TSuccess,TError}"/> class.
-    /// This constructor is protected to encourage use of static factory methods <see cref="Success(TSuccess)"/> and <see cref="Error(TError)"/>
-    /// or for use by derived classes.
-    /// </summary>
-    protected Result(bool isSuccess, TSuccess? success, TError? error) {
-        if (success is null && error is null)
-            throw new InvalidOperationException("Both success and error cannot be null. At least one must be provided.");
-
-        IsSuccess = isSuccess;
-        if (IsSuccess)
-            _success = success;
-        else
-            _error  = error;
+    public Result(TValue value) {
+        ArgumentNullException.ThrowIfNull(value);
+        Case   = ResultCase.Success;
+        _value = value;
+        _error = default;
     }
 
-    protected Result(TSuccess success) {
-        IsSuccess = true;
-        _success  = success;
+    public Result(TError error) {
+        ArgumentNullException.ThrowIfNull(error);
+        Case   = ResultCase.Failure;
+        _value = default;
+        _error = error;
     }
 
-    protected Result(TError error) {
-        IsSuccess = false;
-        _error    = error;
-    }
+    public ResultCase Case { get; }
 
     /// <summary>
     /// Gets a value indicating whether the operation was successful.
     /// </summary>
-    public bool IsSuccess { get; }
+    public bool IsSuccess => Case == ResultCase.Success;
 
     /// <summary>
     /// Gets a value indicating whether the operation failed.
     /// </summary>
-    public bool IsError => !IsSuccess;
+    public bool IsFailure => Case == ResultCase.Failure;
 
     /// <summary>
     /// Gets the success value.
     /// Throws an <see cref="InvalidOperationException"/> if the result is not a success.
     /// </summary>
-    public TSuccess AsSuccess =>
-        IsSuccess ? _success! : throw new InvalidOperationException("Result is not a success.");
+    public TValue Value =>
+        IsSuccess ? _value! : throw new InvalidOperationException("Not a successful operation. No value available.");
 
     /// <summary>
     /// Gets the error value.
     /// Throws an <see cref="InvalidOperationException"/> if the result is not an error.
     /// </summary>
     public TError AsError =>
-        IsError ? _error! : throw new InvalidOperationException("Result is not an error.");
+        IsFailure ? _error! : throw new InvalidOperationException("Not a failed operation. No error available.");
 
-    public override string ToString() => IsSuccess ? $"Success({AsSuccess})" : $"Failure({AsError})";
-
-    #region . equality members .
-
-    public bool Equals(Result<TSuccess, TError>? other) {
-        if (other is null) return false;
-        if (ReferenceEquals(this, other)) return true;
-
-        return IsSuccess == other.IsSuccess
-            && EqualityComparer<TSuccess?>.Default.Equals(_success, other._success)
-            && EqualityComparer<TError?>.Default.Equals(_error, other._error);
-    }
-
-    public override bool Equals(object? obj) {
-        if (obj is null) return false;
-        if (ReferenceEquals(this, obj)) return true;
-        if (obj.GetType() != GetType()) return false;
-        return Equals((Result<TSuccess, TError>)obj);
-    }
-
-    public override int GetHashCode() => HashCode.Combine(_success, _error, IsSuccess);
-
-    public static bool operator ==(Result<TSuccess, TError>? left, Result<TSuccess, TError>? right) => Equals(left, right);
-    public static bool operator !=(Result<TSuccess, TError>? left, Result<TSuccess, TError>? right) => !Equals(left, right);
-
-    #endregion
+    public override string ToString() => IsSuccess ? $"Success({Value})" : $"Failure({AsError})";
 
     /// <summary>
-    /// Creates a new <see cref="Result{TSuccess,TError}"/> representing a successful operation.
+    /// Deconstructs the instance into its component parts.
     /// </summary>
-    public static Result<TSuccess, TError> Success(TSuccess success) => new(true, success, default);
-
-    /// <summary>
-    /// Creates a new <see cref="Result{TSuccess,TError}"/> representing a failed operation.
-    /// </summary>
-    public static Result<TSuccess, TError> Error(TError error) => new(false, default, error);
-
+    /// <param name="success">The success component of the result.</param>
+    /// <param name="error">The error component of the result.</param>
+    public void Deconstruct(out TValue? success, out TError? error) {
+        success = _value;
+        error   = _error;
+    }
 
     #region . implicit and explicit conversions .
 
-    /// <summary>
-    /// Implicitly converts a success value to a <see cref="Result{TSuccess,TError}"/>.
-    /// </summary>
-    /// <param name="value">The success value to convert.</param>
-    /// <returns>A <see cref="Result{TSuccess,TError}"/> representing success.</returns>
-    public static implicit operator Result<TSuccess, TError>(TSuccess value) => Success(value);
+    public static implicit operator bool(Result<TValue, TError> result) => result.IsSuccess;
+
+    public static implicit operator ResultCase(Result<TValue, TError> result) => result.Case;
 
     /// <summary>
-    /// Implicitly converts an error value to a <see cref="Result{TSuccess,TError}"/>.
+    /// Implicitly converts a success value to a <see cref="Result{TValue,TError}"/>.
+    /// </summary>
+    /// <param name="value">The success value to convert.</param>
+    /// <returns>A <see cref="Result{TValue,TError}"/> representing success.</returns>
+    public static implicit operator Result<TValue, TError>(TValue value) => new(value);
+
+    /// <summary>
+    /// Implicitly converts an error value to a <see cref="Result{TValue,TError}"/>.
     /// </summary>
     /// <param name="error">The error value to convert.</param>
-    /// <returns>A <see cref="Result{TSuccess,TError}"/> representing an error.</returns>
-    public static implicit operator Result<TSuccess, TError>(TError error) => Error(error);
+    /// <returns>A <see cref="Result{TValue,TError}"/> representing an error.</returns>
+    public static implicit operator Result<TValue, TError>(TError error) => new(error);
 
     /// <summary>
     /// Explicitly converts the result to its success value.
@@ -125,7 +93,7 @@ public partial class Result<TSuccess, TError> : IEquatable<Result<TSuccess, TErr
     /// <param name="result">The result to convert.</param>
     /// <returns>The success value if the result is a success.</returns>
     /// <exception cref="InvalidOperationException">If the result is not a success (i.e., it's an error).</exception>
-    public static explicit operator TSuccess(Result<TSuccess, TError> result) => result.AsSuccess;
+    public static explicit operator TValue(Result<TValue, TError> result) => result.Value;
 
     /// <summary>
     /// Explicitly converts the result to its error value.
@@ -133,7 +101,43 @@ public partial class Result<TSuccess, TError> : IEquatable<Result<TSuccess, TErr
     /// <param name="result">The result to convert.</param>
     /// <returns>The error value if the result is an error.</returns>
     /// <exception cref="InvalidOperationException">If the result is not an error (i.e., it's a success).</exception>
-    public static explicit operator TError(Result<TSuccess, TError> result) => result.AsError;
+    public static explicit operator TError(Result<TValue, TError> result) => result.AsError;
 
     #endregion
+
+    #region . static factory methods .
+
+    /// <summary>
+    /// Creates a new <see cref="Result{TValue,TError}"/> representing a successful operation.
+    /// </summary>
+    [Obsolete]
+    public static Result<TValue, TError> Success(TValue value) => new(value);
+
+    /// <summary>
+    /// Creates a new <see cref="Result{TValue,TError}"/> representing a failed operation.
+    /// </summary>
+    [Obsolete]
+    public static Result<TValue, TError> Error(TError error) => new(error);
+
+    #endregion
+}
+
+public static partial class Result {
+    /// <summary>
+    /// Creates a new <see cref="Result{TValue,TError}"/> representing a successful operation with the specified value.
+    /// </summary>
+    public static Result<TValue, TError> Success<TValue, TError>(TValue value)
+        // where TValue : notnull where TError : notnull
+        => new(value);
+
+    /// <summary>
+    /// Creates a new <see cref="Result{TValue,TError}"/> representing a failed operation with the specified error.
+    /// </summary>
+    public static Result<TValue, TError> Failure<TValue, TError>(TError error)
+        // where TValue : notnull where TError : notnull
+        => new(error);
+}
+
+public enum ResultCase {
+    Success, Failure
 }

@@ -17,9 +17,7 @@ public partial class AppendStreamFailure : IWhatever<
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,
     ErrorDetails.TransactionMaxSizeExceeded,
-    ErrorDetails.StreamRevisionConflict> {
-    // public KurrentClientException Throw() => ((KurrentClientErrorDetails)Value).Throw();
-};
+    ErrorDetails.StreamRevisionConflict>;
 
 [PublicAPI]
 [method: SetsRequiredMembers]
@@ -30,9 +28,6 @@ public record AppendStreamRequest(string Stream, ExpectedStreamState ExpectedSta
 
     public static AppendStreamRequestBuilder New() => new();
 }
-
-// [PublicAPI]
-// public partial class AppendStreamResult : Result<AppendStreamSuccess, AppendStreamFailure>;
 
 [PublicAPI]
 public class AppendStreamSuccesses : List<AppendStreamSuccess> {
@@ -50,9 +45,6 @@ public class AppendStreamFailures : List<AppendStreamFailure> {
 public record MultiStreamAppendRequest {
     public IEnumerable<AppendStreamRequest> Requests { get; init; } = [];
 }
-
-[PublicAPI]
-public partial class MultiStreamAppendResult : Result<AppendStreamSuccesses, AppendStreamFailures>;
 
 [PublicAPI]
 public class AppendStreamRequestBuilder {
@@ -113,23 +105,33 @@ public partial class SubscribeMessage : IWhatever<Record, Heartbeat>;
 /// Represents the result of a delete operation on a stream in KurrentDB.
 /// </summary>
 [PublicAPI]
-public partial class DeleteStreamError : IWhatever<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.StreamRevisionConflict> {
-    // public KurrentClientException Throw() => ((KurrentClientErrorDetails)Value).Throw();
-}
+public partial class DeleteStreamError : IWhatever<
+    ErrorDetails.StreamNotFound,
+    ErrorDetails.StreamDeleted,
+    ErrorDetails.AccessDenied,
+    ErrorDetails.StreamRevisionConflict>;
 
 /// <summary>
 /// Represents the result of a tombstone operation on a stream in KurrentDB.
 /// </summary>
 [PublicAPI]
-public partial class TombstoneStreamError : IWhatever<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.StreamRevisionConflict> {
-    // public KurrentClientException Throw() => ((KurrentClientErrorDetails)Value).Throw();
-}
+public partial class TombstoneStreamError : IWhatever<
+    ErrorDetails.StreamNotFound,
+    ErrorDetails.StreamDeleted,
+    ErrorDetails.AccessDenied,
+    ErrorDetails.StreamRevisionConflict>;
 
 [PublicAPI]
-public partial class GetStreamInfoError : IWhatever<ErrorDetails.StreamNotFound, ErrorDetails.AccessDenied>;
+public partial class GetStreamInfoError : IWhatever<
+    ErrorDetails.StreamNotFound,
+    ErrorDetails.AccessDenied>;
 
 [PublicAPI]
-public partial class SetStreamMetadataError : IWhatever<ErrorDetails.StreamNotFound, ErrorDetails.StreamDeleted, ErrorDetails.AccessDenied, ErrorDetails.StreamRevisionConflict>;
+public partial class SetStreamMetadataError : IWhatever<
+    ErrorDetails.StreamNotFound,
+    ErrorDetails.StreamDeleted,
+    ErrorDetails.AccessDenied,
+    ErrorDetails.StreamRevisionConflict>;
 
 [PublicAPI]
 public partial class TruncateStreamError : IWhatever<

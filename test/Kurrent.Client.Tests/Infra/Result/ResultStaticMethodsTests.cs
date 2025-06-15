@@ -18,7 +18,7 @@ public class ResultStaticMethodsTests {
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.AsSuccess.ShouldBe(expectedValue);
+        result.Value.ShouldBe(expectedValue);
     }
 
     [Test]
@@ -31,7 +31,7 @@ public class ResultStaticMethodsTests {
         var result = Kurrent.Result.Try(func, ex => ex.Message);
 
         // Assert
-        result.IsError.ShouldBeTrue();
+        result.IsFailure.ShouldBeTrue();
         result.AsError.ShouldBe(errorMessage);
     }
 
@@ -45,7 +45,7 @@ public class ResultStaticMethodsTests {
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.AsSuccess.ShouldBe(Unit.Value);
+        result.Value.ShouldBe(Void.Value);
     }
 
     [Test]
@@ -58,7 +58,7 @@ public class ResultStaticMethodsTests {
         var result = Kurrent.Result.Try(action, ex => ex.Message);
 
         // Assert
-        result.IsError.ShouldBeTrue();
+        result.IsFailure.ShouldBeTrue();
         result.AsError.ShouldBe(errorMessage);
     }
 
@@ -77,7 +77,7 @@ public class ResultStaticMethodsTests {
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.AsSuccess.ShouldBe(expectedValue);
+        result.Value.ShouldBe(expectedValue);
     }
 
     [Test]
@@ -90,7 +90,7 @@ public class ResultStaticMethodsTests {
         var result = await Kurrent.Result.TryAsync(func, ex => ex.Message);
 
         // Assert
-        result.IsError.ShouldBeTrue();
+        result.IsFailure.ShouldBeTrue();
         result.AsError.ShouldBe(errorMessage);
     }
 
@@ -104,7 +104,7 @@ public class ResultStaticMethodsTests {
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.AsSuccess.ShouldBe(Unit.Value);
+        result.Value.ShouldBe(Void.Value);
     }
 
     [Test]
@@ -117,7 +117,7 @@ public class ResultStaticMethodsTests {
         var result = await Kurrent.Result.TryAsync(action, ex => ex.Message);
 
         // Assert
-        result.IsError.ShouldBeTrue();
+        result.IsFailure.ShouldBeTrue();
         result.AsError.ShouldBe(errorMessage);
     }
 

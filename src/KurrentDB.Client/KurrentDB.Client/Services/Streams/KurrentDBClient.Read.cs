@@ -1,7 +1,6 @@
 using System.Threading.Channels;
 using EventStore.Client.Streams;
 using Grpc.Core;
-using Kurrent.Client;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
 using AsyncStreamReaderExtensions = Kurrent.Client.AsyncStreamReaderExtensions;
 

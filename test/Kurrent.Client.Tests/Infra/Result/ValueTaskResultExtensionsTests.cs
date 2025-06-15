@@ -12,11 +12,11 @@ public class ValueTaskResultExtensionsTests {
         var task          = new ValueTask<GameId>(expectedValue);
 
         // Act
-        var result = await task.AsResultAsync(ex => ex.Message);
+        var result = await task.ToResultAsync(ex => ex.Message);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.AsSuccess.ShouldBe(expectedValue);
+        result.Value.ShouldBe(expectedValue);
     }
 
     [Test]
@@ -26,10 +26,10 @@ public class ValueTaskResultExtensionsTests {
         var task         = new ValueTask<GameId>(Task.FromException<GameId>(new InvalidOperationException(errorMessage)));
 
         // Act
-        var result = await task.AsResultAsync(ex => ex.Message);
+        var result = await task.ToResultAsync(ex => ex.Message);
 
         // Assert
-        result.IsError.ShouldBeTrue();
+        result.IsFailure.ShouldBeTrue();
         result.AsError.ShouldBe(errorMessage);
     }
 
@@ -39,11 +39,11 @@ public class ValueTaskResultExtensionsTests {
         var task = new ValueTask();
 
         // Act
-        var result = await task.AsResultAsync(ex => ex.Message);
+        var result = await task.ToResultAsync(ex => ex.Message);
 
         // Assert
         result.IsSuccess.ShouldBeTrue();
-        result.AsSuccess.ShouldBe(Unit.Value);
+        result.Value.ShouldBe(Void.Value);
     }
 
     [Test]
@@ -53,10 +53,10 @@ public class ValueTaskResultExtensionsTests {
         var task         = new ValueTask(Task.FromException(new InvalidOperationException(errorMessage)));
 
         // Act
-        var result = await task.AsResultAsync(ex => ex.Message);
+        var result = await task.ToResultAsync(ex => ex.Message);
 
         // Assert
-        result.IsError.ShouldBeTrue();
+        result.IsFailure.ShouldBeTrue();
         result.AsError.ShouldBe(errorMessage);
     }
 }

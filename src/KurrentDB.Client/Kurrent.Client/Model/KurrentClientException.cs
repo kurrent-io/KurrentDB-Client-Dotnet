@@ -52,8 +52,8 @@ public class KurrentClientException(string errorCode, string message, Exception?
 }
 
 public static class KurrentClientExceptionExtensions {
-    public static KurrentClientException ToException(this IWhatever whateverError, Exception? innerException = null) {
-        if (whateverError.Value is KurrentClientErrorDetails error)
+    public static Exception ToException(this IWhatever whateverError, Exception? innerException = null) {
+        if (whateverError.Value is IResultError error)
             return error.CreateException(innerException);
 
         var invalidEx = new InvalidOperationException(
@@ -63,6 +63,6 @@ public static class KurrentClientExceptionExtensions {
         return KurrentClientException.CreateUnknown("KurrentClientExceptionExtensions.Throw", invalidEx);
     }
 
-    public static KurrentClientException Throw(this IWhatever whateverError, Exception? innerException = null) =>
+    public static Exception Throw(this IWhatever whateverError, Exception? innerException = null) =>
         throw whateverError.ToException(innerException);
 }
