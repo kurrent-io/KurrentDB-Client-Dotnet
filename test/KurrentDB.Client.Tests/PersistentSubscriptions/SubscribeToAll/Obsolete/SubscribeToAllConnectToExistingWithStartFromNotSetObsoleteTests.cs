@@ -29,8 +29,7 @@ public class SubscribeToAllConnectToExistingWithStartFromNotSetObsoleteTests(ITe
 
 		using var subscription = await Fixture.Subscriptions.SubscribeToAllAsync(
 			group,
-			new PersistentSubscriptionListener{
-			 EventAppeared = async (subscription, e, r, ct) => {
+			async (subscription, e, r, ct) => {
 				if (SystemStreams.IsSystemStream(e.OriginalStreamId)) {
 					await subscription.Ack(e);
 					return;
@@ -39,11 +38,11 @@ public class SubscribeToAllConnectToExistingWithStartFromNotSetObsoleteTests(ITe
 				firstNonSystemEventSource.TrySetResult(e);
 				await subscription.Ack(e);
 			},
-			SubscriptionDropped = (subscription, reason, ex) => {
+			(subscription, reason, ex) => {
 				if (reason != SubscriptionDroppedReason.Disposed)
 					firstNonSystemEventSource.TrySetException(ex!);
-			}},
-			new SubscribeToPersistentSubscriptionOptions{ UserCredentials = TestCredentials.Root }
+			},
+			TestCredentials.Root
 		);
 
 		await Assert.ThrowsAsync<TimeoutException>(() => firstNonSystemEventSource.Task.WithTimeout());

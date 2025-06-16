@@ -4,10 +4,10 @@ namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:UserManagement")]
 public class ChangePasswordTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
-	: KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
+	: KurrentDBPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[Theory, ChangePasswordNullInputCases]
 	public async Task changing_user_password_with_null_input_throws(string loginName, string currentPassword, string newPassword, string paramName) {
-		var ex = await Fixture.DbUsers
+		var ex = await Fixture.DBUsers
 			.ChangePasswordAsync(loginName, currentPassword, newPassword, userCredentials: TestCredentials.Root)
 			.ShouldThrowAsync<ArgumentNullException>();
 
@@ -16,7 +16,7 @@ public class ChangePasswordTests(ITestOutputHelper output, KurrentDBPermanentFix
 
 	[Theory, ChangePasswordEmptyInputCases]
 	public async Task changing_user_password_with_empty_input_throws(string loginName, string currentPassword, string newPassword, string paramName) {
-		var ex = await Fixture.DbUsers
+		var ex = await Fixture.DBUsers
 			.ChangePasswordAsync(loginName, currentPassword, newPassword, userCredentials: TestCredentials.Root)
 			.ShouldThrowAsync<ArgumentOutOfRangeException>();
 
@@ -26,9 +26,9 @@ public class ChangePasswordTests(ITestOutputHelper output, KurrentDBPermanentFix
 	[Theory(Skip = "This can't be right")]
 	[ClassData(typeof(InvalidCredentialsTestCases))]
 	public async Task changing_user_password_with_user_with_insufficient_credentials_throws(string loginName, UserCredentials userCredentials) {
-		await Fixture.DbUsers.CreateUserAsync(loginName, "Full Name", Array.Empty<string>(), "password", userCredentials: TestCredentials.Root);
+		await Fixture.DBUsers.CreateUserAsync(loginName, "Full Name", Array.Empty<string>(), "password", userCredentials: TestCredentials.Root);
 
-		await Fixture.DbUsers
+		await Fixture.DBUsers
 			.ChangePasswordAsync(loginName, "password", "newPassword", userCredentials: userCredentials)
 			.ShouldThrowAsync<AccessDeniedException>();
 	}
@@ -37,7 +37,7 @@ public class ChangePasswordTests(ITestOutputHelper output, KurrentDBPermanentFix
 	public async Task changing_user_password_when_the_current_password_is_wrong_throws() {
 		var user = await Fixture.CreateTestUser();
 
-		await Fixture.DbUsers
+		await Fixture.DBUsers
 			.ChangePasswordAsync(user.LoginName, "wrong-password", "new-password", userCredentials: TestCredentials.Root)
 			.ShouldThrowAsync<AccessDeniedException>();
 	}
@@ -46,7 +46,7 @@ public class ChangePasswordTests(ITestOutputHelper output, KurrentDBPermanentFix
 	public async Task changing_user_password_with_correct_credentials() {
 		var user = await Fixture.CreateTestUser();
 
-		await Fixture.DbUsers
+		await Fixture.DBUsers
 			.ChangePasswordAsync(user.LoginName, user.Password, "new-password", userCredentials: TestCredentials.Root)
 			.ShouldNotThrowAsync();
 	}

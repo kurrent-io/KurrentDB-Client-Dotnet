@@ -1,8 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using KurrentDB.Client;
-using Kurrent.Diagnostics;
-using Kurrent.Diagnostics.Telemetry;
+using KurrentDB.Diagnostics;
+using KurrentDB.Diagnostics.Telemetry;
 
 namespace KurrentDB.Client.Diagnostics;
 

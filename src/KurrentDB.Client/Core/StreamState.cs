@@ -1,5 +1,3 @@
-using System;
-
 namespace KurrentDB.Client {
 	/// <summary>
 	/// A structure that represents the state the stream should be in when writing.

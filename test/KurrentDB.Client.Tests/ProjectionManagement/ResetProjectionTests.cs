@@ -8,8 +8,8 @@ public class ResetProjectionTests(ITestOutputHelper output, ResetProjectionTests
 	[Fact]
 	public async Task reset_projection() {
 		var name = Names.First();
-		await Fixture.DbProjections.ResetAsync(name, userCredentials: TestCredentials.Root);
-		var result = await Fixture.DbProjections.GetStatusAsync(name, userCredentials: TestCredentials.Root);
+		await Fixture.DBProjections.ResetAsync(name, userCredentials: TestCredentials.Root);
+		var result = await Fixture.DBProjections.GetStatusAsync(name, userCredentials: TestCredentials.Root);
 
 		Assert.NotNull(result);
 		Assert.Equal("Running", result.Status);

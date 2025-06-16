@@ -1,5 +1,4 @@
 ﻿using connecting_to_a_single_node;
-using EventStore.Client;
 using KurrentDB.Client;
 
 #pragma warning disable CS8321 // Local function is declared but never used
@@ -7,7 +6,7 @@ using KurrentDB.Client;
 static void SimpleConnection() {
 	#region creating-simple-connection
 
-	using var client = new KurrentDBClient(KurrentDBClientSettings.Create("esdb://localhost:2113"));
+	using var client = new KurrentDBClient(KurrentDBClientSettings.Create("kurrentdb://localhost:2113"));
 
 	#endregion creating-simple-connection
 }

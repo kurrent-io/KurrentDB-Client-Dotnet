@@ -2,9 +2,9 @@ using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests;
 
-[Trait("Category", "Target:DbOperations")]
+[Trait("Category", "Target:Operations")]
 public class AuthenticationTests(ITestOutputHelper output, AuthenticationTests.CustomFixture fixture)
-	: KurrentPermanentTests<AuthenticationTests.CustomFixture>(output, fixture) {
+	: KurrentDBPermanentTests<AuthenticationTests.CustomFixture>(output, fixture) {
 	public enum CredentialsCase { None, TestUser, RootUser }
 
 	public static IEnumerable<object?[]> InvalidAuthenticationCases() {
@@ -38,7 +38,7 @@ public class AuthenticationTests(ITestOutputHelper output, AuthenticationTests.C
 		var defaultUserCredentials = GetCredentials(defaultCredentials);
 		var actualUserCredentials  = GetCredentials(actualCredentials);
 
-		var settings = Fixture.DbClientSettings;
+		var settings = Fixture.DBClientSettings;
 
 		settings.DefaultCredentials = defaultUserCredentials;
 		settings.ConnectionName     = $"Authentication case #{caseNr} {defaultCredentials}";

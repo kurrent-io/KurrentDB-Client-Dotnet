@@ -1,6 +1,6 @@
 using System.Net;
-using Grpc.Core;
 using KurrentDB.Client;
+using Grpc.Core;
 
 namespace KurrentDB.Client.Tests;
 

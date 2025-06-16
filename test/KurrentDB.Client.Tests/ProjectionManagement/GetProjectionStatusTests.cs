@@ -8,7 +8,7 @@ public class GetProjectionStatusTests(ITestOutputHelper output, GetProjectionSta
 	[Fact]
 	public async Task get_status() {
 		var name   = Names.First();
-		var result = await Fixture.DbProjections.GetStatusAsync(name, userCredentials: TestCredentials.Root);
+		var result = await Fixture.DBProjections.GetStatusAsync(name, userCredentials: TestCredentials.Root);
 
 		Assert.NotNull(result);
 		Assert.Equal(name, result.Name);

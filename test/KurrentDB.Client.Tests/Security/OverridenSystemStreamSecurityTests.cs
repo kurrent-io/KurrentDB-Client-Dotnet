@@ -4,10 +4,7 @@ using KurrentDB.Client.Tests.TestNode;
 namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:Security")]
-public class OverridenSystemStreamSecurityTests(
-	ITestOutputHelper output,
-	OverridenSystemStreamSecurityTests.CustomFixture fixture
-)
+public class OverridenSystemStreamSecurityTests(ITestOutputHelper output, OverridenSystemStreamSecurityTests.CustomFixture fixture)
 	: KurrentTemporaryTests<OverridenSystemStreamSecurityTests.CustomFixture>(output, fixture) {
 	[Fact]
 	public async Task operations_on_system_stream_succeed_for_authorized_user() {
@@ -30,10 +27,7 @@ public class OverridenSystemStreamSecurityTests(
 	public async Task operations_on_system_stream_fail_for_not_authorized_user() {
 		var stream = $"${Fixture.GetStreamName()}";
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadEvent(stream, TestCredentials.TestUser2));
-		await Assert.ThrowsAsync<AccessDeniedException>(
-			() => Fixture.ReadStreamForward(stream, TestCredentials.TestUser2)
-		);
-
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadStreamForward(stream, TestCredentials.TestUser2));
 		await Assert.ThrowsAsync<AccessDeniedException>(
 			() =>
 				Fixture.ReadStreamBackward(stream, TestCredentials.TestUser2)
@@ -44,9 +38,7 @@ public class OverridenSystemStreamSecurityTests(
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadMeta(stream, TestCredentials.TestUser2));
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.WriteMeta(stream, TestCredentials.TestUser2));
 
-		await Assert.ThrowsAsync<AccessDeniedException>(
-			() => Fixture.SubscribeToStream(stream, TestCredentials.TestUser2)
-		);
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.SubscribeToStream(stream, TestCredentials.TestUser2));
 
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.DeleteStream(stream, TestCredentials.TestUser2));
 	}
@@ -92,10 +84,7 @@ public class OverridenSystemStreamSecurityTests(
 				userStreamAcl: default
 			);
 
-			return Streams.SetSystemSettingsAsync(
-				settings,
-				new SetSystemSettingsOptions { UserCredentials = TestCredentials.TestAdmin }
-			);
+			return Streams.SetSystemSettingsAsync(settings, userCredentials: TestCredentials.TestAdmin);
 		}
 	}
 }

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using KurrentDB.Client;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Display;

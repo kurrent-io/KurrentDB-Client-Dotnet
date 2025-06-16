@@ -5,8 +5,7 @@ namespace KurrentDB.Client.Tests.Streams;
 
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Metadata")]
-public class StreamMetadataTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
-	: KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
+public class StreamMetadataTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentDBPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[Fact]
 	public async Task getting_for_an_existing_stream_and_no_metadata_exists() {
 		var stream = Fixture.GetStreamName();
@@ -102,7 +101,7 @@ public class StreamMetadataTests(ITestOutputHelper output, KurrentDBPermanentFix
 				stream,
 				StreamState.StreamRevision(2),
 				new(),
-				new SetStreamMetadataOptions { ThrowOnAppendFailure = false }
+				options => { options.ThrowOnAppendFailure = false; }
 			);
 
 		Assert.IsType<WrongExpectedVersionResult>(writeResult);
@@ -162,7 +161,7 @@ public class StreamMetadataTests(ITestOutputHelper output, KurrentDBPermanentFix
 					stream,
 					StreamState.Any,
 					new(),
-					new SetStreamMetadataOptions { Deadline = TimeSpan.Zero }
+					deadline: TimeSpan.Zero
 				)
 		);
 
@@ -179,7 +178,7 @@ public class StreamMetadataTests(ITestOutputHelper output, KurrentDBPermanentFix
 					stream,
 					StreamState.StreamRevision(0),
 					new(),
-					new SetStreamMetadataOptions { Deadline = TimeSpan.Zero }
+					deadline: TimeSpan.Zero
 				)
 		);
 
@@ -188,10 +187,7 @@ public class StreamMetadataTests(ITestOutputHelper output, KurrentDBPermanentFix
 
 	[Fact]
 	public async Task with_timeout_get_fails_when_operation_expired() {
-		var stream = Fixture.GetStreamName();
-		var rpcException =
-			await Assert.ThrowsAsync<RpcException>(
-				() => Fixture.Streams.GetStreamMetadataAsync(stream, new OperationOptions { Deadline = TimeSpan.Zero })
-			);
+		var stream       = Fixture.GetStreamName();
+		var rpcException = await Assert.ThrowsAsync<RpcException>(() => Fixture.Streams.GetStreamMetadataAsync(stream, TimeSpan.Zero));
 	}
 }

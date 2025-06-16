@@ -1,32 +1,39 @@
+<a href="https://kurrent.io">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="KurrentLogo-White.png">
+    <source media="(prefers-color-scheme: light)" srcset="KurrentLogo-Black.png">
+    <img alt="Kurrent" src="KurrentLogo-Plum.png" height="50%" width="50%">
+  </picture>
+</a>
+
 # KurrentDB .NET Client
 
-KurrentDB is the event-native database, where business events are immutably stored and streamed. Designed for event-sourced, event-driven, and microservices architectures
+KurrentDB is a database that's engineered for modern software applications and event-driven architectures. Its
+event-native design simplifies data modeling and preserves data integrity while the integrated streaming engine solves
+distributed messaging challenges and ensures data consistency.
 
-This is the repository for the .NET client for KurrentDB version 20+ and uses gRPC as the communication protocol.
+This repository contains an [KurrentDB](https://kurrent.io) Client SDK written in .NET.
 
-## Installation
+## Access to binaries
 
-Reference the nuget package(s) for the API that you would like to call
+Kurrent, Inc publishes GA (general availability) versions
+to [NuGet](https://www.nuget.org/profiles/kurrent).
 
-[KurrentDB.Client](https://www.nuget.org/packages/KurrentDB.Client)
+## KurrentDB Server Compatibility
 
-## Support
+This client is compatible with version `20.6.1` upwards.
 
-Information on support and commercial tools such as LDAP authentication can be found here: [Kurrent Support](https://kurrent.io/support/).
+Server setup instructions can be found in
+the [docs](https://developers.kurrent.io/server/v25.0/quick-start/installation), follow the docker setup for the
+simplest configuration.
 
-## CI Status
+### Documentation
 
-![Build](https://github.com/EventStore/EventStore-Client-Dotnet/actions/workflows/ci.yml/badge.svg)
-![Build](https://github.com/EventStore/EventStore-Client-Dotnet/actions/workflows/lts.yml/badge.svg)
-![Build](https://github.com/EventStore/EventStore-Client-Dotnet/actions/workflows/previous-lts.yml/badge.svg)
-
-## Documentation
-
-Documentation for KurrentDB can be found here: [Kurrent Docs](https://kurrent.io/docs/).
-
-Bear in mind that this client is not yet properly documented. We are working hard on a new version of the documentation.
+* [Samples](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/tree/master/samples)
 
 ## Communities
+
+[Join our global community](https://www.kurrent.io/community) of developers.
 
 - [Discuss](https://discuss.kurrent.io/)
 - [Discord (Kurrent)](https://discord.gg/Phn9pmCw3t)
@@ -34,5 +41,18 @@ Bear in mind that this client is not yet properly documented. We are working har
 
 ## Contributing
 
-Development is done on the `master` branch.
-We attempt to do our best to ensure that the history remains clean and to do so, we generally ask contributors to squash their commits into a set or single logical commit.
+Development is done on the `main` branch.
+We attempt to do our best to ensure that the history remains clean and to do so, we generally ask contributors to squash
+their commits into a set or single logical commit.
+
+- [Create an issue](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/issues)
+- [Documentation](https://docs.kurrent.io/)
+- [Contributing guide](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/blob/main/CONTRIBUTING.md)
+
+## More resources
+
+- [Release notes](https://kurrent.io/blog/release-notes)
+- [Beginners Guide to Event Sourcing](https://kurrent.io/event-sourcing)
+- [Articles](https://kurrent.io/blog)
+- [Webinars](https://kurrent.io/webinars)
+- [Contact us](https://kurrent.io/contact)

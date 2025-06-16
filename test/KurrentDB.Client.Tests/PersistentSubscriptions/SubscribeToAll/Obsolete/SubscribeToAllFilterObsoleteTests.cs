@@ -23,7 +23,7 @@ public class SubscribeToAllFilterObsoleteTests(ITestOutputHelper output, Kurrent
 			SystemStreams.AllStream,
 			StreamState.Any,
 			new(acl: new(SystemRoles.All)),
-			new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
+			userCredentials: TestCredentials.Root
 		);
 
 		var appearedEvents = new List<EventRecord>();
@@ -44,10 +44,7 @@ public class SubscribeToAllFilterObsoleteTests(ITestOutputHelper output, Kurrent
 			userCredentials: TestCredentials.Root
 		);
 
-		await using var subscription = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
+		await using var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
 
 		await subscription.Messages
 			.OfType<PersistentSubscriptionMessage.Event>()
@@ -61,7 +58,7 @@ public class SubscribeToAllFilterObsoleteTests(ITestOutputHelper output, Kurrent
 			)
 			.WithTimeout();
 
-		Assert.Equal(events.Select(x => x.MessageId), appearedEvents.Select(x => x.EventId));
+		Assert.Equal(events.Select(x => x.EventId), appearedEvents.Select(x => x.EventId));
 	}
 
 	[RetryTheory]
@@ -88,14 +85,14 @@ public class SubscribeToAllFilterObsoleteTests(ITestOutputHelper output, Kurrent
 			SystemStreams.AllStream,
 			StreamState.Any,
 			new(acl: new(SystemRoles.All)),
-			new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
+			userCredentials: TestCredentials.Root
 		);
 
 		foreach (var e in eventsToSkip) {
 			await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}_{Guid.NewGuid():n}",
 				StreamState.NoStream,
-				[e]
+				new[] { e }
 			);
 		}
 
@@ -103,7 +100,7 @@ public class SubscribeToAllFilterObsoleteTests(ITestOutputHelper output, Kurrent
 			var result = await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}_{Guid.NewGuid():n}",
 				StreamState.NoStream,
-				[e]
+				new[] { e }
 			);
 
 			eventToCaptureResult ??= result;
@@ -116,11 +113,7 @@ public class SubscribeToAllFilterObsoleteTests(ITestOutputHelper output, Kurrent
 			userCredentials: TestCredentials.Root
 		);
 
-		await using var subscription =
-			Fixture.Subscriptions.SubscribeToAll(
-				group,
-				new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-			);
+		await using var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
 
 		var appearedEvents = await subscription.Messages.OfType<PersistentSubscriptionMessage.Event>()
 			.Take(10)
@@ -129,7 +122,7 @@ public class SubscribeToAllFilterObsoleteTests(ITestOutputHelper output, Kurrent
 			.AsTask()
 			.WithTimeout();
 
-		Assert.Equal(eventsToCapture.Select(x => x.MessageId), appearedEvents.Select(x => x.EventId));
+		Assert.Equal(eventsToCapture.Select(x => x.EventId), appearedEvents.Select(x => x.EventId));
 	}
 
 	public static IEnumerable<object?[]> FilterCases() => Filters.All.Select(filter => new object[] { filter });

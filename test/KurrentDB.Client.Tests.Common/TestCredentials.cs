@@ -1,3 +1,5 @@
+using KurrentDB.Client;
+
 namespace KurrentDB.Client.Tests;
 
 public static class TestCredentials {

@@ -1,6 +1,6 @@
 using EventStore.Client;
-using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
+using EventStore.Client.PersistentSubscriptions;
 
 #nullable enable
 namespace KurrentDB.Client {

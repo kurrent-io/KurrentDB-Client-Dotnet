@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Threading.Channels;
 using EventStore.Client;
 using Grpc.Core;
-using KurrentDB.Client.Core.Serialization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -13,7 +12,7 @@ namespace KurrentDB.Client {
 	/// The client used for operations on streams.
 	/// </summary>
 	public sealed partial class KurrentDBClient : KurrentDBClientBase {
-		internal static readonly JsonSerializerOptions StreamMetadataJsonSerializerOptions = new() {
+		static readonly JsonSerializerOptions StreamMetadataJsonSerializerOptions = new() {
 			Converters = {
 				StreamMetadataJsonConverter.Instance
 			},
@@ -26,10 +25,9 @@ namespace KurrentDB.Client {
 		};
 
 		readonly ILogger<KurrentDBClient> _log;
-		Lazy<StreamAppender>              _batchAppenderLazy;
-		StreamAppender                    BatchAppender => _batchAppenderLazy.Value;
-		readonly CancellationTokenSource  _disposedTokenSource;
-		readonly IMessageSerializer       _messageSerializer;
+		Lazy<StreamAppender>               _batchAppenderLazy;
+		StreamAppender                     BatchAppender => _batchAppenderLazy.Value;
+		readonly CancellationTokenSource   _disposedTokenSource;
 
 		static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
 			[Constants.Exceptions.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),
@@ -72,8 +70,6 @@ namespace KurrentDB.Client {
 			_log                 = Settings.LoggerFactory?.CreateLogger<KurrentDBClient>() ?? new NullLogger<KurrentDBClient>();
 			_disposedTokenSource = new CancellationTokenSource();
 			_batchAppenderLazy   = new Lazy<StreamAppender>(CreateStreamAppender);
-
-			_messageSerializer = MessageSerializer.From(settings?.Serialization);
 		}
 
 		void SwapStreamAppender(Exception ex) =>

@@ -1,4 +1,3 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
@@ -23,7 +22,7 @@ public class SubscribeToStreamConnectToExistingWithStartFromBeginningTests(ITest
 		await using var subscription = Fixture.Subscriptions.SubscribeToStream(
 			stream,
 			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			userCredentials: TestCredentials.Root
 		);
 
 		await Assert.ThrowsAsync<TimeoutException>(

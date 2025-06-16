@@ -1,8 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-
-namespace KurrentDB.Client {
+﻿namespace KurrentDB.Client {
 	/// <summary>
 	/// A class representing the options to apply to an individual operation.
 	/// </summary>

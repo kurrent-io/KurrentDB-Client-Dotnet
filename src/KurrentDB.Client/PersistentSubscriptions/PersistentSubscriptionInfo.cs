@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Google.Protobuf.Collections;
 using EventStore.Client.PersistentSubscriptions;
-using Google.Protobuf.Collections;
 
 namespace KurrentDB.Client {
 	/// <summary>
@@ -14,21 +11,27 @@ namespace KurrentDB.Client {
 	/// <param name="Connections">Active connections to the subscription.</param>
 	/// <param name="Settings">The settings used to create the persistant subscription.</param>
 	/// <param name="Stats">Live statistics for the persistent subscription.</param>
-	public record PersistentSubscriptionInfo(string EventSource, string GroupName, string Status,
+	public record PersistentSubscriptionInfo(
+		string EventSource,
+		string GroupName,
+		string Status,
 		IEnumerable<PersistentSubscriptionConnectionInfo> Connections,
-		PersistentSubscriptionSettings? Settings, PersistentSubscriptionStats Stats) {
-
+		PersistentSubscriptionSettings? Settings,
+		PersistentSubscriptionStats Stats
+	) {
 		internal static PersistentSubscriptionInfo From(SubscriptionInfo info) {
-			IPosition? startFrom = null;
+			IPosition? startFrom                     = null;
 			IPosition? lastCheckpointedEventPosition = null;
-			IPosition? lastKnownEventPosition = null;
+			IPosition? lastKnownEventPosition        = null;
 			if (info.EventSource == SystemStreams.AllStream) {
 				if (Position.TryParse(info.StartFrom, out var position)) {
 					startFrom = position;
 				}
+
 				if (Position.TryParse(info.LastCheckpointedEventPosition, out position)) {
 					lastCheckpointedEventPosition = position;
 				}
+
 				if (Position.TryParse(info.LastKnownEventPosition, out position)) {
 					lastKnownEventPosition = position;
 				}
@@ -36,14 +39,16 @@ namespace KurrentDB.Client {
 				if (long.TryParse(info.StartFrom, out var streamPosition)) {
 					startFrom = StreamPosition.FromInt64(streamPosition);
 				}
+
 				if (ulong.TryParse(info.LastCheckpointedEventPosition, out var position)) {
 					lastCheckpointedEventPosition = new StreamPosition(position);
 				}
+
 				if (ulong.TryParse(info.LastKnownEventPosition, out position)) {
 					lastKnownEventPosition = new StreamPosition(position);
 				}
 			}
-			
+
 			return new PersistentSubscriptionInfo(
 				EventSource: info.EventSource,
 				GroupName: info.GroupName,
@@ -100,7 +105,7 @@ namespace KurrentDB.Client {
 					consumerStrategyName: info.Config.NamedConsumerStrategy
 				);
 			}
-			
+
 			return new PersistentSubscriptionInfo(
 				EventSource: info.EventStreamId,
 				GroupName: info.GroupName,
@@ -124,7 +129,8 @@ namespace KurrentDB.Client {
 		}
 
 		private static IEnumerable<PersistentSubscriptionConnectionInfo> From(
-			RepeatedField<SubscriptionInfo.Types.ConnectionInfo> connections) {
+			RepeatedField<SubscriptionInfo.Types.ConnectionInfo> connections
+		) {
 			foreach (var conn in connections) {
 				yield return new PersistentSubscriptionConnectionInfo(
 					From: conn.From,
@@ -159,9 +165,18 @@ namespace KurrentDB.Client {
 	/// <param name="LastCheckpointedEventPosition">The <see cref="IPosition"/> of the last checkpoint. This will be null if there are no checkpoints.</param>
 	/// <param name="LastKnownEventPosition">The <see cref="IPosition"/> of the last known event. This will be undefined if no events have been received yet.</param>
 	public record PersistentSubscriptionStats(
-		int AveragePerSecond, long TotalItems, long CountSinceLastMeasurement, int ReadBufferCount,
-		long LiveBufferCount, int RetryBufferCount, int TotalInFlightMessages, int OutstandingMessagesCount,
-		long ParkedMessageCount, IPosition? LastCheckpointedEventPosition, IPosition? LastKnownEventPosition);
+		int AveragePerSecond,
+		long TotalItems,
+		long CountSinceLastMeasurement,
+		int ReadBufferCount,
+		long LiveBufferCount,
+		int RetryBufferCount,
+		int TotalInFlightMessages,
+		int OutstandingMessagesCount,
+		long ParkedMessageCount,
+		IPosition? LastCheckpointedEventPosition,
+		IPosition? LastKnownEventPosition
+	);
 
 	/// <summary>
 	/// Provides the details of a persistent subscription connection.
@@ -175,20 +190,27 @@ namespace KurrentDB.Client {
 	/// <param name="AvailableSlots">Number of available slots.</param>
 	/// <param name="InFlightMessages">Number of in flight messages on this connection.</param>
 	/// <param name="ExtraStatistics">Timing measurements for the connection. Can be enabled with the ExtraStatistics setting.</param>
-	public record PersistentSubscriptionConnectionInfo(string From, string Username, string ConnectionName, int AverageItemsPerSecond,
-		long TotalItems, long CountSinceLastMeasurement, int AvailableSlots, int InFlightMessages,
-		IDictionary<string, long> ExtraStatistics) {
-
+	public record PersistentSubscriptionConnectionInfo(
+		string From,
+		string Username,
+		string ConnectionName,
+		int AverageItemsPerSecond,
+		long TotalItems,
+		long CountSinceLastMeasurement,
+		int AvailableSlots,
+		int InFlightMessages,
+		IDictionary<string, long> ExtraStatistics
+	) {
 		internal static IEnumerable<PersistentSubscriptionConnectionInfo> CreateFrom(
-			IEnumerable<PersistentSubscriptionConnectionInfoDto> connections) {
-
+			IEnumerable<PersistentSubscriptionConnectionInfoDto> connections
+		) {
 			foreach (var connection in connections) {
-				yield return  CreateFrom(connection);
+				yield return CreateFrom(connection);
 			}
 		}
 
 		private static PersistentSubscriptionConnectionInfo CreateFrom(PersistentSubscriptionConnectionInfoDto connection) {
-			return  new PersistentSubscriptionConnectionInfo(
+			return new PersistentSubscriptionConnectionInfo(
 				From: connection.From,
 				Username: connection.Username,
 				ConnectionName: connection.ConnectionName,
@@ -204,21 +226,54 @@ namespace KurrentDB.Client {
 		private static IDictionary<string, long> CreateFrom(IEnumerable<PersistentSubscriptionMeasurementInfoDto> extraStatistics) =>
 			extraStatistics.ToDictionary(k => k.Key, v => v.Value);
 	}
-	
-	internal record PersistentSubscriptionDto(string EventStreamId, string GroupName,
-		string Status, float AverageItemsPerSecond, long TotalItemsProcessed, long CountSinceLastMeasurement,
-		long LastProcessedEventNumber, long LastKnownEventNumber, int ReadBufferCount, long LiveBufferCount,
-		int RetryBufferCount, int TotalInFlightMessages, int OutstandingMessagesCount, int ParkedMessageCount,
-		PersistentSubscriptionConfig? Config, IEnumerable<PersistentSubscriptionConnectionInfoDto> Connections);
 
-	internal record PersistentSubscriptionConfig(bool ResolveLinktos, ulong StartFrom, string StartPosition,
-		int MessageTimeoutMilliseconds, bool ExtraStatistics, int MaxRetryCount, int LiveBufferSize, int BufferSize,
-		int ReadBatchSize, int CheckPointAfterMilliseconds, int MinCheckPointCount, int MaxCheckPointCount,
-		int MaxSubscriberCount, string NamedConsumerStrategy);
-	
-	internal record PersistentSubscriptionConnectionInfoDto(string From, string Username, float AverageItemsPerSecond,
-		long TotalItems, long CountSinceLastMeasurement, int AvailableSlots, int InFlightMessages, string ConnectionName,
-		IEnumerable<PersistentSubscriptionMeasurementInfoDto> ExtraStatistics);
-	
+	internal record PersistentSubscriptionDto(
+		string EventStreamId,
+		string GroupName,
+		string Status,
+		float AverageItemsPerSecond,
+		long TotalItemsProcessed,
+		long CountSinceLastMeasurement,
+		long LastProcessedEventNumber,
+		long LastKnownEventNumber,
+		int ReadBufferCount,
+		long LiveBufferCount,
+		int RetryBufferCount,
+		int TotalInFlightMessages,
+		int OutstandingMessagesCount,
+		int ParkedMessageCount,
+		PersistentSubscriptionConfig? Config,
+		IEnumerable<PersistentSubscriptionConnectionInfoDto> Connections
+	);
+
+	internal record PersistentSubscriptionConfig(
+		bool ResolveLinktos,
+		ulong StartFrom,
+		string StartPosition,
+		int MessageTimeoutMilliseconds,
+		bool ExtraStatistics,
+		int MaxRetryCount,
+		int LiveBufferSize,
+		int BufferSize,
+		int ReadBatchSize,
+		int CheckPointAfterMilliseconds,
+		int MinCheckPointCount,
+		int MaxCheckPointCount,
+		int MaxSubscriberCount,
+		string NamedConsumerStrategy
+	);
+
+	internal record PersistentSubscriptionConnectionInfoDto(
+		string From,
+		string Username,
+		float AverageItemsPerSecond,
+		long TotalItems,
+		long CountSinceLastMeasurement,
+		int AvailableSlots,
+		int InFlightMessages,
+		string ConnectionName,
+		IEnumerable<PersistentSubscriptionMeasurementInfoDto> ExtraStatistics
+	);
+
 	internal record PersistentSubscriptionMeasurementInfoDto(string Key, long Value);
 }

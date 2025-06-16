@@ -11,13 +11,13 @@ public class UpdateProjectionTests(ITestOutputHelper output, UpdateProjectionTes
 	[InlineData(null)]
 	public async Task update_projection(bool? emitEnabled) {
 		var name = Fixture.GetProjectionName();
-		await Fixture.DbProjections.CreateContinuousAsync(
+		await Fixture.DBProjections.CreateContinuousAsync(
 			name,
 			"fromAll().when({$init: function (state, ev) {return {};}});",
 			userCredentials: TestCredentials.Root
 		);
 
-		await Fixture.DbProjections.UpdateAsync(
+		await Fixture.DBProjections.UpdateAsync(
 			name,
 			"fromAll().when({$init: function (s, e) {return {};}});",
 			emitEnabled,

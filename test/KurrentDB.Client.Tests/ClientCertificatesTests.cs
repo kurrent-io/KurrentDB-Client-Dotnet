@@ -11,7 +11,7 @@ public class ClientCertificateTests(ITestOutputHelper output, KurrentDBTemporary
 	async Task bad_certificates_combinations_should_return_authentication_error(string userCertFile, string userKeyFile, string tlsCaFile) {
 		var stream     = Fixture.GetStreamName();
 		var seedEvents = Fixture.CreateTestEvents();
-		var port       = Fixture.Options.DbClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
+		var port       = Fixture.Options.DBClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 
 		var connectionString = $"esdb://localhost:{port}/?tls=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
 
@@ -27,7 +27,7 @@ public class ClientCertificateTests(ITestOutputHelper output, KurrentDBTemporary
 	async Task valid_certificates_combinations_should_write_to_stream(string userCertFile, string userKeyFile, string tlsCaFile) {
 		var stream     = Fixture.GetStreamName();
 		var seedEvents = Fixture.CreateTestEvents();
-		var port       = Fixture.Options.DbClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
+		var port       = Fixture.Options.DBClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 
 		var connectionString = $"esdb://localhost:{port}/?userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
 
@@ -44,7 +44,7 @@ public class ClientCertificateTests(ITestOutputHelper output, KurrentDBTemporary
 	async Task basic_authentication_should_take_precedence(string userCertFile, string userKeyFile, string tlsCaFile) {
 		var stream     = Fixture.GetStreamName();
 		var seedEvents = Fixture.CreateTestEvents();
-		var port       = Fixture.Options.DbClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
+		var port       = Fixture.Options.DBClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 
 		var connectionString = $"esdb://admin:changeit@localhost:{port}/?userCertFile={userCertFile}&userKeyFile={userKeyFile}&tlsCaFile={tlsCaFile}";
 

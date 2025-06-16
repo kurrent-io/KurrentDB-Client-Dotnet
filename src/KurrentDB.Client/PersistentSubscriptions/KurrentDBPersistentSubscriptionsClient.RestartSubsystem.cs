@@ -1,7 +1,7 @@
+#nullable enable
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 
-#nullable enable
 namespace KurrentDB.Client {
 	partial class KurrentDBPersistentSubscriptionsClient {
 		/// <summary>

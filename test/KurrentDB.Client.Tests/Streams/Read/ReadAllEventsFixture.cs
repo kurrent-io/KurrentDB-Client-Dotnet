@@ -1,4 +1,3 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests;
@@ -14,7 +13,7 @@ public class ReadAllEventsFixture : KurrentDBTemporaryFixture {
 				SystemStreams.AllStream,
 				StreamState.NoStream,
 				new(acl: new(SystemRoles.All)),
-				new SetStreamMetadataOptions { UserCredentials = TestCredentials.Root }
+				userCredentials: TestCredentials.Root
 			);
 
 			Events = CreateTestEvents(20)
@@ -36,11 +35,11 @@ public class ReadAllEventsFixture : KurrentDBTemporaryFixture {
 
 	public string ExpectedStreamName { get; private set; } = null!;
 
-	public MessageData[] Events { get; private set; } = [];
+	public EventData[] Events { get; private set; } = Array.Empty<EventData>();
 
-	public MessageBinaryData[] ExpectedEvents         { get; private set; } = [];
-	public MessageBinaryData[] ExpectedEventsReversed { get; private set; } = [];
+	public EventBinaryData[] ExpectedEvents         { get; private set; } = Array.Empty<EventBinaryData>();
+	public EventBinaryData[] ExpectedEventsReversed { get; private set; } = Array.Empty<EventBinaryData>();
 
-	public MessageBinaryData ExpectedFirstEvent { get; private set; }
-	public MessageBinaryData ExpectedLastEvent  { get; private set; }
+	public EventBinaryData ExpectedFirstEvent { get; private set; }
+	public EventBinaryData ExpectedLastEvent  { get; private set; }
 }

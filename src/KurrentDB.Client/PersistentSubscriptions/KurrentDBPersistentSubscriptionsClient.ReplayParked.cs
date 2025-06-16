@@ -1,6 +1,6 @@
+using Grpc.Core;
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
-using Grpc.Core;
 using NotSupportedException = System.NotSupportedException;
 
 #nullable enable

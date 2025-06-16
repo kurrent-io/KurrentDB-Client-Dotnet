@@ -1,10 +1,8 @@
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
 public class SubscribeToStreamReplayParkedTests(ITestOutputHelper output, SubscribeToStreamReplayParkedTests.CustomFixture fixture)
-	: KurrentPermanentTests<SubscribeToStreamReplayParkedTests.CustomFixture>(output, fixture) {
+	: KurrentDBPermanentTests<SubscribeToStreamReplayParkedTests.CustomFixture>(output, fixture) {
 	[RetryFact]
 	public async Task does_not_throw() {
 		var stream = Fixture.GetStreamName();
@@ -57,7 +55,7 @@ public class SubscribeToStreamReplayParkedTests(ITestOutputHelper output, Subscr
 		var stream = Fixture.GetStreamName();
 		var user   = Fixture.GetUserCredentials();
 
-		await Fixture.DbUsers
+		await Fixture.DBUsers
 			.CreateUserWithRetry(user.Username!, user.Username!, [], user.Password!, TestCredentials.Root)
 			.WithTimeout();
 

@@ -1,8 +1,4 @@
-using System;
-using System.IO;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using EventStore.Client.Projections;
 using Google.Protobuf.WellKnownTypes;
 using Type = System.Type;
@@ -10,7 +6,7 @@ using Type = System.Type;
 namespace KurrentDB.Client {
 	public partial class KurrentDBProjectionManagementClient {
         static readonly JsonSerializerOptions DefaultJsonSerializerOptions = new JsonSerializerOptions();
-        
+
 		/// <summary>
 		/// Gets the result of a projection as an untyped document.
 		/// </summary>

@@ -8,9 +8,8 @@ namespace EventStore.Client.Streams {
 		public IWriteResult ToWriteResult() => ResultCase switch {
 			ResultOneofCase.Success => new SuccessResult(
 				Success.CurrentRevisionOptionCase switch {
-					Types.Success.CurrentRevisionOptionOneofCase.CurrentRevision =>
-						Success.CurrentRevision,
-					_ => StreamState.NoStream
+					Types.Success.CurrentRevisionOptionOneofCase.CurrentRevision => Success.CurrentRevision,
+					_                                                            => StreamState.NoStream
 				}, Success.PositionOptionCase switch {
 					Types.Success.PositionOptionOneofCase.Position => new Position(
 						Success.Position.CommitPosition,

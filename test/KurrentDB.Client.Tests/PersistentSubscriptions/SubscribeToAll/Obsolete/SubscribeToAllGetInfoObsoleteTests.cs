@@ -89,7 +89,7 @@ public class SubscribeToAllGetInfoObsoleteTests(SubscribeToAllGetInfoObsoleteTes
 
 						return Task.CompletedTask;
 					},
-					new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+					userCredentials: TestCredentials.Root
 				);
 			};
 		}

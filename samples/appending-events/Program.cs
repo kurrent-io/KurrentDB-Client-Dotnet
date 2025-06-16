@@ -1,25 +1,23 @@
 ﻿#pragma warning disable CS8321 // Local function is declared but never used
 
-var settings = KurrentDBClientSettings.Create("esdb://localhost:2113?tls=false");
+var settings = KurrentDBClientSettings.Create("kurrentdb://localhost:2113?tls=false");
 
 settings.OperationOptions.ThrowOnAppendFailure = false;
 
 await using var client = new KurrentDBClient(settings);
 
 await AppendToStream(client);
-await AppendToStreamWithAutoSerialization(client);
-await AppendToStreamWithMetadataAndAutoSerialization(client);
 await AppendWithConcurrencyCheck(client);
 await AppendWithNoStream(client);
 await AppendWithSameId(client);
-await AppendWithSameIdAndAutoSerialization(client);
 
 return;
 
 static async Task AppendToStream(KurrentDBClient client) {
 	#region append-to-stream
 
-	var eventData = MessageData.From(
+	var eventData = new EventData(
+		Uuid.NewUuid(),
 		"some-event",
 		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
@@ -27,120 +25,54 @@ static async Task AppendToStream(KurrentDBClient client) {
 	await client.AppendToStreamAsync(
 		"some-stream",
 		StreamState.NoStream,
-		[eventData]
+		new List<EventData> {
+			eventData
+		}
 	);
 
 	#endregion append-to-stream
 }
 
-static async Task AppendToStreamWithAutoSerialization(KurrentDBClient client) {
-	#region append-to-stream-with-auto-serialization
-
-	var shoppingCartId = Guid.NewGuid();
-
-	var @event = new ProductItemAddedToShoppingCart(
-		shoppingCartId,
-		new PricedProductItem("t-shirt", 1, 99.99m)
-	);
-
-	await client.AppendToStreamAsync(
-		$"shopping_cart-{shoppingCartId}",
-		StreamState.NoStream,
-		[@event]
-	);
-
-	#endregion append-to-stream-with-auto-serialization
-}
-
-static async Task AppendToStreamWithMetadataAndAutoSerialization(KurrentDBClient client) {
-	#region append-to-stream-with-metadata-and-auto-serialization
-
-	var shoppingCartId = Guid.NewGuid();
-	var clientId       = Guid.NewGuid().ToString();
-
-	var @event = new ProductItemAddedToShoppingCart(
-		shoppingCartId,
-		new PricedProductItem("t-shirt", 1, 99.99m)
-	);
-
-	var metadata = new ShoppingCartMetadata(clientId);
-
-	var message = Message.From(@event, metadata);
-
-	await client.AppendToStreamAsync(
-		$"shopping_cart-{shoppingCartId}",
-		StreamState.NoStream,
-		[message]
-	);
-
-	#endregion append-to-stream-with-metadata-and-auto-serialization
-}
-
 static async Task AppendWithSameId(KurrentDBClient client) {
 	#region append-duplicate-event
 
-	var eventData = MessageData.From(
+	var eventData = new EventData(
+		Uuid.NewUuid(),
 		"some-event",
-		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray(),
-		messageId: Uuid.NewUuid()
+		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
 
 	await client.AppendToStreamAsync(
 		"same-event-stream",
 		StreamState.Any,
-		[eventData]
+		new List<EventData> {
+			eventData
+		}
 	);
 
 	// attempt to append the same event again
 	await client.AppendToStreamAsync(
 		"same-event-stream",
 		StreamState.Any,
-		[eventData]
+		new List<EventData> {
+			eventData
+		}
 	);
 
 	#endregion append-duplicate-event
 }
 
-static async Task AppendWithSameIdAndAutoSerialization(KurrentDBClient client) {
-	#region append-duplicate-event-with-serialization
-
-	var shoppingCartId = Guid.NewGuid();
-
-	var @event = new ProductItemAddedToShoppingCart(
-		shoppingCartId,
-		new PricedProductItem("t-shirt", 1, 99.99m)
-	);
-
-	var message = Message.From(
-		@event,
-		messageId: Uuid.NewUuid()
-	);
-
-	await client.AppendToStreamAsync(
-		"same-event-stream",
-		StreamState.Any,
-		[message]
-	);
-
-	// attempt to append the same event again
-	await client.AppendToStreamAsync(
-		"same-event-stream",
-		StreamState.Any,
-		[message]
-	);
-
-	#endregion append-duplicate-event-with-serialization
-}
-
 static async Task AppendWithNoStream(KurrentDBClient client) {
 	#region append-with-no-stream
 
-	var eventDataOne = MessageData.From(
+	var eventDataOne = new EventData(
+		Uuid.NewUuid(),
 		"some-event",
 		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
 
-	var eventDataTwo = MessageData.From(
+	var eventDataTwo = new EventData(
+		Uuid.NewUuid(),
 		"some-event",
 		"{\"id\": \"2\" \"value\": \"some other value\"}"u8.ToArray()
 	);
@@ -148,14 +80,18 @@ static async Task AppendWithNoStream(KurrentDBClient client) {
 	await client.AppendToStreamAsync(
 		"no-stream-stream",
 		StreamState.NoStream,
-		[eventDataOne]
+		new List<EventData> {
+			eventDataOne
+		}
 	);
 
 	// attempt to append the same event again
 	await client.AppendToStreamAsync(
 		"no-stream-stream",
 		StreamState.NoStream,
-		[eventDataTwo]
+		new List<EventData> {
+			eventDataTwo
+		}
 	);
 
 	#endregion append-with-no-stream
@@ -165,19 +101,24 @@ static async Task AppendWithConcurrencyCheck(KurrentDBClient client) {
 	await client.AppendToStreamAsync(
 		"concurrency-stream",
 		StreamState.Any,
-		[MessageData.From("-", ReadOnlyMemory<byte>.Empty)]
+		new[] { new EventData(Uuid.NewUuid(), "-", ReadOnlyMemory<byte>.Empty) }
 	);
 
 	#region append-with-concurrency-check
 
-	var clientOneRead = client.ReadStreamAsync("concurrency-stream");
+	var clientOneRead = client.ReadStreamAsync(
+		Direction.Forwards,
+		"concurrency-stream",
+		StreamPosition.Start
+	);
 
 	var clientOneRevision = (await clientOneRead.LastAsync()).Event.EventNumber.ToUInt64();
 
-	var clientTwoRead     = client.ReadStreamAsync("concurrency-stream");
+	var clientTwoRead     = client.ReadStreamAsync(Direction.Forwards, "concurrency-stream", StreamPosition.Start);
 	var clientTwoRevision = (await clientTwoRead.LastAsync()).Event.EventNumber.ToUInt64();
 
-	var clientOneData = MessageData.From(
+	var clientOneData = new EventData(
+		Uuid.NewUuid(),
 		"some-event",
 		"{\"id\": \"1\" \"value\": \"clientOne\"}"u8.ToArray()
 	);
@@ -185,10 +126,13 @@ static async Task AppendWithConcurrencyCheck(KurrentDBClient client) {
 	await client.AppendToStreamAsync(
 		"no-stream-stream",
 		clientOneRevision,
-		[clientOneData]
+		new List<EventData> {
+			clientOneData
+		}
 	);
 
-	var clientTwoData = MessageData.From(
+	var clientTwoData = new EventData(
+		Uuid.NewUuid(),
 		"some-event",
 		"{\"id\": \"2\" \"value\": \"clientTwo\"}"u8.ToArray()
 	);
@@ -196,14 +140,17 @@ static async Task AppendWithConcurrencyCheck(KurrentDBClient client) {
 	await client.AppendToStreamAsync(
 		"no-stream-stream",
 		clientTwoRevision,
-		[clientTwoData]
+		new List<EventData> {
+			clientTwoData
+		}
 	);
 
 	#endregion append-with-concurrency-check
 }
 
 static async Task AppendOverridingUserCredentials(KurrentDBClient client, CancellationToken cancellationToken) {
-	var eventData = MessageData.From(
+	var eventData = new EventData(
+		Uuid.NewUuid(),
 		"TestEvent",
 		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 	);
@@ -213,23 +160,10 @@ static async Task AppendOverridingUserCredentials(KurrentDBClient client, Cancel
 	await client.AppendToStreamAsync(
 		"some-stream",
 		StreamState.Any,
-		[eventData],
-		new AppendToStreamOptions { UserCredentials = new UserCredentials("admin", "changeit") },
-		cancellationToken
+		new[] { eventData },
+		userCredentials: new UserCredentials("admin", "changeit"),
+		cancellationToken: cancellationToken
 	);
 
 	#endregion overriding-user-credentials
 }
-
-public record PricedProductItem(
-	string ProductId,
-	int Quantity,
-	decimal UnitPrice
-);
-
-public record ProductItemAddedToShoppingCart(
-	Guid CartId,
-	PricedProductItem ProductItem
-);
-
-public record ShoppingCartMetadata(string ClientId);

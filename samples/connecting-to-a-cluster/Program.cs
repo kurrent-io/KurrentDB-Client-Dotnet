@@ -6,7 +6,7 @@ static void ConnectingToACluster() {
 	#region connecting-to-a-cluster
 
 	using var client = new KurrentDBClient(
-		KurrentDBClientSettings.Create("esdb://localhost:1114,localhost:2114,localhost:3114")
+		KurrentDBClientSettings.Create("kurrentdb://localhost:1114,localhost:2114,localhost:3114")
 	);
 
 	#endregion connecting-to-a-cluster

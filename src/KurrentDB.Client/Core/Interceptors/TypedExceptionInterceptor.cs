@@ -7,8 +7,8 @@ namespace KurrentDB.Client.Interceptors;
 
 class TypedExceptionInterceptor : Interceptor {
 	static readonly Dictionary<string, Func<RpcException, Exception>> DefaultExceptionMap = new() {
-		[Exceptions.AccessDenied] = ex => ex.ToAccessDeniedException(),
-		[Exceptions.NotLeader]    = ex => ex.ToNotLeaderException(),
+		[Constants.Exceptions.AccessDenied] = ex => ex.ToAccessDeniedException(),
+		[Constants.Exceptions.NotLeader]    = ex => ex.ToNotLeaderException(),
 	};
 
 	public TypedExceptionInterceptor(Dictionary<string, Func<RpcException, Exception>> customExceptionMap) {
@@ -115,8 +115,8 @@ static class RpcExceptionConversionExtensions {
 		new(exception.Message, exception);
 
 	public static NotLeaderException ToNotLeaderException(this RpcException exception) {
-		var host = exception.Trailers.FirstOrDefault(x => x.Key == Exceptions.LeaderEndpointHost)?.Value!;
-		var port = exception.Trailers.GetIntValueOrDefault(Exceptions.LeaderEndpointPort);
+		var host = exception.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.LeaderEndpointHost)?.Value!;
+		var port = exception.Trailers.GetIntValueOrDefault(Constants.Exceptions.LeaderEndpointPort);
 		return new NotLeaderException(host, port, exception);
 	}
 	
@@ -127,7 +127,7 @@ static class RpcExceptionConversionExtensions {
 		new(new Status(DeadlineExceeded, exception.Status.Detail, exception.Status.DebugException));
 
 	public static bool TryMapException(this RpcException exception, Dictionary<string, Func<RpcException, Exception>> map, out Exception createdException) {
-		if (exception.Trailers.TryGetValue(Exceptions.ExceptionKey, out var key) && map.TryGetValue(key!, out var factory)) {
+		if (exception.Trailers.TryGetValue(Constants.Exceptions.ExceptionKey, out var key) && map.TryGetValue(key!, out var factory)) {
 			createdException = factory.Invoke(exception);
 			return true;
 		}

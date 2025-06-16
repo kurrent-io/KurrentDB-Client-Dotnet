@@ -1,8 +1,8 @@
-using KurrentDB.Client.Diagnostics;
 using JetBrains.Annotations;
+using KurrentDB.Client.Diagnostics;
 using OpenTelemetry.Trace;
 
-namespace EventStore.Client.Extensions.OpenTelemetry;
+namespace KurrentDB.Client.Extensions.OpenTelemetry;
 
 /// <summary>
 /// Extension methods used to facilitate tracing instrumentation of the EventStore Client.

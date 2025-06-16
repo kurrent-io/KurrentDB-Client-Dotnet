@@ -1,9 +1,10 @@
+using KurrentDB.Client;
+
 namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:UserManagement")]
-public class ListUserTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
+public class ListUserTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentDBPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	readonly string _userFullNamePrefix = fixture.IsKdb ? "KurrentDB" : "Event Store";
-
 	[Fact]
 	public async Task returns_all_created_users() {
 		var seed = await Fixture.CreateTestUsers();
@@ -15,7 +16,7 @@ public class ListUserTests(ITestOutputHelper output, KurrentDBPermanentFixture f
 			.Concat(seed.Select(user => user.Details))
 			.ToArray();
 
-		var actual = await Fixture.DbUsers
+		var actual = await Fixture.DBUsers
 			.ListAllAsync(userCredentials: TestCredentials.Root)
 			.Select(user => new UserDetails(user.LoginName, user.FullName, user.Groups, user.Disabled, default))
 			.ToArrayAsync();
@@ -30,7 +31,7 @@ public class ListUserTests(ITestOutputHelper output, KurrentDBPermanentFixture f
 
 		var expected = new[] { admin, ops };
 
-		var actual = await Fixture.DbUsers
+		var actual = await Fixture.DBUsers
 			.ListAllAsync(userCredentials: TestCredentials.Root)
 			.Select(user => new UserDetails(user.LoginName, user.FullName, user.Groups, user.Disabled, default))
 			.ToArrayAsync();

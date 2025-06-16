@@ -11,15 +11,15 @@ public class ProjectionManagementTests(ITestOutputHelper output, ProjectionManag
 	[Fact]
 	public async Task status_is_aborted() {
 		var name = Names.First();
-		await Fixture.DbProjections.AbortAsync(name, userCredentials: TestCredentials.Root);
-		var result = await Fixture.DbProjections.GetStatusAsync(name, userCredentials: TestCredentials.Root);
+		await Fixture.DBProjections.AbortAsync(name, userCredentials: TestCredentials.Root);
+		var result = await Fixture.DBProjections.GetStatusAsync(name, userCredentials: TestCredentials.Root);
 		Assert.NotNull(result);
 		Assert.Contains(["Aborted/Stopped", "Stopped"], x => x == result.Status);
 	}
 
 	[Fact]
 	public async Task one_time() =>
-		await Fixture.DbProjections.CreateOneTimeAsync("fromAll().when({$init: function (state, ev) {return {};}});", userCredentials: TestCredentials.Root);
+		await Fixture.DBProjections.CreateOneTimeAsync("fromAll().when({$init: function (state, ev) {return {};}});", userCredentials: TestCredentials.Root);
 
 	[Theory]
 	[InlineData(true)]
@@ -27,7 +27,7 @@ public class ProjectionManagementTests(ITestOutputHelper output, ProjectionManag
 	public async Task continuous(bool trackEmittedStreams) {
 		var name = Fixture.GetProjectionName();
 
-		await Fixture.DbProjections.CreateContinuousAsync(
+		await Fixture.DBProjections.CreateContinuousAsync(
 			name,
 			"fromAll().when({$init: function (state, ev) {return {};}});",
 			trackEmittedStreams,
@@ -39,7 +39,7 @@ public class ProjectionManagementTests(ITestOutputHelper output, ProjectionManag
 	public async Task transient() {
 		var name = Fixture.GetProjectionName();
 
-		await Fixture.DbProjections.CreateTransientAsync(
+		await Fixture.DBProjections.CreateTransientAsync(
 			name,
 			"fromAll().when({$init: function (state, ev) {return {};}});",
 			userCredentials: TestCredentials.Root

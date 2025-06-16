@@ -1,4 +1,3 @@
-using KurrentDB.Client;
 using Polly;
 using static System.TimeSpan;
 

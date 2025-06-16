@@ -1,5 +1,3 @@
-using System;
-
 namespace KurrentDB.Client {
 	/// <summary>
 	/// An interface representing the result of a write operation.

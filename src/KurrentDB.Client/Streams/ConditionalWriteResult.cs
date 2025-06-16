@@ -27,7 +27,7 @@ namespace KurrentDB.Client {
 		public ConditionalWriteStatus Status { get; }
 
 		/// <summary>
-		/// The correct <see cref="StreamRevision"/> to use when writing to the stream next.
+		/// The correct <see cref="StreamState"/> to use when writing to the stream next.
 		/// </summary>
 		public StreamState NextExpectedStreamState { get; }
 
@@ -41,12 +41,12 @@ namespace KurrentDB.Client {
 
 		internal static ConditionalWriteResult FromWriteResult(IWriteResult writeResult)
 			=> writeResult switch {
-				WrongExpectedVersionResult wrongExpectedVersion => 
+				WrongExpectedVersionResult wrongExpectedVersion =>
 				new ConditionalWriteResult(wrongExpectedVersion.NextExpectedStreamState, Position.End,
 					ConditionalWriteStatus.VersionMismatch),
 				_ => new ConditionalWriteResult(writeResult.NextExpectedStreamState, writeResult.LogPosition)
 			};
-		
+
 		internal static ConditionalWriteResult FromWrongExpectedVersion(WrongExpectedVersionException ex)
 			=> new ConditionalWriteResult(ex.ExpectedStreamState, Position.End,
 				ConditionalWriteStatus.VersionMismatch);

@@ -8,8 +8,8 @@ public class DisableProjectionTests(ITestOutputHelper output, DisableProjectionT
 	[Fact]
 	public async Task disable_projection() {
 		var name = Names.First();
-		await Fixture.DbProjections.DisableAsync(name, userCredentials: TestCredentials.Root);
-		var result = await Fixture.DbProjections.GetStatusAsync(name, userCredentials: TestCredentials.Root);
+		await Fixture.DBProjections.DisableAsync(name, userCredentials: TestCredentials.Root);
+		var result = await Fixture.DBProjections.GetStatusAsync(name, userCredentials: TestCredentials.Root);
 		Assert.NotNull(result);
 		Assert.Contains(["Aborted/Stopped", "Stopped"], x => x == result!.Status);
 	}

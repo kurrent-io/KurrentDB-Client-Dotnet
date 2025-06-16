@@ -1,10 +1,8 @@
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
 public class SubscribeToStreamNoDefaultCredentialsTests(ITestOutputHelper output, SubscribeToStreamNoDefaultCredentialsTests.CustomFixture fixture)
-	: KurrentPermanentTests<SubscribeToStreamNoDefaultCredentialsTests.CustomFixture>(output, fixture) {
+	: KurrentDBPermanentTests<SubscribeToStreamNoDefaultCredentialsTests.CustomFixture>(output, fixture) {
 	[RetryFact]
 	public async Task connect_to_existing_without_permissions() {
 		var group  = Fixture.GetGroupName();
@@ -57,7 +55,7 @@ public class SubscribeToStreamNoDefaultCredentialsTests(ITestOutputHelper output
 			stream,
 			StreamState.NoStream,
 			Fixture.CreateTestEvents(),
-			new AppendToStreamOptions { UserCredentials = TestCredentials.Root }
+			userCredentials: TestCredentials.Root
 		);
 
 		await Fixture.Subscriptions.CreateToStreamAsync(

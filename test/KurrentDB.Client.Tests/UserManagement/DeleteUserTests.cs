@@ -4,10 +4,10 @@ namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:UserManagement")]
 public class DeleteUserTests(ITestOutputHelper output, DeleteUserTests.CustomFixture fixture)
-	: KurrentPermanentTests<DeleteUserTests.CustomFixture>(output, fixture) {
+	: KurrentDBPermanentTests<DeleteUserTests.CustomFixture>(output, fixture) {
 	[Fact]
 	public async Task with_null_input_throws() {
-		var ex = await Fixture.DbUsers
+		var ex = await Fixture.DBUsers
 			.DeleteUserAsync(null!, userCredentials: TestCredentials.Root)
 			.ShouldThrowAsync<ArgumentNullException>();
 
@@ -16,7 +16,7 @@ public class DeleteUserTests(ITestOutputHelper output, DeleteUserTests.CustomFix
 
 	[Fact]
 	public async Task with_empty_input_throws() {
-		var ex = await Fixture.DbUsers
+		var ex = await Fixture.DBUsers
 			.DeleteUserAsync(string.Empty, userCredentials: TestCredentials.Root)
 			.ShouldThrowAsync<ArgumentOutOfRangeException>();
 
@@ -26,7 +26,7 @@ public class DeleteUserTests(ITestOutputHelper output, DeleteUserTests.CustomFix
 	[Theory]
 	[ClassData(typeof(InvalidCredentialsTestCases))]
 	public async Task with_user_with_insufficient_credentials_throws(InvalidCredentialsTestCase testCase) {
-		await Fixture.DbUsers.CreateUserAsync(
+		await Fixture.DBUsers.CreateUserAsync(
 			testCase.User.LoginName,
 			testCase.User.FullName,
 			testCase.User.Groups,
@@ -34,7 +34,7 @@ public class DeleteUserTests(ITestOutputHelper output, DeleteUserTests.CustomFix
 			userCredentials: TestCredentials.Root
 		);
 
-		await Fixture.DbUsers
+		await Fixture.DBUsers
 			.DeleteUserAsync(testCase.User.LoginName, userCredentials: testCase.User.Credentials)
 			.ShouldThrowAsync(testCase.ExpectedException);
 	}
@@ -43,9 +43,9 @@ public class DeleteUserTests(ITestOutputHelper output, DeleteUserTests.CustomFix
 	public async Task cannot_be_read() {
 		var user = await Fixture.CreateTestUser();
 
-		await Fixture.DbUsers.DeleteUserAsync(user.LoginName, userCredentials: TestCredentials.Root);
+		await Fixture.DBUsers.DeleteUserAsync(user.LoginName, userCredentials: TestCredentials.Root);
 
-		var ex = await Fixture.DbUsers
+		var ex = await Fixture.DBUsers
 			.GetUserAsync(user.LoginName, userCredentials: TestCredentials.Root)
 			.ShouldThrowAsync<UserNotFoundException>();
 
@@ -56,9 +56,9 @@ public class DeleteUserTests(ITestOutputHelper output, DeleteUserTests.CustomFix
 	public async Task a_second_time_throws() {
 		var user = await Fixture.CreateTestUser();
 
-		await Fixture.DbUsers.DeleteUserAsync(user.LoginName, userCredentials: TestCredentials.Root);
+		await Fixture.DBUsers.DeleteUserAsync(user.LoginName, userCredentials: TestCredentials.Root);
 
-		var ex = await Fixture.DbUsers
+		var ex = await Fixture.DBUsers
 			.DeleteUserAsync(user.LoginName, userCredentials: TestCredentials.Root)
 			.ShouldThrowAsync<UserNotFoundException>();
 

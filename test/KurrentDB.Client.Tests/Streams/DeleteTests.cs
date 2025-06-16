@@ -1,16 +1,12 @@
-using KurrentDB.Client;
 using Grpc.Core;
 
 namespace KurrentDB.Client.Tests.Streams;
 
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Delete")]
-public class DeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
-	: KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
+public class DeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentDBPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[Theory, ExpectedStreamStateCases]
-	public async Task hard_deleting_a_stream_that_does_not_exist_with_expected_version_does_not_throw(
-		StreamState expectedVersion, string name
-	) {
+	public async Task hard_deleting_a_stream_that_does_not_exist_with_expected_version_does_not_throw(StreamState expectedVersion, string name) {
 		var stream = $"{Fixture.GetStreamName()}_{name}";
 
 		await Fixture.Streams.TombstoneAsync(stream, expectedVersion);
@@ -29,18 +25,14 @@ public class DeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 	public async Task hard_deleting_a_stream_that_does_not_exist_with_wrong_expected_version_throws() {
 		var stream = Fixture.GetStreamName();
 
-		await Assert.ThrowsAsync<WrongExpectedVersionException>(
-			() => Fixture.Streams.TombstoneAsync(stream, StreamState.StreamRevision(0))
-		);
+		await Assert.ThrowsAsync<WrongExpectedVersionException>(() => Fixture.Streams.TombstoneAsync(stream, StreamState.StreamRevision(0)));
 	}
 
 	[Fact]
 	public async Task soft_deleting_a_stream_that_does_not_exist_with_wrong_expected_version_throws() {
 		var stream = Fixture.GetStreamName();
 
-		await Assert.ThrowsAsync<WrongExpectedVersionException>(
-			() => Fixture.Streams.DeleteAsync(stream, StreamState.StreamRevision(0))
-		);
+		await Assert.ThrowsAsync<WrongExpectedVersionException>(() => Fixture.Streams.DeleteAsync(stream, StreamState.StreamRevision(0)));
 	}
 
 	[Fact]
@@ -79,17 +71,13 @@ public class DeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 
 		await Fixture.Streams.TombstoneAsync(stream, StreamState.NoStream);
 
-		await Assert.ThrowsAsync<StreamDeletedException>(
-			() => Fixture.Streams.TombstoneAsync(stream, StreamState.NoStream)
-		);
+		await Assert.ThrowsAsync<StreamDeletedException>(() => Fixture.Streams.TombstoneAsync(stream, StreamState.NoStream));
 	}
 
 	[Fact]
 	public async Task with_timeout_any_stream_revision_delete_fails_when_operation_expired() {
-		var stream = Fixture.GetStreamName();
-		var rpcException = await Assert.ThrowsAsync<RpcException>(
-			() => Fixture.Streams.DeleteAsync(stream, StreamState.Any, new DeleteOptions { Deadline = TimeSpan.Zero })
-		);
+		var stream       = Fixture.GetStreamName();
+		var rpcException = await Assert.ThrowsAsync<RpcException>(() => Fixture.Streams.DeleteAsync(stream, StreamState.Any, TimeSpan.Zero));
 
 		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
 	}
@@ -98,27 +86,15 @@ public class DeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 	public async Task with_timeout_stream_revision_delete_fails_when_operation_expired() {
 		var stream = Fixture.GetStreamName();
 
-		var rpcException = await Assert.ThrowsAsync<RpcException>(
-			() => Fixture.Streams.DeleteAsync(
-				stream,
-				StreamState.StreamRevision(0),
-				new DeleteOptions { Deadline = TimeSpan.Zero }
-			)
-		);
+		var rpcException = await Assert.ThrowsAsync<RpcException>(() => Fixture.Streams.DeleteAsync(stream, StreamState.StreamRevision(0), TimeSpan.Zero));
 
 		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
 	}
 
 	[Fact]
 	public async Task with_timeout_any_stream_revision_tombstoning_fails_when_operation_expired() {
-		var stream = Fixture.GetStreamName();
-		var rpcException = await Assert.ThrowsAsync<RpcException>(
-			() => Fixture.Streams.TombstoneAsync(
-				stream,
-				StreamState.Any,
-				new TombstoneOptions { Deadline = TimeSpan.Zero }
-			)
-		);
+		var stream       = Fixture.GetStreamName();
+		var rpcException = await Assert.ThrowsAsync<RpcException>(() => Fixture.Streams.TombstoneAsync(stream, StreamState.Any, TimeSpan.Zero));
 
 		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
 	}
@@ -127,13 +103,7 @@ public class DeleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 	public async Task with_timeout_stream_revision_tombstoning_fails_when_operation_expired() {
 		var stream = Fixture.GetStreamName();
 
-		var rpcException = await Assert.ThrowsAsync<RpcException>(
-			() => Fixture.Streams.TombstoneAsync(
-				stream,
-				StreamState.StreamRevision(0),
-				new TombstoneOptions { Deadline = TimeSpan.Zero }
-			)
-		);
+		var rpcException = await Assert.ThrowsAsync<RpcException>(() => Fixture.Streams.TombstoneAsync(stream, StreamState.StreamRevision(0), TimeSpan.Zero));
 
 		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
 	}

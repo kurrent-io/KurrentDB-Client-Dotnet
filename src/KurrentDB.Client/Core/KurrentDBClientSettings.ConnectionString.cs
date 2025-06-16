@@ -14,20 +14,6 @@ namespace KurrentDB.Client {
 		public static KurrentDBClientSettings Create(string connectionString) =>
 			ConnectionStringParser.Parse(connectionString);
 
-		/// <summary>
-		/// Creates client settings from a connection string with additional configuration
-		/// </summary>
-		/// <param name="connectionString"></param>
-		/// <param name="configure">allows you to make additional customization of client settings</param>
-		/// <returns></returns>
-		public static KurrentDBClientSettings Create(string connectionString, Action<KurrentDBClientSettings> configure) {
-			var settings = ConnectionStringParser.Parse(connectionString);
-
-			configure(settings);
-
-			return settings;
-		}
-
 		static class ConnectionStringParser {
 			const string SchemeSeparator   = "://";
 			const string UserInfoSeparator = "@";
@@ -53,17 +39,16 @@ namespace KurrentDB.Client {
 			const string UserCertFile         = nameof(UserCertFile);
 			const string UserKeyFile          = nameof(UserKeyFile);
 
-			const string UriSchemeDiscover = "esdb+discover";
-			const string UriSchemeKdbDiscover = "kdb+discover";
-			const string UriSchemeKurrentDiscover = "kurrent+discover";
-			const string UriSchemeKurrentDBDiscover = "kurrentdb+discover";
-
-			static readonly string[] Schemes = {
-				"esdb", UriSchemeDiscover,
-				"kdb", UriSchemeKdbDiscover,
-				"kurrent", UriSchemeKurrentDiscover,
-				"kurrentdb", UriSchemeKurrentDBDiscover
-			};
+			static readonly string[] Schemes = [
+				"esdb",
+				"esdb+discover",
+				"kdb",
+				"kdb+discover",
+				"kurrent",
+				"kurrent+discover",
+				"kurrentdb",
+				"kurrentdb+discover"
+			];
 			static readonly int      DefaultPort   = KurrentDBClientConnectivitySettings.Default.ResolvedAddressOrDefault.Port;
 			static readonly bool     DefaultUseTls = true;
 
@@ -180,10 +165,10 @@ namespace KurrentDB.Client {
 
 				if (typedOptions.TryGetValue(NodePreference, out object? nodePreference)) {
 					settings.ConnectivitySettings.NodePreference = ((string)nodePreference).ToLowerInvariant() switch {
-						"leader"          => KurrentDB.Client.NodePreference.Leader,
-						"follower"        => KurrentDB.Client.NodePreference.Follower,
-						"random"          => KurrentDB.Client.NodePreference.Random,
-						"readonlyreplica" => KurrentDB.Client.NodePreference.ReadOnlyReplica,
+						"leader"          => Client.NodePreference.Leader,
+						"follower"        => Client.NodePreference.Follower,
+						"random"          => Client.NodePreference.Random,
+						"readonlyreplica" => Client.NodePreference.ReadOnlyReplica,
 						_                 => throw new InvalidSettingException($"Invalid NodePreference: {nodePreference}")
 					};
 				}
@@ -217,7 +202,7 @@ namespace KurrentDB.Client {
 
 				settings.ConnectivitySettings.Insecure = !useTls;
 
-				bool isDiscoverScheme = scheme is UriSchemeDiscover or UriSchemeKdbDiscover or UriSchemeKurrentDiscover or UriSchemeKurrentDBDiscover;
+				bool isDiscoverScheme = Schemes.Any(x => x.EndsWith("+discover") && x.Equals(scheme));
 
 				if (hosts.Length == 1 && !isDiscoverScheme) {
 					settings.ConnectivitySettings.Address = hosts[0].ToUri(useTls);
@@ -349,7 +334,7 @@ namespace KurrentDB.Client {
 			}
 
 			static string ParseScheme(string s) =>
-				!Schemes.Contains(s) ? throw new InvalidSchemeException(s, Schemes) : s;
+				Schemes.Contains(s, StringComparer.InvariantCultureIgnoreCase) ? s : throw new InvalidSchemeException(s, Schemes);
 
 			static (string, string) ParseUserInfo(string s) {
 				var tokens = s.Split(Colon[0]);

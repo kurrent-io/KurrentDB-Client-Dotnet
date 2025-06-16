@@ -5,10 +5,7 @@ using KurrentDB.Client.Tests;
 namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:Security")]
-public class OverridenSystemStreamSecurityForAllTests(
-	ITestOutputHelper output,
-	OverridenSystemStreamSecurityForAllTests.CustomFixture fixture
-)
+public class OverridenSystemStreamSecurityForAllTests(ITestOutputHelper output, OverridenSystemStreamSecurityForAllTests.CustomFixture fixture)
 	: KurrentTemporaryTests<OverridenSystemStreamSecurityForAllTests.CustomFixture>(output, fixture) {
 	[Fact]
 	public async Task operations_on_system_stream_succeeds_for_user() {
@@ -71,10 +68,7 @@ public class OverridenSystemStreamSecurityForAllTests(
 				)
 			);
 
-			return Streams.SetSystemSettingsAsync(
-				settings,
-				new SetSystemSettingsOptions { UserCredentials = TestCredentials.TestAdmin }
-			);
+			return Streams.SetSystemSettingsAsync(settings, userCredentials: TestCredentials.TestAdmin);
 		}
 	}
 }

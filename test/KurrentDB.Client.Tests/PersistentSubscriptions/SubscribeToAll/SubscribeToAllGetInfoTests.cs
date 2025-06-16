@@ -55,10 +55,7 @@ public class SubscribeToAllGetInfoTests(SubscribeToAllGetInfoTests.CustomFixture
 
 	[RetryFact]
 	public async Task returns_result_with_normal_user_credentials() {
-		var result = await fixture.Subscriptions.GetInfoToAllAsync(
-			fixture.Group,
-			userCredentials: TestCredentials.Root
-		);
+		var result = await fixture.Subscriptions.GetInfoToAllAsync(fixture.Group, userCredentials: TestCredentials.Root);
 
 		Assert.Equal("$all", result.EventSource);
 	}
@@ -77,16 +74,13 @@ public class SubscribeToAllGetInfoTests(SubscribeToAllGetInfoTests.CustomFixture
 						$"test-{Guid.NewGuid():n}",
 						StreamState.NoStream,
 						[eventData],
-						new AppendToStreamOptions { UserCredentials = TestCredentials.Root }
+						userCredentials: TestCredentials.Root
 					);
 				}
 
 				var counter = 0;
 
-				await using var subscription = Subscriptions.SubscribeToAll(
-					Group,
-					new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-				);
+				await using var subscription = Subscriptions.SubscribeToAll(Group, userCredentials: TestCredentials.Root);
 
 				var enumerator = subscription.Messages.GetAsyncEnumerator();
 

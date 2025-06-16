@@ -83,7 +83,7 @@ namespace KurrentDB.Client {
 				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
 		}
-		
+
 		private async Task DisableInternalAsync(string name, bool writeCheckpoint, TimeSpan? deadline,
 			UserCredentials? userCredentials, CancellationToken cancellationToken) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);

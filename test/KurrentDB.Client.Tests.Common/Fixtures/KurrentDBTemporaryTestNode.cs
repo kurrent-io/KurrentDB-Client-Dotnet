@@ -8,7 +8,7 @@
 //
 // public class EventStoreTemporaryTestNode(EventStoreFixtureOptions? options = null) : BaseTestNode(options) {
 // 	protected override ContainerBuilder ConfigureContainer(ContainerBuilder builder) {
-// 		var port      = Options.DbClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
+// 		var port      = Options.ClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 // 		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
 //
 // 		var containerName = $"es-client-dotnet-test-{port}-{Guid.NewGuid().ToString()[30..]}";
@@ -134,7 +134,7 @@ public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null)
 	protected override ContainerBuilder Configure() {
 		var env = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
 
-		var port      = Options.DbClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
+		var port      = Options.DBClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
 
 		var containerName = $"es-client-dotnet-test-{port}-{Guid.NewGuid().ToString()[30..]}";

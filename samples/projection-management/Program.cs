@@ -2,14 +2,13 @@
 
 using System.Text.Json;
 using Grpc.Core;
-using KurrentDB.Client;
 
 //// This sample demonstrate the projection management features.
 //// It will create data in the target database.
 //// It will create a series of projections with the following content
 //// fromAll() .when({$init:function(){return {count:0};},$any:function(s, e){s.count += 1;}}).outputState();
 
-const string connection = "esdb://localhost:2113?tls=false";
+const string connection = "kurrentdb://localhost:2113?tls=false";
 
 var managementClient = ManagementClient(connection);
 
@@ -439,7 +438,8 @@ static async Task Populate(string connection, int numberOfEvents) {
 	var client = new KurrentDBClient(settings);
 	var messages = Enumerable.Range(0, numberOfEvents).Select(
 		number =>
-			MessageData.From(
+			new EventData(
+				Uuid.NewUuid(),
 				"eventtype",
 				Encoding.UTF8.GetBytes($@"{{ ""Id"":{number} }}")
 			)

@@ -1,5 +1,3 @@
-using System;
-
 namespace KurrentDB.Client {
 	/// <summary>
 	/// An <see cref="IWriteResult"/> that indicates a successful append to a stream.

@@ -1,14 +1,9 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
-using KurrentDB.Client.Tests;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
-public class SubscribeToAllUpdateExistingWithCheckpointObsoleteTests(
-	ITestOutputHelper output,
-	KurrentDBTemporaryFixture fixture
-)
+public class SubscribeToAllUpdateExistingWithCheckpointObsoleteTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture)
 	: KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	[RetryFact]
 	public async Task update_existing_with_check_point_should_resumes_from_check_point() {
@@ -28,11 +23,7 @@ public class SubscribeToAllUpdateExistingWithCheckpointObsoleteTests(
 			userCredentials: TestCredentials.Root
 		);
 
-		await using var subscription = Fixture.Subscriptions.SubscribeToStream(
-			stream,
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
+		await using var subscription = Fixture.Subscriptions.SubscribeToStream(stream, group, userCredentials: TestCredentials.Root);
 
 		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
 
@@ -45,11 +36,7 @@ public class SubscribeToAllUpdateExistingWithCheckpointObsoleteTests(
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents(1));
 
-		await using var sub = Fixture.Subscriptions.SubscribeToStream(
-			stream,
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
+		await using var sub = Fixture.Subscriptions.SubscribeToStream(stream, group, userCredentials: TestCredentials.Root);
 
 		var resolvedEvent = await sub.Messages
 			.OfType<PersistentSubscriptionMessage.Event>()
@@ -82,7 +69,8 @@ public class SubscribeToAllUpdateExistingWithCheckpointObsoleteTests(
 		async Task WaitForCheckpoint() {
 			await using var subscription = Fixture.Streams.SubscribeToStream(
 				$"$persistentsubscription-{stream}::{group}-checkpoint",
-				new SubscribeToStreamOptions { UserCredentials = TestCredentials.Root }
+				FromStream.Start,
+				userCredentials: TestCredentials.Root
 			);
 
 			await foreach (var message in subscription.Messages) {

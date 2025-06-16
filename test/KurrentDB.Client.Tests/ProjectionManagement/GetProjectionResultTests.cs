@@ -18,7 +18,7 @@ public class GetProjectionResultTests(ITestOutputHelper output, GetProjectionRes
 		                   });
 		                   """;
 
-		await Fixture.DbProjections.CreateContinuousAsync(
+		await Fixture.DBProjections.CreateContinuousAsync(
 			name,
 			projection,
 			userCredentials: TestCredentials.Root
@@ -32,7 +32,7 @@ public class GetProjectionResultTests(ITestOutputHelper output, GetProjectionRes
 
 		await AssertEx.IsOrBecomesTrue(
 			async () => {
-				result = await Fixture.DbProjections.GetResultAsync<Result>(name, userCredentials: TestCredentials.Root);
+				result = await Fixture.DBProjections.GetResultAsync<Result>(name, userCredentials: TestCredentials.Root);
 				return result.Count > 0;
 			}
 		);

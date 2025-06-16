@@ -4,10 +4,10 @@ namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:UserManagement")]
 public class CreateUserTests(ITestOutputHelper output, CreateUserTests.CustomFixture fixture)
-	: KurrentPermanentTests<CreateUserTests.CustomFixture>(output, fixture) {
+	: KurrentDBPermanentTests<CreateUserTests.CustomFixture>(output, fixture) {
 	[Theory, CreateUserNullInputCases]
 	public async Task creating_user_with_null_input_throws(string loginName, string fullName, string[] groups, string password, string paramName) {
-		var ex = await Fixture.DbUsers
+		var ex = await Fixture.DBUsers
 			.CreateUserAsync(loginName, fullName, groups, password, userCredentials: TestCredentials.Root)
 			.ShouldThrowAsync<ArgumentNullException>();
 
@@ -16,7 +16,7 @@ public class CreateUserTests(ITestOutputHelper output, CreateUserTests.CustomFix
 
 	[Theory, CreateUserEmptyInputCases]
 	public async Task creating_user_with_empty_input_throws(string loginName, string fullName, string[] groups, string password, string paramName) {
-		var ex = await Fixture.DbUsers
+		var ex = await Fixture.DBUsers
 			.CreateUserAsync(loginName, fullName, groups, password, userCredentials: TestCredentials.Root)
 			.ShouldThrowAsync<ArgumentOutOfRangeException>();
 
@@ -27,7 +27,7 @@ public class CreateUserTests(ITestOutputHelper output, CreateUserTests.CustomFix
 	public async Task creating_user_with_password_containing_ascii_chars() {
 		var user = Fakers.Users.Generate();
 
-		await Fixture.DbUsers
+		await Fixture.DBUsers
 			.CreateUserAsync(user.LoginName, user.FullName, user.Groups, user.Password, userCredentials: TestCredentials.Root)
 			.ShouldNotThrowAsync();
 	}
@@ -35,7 +35,7 @@ public class CreateUserTests(ITestOutputHelper output, CreateUserTests.CustomFix
 	[Theory]
 	[ClassData(typeof(InvalidCredentialsTestCases))]
 	public async Task creating_user_with_insufficient_credentials_throws(InvalidCredentialsTestCase testCase) =>
-		await Fixture.DbUsers
+		await Fixture.DBUsers
 			.CreateUserAsync(
 				testCase.User.LoginName,
 				testCase.User.FullName,
@@ -49,7 +49,7 @@ public class CreateUserTests(ITestOutputHelper output, CreateUserTests.CustomFix
 	public async Task creating_user_can_be_read() {
 		var user = Fakers.Users.Generate();
 
-		await Fixture.DbUsers
+		await Fixture.DBUsers
 			.CreateUserAsync(
 				user.LoginName,
 				user.FullName,
@@ -59,7 +59,7 @@ public class CreateUserTests(ITestOutputHelper output, CreateUserTests.CustomFix
 			)
 			.ShouldNotThrowAsync();
 
-		var actual = await Fixture.DbUsers.GetUserAsync(user.LoginName, userCredentials: TestCredentials.Root);
+		var actual = await Fixture.DBUsers.GetUserAsync(user.LoginName, userCredentials: TestCredentials.Root);
 
 		var expected = new UserDetails(
 			user.Details.LoginName,

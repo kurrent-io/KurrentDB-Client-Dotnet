@@ -10,24 +10,13 @@ public class MultipleRoleSecurityTests(ITestOutputHelper output, MultipleRoleSec
 	[Fact]
 	public async Task multiple_roles_are_handled_correctly() {
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadEvent("usr-stream"));
-		await Assert.ThrowsAsync<StreamNotFoundException>(
-			() => Fixture.ReadEvent("usr-stream", TestCredentials.TestUser1)
-		);
-
-		await Assert.ThrowsAsync<StreamNotFoundException>(
-			() => Fixture.ReadEvent("usr-stream", TestCredentials.TestUser2)
-		);
-
-		await Assert.ThrowsAsync<StreamNotFoundException>(
-			() => Fixture.ReadEvent("usr-stream", TestCredentials.TestAdmin)
-		);
+		await Assert.ThrowsAsync<StreamNotFoundException>(() => Fixture.ReadEvent("usr-stream", TestCredentials.TestUser1));
+		await Assert.ThrowsAsync<StreamNotFoundException>(() => Fixture.ReadEvent("usr-stream", TestCredentials.TestUser2));
+		await Assert.ThrowsAsync<StreamNotFoundException>(() => Fixture.ReadEvent("usr-stream", TestCredentials.TestAdmin));
 
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.AppendStream("usr-stream"));
 		await Fixture.AppendStream("usr-stream", TestCredentials.TestUser1);
-		await Assert.ThrowsAsync<AccessDeniedException>(
-			() => Fixture.AppendStream("usr-stream", TestCredentials.TestUser2)
-		);
-
+		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.AppendStream("usr-stream", TestCredentials.TestUser2));
 		await Fixture.AppendStream("usr-stream", TestCredentials.TestAdmin);
 
 		await Fixture.DeleteStream("usr-stream2", TestCredentials.TestUser1);
@@ -43,16 +32,13 @@ public class MultipleRoleSecurityTests(ITestOutputHelper output, MultipleRoleSec
 		protected override async Task When() {
 			var settings = new SystemSettings(
 				new(
-					["user1", "user2"],
-					["$admins", "user1"],
-					["user1", SystemRoles.All]
+					new[] { "user1", "user2" },
+					new[] { "$admins", "user1" },
+					new[] { "user1", SystemRoles.All }
 				)
 			);
 
-			await Streams.SetSystemSettingsAsync(
-				settings,
-				new SetSystemSettingsOptions { UserCredentials = TestCredentials.TestAdmin }
-			);
+			await Streams.SetSystemSettingsAsync(settings, userCredentials: TestCredentials.TestAdmin);
 		}
 	}
 }

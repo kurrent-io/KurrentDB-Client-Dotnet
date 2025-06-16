@@ -46,10 +46,10 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 	public bool    EventStoreHasLastStreamPosition { get; private set; }
 
 	public KurrentDBClient                        Streams       { get; private set; } = null!;
-	public KurrentDBUserManagementClient          DbUsers         { get; private set; } = null!;
-	public KurrentDBProjectionManagementClient    DbProjections   { get; private set; } = null!;
+	public KurrentDBUserManagementClient          DBUsers         { get; private set; } = null!;
+	public KurrentDBProjectionManagementClient    DBProjections   { get; private set; } = null!;
 	public KurrentDBPersistentSubscriptionsClient Subscriptions { get; private set; } = null!;
-	public KurrentDBOperationsClient              DbOperations    { get; private set; } = null!;
+	public KurrentDBOperationsClient              DBOperations    { get; private set; } = null!;
 
 	public bool SkipPsWarmUp { get; set; }
 
@@ -59,17 +59,17 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 	/// <summary>
 	/// must test this
 	/// </summary>
-	public KurrentDBClientSettings DbClientSettings =>
+	public KurrentDBClientSettings DBClientSettings =>
 		new() {
-			Interceptors             = Options.DbClientSettings.Interceptors,
-			ConnectionName           = Options.DbClientSettings.ConnectionName,
-			CreateHttpMessageHandler = Options.DbClientSettings.CreateHttpMessageHandler,
-			LoggerFactory            = Options.DbClientSettings.LoggerFactory,
-			ChannelCredentials       = Options.DbClientSettings.ChannelCredentials,
-			OperationOptions         = Options.DbClientSettings.OperationOptions,
-			ConnectivitySettings     = Options.DbClientSettings.ConnectivitySettings,
-			DefaultCredentials       = Options.DbClientSettings.DefaultCredentials,
-			DefaultDeadline          = Options.DbClientSettings.DefaultDeadline
+			Interceptors             = Options.DBClientSettings.Interceptors,
+			ConnectionName           = Options.DBClientSettings.ConnectionName,
+			CreateHttpMessageHandler = Options.DBClientSettings.CreateHttpMessageHandler,
+			LoggerFactory            = Options.DBClientSettings.LoggerFactory,
+			ChannelCredentials       = Options.DBClientSettings.ChannelCredentials,
+			OperationOptions         = Options.DBClientSettings.OperationOptions,
+			ConnectivitySettings     = Options.DBClientSettings.ConnectivitySettings,
+			DefaultCredentials       = Options.DBClientSettings.DefaultCredentials,
+			DefaultDeadline          = Options.DBClientSettings.DefaultDeadline
 		};
 
 	InterlockedBoolean            WarmUpCompleted { get; } = new InterlockedBoolean();
@@ -94,14 +94,14 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 				Logger.Warning("*** Warmup started ***");
 
 				await Task.WhenAll(
-					InitClient<KurrentDBUserManagementClient>(async x => DbUsers = await Task.FromResult(x)),
+					InitClient<KurrentDBUserManagementClient>(async x => DBUsers = await Task.FromResult(x)),
 					InitClient<KurrentDBClient>(async x => Streams = await Task.FromResult(x)),
 					InitClient<KurrentDBProjectionManagementClient>(
-						async x => DbProjections = await Task.FromResult(x),
+						async x => DBProjections = await Task.FromResult(x),
 						Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None"
 					),
 					InitClient<KurrentDBPersistentSubscriptionsClient>(async x => Subscriptions = SkipPsWarmUp ? x : await Task.FromResult(x)),
-					InitClient<KurrentDBOperationsClient>(async x => DbOperations = await Task.FromResult(x))
+					InitClient<KurrentDBOperationsClient>(async x => DBOperations = await Task.FromResult(x))
 				);
 
 				WarmUpCompleted.EnsureCalledOnce();
@@ -121,7 +121,7 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 		async Task<T> InitClient<T>(Func<T, Task> action, bool execute = true) where T : KurrentDBClientBase {
 			if (!execute) return default(T)!;
 
-			var client = (Activator.CreateInstance(typeof(T), DbClientSettings) as T)!;
+			var client = (Activator.CreateInstance(typeof(T), DBClientSettings) as T)!;
 			await action(client);
 			return client;
 		}

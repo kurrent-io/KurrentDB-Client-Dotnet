@@ -1,7 +1,5 @@
 // ReSharper disable InconsistentNaming
 
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Tests.Bugs.Obsolete;
 
 [Trait("Category", "Target:Streams")]

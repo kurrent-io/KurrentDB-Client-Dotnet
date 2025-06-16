@@ -8,7 +8,7 @@
 //
 // public class EventStorePermanentTestNode(EventStoreFixtureOptions? options = null) : BaseTestNode(options) {
 // 	protected override ContainerBuilder ConfigureContainer(ContainerBuilder builder) {
-// 		var port      = Options.DbClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
+// 		var port      = Options.ClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 // 		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
 //
 // 		var containerName = "es-client-dotnet-test";
@@ -42,6 +42,7 @@ using Ductus.FluentDocker.Services.Extensions;
 using KurrentDB.Client;
 using KurrentDB.Client.Tests.FluentDocker;
 using Humanizer;
+using KurrentDB.Client.Tests;
 using Serilog;
 using Serilog.Extensions.Logging;
 using static System.TimeSpan;
@@ -135,7 +136,7 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 	protected override ContainerBuilder Configure() {
 		var env = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
 
-		var port      = Options.DbClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
+		var port      = Options.DBClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
 
 		var containerName = port == 2113

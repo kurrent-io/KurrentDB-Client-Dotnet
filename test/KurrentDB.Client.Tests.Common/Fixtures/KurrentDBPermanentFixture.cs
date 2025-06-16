@@ -4,6 +4,7 @@ using System.Net;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Services.Extensions;
+using KurrentDB.Client;
 using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
 using static System.TimeSpan;
@@ -47,11 +48,11 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 
 	public bool EventStoreHasLastStreamPosition { get; private set; }
 
-	public KurrentDBClient                      Streams       { get; private set; } = null!;
-	public KurrentDBUserManagementClient          DbUsers       { get; private set; } = null!;
-	public KurrentDBProjectionManagementClient    DbProjections { get; private set; } = null!;
+	public KurrentDBClient                        Streams       { get; private set; } = null!;
+	public KurrentDBUserManagementClient          DBUsers         { get; private set; } = null!;
+	public KurrentDBProjectionManagementClient    DBProjections   { get; private set; } = null!;
 	public KurrentDBPersistentSubscriptionsClient Subscriptions { get; private set; } = null!;
-	public KurrentDBOperationsClient              DbOperations  { get; private set; } = null!;
+	public KurrentDBOperationsClient              DBOperations    { get; private set; } = null!;
 
 	public bool SkipPsWarmUp { get; set; }
 
@@ -61,18 +62,17 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 	/// <summary>
 	/// must test this
 	/// </summary>
-	public KurrentDBClientSettings DbClientSettings =>
+	public KurrentDBClientSettings DBClientSettings =>
 		new() {
-			Interceptors             = Options.DbClientSettings.Interceptors,
-			ConnectionName           = Options.DbClientSettings.ConnectionName,
-			CreateHttpMessageHandler = Options.DbClientSettings.CreateHttpMessageHandler,
-			LoggerFactory            = Options.DbClientSettings.LoggerFactory,
-			ChannelCredentials       = Options.DbClientSettings.ChannelCredentials,
-			OperationOptions         = Options.DbClientSettings.OperationOptions,
-			ConnectivitySettings     = Options.DbClientSettings.ConnectivitySettings,
-			DefaultCredentials       = Options.DbClientSettings.DefaultCredentials,
-			DefaultDeadline          = Options.DbClientSettings.DefaultDeadline,
-			Serialization            = Options.DbClientSettings.Serialization
+			Interceptors             = Options.DBClientSettings.Interceptors,
+			ConnectionName           = Options.DBClientSettings.ConnectionName,
+			CreateHttpMessageHandler = Options.DBClientSettings.CreateHttpMessageHandler,
+			LoggerFactory            = Options.DBClientSettings.LoggerFactory,
+			ChannelCredentials       = Options.DBClientSettings.ChannelCredentials,
+			OperationOptions         = Options.DBClientSettings.OperationOptions,
+			ConnectivitySettings     = Options.DBClientSettings.ConnectivitySettings,
+			DefaultCredentials       = Options.DBClientSettings.DefaultCredentials,
+			DefaultDeadline          = Options.DBClientSettings.DefaultDeadline
 		};
 
 	InterlockedBoolean            WarmUpCompleted { get; } = new InterlockedBoolean();
@@ -97,14 +97,14 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 				Logger.Warning("*** Warmup started ***");
 
 				await Task.WhenAll(
-					InitClient<KurrentDBUserManagementClient>(async x => DbUsers = await Task.FromResult(x)),
+					InitClient<KurrentDBUserManagementClient>(async x => DBUsers = await Task.FromResult(x)),
 					InitClient<KurrentDBClient>(async x => Streams = await Task.FromResult(x)),
 					InitClient<KurrentDBProjectionManagementClient>(
-						async x => DbProjections = await Task.FromResult(x),
+						async x => DBProjections = await Task.FromResult(x),
 						Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None"
 					),
 					InitClient<KurrentDBPersistentSubscriptionsClient>(async x => Subscriptions = SkipPsWarmUp ? x : await Task.FromResult(x)),
-					InitClient<KurrentDBOperationsClient>(async x => DbOperations = await Task.FromResult(x))
+					InitClient<KurrentDBOperationsClient>(async x => DBOperations = await Task.FromResult(x))
 				);
 
 				WarmUpCompleted.EnsureCalledOnce();
@@ -124,7 +124,7 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 		async Task<T> InitClient<T>(Func<T, Task> action, bool execute = true) where T : KurrentDBClientBase {
 			if (!execute) return default(T)!;
 
-			var client = (Activator.CreateInstance(typeof(T), DbClientSettings) as T)!;
+			var client = (Activator.CreateInstance(typeof(T), DBClientSettings) as T)!;
 			await action(client);
 			return client;
 		}
@@ -182,8 +182,8 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 	async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
 }
 
-public abstract class KurrentPermanentTests<TFixture> : IClassFixture<TFixture> where TFixture : KurrentDBPermanentFixture {
-	protected KurrentPermanentTests(ITestOutputHelper output, TFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
+public abstract class KurrentDBPermanentTests<TFixture> : IClassFixture<TFixture> where TFixture : KurrentDBPermanentFixture {
+	protected KurrentDBPermanentTests(ITestOutputHelper output, TFixture fixture) => Fixture = fixture.With(x => x.CaptureTestRun(output));
 
 	protected TFixture Fixture { get; }
 }

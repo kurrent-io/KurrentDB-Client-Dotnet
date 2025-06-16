@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
     <ItemGroup>
-        <ProjectReference Include="..\KurrentDB.Client.Tests.Common\KurrentDB.Client.Tests.Common.csproj"/>
+        <ProjectReference Include="..\KurrentDB.Client.Tests.Common\KurrentDB.Client.Tests.Common.csproj" />
         <ProjectReference Include="..\KurrentDB.Client.Tests.ExternalAssembly\KurrentDB.Client.Tests.ExternalAssembly.csproj" />
         <ProjectReference Include="..\KurrentDB.Client.Tests.NeverLoadedAssembly\KurrentDB.Client.Tests.NeverLoadedAssembly.csproj" />
     </ItemGroup>

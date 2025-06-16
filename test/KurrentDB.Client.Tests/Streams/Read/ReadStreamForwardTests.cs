@@ -1,11 +1,12 @@
+using KurrentDB.Client;
+
 namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Read")]
 [Trait("Category", "Operation:Read:Forwards")]
-public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
-	: KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
+public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentDBPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[Theory]
 	[InlineData(0)]
 	public async Task count_le_equal_zero_throws(long maxCount) {
@@ -13,11 +14,11 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 
 		var ex = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
 			() =>
-				Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions().Max(maxCount))
+				Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, maxCount)
 					.ToArrayAsync().AsTask()
 		);
 
-		Assert.Equal(nameof(ReadStreamOptions.MaxCount), ex.ParamName);
+		Assert.Equal(nameof(maxCount), ex.ParamName);
 	}
 
 	[Fact]
@@ -26,7 +27,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 
 		var ex = await Assert.ThrowsAsync<StreamNotFoundException>(
 			() => Fixture.Streams
-				.ReadStreamAsync(stream, new ReadStreamOptions().MaxOne())
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 1)
 				.ToArrayAsync().AsTask()
 		);
 
@@ -37,7 +38,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 	public async Task stream_does_not_exist_can_be_checked() {
 		var stream = Fixture.GetStreamName();
 
-		var result = Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions().MaxOne());
+		var result = Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 1);
 
 		var state = await result.ReadState;
 		Assert.Equal(ReadState.StreamNotFound, state);
@@ -51,7 +52,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 
 		var ex = await Assert.ThrowsAsync<StreamDeletedException>(
 			() => Fixture.Streams
-				.ReadStreamAsync(stream, new ReadStreamOptions().MaxOne())
+				.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 1)
 				.ToArrayAsync().AsTask()
 		);
 
@@ -69,10 +70,10 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, expected);
 
 		var actual = await Fixture.Streams
-			.ReadStreamAsync(stream, new ReadStreamOptions().Max(expected.Length))
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, expected.Length)
 			.Select(x => x.Event).ToArrayAsync();
 
-		Assert.True(MessageDataComparer.Equal(expected, actual));
+		Assert.True(EventDataComparer.Equal(expected, actual));
 	}
 
 	[Fact]
@@ -85,11 +86,11 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-		var actual = await Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions().From(new(7)).MaxOne())
+		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, new(7), 1)
 			.Select(x => x.Event)
 			.SingleAsync();
 
-		Assert.True(MessageDataComparer.Equal(expected, actual));
+		Assert.True(EventDataComparer.Equal(expected, actual));
 	}
 
 	[Fact]
@@ -100,11 +101,11 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-		var actual = await Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions().From(new(3)).Max(2))
+		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, new(3), 2)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
-		Assert.True(MessageDataComparer.Equal(events.Skip(3).Take(2).ToArray(), actual));
+		Assert.True(EventDataComparer.Equal(events.Skip(3).Take(2).ToArray(), actual));
 	}
 
 	[Fact]
@@ -115,12 +116,12 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, testEvents);
 
-		var events = await Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions().MaxOne())
+		var events = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 1)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
 		Assert.Single(events);
-		Assert.True(MessageDataComparer.Equal(testEvents[0], events[0]));
+		Assert.True(EventDataComparer.Equal(testEvents[0], events[0]));
 	}
 
 	[Fact]
@@ -135,7 +136,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 			Fixture.CreateTestEvents(count)
 		);
 
-		var events = await Fixture.Streams.ReadStreamAsync(streamName, new ReadStreamOptions().Max(maxCount))
+		var events = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, streamName, StreamPosition.Start, maxCount)
 			.Take(count)
 			.ToArrayAsync();
 
@@ -153,7 +154,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 		);
 
 		var count = await Fixture.Streams
-			.ReadStreamAsync(streamName)
+			.ReadStreamAsync(Direction.Forwards, streamName, StreamPosition.Start)
 			.CountAsync();
 
 		Assert.True(count == maxCount);
@@ -170,7 +171,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 
 		var writeResult = await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
-		var actual = await Fixture.Streams.ReadStreamAsync(stream, new ReadStreamOptions().MaxOne())
+		var actual = await Fixture.Streams.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, 1)
 			.Select(x => x.Event)
 			.ToArrayAsync();
 
@@ -181,7 +182,11 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 
 	[Fact]
 	public async Task stream_not_found() {
-		var result = await Fixture.Streams.ReadStreamAsync(Fixture.GetStreamName()).Messages.SingleAsync();
+		var result = await Fixture.Streams.ReadStreamAsync(
+			Direction.Forwards,
+			Fixture.GetStreamName(),
+			StreamPosition.Start
+		).Messages.SingleAsync();
 
 		Assert.Equal(StreamMessage.NotFound.Instance, result);
 	}
@@ -196,7 +201,11 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 
 		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, events);
 
-		var result = await Fixture.Streams.ReadStreamAsync(streamName).Messages.ToArrayAsync();
+		var result = await Fixture.Streams.ReadStreamAsync(
+			Direction.Forwards,
+			streamName,
+			StreamPosition.Start
+		).Messages.ToArrayAsync();
 
 		Assert.Equal(
 			eventCount + (Fixture.EventStoreHasLastStreamPosition ? 2 : 1),
@@ -233,7 +242,11 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 			new(truncateBefore: new StreamPosition(32))
 		);
 
-		var result = await Fixture.Streams.ReadStreamAsync(streamName).Messages.ToArrayAsync();
+		var result = await Fixture.Streams.ReadStreamAsync(
+			Direction.Forwards,
+			streamName,
+			StreamPosition.Start
+		).Messages.ToArrayAsync();
 
 		Assert.Equal(
 			eventCount - 32 + (Fixture.EventStoreHasLastStreamPosition ? 3 : 1),

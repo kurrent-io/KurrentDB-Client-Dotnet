@@ -1,12 +1,11 @@
 using System.Text;
-using KurrentDB.Client;
 using Grpc.Core;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
 public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
-	: KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
+	: KurrentDBPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[RetryFact]
 	public async Task can_create_duplicate_name_on_different_streams() {
 		// Arrange
@@ -28,27 +27,16 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		// Arrange
 		var group = Fixture.GetGroupName();
 
-		await Fixture.Subscriptions.CreateToAllAsync(
-			group,
-			new(maxSubscriberCount: 1),
-			userCredentials: TestCredentials.Root
-		);
+		await Fixture.Subscriptions.CreateToAllAsync(group, new(maxSubscriberCount: 1), userCredentials: TestCredentials.Root);
 
-		var ex = await Assert.ThrowsAsync<MaximumSubscribersReachedException>(
-			() => Task.WhenAll(Subscribe().WithTimeout(), Subscribe().WithTimeout())
-		);
+		var ex = await Assert.ThrowsAsync<MaximumSubscribersReachedException>(() => Task.WhenAll(Subscribe().WithTimeout(), Subscribe().WithTimeout()));
 
 		Assert.Equal(SystemStreams.AllStream, ex.StreamName);
 		Assert.Equal(group, ex.GroupName);
 		return;
 
 		async Task Subscribe() {
-			await using var subscription =
-				Fixture.Subscriptions.SubscribeToAll(
-					group,
-					new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-				);
-
+			await using var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
 			await subscription.Messages.AnyAsync();
 		}
 	}
@@ -60,11 +48,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		await Fixture.Subscriptions.CreateToAllAsync(group, new(), userCredentials: TestCredentials.Root);
 
 		// Act
-		await using var subscription =
-			Fixture.Subscriptions.SubscribeToAll(
-				group,
-				new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-			);
+		await using var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
 
 		// Assert
 		subscription.Messages
@@ -87,19 +71,12 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		}
 
 		var events = await Fixture.Streams
-			.ReadAllAsync(new ReadAllOptions { MaxCount = 10, UserCredentials = TestCredentials.Root })
+			.ReadAllAsync(Direction.Forwards, Position.Start, 10, userCredentials: TestCredentials.Root)
 			.ToArrayAsync();
 
-		await Fixture.Subscriptions.CreateToAllAsync(
-			group,
-			new(startFrom: Position.Start),
-			userCredentials: TestCredentials.Root
-		);
+		await Fixture.Subscriptions.CreateToAllAsync(group, new(startFrom: Position.Start), userCredentials: TestCredentials.Root);
 
-		var subscription = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
+		var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
 
 		var resolvedEvent = await subscription.Messages.OfType<PersistentSubscriptionMessage.Event>()
 			.Select(e => e.ResolvedEvent)
@@ -125,10 +102,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		}
 
 		await Fixture.Subscriptions.CreateToAllAsync(group, new(), userCredentials: TestCredentials.Root);
-		var subscription = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
+		var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
 
 		await Fixture.Streams.AppendToStreamAsync(expectedStreamId, StreamState.NoStream, [expectedEvent]);
 
@@ -137,7 +111,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			.Where(resolvedEvent => !SystemStreams.IsSystemStream(resolvedEvent.OriginalStreamId))
 			.FirstOrDefaultAsync().AsTask().WithTimeout();
 
-		Assert.Equal(expectedEvent.MessageId, resolvedEvent.Event.EventId);
+		Assert.Equal(expectedEvent.EventId, resolvedEvent.Event.EventId);
 		Assert.Equal(expectedStreamId, resolvedEvent.Event.EventStreamId);
 	}
 
@@ -156,16 +130,8 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			);
 		}
 
-		await Fixture.Subscriptions.CreateToAllAsync(
-			group,
-			new(startFrom: Position.End),
-			userCredentials: TestCredentials.Root
-		);
-
-		var subscription = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
+		await Fixture.Subscriptions.CreateToAllAsync(group, new(startFrom: Position.End), userCredentials: TestCredentials.Root);
+		var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
 
 		await Fixture.Streams.AppendToStreamAsync(expectedStreamId, StreamState.NoStream, [expectedEvent]);
 
@@ -177,7 +143,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			.AsTask()
 			.WithTimeout();
 
-		Assert.Equal(expectedEvent.MessageId, resolvedEvent.Event.EventId);
+		Assert.Equal(expectedEvent.EventId, resolvedEvent.Event.EventId);
 		Assert.Equal(expectedStreamId, resolvedEvent.Event.EventStreamId);
 	}
 
@@ -192,12 +158,8 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			userCredentials: TestCredentials.Root
 		);
 
-		var subscription = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
-
-		var enumerator = subscription.Messages.GetAsyncEnumerator();
+		var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
+		var enumerator   = subscription.Messages.GetAsyncEnumerator();
 
 		await enumerator.MoveNextAsync();
 		var ex = await Assert.ThrowsAsync<PersistentSubscriptionDroppedByServerException>(
@@ -214,7 +176,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		var group = Fixture.GetGroupName();
 
 		var events = await Fixture.Streams
-			.ReadAllAsync(new ReadAllOptions { MaxCount = 10, UserCredentials = TestCredentials.Root })
+			.ReadAllAsync(Direction.Forwards, Position.Start, 10, userCredentials: TestCredentials.Root)
 			.ToArrayAsync();
 
 		var expectedEvent = events[events.Length / 2]; //just a random event in the middle of the results
@@ -225,10 +187,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			userCredentials: TestCredentials.Root
 		);
 
-		var subscription = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
+		var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
 
 		var resolvedEvent = await subscription!.Messages.OfType<PersistentSubscriptionMessage.Event>()
 			.Select(e => e.ResolvedEvent)
@@ -245,18 +204,10 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 	public async Task connect_with_retries() {
 		// Arrange
 		var group = Fixture.GetGroupName();
-		await Fixture.Subscriptions.CreateToAllAsync(
-			group,
-			new(startFrom: Position.Start),
-			userCredentials: TestCredentials.Root
-		);
+		await Fixture.Subscriptions.CreateToAllAsync(group, new(startFrom: Position.Start), userCredentials: TestCredentials.Root);
 
 		// Act
-		var subscription = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
-
+		var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
 		var retryCount = await subscription.Messages.OfType<PersistentSubscriptionMessage.Event>()
 			.SelectAwait(
 				async e => {
@@ -318,15 +269,12 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		var group = Fixture.GetGroupName();
 
 		// Act
-		var lastEvent = await Fixture.Streams
-			.ReadAllAsync(
-				new ReadAllOptions {
-					Direction       = Direction.Backwards,
-					Position        = Position.End,
-					MaxCount        = 1,
-					UserCredentials = TestCredentials.Root
-				}
-			).FirstAsync();
+		var lastEvent = await Fixture.Streams.ReadAllAsync(
+			Direction.Backwards,
+			Position.End,
+			1,
+			userCredentials: TestCredentials.Root
+		).FirstAsync();
 
 		var lastCommitPosition = lastEvent.OriginalPosition?.CommitPosition ?? throw new();
 		await Fixture.Subscriptions.CreateToAllAsync(
@@ -357,11 +305,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		await Fixture.Subscriptions.CreateToAllAsync(group, new(), userCredentials: TestCredentials.Root);
 		await Fixture.Subscriptions.DeleteToAllAsync(group, userCredentials: TestCredentials.Root);
 
-		await using var subscription =
-			Fixture.Subscriptions.SubscribeToAll(
-				group,
-				new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-			);
+		await using var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
 
 		Assert.True(
 			await subscription.Messages.OfType<PersistentSubscriptionMessage.NotFound>().AnyAsync()
@@ -403,10 +347,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 	[RetryFact]
 	public async Task deleting_nonexistent() {
 		await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
-			() => Fixture.Subscriptions.DeleteToAllAsync(
-				Guid.NewGuid().ToString(),
-				userCredentials: TestCredentials.Root
-			)
+			() => Fixture.Subscriptions.DeleteToAllAsync(Guid.NewGuid().ToString(), userCredentials: TestCredentials.Root)
 		);
 	}
 
@@ -418,10 +359,10 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 
 		var events = Fixture.CreateTestEvents(eventWriteCount)
 			.Select(
-				(e, i) => new MessageData(
+				(e, i) => new EventData(
+					e.EventId,
 					SystemEventTypes.LinkTo,
 					Encoding.UTF8.GetBytes($"{i}@test"),
-					messageId: e.MessageId,
 					contentType: Constants.Metadata.ContentTypes.ApplicationOctetStream
 				)
 			)
@@ -437,12 +378,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			userCredentials: TestCredentials.Root
 		);
 
-		var subscription = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions
-				{ BufferSize = bufferCount, UserCredentials = TestCredentials.Root }
-		);
-
+		var subscription = Fixture.Subscriptions.SubscribeToAll(group, bufferSize: bufferCount, userCredentials: TestCredentials.Root);
 		await subscription.Messages.OfType<PersistentSubscriptionMessage.Event>()
 			.Take(events.Length)
 			.ForEachAwaitAsync(e => subscription.Ack(e.ResolvedEvent))
@@ -467,12 +403,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			userCredentials: TestCredentials.Root
 		);
 
-		var subscription = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions
-				{ BufferSize = bufferCount, UserCredentials = TestCredentials.Root }
-		);
-
+		var subscription = Fixture.Subscriptions.SubscribeToAll(group, bufferSize: bufferCount, userCredentials: TestCredentials.Root);
 		await subscription!.Messages.OfType<PersistentSubscriptionMessage.Event>()
 			.Take(events.Length)
 			.ForEachAwaitAsync(e => subscription.Ack(e.ResolvedEvent))
@@ -493,14 +424,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			userCredentials: TestCredentials.Root
 		);
 
-		var subscription = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions {
-				BufferSize = bufferCount, 
-				UserCredentials = TestCredentials.Root
-			}
-		);
-
+		var subscription = Fixture.Subscriptions.SubscribeToAll(group, bufferSize: bufferCount, userCredentials: TestCredentials.Root);
 		foreach (var e in events) {
 			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.Any, new[] { e });
 		}
@@ -570,12 +494,8 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			userCredentials: TestCredentials.Root
 		);
 
-		var subscription = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
-
-		var enumerator = subscription.Messages.GetAsyncEnumerator();
+		var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
+		var enumerator   = subscription.Messages.GetAsyncEnumerator();
 		await enumerator.MoveNextAsync();
 
 		await Task.WhenAll(Subscribe().WithTimeout(), WaitForCheckpoint().WithTimeout());
@@ -591,11 +511,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.NoStream, new[] { e });
 		}
 
-		await using var sub = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
-
+		await using var sub = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
 		var resumed = await sub.Messages.OfType<PersistentSubscriptionMessage.Event>()
 			.Select(e => e.ResolvedEvent)
 			.Take(1)
@@ -624,7 +540,8 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		async Task WaitForCheckpoint() {
 			await using var subscription = Fixture.Streams.SubscribeToStream(
 				$"$persistentsubscription-$all::{group}-checkpoint",
-				new SubscribeToStreamOptions { UserCredentials = TestCredentials.Root }
+				FromStream.Start,
+				userCredentials: TestCredentials.Root
 			);
 
 			await foreach (var message in subscription.Messages) {
@@ -656,12 +573,8 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			userCredentials: TestCredentials.Root
 		);
 
-		var subscription = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
-
-		var enumerator = subscription.Messages.GetAsyncEnumerator();
+		var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
+		var enumerator   = subscription.Messages.GetAsyncEnumerator();
 		await enumerator.MoveNextAsync();
 
 		await Task.WhenAll(Subscribe().WithTimeout(), WaitForCheckpoint().WithTimeout());
@@ -677,11 +590,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.NoStream, [e]);
 		}
 
-		await using var sub = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
-
+		await using var sub = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
 		var resumed = await sub.Messages.OfType<PersistentSubscriptionMessage.Event>()
 			.Select(e => e.ResolvedEvent)
 			.Take(1)
@@ -710,7 +619,8 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		async Task WaitForCheckpoint() {
 			await using var subscription = Fixture.Streams.SubscribeToStream(
 				$"$persistentsubscription-$all::{group}-checkpoint",
-				new SubscribeToStreamOptions { UserCredentials = TestCredentials.Root }
+				FromStream.Start,
+				userCredentials: TestCredentials.Root
 			);
 
 			await foreach (var message in subscription.Messages) {
@@ -735,12 +645,10 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		);
 
 		var lastEvent = await Fixture.Streams.ReadAllAsync(
-			new ReadAllOptions {
-				Direction       = Direction.Backwards,
-				Position        = Position.End,
-				MaxCount        = 1,
-				UserCredentials = TestCredentials.Root
-			}
+			Direction.Backwards,
+			Position.End,
+			1,
+			userCredentials: TestCredentials.Root
 		).FirstAsync();
 
 		var lastCommitPosition = lastEvent.OriginalPosition?.CommitPosition ?? throw new();
@@ -755,16 +663,9 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 	public async Task update_existing_with_subscribers() {
 		var group = Fixture.GetGroupName();
 
-		await Fixture.Subscriptions.CreateToAllAsync(
-			group,
-			new(startFrom: Position.Start),
-			userCredentials: TestCredentials.Root
-		);
+		await Fixture.Subscriptions.CreateToAllAsync(group, new(startFrom: Position.Start), userCredentials: TestCredentials.Root);
 
-		var subscription = Fixture.Subscriptions.SubscribeToAll(
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
+		var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
 
 		var enumerator = subscription.Messages.GetAsyncEnumerator();
 
@@ -805,13 +706,8 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			userCredentials: TestCredentials.Root
 		);
 
-		await using var subscription =
-			Fixture.Subscriptions.SubscribeToAll(
-				group,
-				new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-			);
-
-		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
+		await using var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
+		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
 
 		await Task.WhenAll(Subscribe().WithTimeout(), WaitForCheckpoints().WithTimeout());
 
@@ -824,7 +720,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		}
 
 		Assert.True(secondCheckPoint > firstCheckPoint);
-		Assert.Equal(events.Select(e => e.MessageId), appearedEvents.Select(e => e.Event.EventId));
+		Assert.Equal(events.Select(e => e.EventId), appearedEvents.Select(e => e.Event.EventId));
 
 		return;
 
@@ -846,7 +742,8 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			bool firstCheckpointSet = false;
 			await using var subscription = Fixture.Streams.SubscribeToStream(
 				$"$persistentsubscription-$all::{group}-checkpoint",
-				new SubscribeToStreamOptions { UserCredentials = TestCredentials.Root }
+				FromStream.Start,
+				userCredentials: TestCredentials.Root
 			);
 
 			await foreach (var message in subscription.Messages) {
@@ -934,12 +831,10 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		var group = Fixture.GetGroupName();
 
 		var lastEvent = await Fixture.Streams.ReadAllAsync(
-			new ReadAllOptions {
-				Direction       = Direction.Backwards,
-				Position        = Position.End,
-				MaxCount        = 1,
-				UserCredentials = TestCredentials.Root
-			}
+			Direction.Backwards,
+			Position.End,
+			1,
+			userCredentials: TestCredentials.Root
 		).FirstAsync();
 
 		var lastCommitPosition = lastEvent.OriginalPosition?.CommitPosition ?? throw new();

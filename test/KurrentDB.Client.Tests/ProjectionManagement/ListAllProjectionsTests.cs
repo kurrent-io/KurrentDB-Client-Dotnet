@@ -11,13 +11,13 @@ public class ListAllProjectionsTests(ITestOutputHelper output, ListAllProjection
 	public async Task list_continuous_projections() {
 		var name = Fixture.GetProjectionName();
 
-		await Fixture.DbProjections.CreateContinuousAsync(
+		await Fixture.DBProjections.CreateContinuousAsync(
 			name,
 			"fromAll().when({$init: function (state, ev) {return {};}});",
 			userCredentials: TestCredentials.Root
 		);
 
-		var result = await Fixture.DbProjections.ListContinuousAsync(userCredentials: TestCredentials.Root)
+		var result = await Fixture.DBProjections.ListContinuousAsync(userCredentials: TestCredentials.Root)
 			.ToArrayAsync();
 
 		Assert.Equal(

@@ -1,5 +1,5 @@
-using KurrentDB.Client.Tests.TestNode;
 using KurrentDB.Client;
+using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
@@ -13,7 +13,7 @@ public class SubscribeToAllConnectWithoutReadPermissionsObsoleteTests(ITestOutpu
 
 		await Fixture.Subscriptions.CreateToAllAsync(group, new(), userCredentials: TestCredentials.Root);
 
-		await Fixture.DbUsers.CreateUserWithRetry(
+		await Fixture.DBUsers.CreateUserWithRetry(
 			user.Username!,
 			user.Username!,
 			[],
@@ -26,7 +26,7 @@ public class SubscribeToAllConnectWithoutReadPermissionsObsoleteTests(ITestOutpu
 				using var _ = await Fixture.Subscriptions.SubscribeToAllAsync(
 					group,
 					delegate { return Task.CompletedTask; },
-					new SubscribeToPersistentSubscriptionOptions { UserCredentials = user }
+					userCredentials: user
 				);
 			}
 		);

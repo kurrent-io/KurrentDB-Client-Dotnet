@@ -1,11 +1,10 @@
 using System.Text;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
 [Trait("Category", "Target:PersistentSubscriptions")]
 public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
-	: KurrentPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
+	: KurrentDBPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[RetryFact]
 	public async Task connect_to_existing_with_max_one_client() {
 		var stream = Fixture.GetStreamName();
@@ -22,7 +21,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 			stream,
 			group,
 			delegate { return Task.CompletedTask; },
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			userCredentials: TestCredentials.Root
 		).WithTimeout();
 
 		var ex = await Assert.ThrowsAsync<MaximumSubscribersReachedException>(
@@ -31,7 +30,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 					stream,
 					group,
 					delegate { return Task.CompletedTask; },
-					new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+					userCredentials: TestCredentials.Root
 				);
 			}
 		).WithTimeout();
@@ -56,11 +55,9 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared       = delegate { return Task.CompletedTask; },
-				SubscriptionDropped = (s, reason, ex) => dropped.TrySetResult((reason, ex))
-			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			delegate { return Task.CompletedTask; },
+			(s, reason, ex) => dropped.TrySetResult((reason, ex)),
+			TestCredentials.Root
 		).WithTimeout();
 
 		Assert.NotNull(subscription);
@@ -88,24 +85,22 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, r, ct) => {
-					firstEventSource.TrySetResult(e);
-					await subscription.Ack(e);
-				},
-				SubscriptionDropped = (subscription, reason, ex) => {
-					if (reason != SubscriptionDroppedReason.Disposed)
-						firstEventSource.TrySetException(ex!);
-				}
+			async (subscription, e, r, ct) => {
+				firstEventSource.TrySetResult(e);
+				await subscription.Ack(e);
 			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(subscription, reason, ex) => {
+				if (reason != SubscriptionDroppedReason.Disposed)
+					firstEventSource.TrySetException(ex!);
+			},
+			TestCredentials.Root
 		);
 
 		var firstEvent = firstEventSource.Task;
 
 		var resolvedEvent = await firstEvent.WithTimeout(TimeSpan.FromSeconds(10));
 		Assert.Equal(StreamPosition.Start, resolvedEvent.Event.EventNumber);
-		Assert.Equal(events[0].MessageId, resolvedEvent.Event.EventId);
+		Assert.Equal(events[0].EventId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -117,7 +112,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var events = Fixture.CreateTestEvents().ToArray();
 
-		var eventId = events.Single().MessageId;
+		var eventId = events.Single().EventId;
 
 		await Fixture.Subscriptions.CreateToStreamAsync(
 			stream,
@@ -129,17 +124,15 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, r, ct) => {
-					firstEventSource.TrySetResult(e);
-					await subscription.Ack(e);
-				},
-				SubscriptionDropped = (subscription, reason, ex) => {
-					if (reason != SubscriptionDroppedReason.Disposed)
-						firstEventSource.TrySetException(ex!);
-				}
+			async (subscription, e, r, ct) => {
+				firstEventSource.TrySetResult(e);
+				await subscription.Ack(e);
 			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(subscription, reason, ex) => {
+				if (reason != SubscriptionDroppedReason.Disposed)
+					firstEventSource.TrySetException(ex!);
+			},
+			TestCredentials.Root
 		);
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
@@ -168,17 +161,15 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, r, ct) => {
-					firstEventSource.TrySetResult(e);
-					await subscription.Ack(e);
-				},
-				SubscriptionDropped = (subscription, reason, ex) => {
-					if (reason != SubscriptionDroppedReason.Disposed)
-						firstEventSource.TrySetException(ex!);
-				}
+			async (subscription, e, r, ct) => {
+				firstEventSource.TrySetResult(e);
+				await subscription.Ack(e);
 			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(subscription, reason, ex) => {
+				if (reason != SubscriptionDroppedReason.Disposed)
+					firstEventSource.TrySetException(ex!);
+			},
+			TestCredentials.Root
 		);
 
 		var firstEvent = firstEventSource.Task;
@@ -206,17 +197,15 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, r, ct) => {
-					firstEventSource.TrySetResult(e);
-					await subscription.Ack(e);
-				},
-				SubscriptionDropped = (subscription, reason, ex) => {
-					if (reason != SubscriptionDroppedReason.Disposed)
-						firstEventSource.TrySetException(ex!);
-				}
+			async (subscription, e, r, ct) => {
+				firstEventSource.TrySetResult(e);
+				await subscription.Ack(e);
 			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(subscription, reason, ex) => {
+				if (reason != SubscriptionDroppedReason.Disposed)
+					firstEventSource.TrySetException(ex!);
+			},
+			TestCredentials.Root
 		);
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(9), events.Skip(10));
@@ -225,7 +214,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var resolvedEvent = await firstEvent.WithTimeout();
 		Assert.Equal(new(10), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Last().MessageId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Last().EventId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -248,17 +237,15 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, r, ct) => {
-					firstEventSource.TrySetResult(e);
-					await subscription.Ack(e);
-				},
-				SubscriptionDropped = (subscription, reason, ex) => {
-					if (reason != SubscriptionDroppedReason.Disposed)
-						firstEventSource.TrySetException(ex!);
-				}
+			async (subscription, e, r, ct) => {
+				firstEventSource.TrySetResult(e);
+				await subscription.Ack(e);
 			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(subscription, reason, ex) => {
+				if (reason != SubscriptionDroppedReason.Disposed)
+					firstEventSource.TrySetException(ex!);
+			},
+			TestCredentials.Root
 		);
 
 		var firstEvent = firstEventSource.Task;
@@ -285,17 +272,15 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, r, ct) => {
-					firstEventSource.TrySetResult(e);
-					await subscription.Ack(e);
-				},
-				SubscriptionDropped = (subscription, reason, ex) => {
-					if (reason != SubscriptionDroppedReason.Disposed)
-						firstEventSource.TrySetException(ex!);
-				}
+			async (subscription, e, r, ct) => {
+				firstEventSource.TrySetResult(e);
+				await subscription.Ack(e);
 			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(subscription, reason, ex) => {
+				if (reason != SubscriptionDroppedReason.Disposed)
+					firstEventSource.TrySetException(ex!);
+			},
+			TestCredentials.Root
 		);
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(9), events.Skip(10));
@@ -304,7 +289,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var resolvedEvent = await firstEvent.WithTimeout();
 		Assert.Equal(new(10), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Last().MessageId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Last().EventId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -326,24 +311,22 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, r, ct) => {
-					firstEventSource.TrySetResult(e);
-					await subscription.Ack(e);
-				},
-				SubscriptionDropped = (subscription, reason, ex) => {
-					if (reason != SubscriptionDroppedReason.Disposed)
-						firstEventSource.TrySetException(ex!);
-				}
+			async (subscription, e, r, ct) => {
+				firstEventSource.TrySetResult(e);
+				await subscription.Ack(e);
 			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(subscription, reason, ex) => {
+				if (reason != SubscriptionDroppedReason.Disposed)
+					firstEventSource.TrySetException(ex!);
+			},
+			TestCredentials.Root
 		);
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
 		var firstEvent    = firstEventSource.Task;
 		var resolvedEvent = await firstEvent.WithTimeout(TimeSpan.FromSeconds(10));
-		var eventId       = events.Last().MessageId;
+		var eventId       = events.Last().EventId;
 
 		Assert.Equal(new(2), resolvedEvent.Event.EventNumber);
 		Assert.Equal(eventId, resolvedEvent.Event.EventId);
@@ -369,17 +352,15 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, r, ct) => {
-					firstEventSource.TrySetResult(e);
-					await subscription.Ack(e);
-				},
-				SubscriptionDropped = (subscription, reason, ex) => {
-					if (reason != SubscriptionDroppedReason.Disposed)
-						firstEventSource.TrySetException(ex!);
-				}
+			async (subscription, e, r, ct) => {
+				firstEventSource.TrySetResult(e);
+				await subscription.Ack(e);
 			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(subscription, reason, ex) => {
+				if (reason != SubscriptionDroppedReason.Disposed)
+					firstEventSource.TrySetException(ex!);
+			},
+			TestCredentials.Root
 		);
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(9), events.Skip(10));
@@ -388,7 +369,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var resolvedEvent = await firstEvent.WithTimeout();
 		Assert.Equal(new(4), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Skip(4).First().MessageId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Skip(4).First().EventId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -411,17 +392,15 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, r, ct) => {
-					firstEventSource.TrySetResult(e);
-					await subscription.Ack(e);
-				},
-				SubscriptionDropped = (subscription, reason, ex) => {
-					if (reason != SubscriptionDroppedReason.Disposed)
-						firstEventSource.TrySetException(ex!);
-				}
+			async (subscription, e, r, ct) => {
+				firstEventSource.TrySetResult(e);
+				await subscription.Ack(e);
 			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(subscription, reason, ex) => {
+				if (reason != SubscriptionDroppedReason.Disposed)
+					firstEventSource.TrySetException(ex!);
+			},
+			TestCredentials.Root
 		);
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(9), events.Skip(10));
@@ -430,7 +409,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var resolvedEvent = await firstEvent.WithTimeout();
 		Assert.Equal(new(10), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Last().MessageId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Last().EventId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -453,17 +432,15 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, r, ct) => {
-					firstEventSource.TrySetResult(e);
-					await subscription.Ack(e);
-				},
-				SubscriptionDropped = (subscription, reason, ex) => {
-					if (reason != SubscriptionDroppedReason.Disposed)
-						firstEventSource.TrySetException(ex!);
-				}
+			async (subscription, e, r, ct) => {
+				firstEventSource.TrySetResult(e);
+				await subscription.Ack(e);
 			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(subscription, reason, ex) => {
+				if (reason != SubscriptionDroppedReason.Disposed)
+					firstEventSource.TrySetException(ex!);
+			},
+			TestCredentials.Root
 		);
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(10), events.Skip(11));
@@ -472,7 +449,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var resolvedEvent = await firstEvent.WithTimeout();
 		Assert.Equal(new(11), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Last().MessageId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Last().EventId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -486,7 +463,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 					stream,
 					group,
 					delegate { return Task.CompletedTask; },
-					new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+					userCredentials: TestCredentials.Root
 				);
 			}
 		).WithTimeout();
@@ -515,25 +492,23 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, r, ct) => {
-					if (r > 4) {
-						retryCountSource.TrySetResult(r.Value);
-						await subscription.Ack(e.Event.EventId);
-					} else {
-						await subscription.Nack(
-							PersistentSubscriptionNakEventAction.Retry,
-							"Not yet tried enough times",
-							e
-						);
-					}
-				},
-				SubscriptionDropped = (subscription, reason, ex) => {
-					if (reason != SubscriptionDroppedReason.Disposed)
-						retryCountSource.TrySetException(ex!);
+			async (subscription, e, r, ct) => {
+				if (r > 4) {
+					retryCountSource.TrySetResult(r.Value);
+					await subscription.Ack(e.Event.EventId);
+				} else {
+					await subscription.Nack(
+						PersistentSubscriptionNakEventAction.Retry,
+						"Not yet tried enough times",
+						e
+					);
 				}
 			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(subscription, reason, ex) => {
+				if (reason != SubscriptionDroppedReason.Disposed)
+					retryCountSource.TrySetException(ex!);
+			},
+			TestCredentials.Root
 		);
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
@@ -561,17 +536,15 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, r, ct) => {
-					firstEventSource.TrySetResult(e);
-					await subscription.Ack(e);
-				},
-				SubscriptionDropped = (subscription, reason, ex) => {
-					if (reason != SubscriptionDroppedReason.Disposed)
-						firstEventSource.TrySetException(ex!);
-				}
+			async (subscription, e, r, ct) => {
+				firstEventSource.TrySetResult(e);
+				await subscription.Ack(e);
 			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(subscription, reason, ex) => {
+				if (reason != SubscriptionDroppedReason.Disposed)
+					firstEventSource.TrySetException(ex!);
+			},
+			TestCredentials.Root
 		);
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(10), events.Skip(11));
@@ -580,7 +553,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		var resolvedEvent = await firstEvent.WithTimeout();
 		Assert.Equal(new(11), resolvedEvent.Event.EventNumber);
-		Assert.Equal(events.Last().MessageId, resolvedEvent.Event.EventId);
+		Assert.Equal(events.Last().EventId, resolvedEvent.Event.EventId);
 	}
 
 	[RetryFact]
@@ -599,11 +572,9 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared       = (_, _, _, _) => Task.CompletedTask,
-				SubscriptionDropped = (_, r, e) => dropped.TrySetResult((r, e))
-			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(_, _, _, _) => Task.CompletedTask,
+			(_, r, e) => dropped.TrySetResult((r, e)),
+			TestCredentials.Root
 		);
 
 		await Fixture.Subscriptions.DeleteToStreamAsync(
@@ -636,11 +607,9 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared       = (_, _, _, _) => Task.CompletedTask,
-				SubscriptionDropped = (_, r, e) => _dropped.TrySetResult((r, e))
-			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(_, _, _, _) => Task.CompletedTask,
+			(_, r, e) => _dropped.TrySetResult((r, e)),
+			TestCredentials.Root
 		);
 
 		await Fixture.Subscriptions.DeleteToStreamAsync(
@@ -666,23 +635,23 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		const int bufferCount     = 10;
 		const int eventWriteCount = bufferCount * 2;
 
-		MessageData[]              events;
+		EventData[]                events;
 		TaskCompletionSource<bool> eventsReceived     = new();
 		int                        eventReceivedCount = 0;
 
 		events = Fixture.CreateTestEvents(eventWriteCount)
 			.Select(
-				(e, i) => new MessageData(
+				(e, i) => new EventData(
+					e.EventId,
 					SystemEventTypes.LinkTo,
 					Encoding.UTF8.GetBytes($"{i}@{stream}"),
-					messageId: e.MessageId,
 					contentType: Constants.Metadata.ContentTypes.ApplicationOctetStream
 				)
 			)
 			.ToArray();
 
 		foreach (var e in events)
-			await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, [e]);
+			await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, new[] { e });
 
 		await Fixture.Subscriptions.CreateToStreamAsync(
 			stream,
@@ -694,22 +663,18 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, retryCount, ct) => {
-					await subscription.Ack(e);
+			async (subscription, e, retryCount, ct) => {
+				await subscription.Ack(e);
 
-					if (Interlocked.Increment(ref eventReceivedCount) == events.Length)
-						eventsReceived.TrySetResult(true);
-				},
-				SubscriptionDropped = (s, r, e) => {
-					if (e != null)
-						eventsReceived.TrySetException(e);
-				}
+				if (Interlocked.Increment(ref eventReceivedCount) == events.Length)
+					eventsReceived.TrySetResult(true);
 			},
-			new SubscribeToPersistentSubscriptionOptions {
-				BufferSize      = bufferCount,
-				UserCredentials = TestCredentials.Root
-			}
+			(s, r, e) => {
+				if (e != null)
+					eventsReceived.TrySetException(e);
+			},
+			bufferSize: bufferCount,
+			userCredentials: TestCredentials.Root
 		);
 
 		await eventsReceived.Task.WithTimeout();
@@ -741,22 +706,18 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, retryCount, ct) => {
-					await subscription.Ack(e);
+			async (subscription, e, retryCount, ct) => {
+				await subscription.Ack(e);
 
-					if (Interlocked.Increment(ref eventReceivedCount) == events.Length)
-						eventsReceived.TrySetResult(true);
-				},
-				SubscriptionDropped = (s, r, e) => {
-					if (e != null)
-						eventsReceived.TrySetException(e);
-				}
+				if (Interlocked.Increment(ref eventReceivedCount) == events.Length)
+					eventsReceived.TrySetResult(true);
 			},
-			new SubscribeToPersistentSubscriptionOptions {
-				BufferSize      = bufferCount,
-				UserCredentials = TestCredentials.Root
-			}
+			(s, r, e) => {
+				if (e != null)
+					eventsReceived.TrySetException(e);
+			},
+			bufferSize: bufferCount,
+			userCredentials: TestCredentials.Root
 		);
 
 		await eventsReceived.Task.WithTimeout();
@@ -784,21 +745,17 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, retryCount, ct) => {
-					await subscription.Ack(e);
-					if (Interlocked.Increment(ref eventReceivedCount) == events.Length)
-						eventsReceived.TrySetResult(true);
-				},
-				SubscriptionDropped = (s, r, e) => {
-					if (e != null)
-						eventsReceived.TrySetException(e);
-				}
+			async (subscription, e, retryCount, ct) => {
+				await subscription.Ack(e);
+				if (Interlocked.Increment(ref eventReceivedCount) == events.Length)
+					eventsReceived.TrySetResult(true);
 			},
-			new SubscribeToPersistentSubscriptionOptions {
-				BufferSize      = bufferCount,
-				UserCredentials = TestCredentials.Root
-			}
+			(s, r, e) => {
+				if (e != null)
+					eventsReceived.TrySetException(e);
+			},
+			bufferSize: bufferCount,
+			userCredentials: TestCredentials.Root
 		);
 
 		foreach (var e in events)
@@ -814,11 +771,11 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		StreamPosition checkPoint = default;
 
-		TaskCompletionSource<(SubscriptionDroppedReason, Exception?)> droppedSource = new();
-		TaskCompletionSource<ResolvedEvent>                           resumedSource = new();
-		TaskCompletionSource<bool>                                    appeared = new();
+		TaskCompletionSource<(SubscriptionDroppedReason, Exception?)> droppedSource  = new();
+		TaskCompletionSource<ResolvedEvent>                           resumedSource  = new();
+		TaskCompletionSource<bool>                                    appeared       = new();
 		List<ResolvedEvent>                                           appearedEvents = [];
-		MessageData[]                                                 events = Fixture.CreateTestEvents(5).ToArray();
+		EventData[]                                                   events         = Fixture.CreateTestEvents(5).ToArray();
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 
 		await Fixture.Subscriptions.CreateToStreamAsync(
@@ -837,17 +794,15 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (s, e, _, _) => {
-					appearedEvents.Add(e);
-					await s.Ack(e);
+			async (s, e, _, _) => {
+				appearedEvents.Add(e);
+				await s.Ack(e);
 
-					if (appearedEvents.Count == events.Length)
-						appeared.TrySetResult(true);
-				},
-				SubscriptionDropped = (_, reason, ex) => droppedSource.TrySetResult((reason, ex))
+				if (appearedEvents.Count == events.Length)
+					appeared.TrySetResult(true);
 			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(_, reason, ex) => droppedSource.TrySetResult((reason, ex)),
+			TestCredentials.Root
 		);
 
 		await Task.WhenAll(appeared.Task.WithTimeout(), Checkpointed());
@@ -865,19 +820,17 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (s, e, _, _) => {
-					resumedSource.TrySetResult(e);
-					await s.Ack(e);
-				},
-				SubscriptionDropped = (_, reason, ex) => {
-					if (ex is not null)
-						resumedSource.TrySetException(ex);
-					else
-						resumedSource.TrySetResult(default);
-				}
+			async (s, e, _, _) => {
+				resumedSource.TrySetResult(e);
+				await s.Ack(e);
 			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			(_, reason, ex) => {
+				if (ex is not null)
+					resumedSource.TrySetException(ex);
+				else
+					resumedSource.TrySetResult(default);
+			},
+			TestCredentials.Root
 		);
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents(1));
@@ -890,7 +843,8 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		async Task Checkpointed() {
 			await using var subscription = Fixture.Streams.SubscribeToStream(
 				checkPointStream,
-				new SubscribeToStreamOptions { UserCredentials = TestCredentials.Root }
+				FromStream.Start,
+				userCredentials: TestCredentials.Root
 			);
 
 			await foreach (var message in subscription.Messages) {
@@ -924,11 +878,9 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared       = delegate { return Task.CompletedTask; },
-				SubscriptionDropped = (_, reason, ex) => droppedSource.TrySetResult((reason, ex))
-			},
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
+			delegate { return Task.CompletedTask; },
+			(_, reason, ex) => droppedSource.TrySetResult((reason, ex)),
+			TestCredentials.Root
 		);
 
 		await Fixture.Subscriptions.UpdateToStreamAsync(
@@ -958,7 +910,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 
 		int eventReceivedCount = 0;
 
-		MessageData[] events = Fixture.CreateTestEvents(eventWriteCount)
+		EventData[] events = Fixture.CreateTestEvents(eventWriteCount)
 			.ToArray();
 
 		TaskCompletionSource<bool> eventsReceived = new();
@@ -973,22 +925,18 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		using var subscription = await Fixture.Subscriptions.SubscribeToStreamAsync(
 			stream,
 			group,
-			new PersistentSubscriptionListener {
-				EventAppeared = async (subscription, e, retryCount, ct) => {
-					await subscription.Nack(PersistentSubscriptionNakEventAction.Park, "fail", e);
+			async (subscription, e, retryCount, ct) => {
+				await subscription.Nack(PersistentSubscriptionNakEventAction.Park, "fail", e);
 
-					if (Interlocked.Increment(ref eventReceivedCount) == events.Length)
-						eventsReceived.TrySetResult(true);
-				},
-				SubscriptionDropped = (s, r, e) => {
-					if (e != null)
-						eventsReceived.TrySetException(e);
-				}
+				if (Interlocked.Increment(ref eventReceivedCount) == events.Length)
+					eventsReceived.TrySetResult(true);
 			},
-			new SubscribeToPersistentSubscriptionOptions {
-				UserCredentials = TestCredentials.Root,
-				BufferSize = bufferCount
-			}
+			(s, r, e) => {
+				if (e != null)
+					eventsReceived.TrySetException(e);
+			},
+			bufferSize: bufferCount,
+			userCredentials: TestCredentials.Root
 		);
 
 		foreach (var e in events)

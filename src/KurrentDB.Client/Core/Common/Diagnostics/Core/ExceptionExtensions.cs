@@ -2,7 +2,7 @@
 
 using System.Globalization;
 
-namespace Kurrent.Diagnostics;
+namespace KurrentDB.Diagnostics;
 
 static class ExceptionExtensions {
     /// <summary>

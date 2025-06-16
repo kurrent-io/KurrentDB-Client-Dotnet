@@ -1,5 +1,4 @@
-﻿using Grpc.Core;
-using KurrentDB.Client;
+﻿using Grpc.Core; 
 
 // take the address from environment variable (when run with Docker) or use localhost by default 
 var connectionString = Environment.GetEnvironmentVariable("ESDB__CONNECTION__STRING") 
@@ -9,11 +8,11 @@ Console.WriteLine($"Connecting to EventStoreDB at: {connectionString}");
 
 await using var client = new KurrentDBClient(KurrentDBClientSettings.Create(connectionString));
 
-var eventData = MessageData.From("some-event", "{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray());
+var eventData = new EventData(Uuid.NewUuid(), "some-event", "{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray());
 
 try {
 	var appendResult = await client.AppendToStreamAsync(
-		"some-stream", StreamState.Any, [eventData]
+		"some-stream", StreamState.Any, new List<EventData> { eventData }
 	);
 
 	Console.WriteLine($"SUCCESS! Append result: {appendResult.LogPosition}");

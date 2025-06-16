@@ -23,11 +23,7 @@ public class SubscribeToAllUpdateExistingWithCheckpointTest(ITestOutputHelper ou
 			userCredentials: TestCredentials.Root
 		);
 
-		await using var subscription = Fixture.Subscriptions.SubscribeToStream(
-			stream,
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
+		await using var subscription = Fixture.Subscriptions.SubscribeToStream(stream, group, userCredentials: TestCredentials.Root);
 
 		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
 
@@ -40,11 +36,7 @@ public class SubscribeToAllUpdateExistingWithCheckpointTest(ITestOutputHelper ou
 
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, Fixture.CreateTestEvents(1));
 
-		await using var sub = Fixture.Subscriptions.SubscribeToStream(
-			stream,
-			group,
-			new SubscribeToPersistentSubscriptionOptions { UserCredentials = TestCredentials.Root }
-		);
+		await using var sub = Fixture.Subscriptions.SubscribeToStream(stream, group, userCredentials: TestCredentials.Root);
 
 		var resolvedEvent = await sub.Messages
 			.OfType<PersistentSubscriptionMessage.Event>()
@@ -77,7 +69,8 @@ public class SubscribeToAllUpdateExistingWithCheckpointTest(ITestOutputHelper ou
 		async Task WaitForCheckpoint() {
 			await using var subscription = Fixture.Streams.SubscribeToStream(
 				$"$persistentsubscription-{stream}::{group}-checkpoint",
-				new SubscribeToStreamOptions { UserCredentials = TestCredentials.Root }
+				FromStream.Start,
+				userCredentials: TestCredentials.Root
 			);
 
 			await foreach (var message in subscription.Messages) {

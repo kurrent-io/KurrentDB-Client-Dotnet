@@ -2,10 +2,10 @@ namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:UserManagement")]
 public class DisableUserTests(ITestOutputHelper output, DisableUserTests.CustomFixture fixture)
-	: KurrentPermanentTests<DisableUserTests.CustomFixture>(output, fixture) {
+	: KurrentDBPermanentTests<DisableUserTests.CustomFixture>(output, fixture) {
 	[Fact]
 	public async Task with_null_input_throws() {
-		var ex = await Fixture.DbUsers
+		var ex = await Fixture.DBUsers
 			.DisableUserAsync(null!, userCredentials: TestCredentials.Root)
 			.ShouldThrowAsync<ArgumentNullException>();
 
@@ -15,7 +15,7 @@ public class DisableUserTests(ITestOutputHelper output, DisableUserTests.CustomF
 
 	[Fact]
 	public async Task with_empty_input_throws() {
-		var ex = await Fixture.DbUsers
+		var ex = await Fixture.DBUsers
 			.DisableUserAsync(string.Empty, userCredentials: TestCredentials.Root)
 			.ShouldThrowAsync<ArgumentOutOfRangeException>();
 
@@ -25,7 +25,7 @@ public class DisableUserTests(ITestOutputHelper output, DisableUserTests.CustomF
 	[Theory]
 	[ClassData(typeof(InvalidCredentialsTestCases))]
 	public async Task with_user_with_insufficient_credentials_throws(InvalidCredentialsTestCase testCase) {
-		await Fixture.DbUsers.CreateUserAsync(
+		await Fixture.DBUsers.CreateUserAsync(
 			testCase.User.LoginName,
 			testCase.User.FullName,
 			testCase.User.Groups,
@@ -33,7 +33,7 @@ public class DisableUserTests(ITestOutputHelper output, DisableUserTests.CustomF
 			userCredentials: TestCredentials.Root
 		);
 
-		await Fixture.DbUsers
+		await Fixture.DBUsers
 			.DisableUserAsync(testCase.User.LoginName, userCredentials: testCase.User.Credentials)
 			.ShouldThrowAsync(testCase.ExpectedException);
 	}
@@ -42,11 +42,11 @@ public class DisableUserTests(ITestOutputHelper output, DisableUserTests.CustomF
 	public async Task that_was_disabled() {
 		var user = await Fixture.CreateTestUser();
 
-		await Fixture.DbUsers
+		await Fixture.DBUsers
 			.DisableUserAsync(user.LoginName, userCredentials: TestCredentials.Root)
 			.ShouldNotThrowAsync();
 
-		await Fixture.DbUsers
+		await Fixture.DBUsers
 			.DisableUserAsync(user.LoginName, userCredentials: TestCredentials.Root)
 			.ShouldNotThrowAsync();
 	}
@@ -55,7 +55,7 @@ public class DisableUserTests(ITestOutputHelper output, DisableUserTests.CustomF
 	public async Task that_is_enabled() {
 		var user = await Fixture.CreateTestUser();
 
-		await Fixture.DbUsers
+		await Fixture.DBUsers
 			.DisableUserAsync(user.LoginName, userCredentials: TestCredentials.Root)
 			.ShouldNotThrowAsync();
 	}

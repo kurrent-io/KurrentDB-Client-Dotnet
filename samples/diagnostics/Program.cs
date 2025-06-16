@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
-using EventStore.Client;
-using EventStore.Client.Extensions.OpenTelemetry;
-using KurrentDB.Client;
+using KurrentDB.Client.Extensions.OpenTelemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry.Exporter;
@@ -25,7 +23,7 @@ dotnet add package OpenTelemetry.Extensions.Hosting
 # endregion import-required-packages
 **/
 
-var settings = KurrentDBClientSettings.Create("esdb://localhost:2113?tls=false");
+var settings = KurrentDBClientSettings.Create("kurrentdb://localhost:2113?tls=false");
 
 settings.OperationOptions.ThrowOnAppendFailure = false;
 
@@ -55,7 +53,8 @@ static async Task TraceAppendToStream(KurrentDBClient client) {
 
 		host.Start();
 
-		var eventData = MessageData.From(
+		var eventData = new EventData(
+			Uuid.NewUuid(),
 			"some-event",
 			"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
 		);
@@ -63,7 +62,9 @@ static async Task TraceAppendToStream(KurrentDBClient client) {
 		await client.AppendToStreamAsync(
 			Uuid.NewUuid().ToString(),
 			StreamState.Any,
-			[eventData]
+			new List<EventData> {
+				eventData
+			}
 		);
 
 		# endregion setup-client-for-tracing
