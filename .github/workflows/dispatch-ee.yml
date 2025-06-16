@@ -4,13 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       kurrentdb-tag:
-        description: "KurrentDB tag"
+        description: "The KurrentDB docker tag to use. If kurrentdb-image is empty, the action will use the values in the KURRENTDB_DOCKER_IMAGES variable (ci, lts, previous-lts)."
         required: true
-        type: choice
-        options:
-          - ci
-          - lts
-          - previous-lts
+        type: string
+      kurrentdb-image:
+        description: "The KurrentDB docker image to test against. Leave this empty to use the image in the KURRENTDB_DOCKER_IMAGES variable"
+        required: false
+        type: string
+      kurrentdb-registry:
+        description: "The docker registry containing the KurrentDB docker image. Leave this empty to use the registry in the KURRENTDB_DOCKER_IMAGES variable."
+        required: false
+        type: string
 jobs:
   test:
     uses: ./.github/workflows/base.yml
@@ -21,5 +25,7 @@ jobs:
     name: Test (${{ inputs.kurrentdb-tag }})
     with:
       kurrentdb-tag: ${{ inputs.kurrentdb-tag }}
+      kurrentdb-image: ${{ inputs.kurrentdb-image }}
+      kurrentdb-registry: ${{ inputs.kurrentdb-registry }}
       test: ${{ matrix.test }}
     secrets: inherit
