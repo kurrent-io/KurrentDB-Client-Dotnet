@@ -6,13 +6,12 @@ namespace Kurrent.Client;
 
 [PublicAPI]
 public class KurrentClient : IAsyncDisposable {
-    KurrentClient(KurrentClientOptions options) {
+    public KurrentClient(KurrentClientOptions options) {
         options.EnsureConfigIsValid();
 
         Options = options;
 
-        LegacyCallInvoker = new KurrentDBLegacyCallInvoker(
-            new LegacyClusterClient(Options.ConvertToLegacySettings()));
+        LegacyCallInvoker = new KurrentDBLegacyCallInvoker(new LegacyClusterClient(Options.ConvertToLegacySettings()));
 
         Streams  = new KurrentStreamsClient(LegacyCallInvoker, options);
         Registry = new KurrentRegistryClient(LegacyCallInvoker);

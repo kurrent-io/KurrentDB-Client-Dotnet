@@ -47,52 +47,17 @@ public readonly struct Success {
     public static readonly Success Instance = new();
 }
 
-// TODO: all results should be represented using Result<T, E>
-// TODO: all Errors should be represented using OneOf<ErrorDetails.Something, ErrorDetails.SomethingElse>
+[PublicAPI]
+public partial class CreateSchemaError : IWhatever<ErrorDetails.SchemaAlreadyExists>;
 
-[GenerateOneOf]
-public partial class CreateSchemaResult : OneOfBase<SchemaVersionDescriptor, ErrorDetails.SchemaAlreadyExists> {
-    public bool IsSchemaVersionDescriptor => IsT0;
-    public bool IsSchemaAlreadyExists     => IsT1;
+[PublicAPI]
+public partial class GetSchemaError : IWhatever<ErrorDetails.SchemaNotFound>;
 
-    public SchemaVersionDescriptor          AsSchemaVersionDescriptor => AsT0;
-    public ErrorDetails.SchemaAlreadyExists AsSchemaAlreadyExists     => AsT1;
-}
+[PublicAPI]
+public partial class GetSchemaVersionError : IWhatever<ErrorDetails.SchemaNotFound>;
 
-[GenerateOneOf]
-public partial class GetSchemaResult : OneOfBase<Schema, ErrorDetails.SchemaNotFound> {
-    public bool IsSchema         => IsT0;
-    public bool IsSchemaNotFound => IsT1;
+[PublicAPI]
+public partial class DeleteSchemaError : IWhatever<ErrorDetails.SchemaNotFound>;
 
-    public Schema                      AsSchema         => AsT0;
-    public ErrorDetails.SchemaNotFound AsSchemaNotFound => AsT1;
-}
-
-[GenerateOneOf]
-public partial class GetSchemaVersionResult : OneOfBase<SchemaVersion, ErrorDetails.SchemaNotFound> {
-    public bool IsSchemaVersion  => IsT0;
-    public bool IsSchemaNotFound => IsT1;
-
-    public SchemaVersion               AsSchemaVersion  => AsT0;
-    public ErrorDetails.SchemaNotFound AsSchemaNotFound => AsT1;
-}
-
-[GenerateOneOf]
-public partial class DeleteSchemaResult : OneOfBase<Success, ErrorDetails.SchemaNotFound> {
-    public bool IsSuccess        => IsT0;
-    public bool IsSchemaNotFound => IsT1;
-
-    public Success                     AsSuccess        => AsT0;
-    public ErrorDetails.SchemaNotFound AsSchemaNotFound => AsT1;
-}
-
-[GenerateOneOf]
-public partial class CheckSchemaCompatibilityResult : OneOfBase<SchemaVersionId, SchemaCompatibilityErrors, ErrorDetails.SchemaNotFound> {
-    public bool IsSchemaVersionId => IsT0;
-    public bool IsSchemaErrors    => IsT1;
-    public bool IsSchemaNotFound  => IsT2;
-
-    public SchemaVersionId             AsSchemaVersionId => AsT0;
-    public SchemaCompatibilityErrors   AsSchemaErrors    => AsT1;
-    public ErrorDetails.SchemaNotFound AsSchemaNotFound  => AsT2;
-}
+[PublicAPI]
+public partial class CheckSchemaCompatibilityError : IWhatever<SchemaCompatibilityErrors, ErrorDetails.SchemaNotFound>;

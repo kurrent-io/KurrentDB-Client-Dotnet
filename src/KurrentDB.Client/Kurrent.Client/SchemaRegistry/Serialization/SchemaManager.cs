@@ -121,32 +121,30 @@ public class SchemaManager(KurrentRegistryClient schemaRegistryClient, ISchemaEx
 			.GetSchemaVersion(schemaName, null, cancellationToken)
 			.ConfigureAwait(false);
 
-		if (getSchemaVersionResult.Value is SchemaVersion version) {
+		if (getSchemaVersionResult.IsSuccess) {
+			var version     = getSchemaVersionResult.AsSuccess;
 			var versionInfo = new SchemaVersionDescriptor(version.VersionId, version.VersionNumber);
 			CompatibleVersions.TryAdd(messageType, [versionInfo]);
 			return versionInfo;
 		}
-		else {
-			var definition = SchemaExporter.Export(messageType, dataFormat);
 
-			var createSchemaResult = await SchemaRegistryClient
-				.CreateSchema(schemaName, definition, dataFormat, cancellationToken)
-				.ConfigureAwait(false);
+		var definition = SchemaExporter.Export(messageType, dataFormat);
 
-			return await createSchemaResult.Match(
-				versionInfo => {
-					// edge case: the schema was created by another client between checking and creating
-					var added = CompatibleVersions.TryAdd(messageType, [versionInfo]);
-					if (added) {
-						return new(versionInfo);
-					}
-					else
-						return TryRegisterSchema(schemaName, messageType, dataFormat, cancellationToken);
-				},
+		var createSchemaResult = await SchemaRegistryClient
+			.CreateSchema(schemaName, definition, dataFormat, cancellationToken)
+			.ConfigureAwait(false);
+
+		return await createSchemaResult.Match(
+			versionInfo => {
 				// edge case: the schema was created by another client between checking and creating
-				_ => TryRegisterSchema(schemaName, messageType, dataFormat, cancellationToken)
-			);
-		}
+				var added = CompatibleVersions.TryAdd(messageType, [versionInfo]);
+				return added
+					? new(versionInfo)
+					: TryRegisterSchema(schemaName, messageType, dataFormat, cancellationToken);
+			},
+			// edge case: the schema was created by another client between checking and creating
+			_ => TryRegisterSchema(schemaName, messageType, dataFormat, cancellationToken)
+		);
 	}
 
 	/// <summary>
@@ -169,7 +167,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistryClient, ISchemaEx
 			.ConfigureAwait(false);
 
 		return result.Match(
-			lastSchemaVersionId => {
+			onSuccess: lastSchemaVersionId => {
 				// its impossible to update because we start by checking the cache
 				CompatibleVersions.AddOrUpdate(
 					messageType,
@@ -190,8 +188,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistryClient, ISchemaEx
 
 				return lastSchemaVersionId;
 			},
-			errors => throw new SchemaValidationException(dataFormat, schemaVersionId, messageType, errors.Errors),
-			_ => throw new SchemaNotFoundException(schemaVersionId)
+			onError: error => throw new SchemaValidationException(dataFormat, schemaVersionId, messageType, error.AsSchemaCompatibilityErrors.Errors)
 		);
 
 		// Attempts to retrieve the last schema version ID that is compatible with the provided schema version ID.
@@ -227,13 +224,15 @@ public class SchemaManager(KurrentRegistryClient schemaRegistryClient, ISchemaEx
 			.ConfigureAwait(false);
 
 		return result.Match(
-			schemaVersionId => {
+			onSuccess: schemaVersionId => {
 				// its impossible to update because we start by checking the cache
 				CompatibleVersions.TryAdd(messageType, [new SchemaVersionDescriptor(schemaVersionId, 0)]);
 				return schemaVersionId;
 			},
-			errors => throw new SchemaValidationException(dataFormat, schemaName, messageType, errors.Errors),
-			_ => throw new SchemaNotFoundException(schemaName)
+			onError: error => throw new SchemaValidationException(
+				dataFormat, schemaName, messageType,
+				error.AsSchemaCompatibilityErrors.Errors
+			)
 		);
 	}
 }

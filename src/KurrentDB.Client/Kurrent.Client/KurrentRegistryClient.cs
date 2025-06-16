@@ -5,6 +5,7 @@ using Kurrent.Client.SchemaRegistry;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 using Contracts = KurrentDB.Protocol.Registry.V2;
 using ErrorDetails = Kurrent.Client.SchemaRegistry.ErrorDetails;
+using Success = Kurrent.Client.SchemaRegistry.Success;
 
 namespace Kurrent.Client;
 
@@ -40,13 +41,13 @@ public class KurrentRegistryClient {
 	/// An optional <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
 	/// </param>
 	/// <returns>
-	/// A <see cref="CreateSchemaResult"/> indicating the result of the schema creation operation.
-	/// This can include the newly created schema version or an error specifying that the schema already exists.
+	/// A <see cref="Result{SchemaVersionDescriptor, CreateSchemaError}"/> representing the outcome of the schema creation,
+	/// which may contain the newly generated schema version or an error in case of failure.
 	/// </returns>
 	/// <exception cref="Exception">
 	/// Throws an exception if the operation encounters an error, such as a network issue or invalid input.
 	/// </exception>
-	public async ValueTask<CreateSchemaResult> CreateSchema(
+	public async ValueTask<Result<SchemaVersionDescriptor, CreateSchemaError>> CreateSchema(
 		SchemaName schemaName, string schemaDefinition,
 		SchemaDataFormat dataFormat, CompatibilityMode compatibilityMode,
 		string description, Dictionary<string, string> tags,
@@ -63,18 +64,16 @@ public class KurrentRegistryClient {
 			SchemaDefinition = ByteString.CopyFromUtf8(schemaDefinition)
 		};
 
-        try {
-            var response = await ServiceClient
-                .CreateSchemaAsync(request, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
+		try {
+			var response = await ServiceClient
+				.CreateSchemaAsync(request, cancellationToken: cancellationToken)
+				.ConfigureAwait(false);
 
-            return new SchemaVersionDescriptor(Guid.Parse(response.SchemaVersionId), response.VersionNumber);
-        }
-        catch (RpcException ex) when (ex.StatusCode == StatusCode.AlreadyExists) {
-            return new ErrorDetails.SchemaAlreadyExists(schemaName);
-        }
-        catch (RpcException ex) {
-            throw new KurrentClientException(ex.StatusCode.ToString(), $"An error occurred while creating the schema: {ex.Message}", ex);
+			return new SchemaVersionDescriptor(Guid.Parse(response.SchemaVersionId), response.VersionNumber);
+		} catch (RpcException ex) when (ex.StatusCode == StatusCode.AlreadyExists) {
+			return Result<SchemaVersionDescriptor, CreateSchemaError>.Error(new ErrorDetails.SchemaAlreadyExists(schemaName));
+		} catch (RpcException ex) {
+			throw new KurrentClientException(ex.StatusCode.ToString(), $"An error occurred while creating the schema: {ex.Message}", ex);
         }
         catch (Exception ex) {
             throw new KurrentClientException("CreateSchema", "An error occurred while creating the schema.", ex);
@@ -97,26 +96,18 @@ public class KurrentRegistryClient {
 	/// An optional <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
 	/// </param>
 	/// <returns>
-	/// A <see cref="CreateSchemaResult"/> indicating the result of the schema creation operation.
-	/// This can include the newly created schema version or an error specifying that the schema already exists.
+	/// A <see cref="ValueTask{TResult}"/> containing a <see cref="Result{TSuccess, TError}"/> which represents the outcome of the schema creation.
+	/// The result may include the created schema version descriptor or an error in case of failure.
 	/// </returns>
 	/// <exception cref="Exception">
 	/// Throws an exception if the operation encounters an error, such as a network issue or invalid input.
 	/// </exception>
-	public ValueTask<CreateSchemaResult> CreateSchema(
+	public ValueTask<Result<SchemaVersionDescriptor, CreateSchemaError>> CreateSchema(
 		SchemaName schemaName,
 		string schemaDefinition,
 		SchemaDataFormat dataFormat,
 		CancellationToken cancellationToken = default
-	) => CreateSchema(
-		schemaName,
-		schemaDefinition,
-		dataFormat,
-		CompatibilityMode.None,
-		"",
-		[],
-		cancellationToken
-	);
+	) => CreateSchema(schemaName, schemaDefinition, dataFormat, CompatibilityMode.None, "", [], cancellationToken);
 
 	/// <summary>
 	/// Retrieves the schema details for the specified schema name from the registry.
@@ -128,12 +119,12 @@ public class KurrentRegistryClient {
 	/// An optional <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
 	/// </param>
 	/// <returns>
-	/// A <see cref="GetSchemaResult"/> representing the retrieved schema details or an error indicating the schema was not found.
+	/// A <see cref="Result{Schema, GetSchemaError}"/> that either contains the retrieved schema or an error indicating the issue encountered, such as the schema not being found.
 	/// </returns>
 	/// <exception cref="Exception">
 	/// Throws an exception if an error occurs while trying to retrieve the schema, including issues with network connectivity or invalid input.
 	/// </exception>
-	public async ValueTask<GetSchemaResult> GetSchema(SchemaName schemaName, CancellationToken cancellationToken = default) {
+	public async ValueTask<Result<Schema, GetSchemaError>> GetSchema(SchemaName schemaName, CancellationToken cancellationToken = default) {
 		var request = new Contracts.GetSchemaRequest {
 			SchemaName = schemaName
 		};
@@ -156,7 +147,7 @@ public class KurrentRegistryClient {
         //     );
         // }
 		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
-			return new ErrorDetails.SchemaNotFound(schemaName);
+			return Result<Schema, GetSchemaError>.Error(new ErrorDetails.SchemaNotFound(schemaName));
 		}
 	}
 
@@ -173,12 +164,14 @@ public class KurrentRegistryClient {
 	/// An optional <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
 	/// </param>
 	/// <returns>
-	/// A <see cref="GetSchemaVersionResult"/> containing either the schema version details or an error indicating that the schema was not found.
+	/// A <see cref="Result{SchemaVersion, GetSchemaVersionError}"/> containing either the schema version details or an error indicating that the schema could not be found.
 	/// </returns>
 	/// <exception cref="Exception">
 	/// Throws an exception if an error occurs during the operation, such as network issues or invalid input.
 	/// </exception>
-	public async ValueTask<GetSchemaVersionResult> GetSchemaVersion(SchemaName schemaName, int? versionNumber = null, CancellationToken cancellationToken = default) {
+	public async ValueTask<Result<SchemaVersion, GetSchemaVersionError>> GetSchemaVersion(
+		SchemaName schemaName, int? versionNumber = null, CancellationToken cancellationToken = default
+	) {
 		var request = new Contracts.GetSchemaVersionRequest {
 			SchemaName = schemaName
 		};
@@ -192,9 +185,8 @@ public class KurrentRegistryClient {
 				.ConfigureAwait(false);
 
 			return SchemaVersion.FromProto(response.Version);
-		}
-		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
-            return new ErrorDetails.SchemaNotFound(schemaName);
+		} catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound) {
+			return Result<SchemaVersion, GetSchemaVersionError>.Error(new ErrorDetails.SchemaNotFound(schemaName));
 		}
 	}
 
@@ -208,12 +200,15 @@ public class KurrentRegistryClient {
 	/// An optional <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
 	/// </param>
 	/// <returns>
-	/// A <see cref="GetSchemaVersionResult"/> containing the requested schema version details or an error if the schema version is not found.
+	/// A <see cref="Result{SchemaVersion, GetSchemaVersionError}"/> containing the requested schema version details or an error
+	/// if the schema version is not found.
 	/// </returns>
 	/// <exception cref="RpcException">
 	/// Throws an exception in case of communication errors with the schema registry service.
 	/// </exception>
-	public async ValueTask<GetSchemaVersionResult> GetSchemaVersionById(SchemaVersionId schemaVersionId, CancellationToken cancellationToken = default) {
+	public async ValueTask<Result<SchemaVersion, GetSchemaVersionError>> GetSchemaVersionById(
+		SchemaVersionId schemaVersionId, CancellationToken cancellationToken = default
+	) {
 		var request = new Contracts.GetSchemaVersionByIdRequest {
 			SchemaVersionId = schemaVersionId
 		};
@@ -224,9 +219,8 @@ public class KurrentRegistryClient {
 				.ConfigureAwait(false);
 
 			return SchemaVersion.FromProto(response.Version);
-		}
-		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
-            return new ErrorDetails.SchemaNotFound(schemaVersionId);
+		} catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound) {
+			return Result<SchemaVersion, GetSchemaVersionError>.Error(new ErrorDetails.SchemaNotFound(schemaVersionId));
 		}
 	}
 
@@ -240,13 +234,13 @@ public class KurrentRegistryClient {
 	/// An optional <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
 	/// </param>
 	/// <returns>
-	/// A <see cref="DeleteSchemaResult"/> indicating the result of the schema deletion operation.
+	/// A <see cref="Result{Success, DeleteSchemaError}"/> indicating the result of the schema deletion operation.
 	/// The result can either indicate success or specify that the schema was not found.
 	/// </returns>
 	/// <exception cref="Exception">
 	/// Throws an exception if the operation encounters an error, such as a network issue or invalid input.
 	/// </exception>
-	public async ValueTask<DeleteSchemaResult> DeleteSchema(SchemaName schemaName, CancellationToken cancellationToken = default) {
+	public async ValueTask<Result<Success, DeleteSchemaError>> DeleteSchema(SchemaName schemaName, CancellationToken cancellationToken = default) {
 		var request = new Contracts.DeleteSchemaRequest {
 			SchemaName = schemaName
 		};
@@ -256,10 +250,9 @@ public class KurrentRegistryClient {
 				.DeleteSchemaAsync(request, cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
 
-			return SchemaRegistry.Success.Instance;
-		}
-		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
-            return new ErrorDetails.SchemaNotFound(schemaName);
+			return Success.Instance;
+		} catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound) {
+			return Result<Success, DeleteSchemaError>.Error(new ErrorDetails.SchemaNotFound(schemaName));
 		}
 	}
 
@@ -279,14 +272,15 @@ public class KurrentRegistryClient {
 	/// An optional <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
 	/// </param>
 	/// <returns>
-	/// A <see cref="CheckSchemaCompatibilityResult"/> object representing the result of the compatibility check.
-	/// This result can be one of the following: a compatible schema version ID, a list of compatibility errors,
-	/// or an indication that the schema was not found.
+	/// A <see cref="Result{TSuccess, TError}"/> of type <see cref="SchemaVersionId"/> on success, or
+	/// <see cref="CheckSchemaCompatibilityError"/> on failure indicating details of the compatibility issues.
 	/// </returns>
 	/// <exception cref="Exception">
 	/// Throws an exception if there is an error during the compatibility check process.
 	/// </exception>
-	public async ValueTask<CheckSchemaCompatibilityResult> CheckSchemaCompatibility(SchemaIdentifier identifier, string schemaDefinition, SchemaDataFormat dataFormat, CancellationToken cancellationToken = default) {
+	public async ValueTask<Result<SchemaVersionId, CheckSchemaCompatibilityError>> CheckSchemaCompatibility(
+		SchemaIdentifier identifier, string schemaDefinition, SchemaDataFormat dataFormat, CancellationToken cancellationToken = default
+	) {
 		var request = identifier.IsSchemaName
 			? new Contracts.CheckSchemaCompatibilityRequest { SchemaName      = identifier.AsSchemaName }
 			: new Contracts.CheckSchemaCompatibilityRequest { SchemaVersionId = identifier.AsSchemaVersionId };
@@ -299,16 +293,22 @@ public class KurrentRegistryClient {
 				.CheckSchemaCompatibilityAsync(request, cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
 
-			return response.ResultCase switch {
-				Contracts.CheckSchemaCompatibilityResponse.ResultOneofCase.Success => SchemaVersionId.From(response.Success.SchemaVersionId),
-                Contracts.CheckSchemaCompatibilityResponse.ResultOneofCase.Failure => SchemaCompatibilityErrors.FromProto(response.Failure.Errors),
-                _                                                                  => identifier.IsSchemaName ? new ErrorDetails.SchemaNotFound(identifier.AsSchemaName) : new ErrorDetails.SchemaNotFound(identifier.AsSchemaVersionId)
-            };
+			if (response.Success is not null)
+				return Result<SchemaVersionId, CheckSchemaCompatibilityError>.Success(SchemaVersionId.From(response.Success.SchemaVersionId));
+
+			if (response.Failure is not null)
+				return Result<SchemaVersionId, CheckSchemaCompatibilityError>.Error(SchemaCompatibilityErrors.FromProto(response.Failure.Errors));
+
+			return Result<SchemaVersionId, CheckSchemaCompatibilityError>.Error(identifier.IsSchemaName
+				? new ErrorDetails.SchemaNotFound(identifier.AsSchemaName)
+				: new ErrorDetails.SchemaNotFound(identifier.AsSchemaVersionId)
+			);
 		}
-		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
-            return identifier.IsSchemaName
-                ? new ErrorDetails.SchemaNotFound(identifier.AsSchemaName)
-                : new ErrorDetails.SchemaNotFound(identifier.AsSchemaVersionId);
-        }
+		catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound) {
+            return Result<SchemaVersionId, CheckSchemaCompatibilityError>.Error(identifier.IsSchemaName
+	            ? new ErrorDetails.SchemaNotFound(identifier.AsSchemaName)
+	            : new ErrorDetails.SchemaNotFound(identifier.AsSchemaVersionId)
+            );
+		}
 	}
 }
