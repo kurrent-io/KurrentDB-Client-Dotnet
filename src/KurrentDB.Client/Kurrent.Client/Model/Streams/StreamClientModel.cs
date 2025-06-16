@@ -12,7 +12,7 @@ public record AppendStreamSuccess(string Stream, LogPosition Position, StreamRev
 }
 
 [PublicAPI]
-public partial class AppendStreamFailure : IWhatever<
+public readonly partial record struct AppendStreamFailure : IWhatever<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,
@@ -96,16 +96,16 @@ public readonly record struct HeartbeatOptions(bool Enable, int RecordsThreshold
 }
 
 [PublicAPI]
-public partial class ReadMessage : IWhatever<Record, Heartbeat>;
+public readonly partial record struct ReadMessage : IWhatever<Record, Heartbeat>;
 
 [PublicAPI]
-public partial class SubscribeMessage : IWhatever<Record, Heartbeat>;
+public readonly partial record struct SubscribeMessage : IWhatever<Record, Heartbeat>;
 
 /// <summary>
 /// Represents the result of a delete operation on a stream in KurrentDB.
 /// </summary>
 [PublicAPI]
-public partial class DeleteStreamError : IWhatever<
+public readonly partial record struct DeleteStreamError : IWhatever<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,
@@ -115,26 +115,26 @@ public partial class DeleteStreamError : IWhatever<
 /// Represents the result of a tombstone operation on a stream in KurrentDB.
 /// </summary>
 [PublicAPI]
-public partial class TombstoneStreamError : IWhatever<
+public readonly partial record struct TombstoneStreamError : IWhatever<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,
     ErrorDetails.StreamRevisionConflict>;
 
 [PublicAPI]
-public partial class GetStreamInfoError : IWhatever<
+public readonly partial record struct GetStreamInfoError : IWhatever<
     ErrorDetails.StreamNotFound,
     ErrorDetails.AccessDenied>;
 
 [PublicAPI]
-public partial class SetStreamMetadataError : IWhatever<
+public readonly partial record struct SetStreamMetadataError : IWhatever<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,
     ErrorDetails.StreamRevisionConflict>;
 
 [PublicAPI]
-public partial class TruncateStreamError : IWhatever<
+public readonly partial record struct TruncateStreamError : IWhatever<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,

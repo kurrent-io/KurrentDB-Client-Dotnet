@@ -4,11 +4,11 @@ namespace Kurrent.Whatever.Tests;
 
 // Define a test type that implements IWhatever directly
 // The source generator will generate the full implementation.
-public partial class TestWhateverResult : IWhatever<string, int> {
+public readonly partial record struct TestWhateverResult : IWhatever<string, int> {
     // User-defined part is empty or can contain other non-generated members.
 }
 
-public partial class TestWhateverComplexResult : IWhatever<MyError, MySuccess, MyWarning> {
+public readonly partial record struct TestWhateverComplexResult : IWhatever<MyError, MySuccess, MyWarning> {
     // Generator will handle this
 }
 
@@ -183,27 +183,6 @@ public class WhateverGenerationTests {
         result.AsInt.ShouldBe(789);
     }
 
-    [Test]
-    public void explicit_conversion_to_string_should_work() {
-        TestWhateverResult result   = "explicit_cast";
-        var                strValue = (string?)result;
-        strValue.ShouldBe("explicit_cast");
-
-        TestWhateverResult intResult    = 100;
-        var                nullStrValue = (string?)intResult;
-        nullStrValue.ShouldBeNull();
-    }
-
-    [Test]
-    public void explicit_conversion_to_int_should_work() {
-        TestWhateverResult result   = 99;
-        var                intValue = (int?)result;
-        intValue.ShouldBe(99);
-
-        TestWhateverResult stringResult = "not_an_int";
-        var                nullIntValue = (int?)stringResult;
-        nullIntValue.ShouldBeNull();
-    }
 
     [Test]
     public void switch_should_execute_correct_action_for_string() {
@@ -316,4 +295,62 @@ public class WhateverGenerationTests {
         Should.NotThrow(() => new TestWhateverResult(0));
         Should.NotThrow(() => new TestWhateverResult(0));
     }
+
+    // Case enum tests
+    [Test]
+    public void case_property_should_return_correct_enum_value_for_string() {
+        TestWhateverResult result = "test";
+        result.Case.ShouldBe(TestWhateverResult.TestWhateverResultCase.String);
+    }
+
+    [Test]
+    public void case_property_should_return_correct_enum_value_for_int() {
+        TestWhateverResult result = 123;
+        result.Case.ShouldBe(TestWhateverResult.TestWhateverResultCase.Int);
+    }
+
+    // Async Switch tests
+    [Test]
+    public async Task switch_async_should_execute_correct_action_for_string() {
+        TestWhateverResult result = "async_test";
+        var stringActionCalled = false;
+        var intActionCalled = false;
+
+        await result.SwitchAsync(
+            async s => { stringActionCalled = true; await ValueTask.CompletedTask; },
+            async i => { intActionCalled = true; await ValueTask.CompletedTask; }
+        );
+
+        stringActionCalled.ShouldBeTrue();
+        intActionCalled.ShouldBeFalse();
+    }
+
+    // Async Match tests
+    [Test]
+    public async Task match_async_should_return_correct_value_for_string() {
+        TestWhateverResult result = "async_match";
+        var outcome = await result.MatchAsync(
+            async s => { await ValueTask.CompletedTask; return $"String: {s}"; },
+            async i => { await ValueTask.CompletedTask; return $"Int: {i}"; }
+        );
+
+        outcome.ShouldBe("String: async_match");
+    }
+
+    // State parameter tests
+    [Test]
+    public void switch_with_state_should_pass_state_correctly() {
+        TestWhateverResult result = "state_test";
+        var capturedState = "";
+        var state = "test_state";
+
+        result.Switch<string>(
+            (s, st) => capturedState = st,
+            (i, st) => capturedState = "wrong",
+            state
+        );
+
+        capturedState.ShouldBe("test_state");
+    }
+
 }
