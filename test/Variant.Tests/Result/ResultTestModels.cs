@@ -1,6 +1,6 @@
 using TicTacToe;
 
-namespace Kurrent.Client.Tests.Infra.Result;
+namespace Kurrent.Variant.Tests.Result;
 
 public readonly record struct GameId(Guid Value);
 

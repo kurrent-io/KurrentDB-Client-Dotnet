@@ -1,5 +1,3 @@
-using Kurrent.Client;
-
 namespace Kurrent;
 
 /// <summary>
@@ -65,7 +63,7 @@ public static class CollectionsSequenceResultExtensions {
     /// <param name="tasks">The collection of result-producing tasks to sequence.</param>
     /// <returns>A <see cref="ValueTask{TResult}"/> representing the asynchronous operation, with a result containing either a collection of all success values or the first error.</returns>
     public static async ValueTask<Result<IEnumerable<TValue>, TError>> SequenceAsync<TValue, TError>(this IEnumerable<ValueTask<Result<TValue, TError>>> tasks) where TError : notnull {
-        var results = await tasks.Select(t => t.AsTask()).WhenAll().ConfigureAwait(false);
+        var results = await Task.WhenAll(tasks.Select(t => t.AsTask())).ConfigureAwait(false);
         return results.Sequence();
     }
 

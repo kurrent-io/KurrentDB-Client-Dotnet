@@ -1,6 +1,4 @@
-using Bogus;
-
-namespace Kurrent.Client.Tests.Infra.Result;
+namespace Kurrent.Variant.Tests.Result;
 
 public class ValueTaskResultExtensionsTests {
     Faker Faker { get; } = new();

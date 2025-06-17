@@ -1,6 +1,6 @@
 namespace Kurrent.Variant.Tests;
 
-// Define a test type that implements IWhatever directly
+// Define a test type that implements IVariant directly
 // The source generator will generate the full implementation.
 public readonly partial record struct TestVariantResult : IVariant<string, int> {
     // User-defined part is empty or can contain other non-generated members.
@@ -16,7 +16,7 @@ public record MySuccess(Guid Id);
 
 public record MyWarning(string Text);
 
-public class WhateverGenerationTests {
+public class VariantGenerationTests {
     [Test]
     public void is_string_should_be_true_when_value_is_string() {
         TestVariantResult result = "hello";
@@ -229,24 +229,24 @@ public class WhateverGenerationTests {
 
     // [Test]
     // public void try_pick_string_should_work() {
-    //     TestWhateverResult result = "pick_string";
+    //     TestVariantResult result = "pick_string";
     //
     //     result.TryPickString(out var pickedString).ShouldBeTrue();
     //     pickedString.ShouldBe("pick_string");
     //
-    //     TestWhateverResult intResult = 123;
+    //     TestVariantResult intResult = 123;
     //     intResult.TryPickString(out pickedString).ShouldBeFalse();
     //     pickedString.ShouldBeNull();
     // }
     //
     // [Test]
     // public void try_pick_int_should_work() {
-    //     TestWhateverResult result = 987;
+    //     TestVariantResult result = 987;
     //
     //     result.TryPickInt(out var pickedInt).ShouldBeTrue();
     //     pickedInt.ShouldBe(987);
     //
-    //     TestWhateverResult stringResult = "not_an_int";
+    //     TestVariantResult stringResult = "not_an_int";
     //     stringResult.TryPickInt(out pickedInt).ShouldBeFalse();
     //     pickedInt.ShouldBe(0);
     // }

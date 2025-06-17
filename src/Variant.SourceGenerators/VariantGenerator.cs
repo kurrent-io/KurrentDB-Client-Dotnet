@@ -196,11 +196,11 @@ public class VariantGenerator : ISourceGenerator {
             GenerateResultErrorImplementation(sb, memberIndent, className, typeArguments);
         }
 
-        // Only generate equality members for regular classes, not record structs
-        // Record structs automatically generate Equals, GetHashCode, ToString, and operators
-        if (classSymbol.TypeKind == TypeKind.Class) {
-            GenerateEqualityMembers(sb, memberIndent, className);
-        }
+        // // Only generate equality members for regular classes, not record structs
+        // // Record structs automatically generate Equals, GetHashCode, ToString, and operators
+        // if (classSymbol.TypeKind == TypeKind.Class) {
+        //     GenerateEqualityMembers(sb, memberIndent, className);
+        // }
 
         sb.AppendLine($"{baseIndent}}}");
         for (var i = containingTypeSymbols.Count - 1; i >= 0; i--)

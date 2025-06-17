@@ -1,6 +1,4 @@
-using Bogus;
-
-namespace Kurrent.Client.Tests.Infra.Result;
+namespace Kurrent.Variant.Tests.Result;
 
 public class ResultStaticMethodsTests {
     Faker Faker { get; } = new();

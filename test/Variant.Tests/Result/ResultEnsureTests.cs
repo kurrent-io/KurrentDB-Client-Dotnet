@@ -1,4 +1,4 @@
-namespace Kurrent.Client.Tests.Infra.Result;
+namespace Kurrent.Variant.Tests.Result;
 
 public class ResultEnsureTests {
     [Test]

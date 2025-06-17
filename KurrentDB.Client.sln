@@ -27,7 +27,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.Integration.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{1BD9B8F6-3497-4A76-BC26-D01F0E6D4848}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Whatever", "Whatever", "{88BBD171-224B-48DD-85C4-DA4B64F79B88}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Variant", "Variant", "{88BBD171-224B-48DD-85C4-DA4B64F79B88}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

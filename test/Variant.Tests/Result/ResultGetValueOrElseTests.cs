@@ -1,7 +1,6 @@
-using Bogus;
 using TicTacToe;
 
-namespace Kurrent.Client.Tests.Infra.Result;
+namespace Kurrent.Variant.Tests.Result;
 
 public class ResultGetValueOrElseTests {
     Faker Faker { get; } = new();
@@ -72,7 +71,7 @@ public class ResultGetValueOrElseTests {
         // Assert
         value.ShouldBe(fallbackValue);
     }
-    
+
     [Test]
     public async Task get_value_or_else_async_returns_success_value_when_called_on_success() {
         // Arrange
