@@ -9,8 +9,7 @@ namespace Kurrent.Client.Model;
 /// </summary>
 [PublicAPI]
 [DebuggerDisplay("{ToDebugString(prettyPrint: true)}")]
-public class Metadata : IEnumerable<KeyValuePair<string, object?>> // IDictionary<string, object?>
-{
+public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	readonly Dictionary<string, object?> _dictionary;
 
 	/// <summary>
@@ -64,43 +63,43 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> // IDictionar
 	/// </summary>
 	public ICollection<object?> Values => _dictionary.Values;
 
-	/// <summary>
-	/// Gets or sets the value associated with the specified key.
-	/// </summary>
-	/// <param name="key">The key to look up or set.</param>
-	/// <returns>The value associated with the specified key.</returns>
-	/// <exception cref="KeyNotFoundException">The key does not exist in the collection (when getting).</exception>
-	public object? this[string key] {
-		get => _dictionary[key];
-		set => _dictionary[key] = value;
-	}
+	// /// <summary>
+	// /// Gets or sets the value associated with the specified key.
+	// /// </summary>
+	// /// <param name="key">The key to look up or set.</param>
+	// /// <returns>The value associated with the specified key.</returns>
+	// /// <exception cref="KeyNotFoundException">The key does not exist in the collection (when getting).</exception>
+	// public object? this[string key] {
+	// 	get => _dictionary[key];
+	// 	set => _dictionary[key] = value;
+	// }
 
-	/// <summary>
-	/// Adds the specified key and value to the dictionary.
-	/// </summary>
-	/// <param name="key">The key of the element to add.</param>
-	/// <param name="value">The value of the element to add.</param>
-	public void Add(string key, object? value) => _dictionary.Add(key, value);
-
-	/// <summary>
-	/// Adds the specified key-value pair to the dictionary.
-	/// </summary>
-	/// <param name="item">The key-value pair to add.</param>
-	public void Add(KeyValuePair<string, object?> item) => _dictionary.Add(item.Key, item.Value);
+	// /// <summary>
+	// /// Adds the specified key and value to the dictionary.
+	// /// </summary>
+	// /// <param name="key">The key of the element to add.</param>
+	// /// <param name="value">The value of the element to add.</param>
+	// public void Add(string key, object? value) => _dictionary.Add(key, value);
+	//
+	// /// <summary>
+	// /// Adds the specified key-value pair to the dictionary.
+	// /// </summary>
+	// /// <param name="item">The key-value pair to add.</param>
+	// public void Add(KeyValuePair<string, object?> item) => _dictionary.Add(item.Key, item.Value);
 
 	/// <summary>
 	/// Removes all keys and values from the dictionary.
 	/// </summary>
 	public void Clear() => _dictionary.Clear();
 
-	/// <summary>
-	/// Determines whether the dictionary contains the specified key-value pair.
-	/// </summary>
-	/// <param name="item">The key-value pair to locate.</param>
-	/// <returns>true if the dictionary contains the specified key-value pair; otherwise, false.</returns>
-	public bool Contains(KeyValuePair<string, object?> item) =>
-		_dictionary.TryGetValue(item.Key, out var value) &&
-		Equals(value, item.Value);
+	// /// <summary>
+	// /// Determines whether the dictionary contains the specified key-value pair.
+	// /// </summary>
+	// /// <param name="item">The key-value pair to locate.</param>
+	// /// <returns>true if the dictionary contains the specified key-value pair; otherwise, false.</returns>
+	// public bool Contains(KeyValuePair<string, object?> item) =>
+	// 	_dictionary.TryGetValue(item.Key, out var value) &&
+	// 	Equals(value, item.Value);
 
 	/// <summary>
 	/// Determines whether the dictionary contains the specified key.
@@ -109,13 +108,13 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> // IDictionar
 	/// <returns>true if the dictionary contains an element with the specified key; otherwise, false.</returns>
 	public bool ContainsKey(string key) => _dictionary.ContainsKey(key);
 
-	/// <summary>
-	/// Copies the elements of the dictionary to an array, starting at the specified array index.
-	/// </summary>
-	/// <param name="array">The destination array.</param>
-	/// <param name="arrayIndex">The zero-based index in the array at which copying begins.</param>
-	public void CopyTo(KeyValuePair<string, object?>[] array, int arrayIndex) =>
-		((ICollection<KeyValuePair<string, object?>>)_dictionary).CopyTo(array, arrayIndex);
+	// /// <summary>
+	// /// Copies the elements of the dictionary to an array, starting at the specified array index.
+	// /// </summary>
+	// /// <param name="array">The destination array.</param>
+	// /// <param name="arrayIndex">The zero-based index in the array at which copying begins.</param>
+	// public void CopyTo(KeyValuePair<string, object?>[] array, int arrayIndex) =>
+	// 	((ICollection<KeyValuePair<string, object?>>)_dictionary).CopyTo(array, arrayIndex);
 
 	/// <summary>
 	/// Removes the specified key from the dictionary.
@@ -124,13 +123,13 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> // IDictionar
 	/// <returns>true if the element is successfully removed; otherwise, false.</returns>
 	public bool Remove(string key) => _dictionary.Remove(key);
 
-	/// <summary>
-	/// Removes the specified key-value pair from the dictionary.
-	/// </summary>
-	/// <param name="item">The key-value pair to remove.</param>
-	/// <returns>true if the element is successfully removed; otherwise, false.</returns>
-	public bool Remove(KeyValuePair<string, object?> item) =>
-		Contains(item) && _dictionary.Remove(item.Key);
+	// /// <summary>
+	// /// Removes the specified key-value pair from the dictionary.
+	// /// </summary>
+	// /// <param name="item">The key-value pair to remove.</param>
+	// /// <returns>true if the element is successfully removed; otherwise, false.</returns>
+	// public bool Remove(KeyValuePair<string, object?> item) =>
+	// 	Contains(item) && _dictionary.Remove(item.Key);
 
 	// /// <summary>
 	// /// Tries to get the value associated with the specified key.

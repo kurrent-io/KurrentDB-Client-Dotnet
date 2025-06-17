@@ -1,20 +1,57 @@
+using System.Collections.Concurrent;
+using System.Runtime.ExceptionServices;
+using Google.Protobuf.Reflection;
+using Kurrent.Client.SchemaRegistry.Serialization.Protobuf;
+using KurrentDB.Protocol;
+using static KurrentDB.Protocol.Streams.V2.ErrorDetails;
+
 namespace Kurrent.Client.Model;
+
+static class ErrorAnnotationsCache {
+    static readonly ConcurrentDictionary<string, ErrorAnnotations> Annotations = new();
+
+    public static ErrorAnnotations Get(MessageDescriptor descriptor) =>
+        Annotations.GetOrAdd(descriptor.FullName, static (_, descriptor) => descriptor.GetRequiredMessageExtensionValue(CoreExtensions.ErrorInfo), descriptor);
+}
+
+public abstract record ServiceOperationError(Metadata? Metadata = null) : IResultError {
+    protected abstract MessageDescriptor Descriptor { get; }
+
+    public Metadata Metadata { get; } = Metadata ?? new Metadata();
+
+    public         string ErrorCode    => ErrorAnnotationsCache.Get(Descriptor).Code;
+    public virtual string ErrorMessage => ErrorAnnotationsCache.Get(Descriptor).Message;
+    public         bool   IsFatal      => ErrorAnnotationsCache.Get(Descriptor).Severity == ErrorAnnotations.Types.Severity.Fatal;
+
+    public Exception CreateException(Exception? innerException = null) =>
+        new KurrentClientException(ErrorCode, ErrorMessage, Metadata, innerException);
+
+    public Exception Throw(Exception? innerException = null) =>
+        throw CreateException(innerException);
+}
 
 /// <summary>
 /// Provides a set of error detail types for representing specific append operation failures when interacting with KurrentDB.
 /// </summary>
 [PublicAPI]
 public static class ErrorDetails {
-    /// <summary>
-    /// Represents an error indicating that the specified stream could not be found.
-    /// </summary>
-    /// <param name="Stream">The name of the stream that could not be located.</param>
-    public readonly record struct StreamNotFound(string Stream) : IKurrentClientError {
-        /// <inheritdoc />
-        public string ErrorCode => nameof(StreamNotFound);
-        /// <inheritdoc />
-        public string ErrorMessage => $"Stream '{Stream}' not found.";
+
+    public record StreamNotFound(string? Stream = null) : ServiceOperationError {
+        protected override MessageDescriptor Descriptor { get; } = Types.StreamNotFound.Descriptor;
+
+        public override string ErrorMessage => Stream is not null ? $"Stream '{Stream}' not found." : base.ErrorMessage;
     }
+
+    // /// <summary>
+    // /// Represents an error indicating that the specified stream could not be found.
+    // /// </summary>
+    // /// <param name="Stream">The name of the stream that could not be located.</param>
+    // public readonly record struct StreamNotFound(string Stream) : IKurrentClientError {
+    //     /// <inheritdoc />
+    //     public string ErrorCode => nameof(StreamNotFound);
+    //     /// <inheritdoc />
+    //     public string ErrorMessage => $"Stream '{Stream}' not found.";
+    // }
 
     /// <summary>
     /// Represents an error indicating that the specified stream has been deleted.

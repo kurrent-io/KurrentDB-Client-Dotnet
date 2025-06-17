@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Text;
 using Google.Protobuf;
@@ -23,6 +24,33 @@ static class ProtobufExtensions {
 
     public static IMessage EnsureValueIsProtoMessage(this object? value) =>
 	    value as IMessage ?? throw new InvalidOperationException($"Value of type {value!.GetType().Name} is not a Protocol Buffers message");
+
+
+    public static bool TryGetMessageExtensionValue<TValue>(this MessageDescriptor descriptor, Extension<MessageOptions, TValue> extension, out TValue? value) where TValue : IMessage {
+        var options = descriptor.GetOptions();
+
+        if (options?.HasExtension(extension) ?? false) {
+            value = options.GetExtension(extension);
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
+
+    public static TValue GetRequiredMessageExtensionValue<TValue>(this MessageDescriptor descriptor, Extension<MessageOptions, TValue> extension) where TValue : IMessage =>
+        !descriptor.TryGetMessageExtensionValue(extension, out var value) || value is null ? throw new InvalidOperationException($"Type {descriptor.Name} does not have {typeof(TValue)} extension defined.") : value;
+
+    public static bool TryGetFieldExtensionValue<TValue>(this MessageDescriptor descriptor, string fieldName, Extension<FieldOptions, TValue> extension, [MaybeNullWhen(false)] out TValue value) where TValue : IMessage {
+        var options = descriptor.FindFieldByName(fieldName).GetOptions();
+        if (options?.HasExtension(extension) ?? false) {
+            value = options.GetExtension(extension);
+            return true;
+        }
+
+        value = default!;
+        return false;
+    }
 
     public static ReadOnlyMemory<byte> ToUtf8JsonBytes(this IMessage message) {
 	    return Encoding.UTF8.GetBytes(
@@ -60,6 +88,9 @@ class ProtobufMessages {
     public MessageDescriptor GetDescriptor(Type messageType) =>
         Types.GetOrAdd(messageType, GetContext).Descriptor;
 
+    public MessageDescriptor GetDescriptor<T>() =>
+        GetDescriptor(typeof(T));
+
     static (MessageParser Parser, MessageDescriptor Descriptor) GetContext(Type messageType) {
         return (GetMessageParser(messageType), GetMessageDescriptor(messageType));
 
@@ -72,5 +103,26 @@ class ProtobufMessages {
             (MessageDescriptor)messageType
                 .GetProperty("Descriptor", BindingFlags.Public | BindingFlags.Static)!
                 .GetValue(null)!;
+    }
+
+    static ConcurrentDictionary<Type, MessageOptions?> OptionsCache { get; } = new();
+
+    public static bool TryGetMessageAnnotations<T, TAnnotations>(Extension<MessageOptions, TAnnotations> extension, [MaybeNullWhen(false)] out TAnnotations annotation) where T : IMessage where TAnnotations : IMessage {
+        var options = OptionsCache.GetOrAdd(
+            typeof(T), static type =>
+                System.GetDescriptor(type).GetOptions());
+
+        if (options?.HasExtension(extension) ?? false) {
+            annotation = options.GetExtension(extension);
+            return true;
+        }
+
+        annotation = default!;
+        return false;
+    }
+
+    public void ClearCache() {
+        Types.Clear();
+        OptionsCache.Clear();
     }
 }

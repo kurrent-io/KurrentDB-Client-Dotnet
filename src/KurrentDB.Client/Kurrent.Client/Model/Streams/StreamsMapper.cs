@@ -111,7 +111,7 @@ static class StreamsMapper {
 	public static AppendStreamFailure Map(this Contracts.AppendStreamFailure source) =>
 		source.ErrorCase switch {
 			Contracts.AppendStreamFailure.ErrorOneofCase.StreamNotFound             => new ErrorDetails.StreamNotFound(source.Stream),
-			Contracts.AppendStreamFailure.ErrorOneofCase.StreamDeleted              => new ErrorDetails.StreamDeleted(source.Stream),
+			Contracts.AppendStreamFailure.ErrorOneofCase.StreamDeleted              => new ErrorDetails.StreamDeleted(source.StreamDeleted.Stream),
 			Contracts.AppendStreamFailure.ErrorOneofCase.StreamRevisionConflict     => new ErrorDetails.StreamRevisionConflict(source.Stream, source.StreamRevisionConflict.StreamRevision),
 			Contracts.AppendStreamFailure.ErrorOneofCase.AccessDenied               => new ErrorDetails.AccessDenied(source.Stream),
 			Contracts.AppendStreamFailure.ErrorOneofCase.TransactionMaxSizeExceeded => new ErrorDetails.TransactionMaxSizeExceeded(source.TransactionMaxSizeExceeded.MaxSize),
