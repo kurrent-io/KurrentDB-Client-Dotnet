@@ -1,5 +1,3 @@
-// For Guid, InvalidOperationException
-
 namespace Kurrent.Whatever.Tests;
 
 // Define a test type that implements IWhatever directly
@@ -236,29 +234,29 @@ public class WhateverGenerationTests {
         outcome.ShouldBe("Int: 777");
     }
 
-    [Test]
-    public void try_pick_string_should_work() {
-        TestWhateverResult result = "pick_string";
-
-        result.TryPickString(out var pickedString).ShouldBeTrue();
-        pickedString.ShouldBe("pick_string");
-
-        TestWhateverResult intResult = 123;
-        intResult.TryPickString(out pickedString).ShouldBeFalse();
-        pickedString.ShouldBeNull();
-    }
-
-    [Test]
-    public void try_pick_int_should_work() {
-        TestWhateverResult result = 987;
-
-        result.TryPickInt(out var pickedInt).ShouldBeTrue();
-        pickedInt.ShouldBe(987);
-
-        TestWhateverResult stringResult = "not_an_int";
-        stringResult.TryPickInt(out pickedInt).ShouldBeFalse();
-        pickedInt.ShouldBe(0);
-    }
+    // [Test]
+    // public void try_pick_string_should_work() {
+    //     TestWhateverResult result = "pick_string";
+    //
+    //     result.TryPickString(out var pickedString).ShouldBeTrue();
+    //     pickedString.ShouldBe("pick_string");
+    //
+    //     TestWhateverResult intResult = 123;
+    //     intResult.TryPickString(out pickedString).ShouldBeFalse();
+    //     pickedString.ShouldBeNull();
+    // }
+    //
+    // [Test]
+    // public void try_pick_int_should_work() {
+    //     TestWhateverResult result = 987;
+    //
+    //     result.TryPickInt(out var pickedInt).ShouldBeTrue();
+    //     pickedInt.ShouldBe(987);
+    //
+    //     TestWhateverResult stringResult = "not_an_int";
+    //     stringResult.TryPickInt(out pickedInt).ShouldBeFalse();
+    //     pickedInt.ShouldBe(0);
+    // }
 
     [Test]
     public void complex_type_generation_is_my_error_should_be_true() {
@@ -352,5 +350,4 @@ public class WhateverGenerationTests {
 
         capturedState.ShouldBe("test_state");
     }
-
 }

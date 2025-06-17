@@ -33,6 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Registry\" />
     <Folder Include="Schema\" />
   </ItemGroup>
 

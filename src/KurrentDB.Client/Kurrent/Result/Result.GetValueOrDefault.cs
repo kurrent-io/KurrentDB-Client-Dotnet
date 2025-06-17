@@ -9,7 +9,7 @@ public readonly partial record struct Result<TValue, TError> {
     /// <param name="fallback">A function that takes the error value and returns a fallback success value.</param>
     /// <returns>The success value if <see cref="IsSuccess"/> is <c>true</c>; otherwise, the result of the <paramref name="fallback"/> function.</returns>
     public TValue GetValueOrDefault(Func<TError, TValue> fallback) =>
-        TryGetValue(out var value) ? value : fallback(AsError);
+        TryGetValue(out var value) ? value : fallback(Error);
 
     /// <summary>
     /// Gets the success value if the result is a success; otherwise, returns a fallback value computed from the error, passing additional state.
@@ -19,7 +19,7 @@ public readonly partial record struct Result<TValue, TError> {
     /// <param name="state">The state to pass to the fallback function.</param>
     /// <returns>The success value if <see cref="IsSuccess"/> is <c>true</c>; otherwise, the result of the <paramref name="fallback"/> function.</returns>
     public TValue GetValueOrDefault<TState>(Func<TError, TState, TValue> fallback, TState state) =>
-        TryGetValue(out var value) ? value : fallback(AsError, state);
+        TryGetValue(out var value) ? value : fallback(Error, state);
 
     #endregion
 
@@ -31,7 +31,7 @@ public readonly partial record struct Result<TValue, TError> {
     /// <param name="fallback">An asynchronous function that takes the error value and returns a fallback success value.</param>
     /// <returns>A <see cref="ValueTask{TValue}"/> representing the asynchronous operation with the success value or the result of the <paramref name="fallback"/> function.</returns>
     public ValueTask<TValue> GetValueOrDefaultAsync(Func<TError, ValueTask<TValue>> fallback) =>
-        TryGetValue(out var value) ? ValueTask.FromResult(value) : fallback(AsError);
+        TryGetValue(out var value) ? ValueTask.FromResult(value) : fallback(Error);
 
     /// <summary>
     /// Asynchronously gets the success value if the result is a success; otherwise, returns a fallback value computed from the error, passing additional state.
@@ -41,7 +41,7 @@ public readonly partial record struct Result<TValue, TError> {
     /// <param name="state">The state to pass to the fallback function.</param>
     /// <returns>A <see cref="ValueTask{TValue}"/> representing the asynchronous operation with the success value or the result of the <paramref name="fallback"/> function.</returns>
     public ValueTask<TValue> GetValueOrDefaultAsync<TState>(Func<TError, TState, ValueTask<TValue>> fallback, TState state) =>
-        TryGetValue(out var value) ? ValueTask.FromResult(value) : fallback(AsError, state);
+        TryGetValue(out var value) ? ValueTask.FromResult(value) : fallback(Error, state);
 
     #endregion
 }

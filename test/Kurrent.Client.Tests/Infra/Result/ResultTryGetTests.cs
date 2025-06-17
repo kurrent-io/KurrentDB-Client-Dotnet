@@ -10,7 +10,7 @@ public class ResultTryGetTests {
     public void returns_true_and_outputs_value_when_try_get_success_called_on_success_result() {
         // Arrange
         var successValue  = new GameId(Faker.Random.Guid());
-        var successResult = Result<GameId, InvalidMoveError>.Success(successValue);
+        var successResult = Result<GameId, InvalidMoveError>.AsObsoleteSuccess(successValue);
 
         // Act
         var retrieved = successResult.TryGetValue(out var outputValue);
@@ -23,7 +23,7 @@ public class ResultTryGetTests {
     [Test]
     public void returns_false_and_default_when_try_get_success_called_on_error_result() {
         // Arrange
-        var errorResult = Result<GameId, InvalidMoveError>.Error(new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence()));
+        var errorResult = Result<GameId, InvalidMoveError>.AsObsoleteError(new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence()));
 
         // Act
         var retrieved = errorResult.TryGetValue(out var outputValue);
@@ -37,7 +37,7 @@ public class ResultTryGetTests {
     public void returns_true_and_outputs_value_when_try_get_error_called_on_error_result() {
         // Arrange
         var errorValue  = new GameEndedError(Faker.Random.Guid(), Faker.PickRandom<GameStatus>());
-        var errorResult = Result<GameStarted, GameEndedError>.Error(errorValue);
+        var errorResult = Result<GameStarted, GameEndedError>.AsObsoleteError(errorValue);
 
         // Act
         var retrieved = errorResult.TryGetError(out var outputValue);
@@ -50,7 +50,7 @@ public class ResultTryGetTests {
     [Test]
     public void returns_false_and_default_when_try_get_error_called_on_success_result() {
         // Arrange
-        var successResult = Result<GameStarted, GameEndedError>.Success(new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>()));
+        var successResult = Result<GameStarted, GameEndedError>.AsObsoleteSuccess(new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>()));
 
         // Act
         var retrieved = successResult.TryGetError(out var outputValue);
@@ -64,7 +64,7 @@ public class ResultTryGetTests {
     public void returns_true_and_outputs_complex_value_when_try_get_success_called_on_complex_success_result() {
         // Arrange
         var complexValue  = new PlayerTurn(Faker.PickRandom<Player>(), new Position(1, 2), "Complex move description");
-        var successResult = Result<PlayerTurn, InvalidMoveError>.Success(complexValue);
+        var successResult = Result<PlayerTurn, InvalidMoveError>.AsObsoleteSuccess(complexValue);
 
         // Act
         var retrieved = successResult.TryGetValue(out var outputValue);
@@ -81,7 +81,7 @@ public class ResultTryGetTests {
     public void returns_true_and_outputs_complex_error_when_try_get_error_called_on_complex_error_result() {
         // Arrange
         var complexError = new InvalidMoveError(Faker.Random.Guid(), "Position already occupied", "Critical game state");
-        var errorResult  = Result<PlayerTurn, InvalidMoveError>.Error(complexError);
+        var errorResult  = Result<PlayerTurn, InvalidMoveError>.AsObsoleteError(complexError);
 
         // Act
         var retrieved = errorResult.TryGetError(out var outputValue);
@@ -98,7 +98,7 @@ public class ResultTryGetTests {
     public void maintains_nullable_annotations_when_try_get_value_called_on_nullable_success_type() {
         // Arrange
         var nullableValue = Faker.Lorem.Word();
-        var successResult = Result<string?, InvalidMoveError>.Success(nullableValue);
+        var successResult = Result<string?, InvalidMoveError>.AsObsoleteSuccess(nullableValue);
 
         // Act
         var retrieved = successResult.TryGetValue(out var outputValue);
@@ -112,7 +112,7 @@ public class ResultTryGetTests {
     public void maintains_nullable_annotations_when_try_get_error_called_on_nullable_error_type() {
         // Arrange
         var nullableError = Faker.Lorem.Word();
-        var errorResult   = Result<GameId, string?>.Error(nullableError);
+        var errorResult   = Result<GameId, string?>.AsObsoleteError(nullableError);
 
         // Act
         var retrieved = errorResult.TryGetError(out var outputValue);

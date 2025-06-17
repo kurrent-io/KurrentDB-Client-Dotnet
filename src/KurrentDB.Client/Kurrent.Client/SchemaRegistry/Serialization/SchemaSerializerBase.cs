@@ -30,7 +30,7 @@ public abstract class SchemaSerializerBase(SchemaSerializerOptions options, Sche
 		// these debug asserts ensure the required info is set during the development process
 		// -------------------------------------------------------------------------------------------------
 		Debug.Assert(!string.IsNullOrWhiteSpace(context.Stream) || context.Metadata.GetOrDefault<string>(SystemMetadataKeys.Stream) is not null, "Stream name is missing in the metadata");
-		Debug.Assert(context.Metadata.Get(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Unspecified) == DataFormat, "Schema data format does not match the serializer data format");
+		Debug.Assert(context.Metadata.GetOrDefault(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Unspecified) == DataFormat, "Schema data format does not match the serializer data format");
 		// -------------------------------------------------------------------------------------------------
 
 		if (value is null)

@@ -10,14 +10,9 @@ public static class ErrorDetails {
     /// </summary>
     /// <param name="Stream">The name of the stream that could not be located.</param>
     public readonly record struct StreamNotFound(string Stream) : IKurrentClientError {
-        /// <summary>
-        /// Gets the unique code identifying the error.
-        /// </summary>
+        /// <inheritdoc />
         public string ErrorCode => nameof(StreamNotFound);
-
-        /// <summary>
-        /// Gets the error message indicating that the stream was not found.
-        /// </summary>
+        /// <inheritdoc />
         public string ErrorMessage => $"Stream '{Stream}' not found.";
     }
 

@@ -18,18 +18,11 @@ namespace Kurrent.Whatever {
     /// Base struct for efficient Whatever implementations when all types are reference types.
     /// This provides better performance than object-based storage for certain scenarios.
     /// </summary>
-    public readonly struct WhateverValue<T> where T : class? {
-        private readonly T? _value;
-        private readonly int _index;
+    public readonly struct WhateverValue<T>(T? value, int index) where T : class? {
+        public T?   Value { get; } = value;
+        public int  Index { get; } = index;
 
-        public WhateverValue(T? value, int index) {
-            _value = value;
-            _index = index;
-        }
-
-        public T? Value => _value;
-        public int Index => _index;
-        public bool HasValue => _value is not null;
+        public bool HasValue => Value is not null;
     }
 
     public interface IWhatever<T0> : IWhatever;

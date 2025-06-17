@@ -13,7 +13,7 @@ public static class ResultThrowExtensions {
     /// <returns>The success value if the result represents success.</returns>
     /// <exception sref="TException">Thrown when the result represents an error.</exception>
     public static TValue ThrowOnError<TValue, TError, TException>(this Result<TValue, TError> result, Func<TError, TException> exceptionFactory) where TException : Exception where TError : notnull =>
-        result.IsFailure ? throw exceptionFactory(result.AsError) : result.Value;
+        result.IsFailure ? throw exceptionFactory(result.Error) : result.Value;
 
     /// <summary>
     /// Throws an exception if the result represents an error; otherwise, returns the success value.
@@ -25,7 +25,7 @@ public static class ResultThrowExtensions {
     /// <returns>The success value if the result represents success.</returns>
     /// <exception cref="Exception">Thrown when the result represents an error.</exception>
     public static TValue ThrowOnError<TValue, TError>(this Result<TValue, TError> result, Func<TError, Exception> exceptionFactory) where TError : notnull =>
-        result.IsFailure ? throw exceptionFactory(result.AsError) : result.Value;
+        result.IsFailure ? throw exceptionFactory(result.Error) : result.Value;
 
     public static async ValueTask<TSuccess> ThrowOnErrorAsync<TSuccess, TError, TException>(
         this ValueTask<Result<TSuccess, TError>> resultTask, Func<TError, TException> exceptionFactory)

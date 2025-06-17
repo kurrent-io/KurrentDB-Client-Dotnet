@@ -17,6 +17,17 @@ public record KurrentClientTestFixtureOptions {
     /// </summary>
     [ConfigurationKeyName("AutoWireUpContainers")]
     public bool AutoWireUpContainers { get; init; } = true;
+
+    /// <summary>
+    /// The connection string for authenticated access to the KurrentDB test container.
+    /// </summary>
+    public static string AuthenticatedConnectionString { get; private set; } = "kurrentdb://admin:changeit@localhost:2113/?tls=false";
+
+    /// <summary>
+    /// The connection string for anonymous access to the KurrentDB test container.
+    /// </summary>
+    public static string AnonymousConnectionString { get; private set; } = "kurrentdb://localhost:2113/?tls=false";
+
 }
 
 [PublicAPI]
@@ -89,7 +100,7 @@ public partial class KurrentClientTestFixture : TestFixture {
     protected KurrentClient LightweightClient => _lazyAutomaticClient.Value;
 
     /// <summary>
-    /// Lightweight client with automatic schema registration enabled.
+    /// Lightweight client with automatic schema registration enabled but without validation on consumption.
     /// </summary>
 	protected KurrentClient AutomaticClient => _lazyAutomaticClient.Value;
 

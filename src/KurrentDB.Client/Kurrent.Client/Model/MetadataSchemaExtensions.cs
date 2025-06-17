@@ -10,7 +10,7 @@ public static class MetadataSchemaExtensions {
 		metadata.TryGetSchemaName(out var schemaName) ? schemaName : SchemaName.None;
 
 	public static SchemaDataFormat GetSchemaDataFormat(this Metadata metadata) =>
-		metadata.Get(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Unspecified);
+		metadata.GetOrDefault(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Unspecified);
 
 	public static SchemaVersionId GetSchemaVersionId(this Metadata metadata) =>
 		metadata.TryGet<string>(SystemMetadataKeys.SchemaVersionId, out var schemaVersionId)

@@ -1,3 +1,4 @@
+using Kurrent.Client.SchemaRegistry;
 using Kurrent.Client.SchemaRegistry.Serialization.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -9,39 +10,63 @@ namespace Kurrent.Client.Model;
 /// into <see cref="Metadata"/> objects.
 /// </summary>
 public interface IMetadataDecoder {
-	/// <summary>
-	/// Decodes metadata from a byte array.
-	/// </summary>
-	/// <param name="bytes">The serialized metadata bytes.</param>
-	/// <returns>The decoded <see cref="Metadata"/> object.</returns>
-    Metadata Decode(ReadOnlyMemory<byte> bytes);
+    /// <summary>
+    /// Decodes metadata from a byte array.
+    /// </summary>
+    /// <param name="bytes">The serialized metadata bytes.</param>
+    /// <param name="context">
+    /// The context for decoding metadata, providing additional information such as the originating stream's name,
+    /// </param>
+    /// <returns>The decoded <see cref="Metadata"/> object.</returns>
+    Metadata Decode(ReadOnlyMemory<byte> bytes,  MetadataDecoderContext context);
 }
+
+/// <summary>
+/// Encapsulates metadata decoding context, providing necessary information to decode metadata.
+/// It includes the originating stream's name, the schema associated with the data,
+/// and the format of the schema content.
+/// </summary>
+[PublicAPI]
+public readonly record struct MetadataDecoderContext(
+    StreamName Stream,
+    SchemaName SchemaName,
+    SchemaDataFormat SchemaDataFormat
+);
 
 /// <summary>
 /// Provides a base implementation for decoding metadata from serialized byte representations.
 /// Serves as an abstraction for specific metadata decoding implementations.
 /// </summary>
-public abstract class MetadataDecoderBase : IMetadataDecoder {
+public abstract class MetadataDecoder : IMetadataDecoder {
 	/// <inheritdoc />
-	public Metadata Decode(ReadOnlyMemory<byte> bytes) {
+	public Metadata Decode(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context) {
 		if (bytes.IsEmpty)
 			throw new MetadataDecodingException("Cannot decode empty metadata bytes");
 
 		try {
-			return DecodeCore(bytes);
-		} catch (Exception ex) when (ex is not MetadataDecodingException) {
+			var metadata = DecodeCore(bytes, context);
+
+            // Handle backwards compatibility with old data by injecting the legacy schema in the metadata.
+            if (metadata.ContainsKey(SystemMetadataKeys.SchemaDataFormat))
+                return metadata;
+
+            return metadata
+                .With(SystemMetadataKeys.SchemaName, context.SchemaName)
+                .With(SystemMetadataKeys.SchemaDataFormat, context.SchemaDataFormat);
+        } catch (Exception ex) when (ex is not MetadataDecodingException) {
 			throw new MetadataDecodingException("Failed to decode metadata", ex);
 		}
 	}
 
-	 protected abstract Metadata DecodeCore(ReadOnlyMemory<byte> bytes);
+	 protected abstract Metadata DecodeCore(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context);
 }
 
 [PublicAPI]
-public sealed class MetadataDecoder : MetadataDecoderBase {
-    protected override Metadata DecodeCore(ReadOnlyMemory<byte> bytes) =>
+public sealed class DefaultMetadataDecoder : MetadataDecoder {
+    protected override Metadata DecodeCore(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context) =>
 	    JsonSerializer.Deserialize<Metadata>(bytes.Span, JsonSchemaSerializerOptions.DefaultJsonSerializerOptions)
 	 ?? throw new MetadataDecodingException("Decoded metadata cannot be null");
 }
 
-public class MetadataDecodingException(string message, Exception? innerException = null) : Exception(message, innerException);
+public class MetadataDecodingException(string message, Exception? innerException = null)
+    : KurrentClientException(errorCode: "MetadataDecodingError", message, innerException);

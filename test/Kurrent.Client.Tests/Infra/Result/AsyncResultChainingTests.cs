@@ -18,7 +18,7 @@ public class AsyncResultChainingTests {
         // Act
         var finalResult = await task
             .ToResultAsync(ex => new InvalidMoveError(initialValue.Value, ex.Message))
-            .ThenAsync(gameId => Result<GameUpdated, InvalidMoveError>.Success(new GameUpdated(gameId.Value, GameStatus.Ongoing)))
+            .ThenAsync(gameId => Result<GameUpdated, InvalidMoveError>.AsObsoleteSuccess(new GameUpdated(gameId.Value, GameStatus.Ongoing)))
             .MapAsync(gameUpdated => {
                     mappedValue = gameUpdated;
                     return new PlayerTurn(Player.X, new Position(1, 1), $"Turn for {gameUpdated.GameId}");
@@ -56,12 +56,12 @@ public class AsyncResultChainingTests {
             .ToResultAsync(ex => new InvalidMoveError(initialError.GameId, ex.Message))
             .ThenAsync(gameId => {
                 thenExecuted = true;
-                return Result<GameUpdated, InvalidMoveError>.Success(new GameUpdated(gameId.Value, GameStatus.Ongoing));
+                return Result<GameUpdated, InvalidMoveError>.AsObsoleteSuccess(new GameUpdated(gameId.Value, GameStatus.Ongoing));
             });
 
         // Assert
         finalResult.IsFailure.ShouldBeTrue();
-        finalResult.AsError.Reason.ShouldBe(initialError.Reason);
+        finalResult.Error.Reason.ShouldBe(initialError.Reason);
         thenExecuted.ShouldBeFalse();
     }
 
@@ -76,7 +76,7 @@ public class AsyncResultChainingTests {
         // Act
         var finalResult = await task
             .ToResultAsync(ex => new InvalidMoveError(initialValue.Value, ex.Message))
-            .ThenAsync(gameId => Result<GameUpdated, InvalidMoveError>.Error(middleError))
+            .ThenAsync(gameId => Result<GameUpdated, InvalidMoveError>.AsObsoleteError(middleError))
             .MapAsync(gameUpdated => {
                     mapExecuted = true;
                     return new PlayerTurn(Player.X, new Position(1, 1));
@@ -85,7 +85,7 @@ public class AsyncResultChainingTests {
 
         // Assert
         finalResult.IsFailure.ShouldBeTrue();
-        finalResult.AsError.ShouldBe(middleError);
+        finalResult.Error.ShouldBe(middleError);
         mapExecuted.ShouldBeFalse();
     }
 
@@ -104,12 +104,12 @@ public class AsyncResultChainingTests {
             .ToResultAsync(ex => new InvalidMoveError(initialValue.Value, ex.Message))
             .ThenAsync(gameId => {
                     // Operation that returns a Unit result
-                    return Result<Void, InvalidMoveError>.Success(Void.Value);
+                    return Result<Void, InvalidMoveError>.AsObsoleteSuccess(Void.Value);
                 }
             )
             .ThenAsync(unit => {
                     // Operation that takes a Unit and returns a value result
-                    return Result<PlayerTurn, InvalidMoveError>.Success(new PlayerTurn(Player.O, new Position(2, 2)));
+                    return Result<PlayerTurn, InvalidMoveError>.AsObsoleteSuccess(new PlayerTurn(Player.O, new Position(2, 2)));
                 }
             );
 
@@ -131,7 +131,7 @@ public class AsyncResultChainingTests {
             .ThenAsync(
                 (gameId, s) => {
                     s.Status = GameStatus.Ongoing;
-                    return Result<GameUpdated, InvalidMoveError>.Success(new GameUpdated(gameId.Value, s.Status));
+                    return Result<GameUpdated, InvalidMoveError>.AsObsoleteSuccess(new GameUpdated(gameId.Value, s.Status));
                 }, state
             )
             .MapAsync(

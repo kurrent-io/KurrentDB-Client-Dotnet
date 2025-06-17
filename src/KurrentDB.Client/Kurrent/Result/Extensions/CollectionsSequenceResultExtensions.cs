@@ -24,7 +24,7 @@ public static class CollectionsSequenceResultExtensions {
     public static Result<IEnumerable<TValue>, TError> Sequence<TValue, TError>(this IEnumerable<Result<TValue, TError>> results) where TError : notnull {
         var successes = new List<TValue>();
         foreach (var result in results) {
-            if (result.IsFailure) return result.AsError;
+            if (result.IsFailure) return result.Error;
             successes.Add(result.Value);
         }
         return Result.Success<IEnumerable<TValue>, TError>(successes);
@@ -47,7 +47,7 @@ public static class CollectionsSequenceResultExtensions {
     public static Result<TValue[], TError> SequenceToArray<TValue, TError>(this IEnumerable<Result<TValue, TError>> results) where TError : notnull {
         var successes = new List<TValue>();
         foreach (var result in results) {
-            if (result.IsFailure) return result.AsError;
+            if (result.IsFailure) return result.Error;
             successes.Add(result.Value);
         }
         return Result.Success<TValue[], TError>(successes.ToArray());
@@ -88,7 +88,7 @@ public static class CollectionsSequenceResultExtensions {
         var successValues = new List<TValue>();
         await foreach (var result in source.ConfigureAwait(false)) {
             if (result.IsFailure)
-                return Result.Failure<IReadOnlyList<TValue>, TError>(result.AsError);
+                return Result.Failure<IReadOnlyList<TValue>, TError>(result.Error);
             successValues.Add(result.Value);
         }
         return Result.Success<IReadOnlyList<TValue>, TError>(successValues);

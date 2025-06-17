@@ -19,7 +19,7 @@ public static class IResultErrorExtensions {
     /// <exception cref="Exception">Thrown when the result represents an error, using the error's CreateException() method.</exception>
     public static TValue ThrowOnError<TValue, TError>(this Result<TValue, TError> result)
         where TError : IResultError where TValue : notnull =>
-        result.IsFailure ? throw result.AsError.CreateException() : result.Value;
+        result.IsFailure ? throw result.Error.CreateException() : result.Value;
 
     /// <summary>
     /// Executes the specified action on the success value if the result is a success, or throws an exception if it's an error.
@@ -35,7 +35,7 @@ public static class IResultErrorExtensions {
         if (result.IsSuccess) {
             onSuccess(result.Value);
         } else {
-            throw result.AsError.CreateException();
+            throw result.Error.CreateException();
         }
     }
 
@@ -54,7 +54,7 @@ public static class IResultErrorExtensions {
         if (result.IsSuccess) {
             onSuccess(result.Value, state);
         } else {
-            throw result.AsError.CreateException();
+            throw result.Error.CreateException();
         }
     }
 
@@ -70,7 +70,7 @@ public static class IResultErrorExtensions {
     /// <exception cref="Exception">Thrown when the result represents an error, using the error's CreateException() method.</exception>
     public static TOut MatchOrThrow<TValue, TError, TOut>(this Result<TValue, TError> result, Func<TValue, TOut> onSuccess)
         where TError : IResultError where TValue : notnull =>
-        result.IsSuccess ? onSuccess(result.Value) : throw result.AsError.CreateException();
+        result.IsSuccess ? onSuccess(result.Value) : throw result.Error.CreateException();
 
     /// <summary>
     /// Transforms the success value using the specified function with additional state if the result is a success, or throws an exception if it's an error.
@@ -86,7 +86,7 @@ public static class IResultErrorExtensions {
     /// <exception cref="Exception">Thrown when the result represents an error, using the error's CreateException() method.</exception>
     public static TOut MatchOrThrow<TValue, TError, TOut, TState>(this Result<TValue, TError> result, Func<TValue, TState, TOut> onSuccess, TState state)
         where TError : IResultError where TValue : notnull =>
-        result.IsSuccess ? onSuccess(result.Value, state) : throw result.AsError.CreateException();
+        result.IsSuccess ? onSuccess(result.Value, state) : throw result.Error.CreateException();
 
     #endregion
 
@@ -137,7 +137,7 @@ public static class IResultErrorExtensions {
         if (result.IsSuccess) {
             await onSuccess(result.Value).ConfigureAwait(false);
         } else {
-            throw result.AsError.CreateException();
+            throw result.Error.CreateException();
         }
     }
 
@@ -175,7 +175,7 @@ public static class IResultErrorExtensions {
         if (result.IsSuccess) {
             await onSuccess(result.Value, state).ConfigureAwait(false);
         } else {
-            throw result.AsError.CreateException();
+            throw result.Error.CreateException();
         }
     }
 
@@ -208,7 +208,7 @@ public static class IResultErrorExtensions {
     public static async ValueTask<TOut> MatchOrThrowAsync<TValue, TError, TOut>(this ValueTask<Result<TValue, TError>> resultTask, Func<TValue, ValueTask<TOut>> onSuccess)
         where TError : IResultError where TValue : notnull {
         var result = await resultTask.ConfigureAwait(false);
-        return result.IsSuccess ? await onSuccess(result.Value).ConfigureAwait(false) : throw result.AsError.CreateException();
+        return result.IsSuccess ? await onSuccess(result.Value).ConfigureAwait(false) : throw result.Error.CreateException();
     }
 
     /// <summary>
@@ -244,7 +244,7 @@ public static class IResultErrorExtensions {
     public static async ValueTask<TOut> MatchOrThrowAsync<TValue, TError, TOut, TState>(this ValueTask<Result<TValue, TError>> resultTask, Func<TValue, TState, ValueTask<TOut>> onSuccess, TState state)
         where TError : IResultError where TValue : notnull {
         var result = await resultTask.ConfigureAwait(false);
-        return result.IsSuccess ? await onSuccess(result.Value, state).ConfigureAwait(false) : throw result.AsError.CreateException();
+        return result.IsSuccess ? await onSuccess(result.Value, state).ConfigureAwait(false) : throw result.Error.CreateException();
     }
 
     #endregion

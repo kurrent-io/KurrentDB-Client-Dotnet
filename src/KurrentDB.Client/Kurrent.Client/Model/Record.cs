@@ -59,8 +59,8 @@ public readonly record struct Record() {
 	/// </summary>
 	public RecordSchemaInfo Schema => new RecordSchemaInfo(
 		Metadata.TryGet<string>(SystemMetadataKeys.SchemaName, out var schemaName) ? SchemaName.From(schemaName!) : SchemaName.None,
-		Metadata.Get(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Unspecified),
-		Metadata.Get(SystemMetadataKeys.SchemaVersionId, Guid.Empty)
+		Metadata.GetOrDefault(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Unspecified),
+		Metadata.GetOrDefault(SystemMetadataKeys.SchemaVersionId, Guid.Empty)
 	);
 
 	public bool IsDecoded => Value is not null

@@ -179,7 +179,7 @@ public record KurrentClientOptions : KurrentClientOptionsBase {
 	/// Responsible for decoding metadata attached to events.
 	/// </para>
 	/// </remarks>
-	public MetadataDecoderBase MetadataDecoder { get; init; } = new MetadataDecoder();
+	public MetadataDecoder MetadataDecoder { get; init; } = new DefaultMetadataDecoder();
 
     /// <summary>
     /// An optional <see cref="ILoggerFactory"/> to use.

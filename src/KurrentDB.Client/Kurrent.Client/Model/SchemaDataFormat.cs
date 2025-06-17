@@ -66,9 +66,9 @@ static class SchemaDataFormatExtensions {
 		Debug.Assert(!string.IsNullOrWhiteSpace(contentType), "Content type should not be empty");
 
 		return contentType.ToLower() switch {
-			JsonContentType        => SchemaDataFormat.Json,
-			ProtobufContentType    => SchemaDataFormat.Protobuf,
-			AvroContentType        => SchemaDataFormat.Avro,
+            JsonContentType     => SchemaDataFormat.Json,
+            ProtobufContentType => SchemaDataFormat.Protobuf,
+            AvroContentType     => SchemaDataFormat.Avro,
             BytesContentType    => SchemaDataFormat.Bytes,
             _                   => SchemaDataFormat.Unspecified
         };

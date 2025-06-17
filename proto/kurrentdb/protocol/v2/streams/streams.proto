@@ -8,7 +8,7 @@ option java_multiple_files = true;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
-import "google/protobuf/struct.proto";
+import "google/protobuf/descriptor.proto";
 
 import "streams/shared.proto";
 import "core.proto";
@@ -27,8 +27,8 @@ service StreamsService {
   // maintaining the same transactional guarantees.
   rpc MultiStreamAppendSession(stream AppendStreamRequest) returns (MultiStreamAppendResponse);
 
-  // Appends records to a specific stream.
-  rpc AppendStream(AppendStreamRequest) returns (AppendStreamResponse);
+//  // Appends records to a specific stream.
+//  rpc AppendStream(AppendStreamRequest) returns (AppendStreamResponse);
 
 //  // Append batches of records to a stream continuously, while guaranteeing pipelined
 //  // requests are processed in order. If any request fails, the session is terminated.
@@ -50,14 +50,24 @@ message AppendRecord {
   // Universally Unique identifier for the record.
   // If not provided, the server will generate a new one.
   optional string record_id = 1;
-  // A collection of properties providing additional system information about the
-  // record.
+
+//  // The name of the stream to append the record to.
+//  optional string stream = 6;
+//
+//  // The name of the schema in the registry that defines the structure of the record.
+//  string schema_name = 4;
+//
+//  // The format of the data in the record.
+//  SchemaDataFormat data_format = 5;
+
+  // A collection of properties providing additional information about the
+  // record. This can include user-defined metadata or system properties.
+  // System properties are prefixed with "$." to avoid conflicts with user-defined properties.
+  // For example, "$schema.name" or "$schema.data-format".
   map<string, DynamicValue> properties = 2;
+
   // The actual data payload of the record, stored as bytes.
   bytes data = 3;
-//  // Optional timestamp indicating when the record was created.
-//  // If not provided, the server will use the current time.
-//  optional google.protobuf.Timestamp timestamp = 4;
 }
 
 // Constants that match the expected state of a stream during an
@@ -106,7 +116,7 @@ message AppendStreamFailure {
   // The error details
   oneof error {
     // Failed because the actual stream revision didn't match the expected revision.
-    ErrorDetails.WrongExpectedRevision wrong_expected_revision = 2;
+    ErrorDetails.StreamRevisionConflict stream_revision_conflict = 2;
     // Failed because the client lacks sufficient permissions.
     ErrorDetails.AccessDenied access_denied = 3;
     // Failed because the target stream has been deleted.

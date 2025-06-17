@@ -30,7 +30,7 @@ public class ValueTaskResultExtensionsTests {
 
         // Assert
         result.IsFailure.ShouldBeTrue();
-        result.AsError.ShouldBe(errorMessage);
+        result.Error.ShouldBe(errorMessage);
     }
 
     [Test]
@@ -57,6 +57,6 @@ public class ValueTaskResultExtensionsTests {
 
         // Assert
         result.IsFailure.ShouldBeTrue();
-        result.AsError.ShouldBe(errorMessage);
+        result.Error.ShouldBe(errorMessage);
     }
 }

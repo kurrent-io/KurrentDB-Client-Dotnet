@@ -8,9 +8,9 @@ public class ResultCollectionsTests
         // Arrange
         var successResults = new[]
         {
-            Result<int, string>.Success(1),
-            Result<int, string>.Success(2),
-            Result<int, string>.Success(3)
+            Result<int, string>.AsObsoleteSuccess(1),
+            Result<int, string>.AsObsoleteSuccess(2),
+            Result<int, string>.AsObsoleteSuccess(3)
         };
 
         // Act
@@ -27,9 +27,9 @@ public class ResultCollectionsTests
         // Arrange
         var mixedResults = new[]
         {
-            Result<int, string>.Success(1),
-            Result<int, string>.Error("First error"),
-            Result<int, string>.Error("Second error")
+            Result<int, string>.AsObsoleteSuccess(1),
+            Result<int, string>.AsObsoleteError("First error"),
+            Result<int, string>.AsObsoleteError("Second error")
         };
 
         // Act
@@ -37,7 +37,7 @@ public class ResultCollectionsTests
 
         // Assert
         finalResult.IsFailure.ShouldBeTrue();
-        finalResult.AsError.ShouldBe("First error");
+        finalResult.Error.ShouldBe("First error");
     }
 
     [Test]
@@ -59,7 +59,7 @@ public class ResultCollectionsTests
     {
         // Arrange
         var source = new[] { 1, 2, 3 };
-        Result<int, string> Map(int i) => Result<int, string>.Success(i * 2);
+        Result<int, string> Map(int i) => Result<int, string>.AsObsoleteSuccess(i * 2);
 
         // Act
         var finalResult = source.Traverse(Map);
@@ -74,14 +74,14 @@ public class ResultCollectionsTests
     {
         // Arrange
         var source = new[] { 1, 2, 3 };
-        Result<int, string> Map(int i) => i == 2 ? Result<int, string>.Error("Error on 2") : Result<int, string>.Success(i);
+        Result<int, string> Map(int i) => i == 2 ? Result<int, string>.AsObsoleteError("Error on 2") : Result<int, string>.AsObsoleteSuccess(i);
 
         // Act
         var finalResult = source.Traverse(Map);
 
         // Assert
         finalResult.IsFailure.ShouldBeTrue();
-        finalResult.AsError.ShouldBe("Error on 2");
+        finalResult.Error.ShouldBe("Error on 2");
     }
 
     [Test]
@@ -90,8 +90,8 @@ public class ResultCollectionsTests
         // Arrange
         var tasks = new[]
         {
-            ValueTask.FromResult(Result<int, string>.Success(1)),
-            ValueTask.FromResult(Result<int, string>.Success(2))
+            ValueTask.FromResult(Result<int, string>.AsObsoleteSuccess(1)),
+            ValueTask.FromResult(Result<int, string>.AsObsoleteSuccess(2))
         };
 
         // Act
@@ -108,9 +108,9 @@ public class ResultCollectionsTests
         // Arrange
         var tasks = new[]
         {
-            ValueTask.FromResult(Result<int, string>.Success(1)),
-            ValueTask.FromResult(Result<int, string>.Error("First error")),
-            ValueTask.FromResult(Result<int, string>.Error("Second error"))
+            ValueTask.FromResult(Result<int, string>.AsObsoleteSuccess(1)),
+            ValueTask.FromResult(Result<int, string>.AsObsoleteError("First error")),
+            ValueTask.FromResult(Result<int, string>.AsObsoleteError("Second error"))
         };
 
         // Act
@@ -118,7 +118,7 @@ public class ResultCollectionsTests
 
         // Assert
         finalResult.IsFailure.ShouldBeTrue();
-        finalResult.AsError.ShouldBe("First error");
+        finalResult.Error.ShouldBe("First error");
     }
 
     [Test]
@@ -126,7 +126,7 @@ public class ResultCollectionsTests
     {
         // Arrange
         var source = new[] { 1, 2, 3 };
-        ValueTask<Result<int, string>> MapAsync(int i) => ValueTask.FromResult(Result<int, string>.Success(i * 2));
+        ValueTask<Result<int, string>> MapAsync(int i) => ValueTask.FromResult(Result<int, string>.AsObsoleteSuccess(i * 2));
 
         // Act
         var finalResult = await source.TraverseAsync(MapAsync);
@@ -142,14 +142,14 @@ public class ResultCollectionsTests
         // Arrange
         var source = new[] { 1, 2, 3 };
         ValueTask<Result<int, string>> MapAsync(int i) => i == 2
-            ? ValueTask.FromResult(Result<int, string>.Error("Async error on 2"))
-            : ValueTask.FromResult(Result<int, string>.Success(i));
+            ? ValueTask.FromResult(Result<int, string>.AsObsoleteError("Async error on 2"))
+            : ValueTask.FromResult(Result<int, string>.AsObsoleteSuccess(i));
 
         // Act
         var finalResult = await source.TraverseAsync(MapAsync);
 
         // Assert
         finalResult.IsFailure.ShouldBeTrue();
-        finalResult.AsError.ShouldBe("Async error on 2");
+        finalResult.Error.ShouldBe("Async error on 2");
     }
 }

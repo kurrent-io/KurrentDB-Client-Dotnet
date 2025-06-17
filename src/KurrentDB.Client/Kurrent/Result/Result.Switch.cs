@@ -13,7 +13,7 @@ public readonly partial record struct Result<TValue, TError> {
         if (IsSuccess) {
             onSuccess(Value);
         } else {
-            onError(AsError);
+            onError(Error);
         }
     }
 
@@ -29,7 +29,7 @@ public readonly partial record struct Result<TValue, TError> {
         if (IsSuccess) {
             onSuccess(Value, state);
         } else {
-            onError(AsError, state);
+            onError(Error, state);
         }
     }
 
@@ -46,7 +46,7 @@ public readonly partial record struct Result<TValue, TError> {
     /// <param name="onError">The asynchronous action to execute if the result is an error. It takes the error value as input.</param>
     /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
     public ValueTask SwitchAsync(Func<TValue, ValueTask> onSuccess, Func<TError, ValueTask> onError) =>
-        IsSuccess ? onSuccess(Value) : onError(AsError);
+        IsSuccess ? onSuccess(Value) : onError(Error);
 
     /// <summary>
     /// Asynchronously executes one of the two provided actions depending on whether this result is a success or an error.
@@ -61,7 +61,7 @@ public readonly partial record struct Result<TValue, TError> {
             onSuccess(Value);
             return ValueTask.CompletedTask;
         }
-        return onError(AsError);
+        return onError(Error);
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ public readonly partial record struct Result<TValue, TError> {
         if (IsSuccess) {
             return onSuccess(Value);
         }
-        onError(AsError);
+        onError(Error);
         return ValueTask.CompletedTask;
     }
 
@@ -91,7 +91,7 @@ public readonly partial record struct Result<TValue, TError> {
     /// <param name="state">The state to pass to the actions.</param>
     /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
     public ValueTask SwitchAsync<TState>(Func<TValue, TState, ValueTask> onSuccess, Func<TError, TState, ValueTask> onError, TState state) =>
-        IsSuccess ? onSuccess(Value, state) : onError(AsError, state);
+        IsSuccess ? onSuccess(Value, state) : onError(Error, state);
 
     /// <summary>
     /// Asynchronously executes one of the two provided actions depending on whether this result is a success or an error, passing additional state.
@@ -108,7 +108,7 @@ public readonly partial record struct Result<TValue, TError> {
             onSuccess(Value, state);
             return ValueTask.CompletedTask;
         }
-        return onError(AsError, state);
+        return onError(Error, state);
     }
 
     /// <summary>
@@ -125,7 +125,7 @@ public readonly partial record struct Result<TValue, TError> {
         if (IsSuccess) {
             return onSuccess(Value, state);
         }
-        onError(AsError, state);
+        onError(Error, state);
         return ValueTask.CompletedTask;
     }
 

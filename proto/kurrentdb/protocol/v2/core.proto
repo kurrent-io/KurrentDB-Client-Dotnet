@@ -9,6 +9,35 @@ option java_multiple_files = true;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
+import "google/protobuf/descriptor.proto";
+
+//===================================================================
+// Error Annotations
+//===================================================================
+
+message ErrorAnnotations {
+  // Identifies the error condition.
+  string code = 1;
+
+  // Severity of the error.
+  Severity severity = 2;
+
+  // Human-readable message that describes the error condition.
+  optional string message = 3;
+
+  enum Severity {
+    // The error is recoverable, the operation failed but the session can continue.
+    RECOVERABLE = 0;
+    // The error is fatal and the session should be terminated.
+    FATAL = 1;
+  }
+}
+
+// Extend the MessageOptions to include error information.
+extend google.protobuf.MessageOptions {
+  // Provides additional information about the error condition.
+  optional ErrorAnnotations error_info = 50000;
+}
 
 //===================================================================
 // Dynamic values map

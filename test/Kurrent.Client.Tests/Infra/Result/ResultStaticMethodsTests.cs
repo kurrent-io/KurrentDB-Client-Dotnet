@@ -32,7 +32,7 @@ public class ResultStaticMethodsTests {
 
         // Assert
         result.IsFailure.ShouldBeTrue();
-        result.AsError.ShouldBe(errorMessage);
+        result.Error.ShouldBe(errorMessage);
     }
 
     [Test]
@@ -59,7 +59,7 @@ public class ResultStaticMethodsTests {
 
         // Assert
         result.IsFailure.ShouldBeTrue();
-        result.AsError.ShouldBe(errorMessage);
+        result.Error.ShouldBe(errorMessage);
     }
 
     #endregion
@@ -91,7 +91,7 @@ public class ResultStaticMethodsTests {
 
         // Assert
         result.IsFailure.ShouldBeTrue();
-        result.AsError.ShouldBe(errorMessage);
+        result.Error.ShouldBe(errorMessage);
     }
 
     [Test]
@@ -118,7 +118,7 @@ public class ResultStaticMethodsTests {
 
         // Assert
         result.IsFailure.ShouldBeTrue();
-        result.AsError.ShouldBe(errorMessage);
+        result.Error.ShouldBe(errorMessage);
     }
 
     #endregion

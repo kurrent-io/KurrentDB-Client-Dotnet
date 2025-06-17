@@ -248,7 +248,7 @@ public static partial class ValueTaskResultExtensions {
         this ValueTask<Result<TValue, TCurrent>> resultTask,
         Func<TCurrent, ValueTask<TNext>> asyncMapper) where TValue : notnull where TCurrent : notnull where TNext : notnull {
         var result = await resultTask.ConfigureAwait(false);
-        return result.IsSuccess ? result.Value : Result.Failure<TValue, TNext>(await asyncMapper(result.AsError).ConfigureAwait(false));
+        return result.IsSuccess ? result.Value : Result.Failure<TValue, TNext>(await asyncMapper(result.Error).ConfigureAwait(false));
     }
 
     /// <summary>
@@ -268,7 +268,7 @@ public static partial class ValueTaskResultExtensions {
         Func<TCurrent, TState, TNext> mapper, TState state
     ) where TValue : notnull where TCurrent : notnull where TNext : notnull {
         var result = await resultTask.ConfigureAwait(false);
-        return result.IsSuccess ? result.Value : Result.Failure<TValue, TNext>(mapper(result.AsError, state));
+        return result.IsSuccess ? result.Value : Result.Failure<TValue, TNext>(mapper(result.Error, state));
     }
 
     /// <summary>
@@ -288,7 +288,7 @@ public static partial class ValueTaskResultExtensions {
         Func<TCurrent, TState, ValueTask<TNext>> asyncMapper, TState state
     ) where TValue : notnull where TCurrent : notnull where TNext : notnull {
         var result = await resultTask.ConfigureAwait(false);
-        return result.IsSuccess ? result.Value : Result.Failure<TValue, TNext>(await asyncMapper(result.AsError, state).ConfigureAwait(false));
+        return result.IsSuccess ? result.Value : Result.Failure<TValue, TNext>(await asyncMapper(result.Error, state).ConfigureAwait(false));
     }
 
     /// <summary>

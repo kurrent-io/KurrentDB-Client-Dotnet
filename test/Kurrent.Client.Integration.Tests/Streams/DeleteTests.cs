@@ -4,7 +4,7 @@ using KurrentDB.Client;
 
 namespace Kurrent.Client.Tests.Streams;
 
-public class AppendTests : KurrentClientTestFixture {
+public class DeleteTests : KurrentClientTestFixture {
     [Test]
     [Timeout(60000)]
     public async Task appends_message_to_new_stream_with_no_stream_expected_state(CancellationToken ct) {

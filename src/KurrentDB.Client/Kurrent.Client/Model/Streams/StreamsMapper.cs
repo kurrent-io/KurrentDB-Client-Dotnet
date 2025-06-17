@@ -112,7 +112,7 @@ static class StreamsMapper {
 		source.ErrorCase switch {
 			Contracts.AppendStreamFailure.ErrorOneofCase.StreamNotFound             => new ErrorDetails.StreamNotFound(source.Stream),
 			Contracts.AppendStreamFailure.ErrorOneofCase.StreamDeleted              => new ErrorDetails.StreamDeleted(source.Stream),
-			Contracts.AppendStreamFailure.ErrorOneofCase.WrongExpectedRevision      => new ErrorDetails.StreamRevisionConflict(source.Stream, source.WrongExpectedRevision.StreamRevision),
+			Contracts.AppendStreamFailure.ErrorOneofCase.StreamRevisionConflict     => new ErrorDetails.StreamRevisionConflict(source.Stream, source.StreamRevisionConflict.StreamRevision),
 			Contracts.AppendStreamFailure.ErrorOneofCase.AccessDenied               => new ErrorDetails.AccessDenied(source.Stream),
 			Contracts.AppendStreamFailure.ErrorOneofCase.TransactionMaxSizeExceeded => new ErrorDetails.TransactionMaxSizeExceeded(source.TransactionMaxSizeExceeded.MaxSize),
 			_                                                                       => throw new UnreachableException($"Unexpected append stream failure error case: {source.ErrorCase}")

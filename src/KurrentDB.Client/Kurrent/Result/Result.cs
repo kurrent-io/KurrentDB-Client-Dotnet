@@ -52,10 +52,10 @@ public readonly partial record struct Result<TValue, TError> {
     /// Gets the error value.
     /// Throws an <see cref="InvalidOperationException"/> if the result is not an error.
     /// </summary>
-    public TError AsError =>
+    public TError Error =>
         IsFailure ? _error! : throw new InvalidOperationException("Not a failed operation. No error available.");
 
-    public override string ToString() => IsSuccess ? $"Success({Value})" : $"Failure({AsError})";
+    public override string ToString() => IsSuccess ? $"Success({Value})" : $"Failure({Error})";
 
     /// <summary>
     /// Deconstructs the instance into its component parts.
@@ -101,7 +101,7 @@ public readonly partial record struct Result<TValue, TError> {
     /// <param name="result">The result to convert.</param>
     /// <returns>The error value if the result is an error.</returns>
     /// <exception cref="InvalidOperationException">If the result is not an error (i.e., it's a success).</exception>
-    public static explicit operator TError(Result<TValue, TError> result) => result.AsError;
+    public static explicit operator TError(Result<TValue, TError> result) => result.Error;
 
     #endregion
 
@@ -111,13 +111,13 @@ public readonly partial record struct Result<TValue, TError> {
     /// Creates a new <see cref="Result{TValue,TError}"/> representing a successful operation.
     /// </summary>
     [Obsolete]
-    public static Result<TValue, TError> Success(TValue value) => new(value);
+    public static Result<TValue, TError> AsObsoleteSuccess(TValue value) => new(value);
 
     /// <summary>
     /// Creates a new <see cref="Result{TValue,TError}"/> representing a failed operation.
     /// </summary>
     [Obsolete]
-    public static Result<TValue, TError> Error(TError error) => new(error);
+    public static Result<TValue, TError> AsObsoleteError(TError error) => new(error);
 
     #endregion
 }
@@ -126,16 +126,12 @@ public static partial class Result {
     /// <summary>
     /// Creates a new <see cref="Result{TValue,TError}"/> representing a successful operation with the specified value.
     /// </summary>
-    public static Result<TValue, TError> Success<TValue, TError>(TValue value)
-        // where TValue : notnull where TError : notnull
-        => new(value);
+    public static Result<TValue, TError> Success<TValue, TError>(TValue value) => new(value);
 
     /// <summary>
     /// Creates a new <see cref="Result{TValue,TError}"/> representing a failed operation with the specified error.
     /// </summary>
-    public static Result<TValue, TError> Failure<TValue, TError>(TError error)
-        // where TValue : notnull where TError : notnull
-        => new(error);
+    public static Result<TValue, TError> Failure<TValue, TError>(TError error) => new(error);
 }
 
 public enum ResultCase {
