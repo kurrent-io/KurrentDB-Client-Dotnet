@@ -122,7 +122,7 @@ public class SchemaManager(KurrentRegistryClient schemaRegistryClient, ISchemaEx
 			.ConfigureAwait(false);
 
 		if (getSchemaVersionResult.IsSuccess) {
-			var version     = getSchemaVersionResult.AsSuccess;
+			var version     = getSchemaVersionResult.Value;
 			var versionInfo = new SchemaVersionDescriptor(version.VersionId, version.VersionNumber);
 			CompatibleVersions.TryAdd(messageType, [versionInfo]);
 			return versionInfo;

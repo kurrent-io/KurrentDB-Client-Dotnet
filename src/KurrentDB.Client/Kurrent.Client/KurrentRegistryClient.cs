@@ -70,15 +70,17 @@ public class KurrentRegistryClient {
 				.ConfigureAwait(false);
 
 			return new SchemaVersionDescriptor(Guid.Parse(response.SchemaVersionId), response.VersionNumber);
-		} catch (RpcException ex) when (ex.StatusCode == StatusCode.AlreadyExists) {
-			return Result<SchemaVersionDescriptor, CreateSchemaError>.Error(new ErrorDetails.SchemaAlreadyExists(schemaName));
 		} catch (RpcException ex) {
-			throw new KurrentClientException(ex.StatusCode.ToString(), $"An error occurred while creating the schema: {ex.Message}", ex);
-        }
-        catch (Exception ex) {
-            throw new KurrentClientException("CreateSchema", "An error occurred while creating the schema.", ex);
-        }
-    }
+			return Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(
+				ex.StatusCode switch {
+					StatusCode.AlreadyExists => new ErrorDetails.SchemaAlreadyExists(schemaName),
+					_                        => throw KurrentClientException.Throw(ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.Throw(ex);
+		}
+	}
 
 	/// <summary>
 	/// Creates a new schema in the registry with the provided details.
@@ -107,7 +109,15 @@ public class KurrentRegistryClient {
 		string schemaDefinition,
 		SchemaDataFormat dataFormat,
 		CancellationToken cancellationToken = default
-	) => CreateSchema(schemaName, schemaDefinition, dataFormat, CompatibilityMode.None, "", [], cancellationToken);
+	) => CreateSchema(
+		schemaName,
+		schemaDefinition,
+		dataFormat,
+		CompatibilityMode.None,
+		"",
+		[],
+		cancellationToken
+	);
 
 	/// <summary>
 	/// Retrieves the schema details for the specified schema name from the registry.
@@ -136,18 +146,25 @@ public class KurrentRegistryClient {
 
 			return Schema.FromProto(response.Schema);
 		}
-        // catch (Exception ex) {
-        //     return DeleteResult.Error(
-        //         ex switch {
-        //             StreamNotFoundException => new ErrorDetails.StreamNotFound(stream),
-        //             StreamDeletedException  => new ErrorDetails.StreamDeleted(stream),
-        //             AccessDeniedException   => new ErrorDetails.AccessDenied(stream), // Added stream parameter
-        //             _                       => throw new Exception($"Unexpected error while deleting stream {stream}: {ex.Message}", ex)
-        //         }
-        //     );
-        // }
+		// catch (Exception ex) {
+		//     return DeleteResult.Error(
+		//         ex switch {
+		//             StreamNotFoundException => new ErrorDetails.StreamNotFound(stream),
+		//             StreamDeletedException  => new ErrorDetails.StreamDeleted(stream),
+		//             AccessDeniedException   => new ErrorDetails.AccessDenied(stream), // Added stream parameter
+		//             _                       => throw new Exception($"Unexpected error while deleting stream {stream}: {ex.Message}", ex)
+		//         }
+		//     );
+		// }
 		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
-			return Result<Schema, GetSchemaError>.Error(new ErrorDetails.SchemaNotFound(schemaName));
+			return Result.Failure<Schema, GetSchemaError>(
+				ex.StatusCode switch {
+					StatusCode.NotFound => new ErrorDetails.SchemaNotFound(schemaName),
+					_                   => throw KurrentClientException.CreateUnknown(nameof(CheckSchemaCompatibility), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.Throw(ex);
 		}
 	}
 
@@ -186,7 +203,14 @@ public class KurrentRegistryClient {
 
 			return SchemaVersion.FromProto(response.Version);
 		} catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound) {
-			return Result<SchemaVersion, GetSchemaVersionError>.Error(new ErrorDetails.SchemaNotFound(schemaName));
+			return Result.Failure<SchemaVersion, GetSchemaVersionError>(
+				ex.StatusCode switch {
+					StatusCode.NotFound => new ErrorDetails.SchemaNotFound(schemaName),
+					_                   => throw KurrentClientException.CreateUnknown(nameof(CheckSchemaCompatibility), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.Throw(ex);
 		}
 	}
 
@@ -219,8 +243,15 @@ public class KurrentRegistryClient {
 				.ConfigureAwait(false);
 
 			return SchemaVersion.FromProto(response.Version);
-		} catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound) {
-			return Result<SchemaVersion, GetSchemaVersionError>.Error(new ErrorDetails.SchemaNotFound(schemaVersionId));
+		} catch (RpcException ex) {
+			return Result.Failure<SchemaVersion, GetSchemaVersionError>(
+				ex.StatusCode switch {
+					StatusCode.NotFound => new ErrorDetails.SchemaNotFound(schemaVersionId),
+					_                   => throw KurrentClientException.CreateUnknown(nameof(CheckSchemaCompatibility), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.Throw(ex);
 		}
 	}
 
@@ -250,9 +281,16 @@ public class KurrentRegistryClient {
 				.DeleteSchemaAsync(request, cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
 
-			return Success.Instance;
-		} catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound) {
-			return Result<Success, DeleteSchemaError>.Error(new ErrorDetails.SchemaNotFound(schemaName));
+			return Result.Success<Success, DeleteSchemaError>(Success.Instance);
+		} catch (RpcException ex) {
+			return Result.Failure<Success, DeleteSchemaError>(
+				ex.StatusCode switch {
+					StatusCode.NotFound => new ErrorDetails.SchemaNotFound(schemaName),
+					_                   => throw KurrentClientException.CreateUnknown(nameof(CheckSchemaCompatibility), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.Throw(ex);
 		}
 	}
 
@@ -293,22 +331,18 @@ public class KurrentRegistryClient {
 				.CheckSchemaCompatibilityAsync(request, cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
 
-			if (response.Success is not null)
-				return Result<SchemaVersionId, CheckSchemaCompatibilityError>.Success(SchemaVersionId.From(response.Success.SchemaVersionId));
-
-			if (response.Failure is not null)
-				return Result<SchemaVersionId, CheckSchemaCompatibilityError>.Error(SchemaCompatibilityErrors.FromProto(response.Failure.Errors));
-
-			return Result<SchemaVersionId, CheckSchemaCompatibilityError>.Error(identifier.IsSchemaName
-				? new ErrorDetails.SchemaNotFound(identifier.AsSchemaName)
-				: new ErrorDetails.SchemaNotFound(identifier.AsSchemaVersionId)
+			return response.Success is not null
+				? Result.Success<SchemaVersionId, CheckSchemaCompatibilityError>(SchemaVersionId.From(response.Success.SchemaVersionId))
+				: Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(SchemaCompatibilityErrors.FromProto(response.Failure.Errors));
+		} catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound) {
+			return Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(
+				ex.StatusCode switch {
+					StatusCode.NotFound => new ErrorDetails.SchemaNotFound(identifier.AsSchemaName),
+					_                   => throw KurrentClientException.CreateUnknown(nameof(CheckSchemaCompatibility), ex)
+				}
 			);
-		}
-		catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound) {
-            return Result<SchemaVersionId, CheckSchemaCompatibilityError>.Error(identifier.IsSchemaName
-	            ? new ErrorDetails.SchemaNotFound(identifier.AsSchemaName)
-	            : new ErrorDetails.SchemaNotFound(identifier.AsSchemaVersionId)
-            );
+		} catch (Exception ex) {
+			throw KurrentClientException.Throw(ex);
 		}
 	}
 }
