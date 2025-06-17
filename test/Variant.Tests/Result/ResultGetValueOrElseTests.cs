@@ -9,7 +9,7 @@ public class ResultGetValueOrElseTests {
     public void get_value_or_else_returns_success_value_when_called_on_success() {
         // Arrange
         var successValue = new GameId(Faker.Random.Guid());
-        var result       = Result<GameId, InvalidMoveError>.AsObsoleteSuccess(successValue);
+        var result       = Kurrent.Result.Success<GameId, InvalidMoveError>(successValue);
 
         // Act
         var value = result.GetValueOrDefault(_ => new GameId(Faker.Random.Guid()));
@@ -22,7 +22,7 @@ public class ResultGetValueOrElseTests {
     public void get_value_or_else_returns_fallback_value_when_called_on_error() {
         // Arrange
         var errorValue    = new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence());
-        var result        = Result<GameId, InvalidMoveError>.AsObsoleteError(errorValue);
+        var result        = Kurrent.Result.Failure<GameId, InvalidMoveError>(errorValue);
         var fallbackValue = new GameId(Faker.Random.Guid());
 
         // Act
@@ -40,7 +40,7 @@ public class ResultGetValueOrElseTests {
     public void get_value_or_else_returns_success_value_when_stateful_variant_called_on_success() {
         // Arrange
         var successValue = new GameId(Faker.Random.Guid());
-        var result       = Result<GameId, InvalidMoveError>.AsObsoleteSuccess(successValue);
+        var result       = Kurrent.Result.Success<GameId, InvalidMoveError>(successValue);
         var stateStatus  = Faker.PickRandom<GameStatus>(); // State not used in success path for GetValueOrElse
 
         // Act
@@ -54,7 +54,7 @@ public class ResultGetValueOrElseTests {
     public void get_value_or_else_passes_state_to_fallback_when_using_stateful_variant() {
         // Arrange
         var errorValue    = new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence());
-        var result        = Result<GameId, InvalidMoveError>.AsObsoleteError(errorValue);
+        var result        = Kurrent.Result.Failure<GameId, InvalidMoveError>(errorValue);
         var fallbackValue = new GameId(Faker.Random.Guid());
         var contextState  = "Fallback context";
 
@@ -76,7 +76,7 @@ public class ResultGetValueOrElseTests {
     public async Task get_value_or_else_async_returns_success_value_when_called_on_success() {
         // Arrange
         var successValue = new GameId(Faker.Random.Guid());
-        var result = Result<GameId, InvalidMoveError>.AsObsoleteSuccess(successValue);
+        var result = Kurrent.Result.Success<GameId, InvalidMoveError>(successValue);
 
         // Act
         var value = await result.GetValueOrDefaultAsync(_ => ValueTask.FromResult(new GameId(Faker.Random.Guid())));
@@ -89,7 +89,7 @@ public class ResultGetValueOrElseTests {
     public async Task get_value_or_else_async_returns_fallback_value_when_called_on_error() {
         // Arrange
         var errorValue = new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence());
-        var result = Result<GameId, InvalidMoveError>.AsObsoleteError(errorValue);
+        var result = Kurrent.Result.Failure<GameId, InvalidMoveError>(errorValue);
         var fallbackValue = new GameId(Faker.Random.Guid());
 
         // Act

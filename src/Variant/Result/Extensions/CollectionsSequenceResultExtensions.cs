@@ -25,7 +25,7 @@ public static class CollectionsSequenceResultExtensions {
             if (result.IsFailure) return result.Error;
             successes.Add(result.Value);
         }
-        return Result.Success<IEnumerable<TValue>, TError>(successes);
+        return Kurrent.Result.Success<IEnumerable<TValue>, TError>(successes);
     }
 
     /// <summary>
@@ -48,7 +48,7 @@ public static class CollectionsSequenceResultExtensions {
             if (result.IsFailure) return result.Error;
             successes.Add(result.Value);
         }
-        return Result.Success<TValue[], TError>(successes.ToArray());
+        return Kurrent.Result.Success<TValue[], TError>(successes.ToArray());
     }
 
     /// <summary>
@@ -86,9 +86,9 @@ public static class CollectionsSequenceResultExtensions {
         var successValues = new List<TValue>();
         await foreach (var result in source.ConfigureAwait(false)) {
             if (result.IsFailure)
-                return Result.Failure<IReadOnlyList<TValue>, TError>(result.Error);
+                return Kurrent.Result.Failure<IReadOnlyList<TValue>, TError>(result.Error);
             successValues.Add(result.Value);
         }
-        return Result.Success<IReadOnlyList<TValue>, TError>(successValues);
+        return Kurrent.Result.Success<IReadOnlyList<TValue>, TError>(successValues);
     }
 }

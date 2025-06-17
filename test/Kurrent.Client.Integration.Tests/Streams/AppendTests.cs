@@ -1,5 +1,6 @@
 using Kurrent.Client.Model;
 using Kurrent.Client.Testing.Sample;
+using Kurrent.Variant;
 using KurrentDB.Client;
 
 namespace Kurrent.Client.Tests.Streams;

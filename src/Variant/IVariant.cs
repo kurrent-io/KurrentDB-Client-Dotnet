@@ -1,3 +1,5 @@
+// ReSharper disable CheckNamespace
+
 namespace Kurrent.Variant {
     /// <summary>
     /// Base interface for the Variant discriminated union type.

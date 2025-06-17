@@ -15,14 +15,14 @@ public readonly partial record struct Result<TValue, TError> {
     readonly TValue? _value;
     readonly TError? _error;
 
-    public Result(TValue value) {
+    internal Result(TValue value) {
         ArgumentNullException.ThrowIfNull(value);
         Case   = ResultCase.Success;
         _value = value;
         _error = default;
     }
 
-    public Result(TError error) {
+    internal Result(TError error) {
         ArgumentNullException.ThrowIfNull(error);
         Case   = ResultCase.Failure;
         _value = default;
@@ -102,22 +102,6 @@ public readonly partial record struct Result<TValue, TError> {
     /// <returns>The error value if the result is an error.</returns>
     /// <exception cref="InvalidOperationException">If the result is not an error (i.e., it's a success).</exception>
     public static explicit operator TError(Result<TValue, TError> result) => result.Error;
-
-    #endregion
-
-    #region . static factory methods .
-
-    /// <summary>
-    /// Creates a new <see cref="Result{TValue,TError}"/> representing a successful operation.
-    /// </summary>
-    [Obsolete]
-    public static Result<TValue, TError> AsObsoleteSuccess(TValue value) => new(value);
-
-    /// <summary>
-    /// Creates a new <see cref="Result{TValue,TError}"/> representing a failed operation.
-    /// </summary>
-    [Obsolete]
-    public static Result<TValue, TError> AsObsoleteError(TError error) => new(error);
 
     #endregion
 }

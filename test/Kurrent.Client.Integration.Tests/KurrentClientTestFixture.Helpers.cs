@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Kurrent.Client.Model;
 using Kurrent.Client.Testing.Fixtures;
 using Kurrent.Client.Testing.Sample;
+using Kurrent.Variant;
 using RockPaperScissors;
 using Serilog;
 using Serilog.Extensions.Logging;
@@ -66,8 +67,8 @@ public partial class KurrentClientTestFixture : TestFixture {
             .Append(streamName, messages, cancellationToken)
             .OnErrorAsync(err => err.Throw())
             .MatchAsync(
-                 Result.Success<AppendStreamSuccess, AppendStreamFailure>,
-                 Result.Failure<AppendStreamSuccess, AppendStreamFailure>)
+                 Kurrent.Result.Success<AppendStreamSuccess, AppendStreamFailure>,
+                 Kurrent.Result.Failure<AppendStreamSuccess, AppendStreamFailure>)
             .ConfigureAwait(false);
 
         var (stream, logPosition, streamRevision) = result.Match(
@@ -100,8 +101,8 @@ public partial class KurrentClientTestFixture : TestFixture {
                 .Append(simulatedGame.Stream, simulatedGame.GameEvents, cancellationToken)
                 .OnErrorAsync(err => err.Throw())
                 .MatchAsync(
-                    Result.Success<AppendStreamSuccess, AppendStreamFailure>,
-                    Result.Failure<AppendStreamSuccess, AppendStreamFailure>)
+                    Kurrent.Result.Success<AppendStreamSuccess, AppendStreamFailure>,
+                    Kurrent.Result.Failure<AppendStreamSuccess, AppendStreamFailure>)
                 .ConfigureAwait(false);
 
             var (_, logPosition, streamRevision) = result.Match(

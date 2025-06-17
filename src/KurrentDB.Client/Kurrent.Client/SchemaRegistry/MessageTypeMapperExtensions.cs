@@ -1,4 +1,5 @@
 using Google.Protobuf;
+using Kurrent.Variant;
 
 namespace Kurrent.Client.SchemaRegistry;
 

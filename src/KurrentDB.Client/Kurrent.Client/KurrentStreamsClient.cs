@@ -11,6 +11,7 @@ using Kurrent.Client.SchemaRegistry.Serialization;
 using Kurrent.Client.SchemaRegistry.Serialization.Bytes;
 using Kurrent.Client.SchemaRegistry.Serialization.Json;
 using Kurrent.Client.SchemaRegistry.Serialization.Protobuf;
+using Kurrent.Variant;
 using KurrentDB.Client;
 using static KurrentDB.Protocol.Streams.V2.StreamsService;
 using Contracts = KurrentDB.Protocol.Streams.V2;
@@ -117,8 +118,8 @@ public partial class KurrentStreamsClient {
             var response = await session.ResponseAsync;
 
             return response.ResultCase switch {
-                Contracts.MultiStreamAppendResponse.ResultOneofCase.Success => Result.Success<AppendStreamSuccesses, AppendStreamFailures>(response.Success.Map()),
-                Contracts.MultiStreamAppendResponse.ResultOneofCase.Failure => Result.Failure<AppendStreamSuccesses, AppendStreamFailures>(response.Failure.Map()),
+                Contracts.MultiStreamAppendResponse.ResultOneofCase.Success => Kurrent.Result.Success<AppendStreamSuccesses, AppendStreamFailures>(response.Success.Map()),
+                Contracts.MultiStreamAppendResponse.ResultOneofCase.Failure => Kurrent.Result.Failure<AppendStreamSuccesses, AppendStreamFailures>(response.Failure.Map()),
                 _                                                           => throw KurrentClientException.CreateUnknown(nameof(Append), new UnreachableException($"Unreachable error while appending stream: {response.ResultCase}"))
             };
         }
@@ -601,7 +602,7 @@ public partial class KurrentStreamsClient {
 
             // return result.Match(
             //     success => success,
-            //     failure => Result.Failure<StreamRevision, TruncateStreamError>(
+            //     failure => Kurrent.Result.Failure<StreamRevision, TruncateStreamError>(
             //         failure.Value switch {
             //             ErrorDetails.StreamNotFound         => failure.AsStreamNotFound,
             //             ErrorDetails.StreamDeleted          => failure.AsStreamDeleted,
@@ -668,10 +669,10 @@ public partial class KurrentStreamsClient {
                 .DeleteAsync(stream, legacyExpectedState, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return Result.Success<LogPosition, DeleteStreamError>(result.LogPosition.ConvertToLogPosition());
+            return Kurrent.Result.Success<LogPosition, DeleteStreamError>(result.LogPosition.ConvertToLogPosition());
         }
         catch (Exception ex) {
-            return Result.Failure<LogPosition, DeleteStreamError>(ex switch {
+            return Kurrent.Result.Failure<LogPosition, DeleteStreamError>(ex switch {
                 StreamNotFoundException       => new ErrorDetails.StreamNotFound(stream),
                 AccessDeniedException         => new ErrorDetails.AccessDenied(stream),
                 WrongExpectedVersionException => new ErrorDetails.StreamRevisionConflict(stream, expectedState),
@@ -705,10 +706,10 @@ public partial class KurrentStreamsClient {
                 .TombstoneAsync(stream, legacyExpectedState, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return Result.Success<LogPosition, TombstoneStreamError>(result.LogPosition.ConvertToLogPosition());
+            return Kurrent.Result.Success<LogPosition, TombstoneStreamError>(result.LogPosition.ConvertToLogPosition());
         }
         catch (Exception ex) {
-            return Result.Failure<LogPosition, TombstoneStreamError>(ex switch {
+            return Kurrent.Result.Failure<LogPosition, TombstoneStreamError>(ex switch {
                 StreamNotFoundException       => new ErrorDetails.StreamNotFound(stream),
                 AccessDeniedException         => new ErrorDetails.AccessDenied(stream),
                 WrongExpectedVersionException => new ErrorDetails.StreamRevisionConflict(stream, expectedState),
@@ -755,7 +756,7 @@ public partial class KurrentStreamsClient {
             return info;
         }
         catch (Exception ex) {
-            return Result.Failure<StreamInfo, GetStreamInfoError>(ex switch {
+            return Kurrent.Result.Failure<StreamInfo, GetStreamInfoError>(ex switch {
                 StreamNotFoundException => new ErrorDetails.StreamNotFound(stream),
                 AccessDeniedException   => new ErrorDetails.AccessDenied(stream),
                 _                       => throw KurrentClientException.CreateUnknown(nameof(GetStreamInfo), ex)
@@ -791,7 +792,7 @@ public partial class KurrentStreamsClient {
             return StreamRevision.From(result.NextExpectedStreamState.ToInt64());
         }
         catch (Exception ex) {
-            return Result.Failure<StreamRevision, SetStreamMetadataError>(ex switch {
+            return Kurrent.Result.Failure<StreamRevision, SetStreamMetadataError>(ex switch {
                 StreamNotFoundException       => new ErrorDetails.StreamNotFound(stream),
                 StreamDeletedException        => new ErrorDetails.StreamDeleted(stream),
                 AccessDeniedException         => new ErrorDetails.AccessDenied(stream),

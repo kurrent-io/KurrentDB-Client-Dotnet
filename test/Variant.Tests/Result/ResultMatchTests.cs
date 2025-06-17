@@ -11,7 +11,7 @@ public class ResultMatchTests {
     public void match_executes_success_function_when_matching_success_result() {
         // Arrange
         GameStarted successValue = new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>());
-        Result<GameStarted, InvalidMoveError> result = Result<GameStarted, InvalidMoveError>.AsObsoleteSuccess(successValue);
+        Result<GameStarted, InvalidMoveError> result = Kurrent.Result.Success<GameStarted, InvalidMoveError>(successValue);
 
         // Act
         string matchOutput = result.Match(
@@ -27,7 +27,7 @@ public class ResultMatchTests {
     public void match_executes_error_function_when_matching_error_result() {
         // Arrange
         InvalidMoveError errorValue = new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence());
-        Result<GameStarted, InvalidMoveError> result = Result<GameStarted, InvalidMoveError>.AsObsoleteError(errorValue);
+        Result<GameStarted, InvalidMoveError> result = Kurrent.Result.Failure<GameStarted, InvalidMoveError>(errorValue);
 
         // Act
         string matchOutput = result.Match(
@@ -43,7 +43,7 @@ public class ResultMatchTests {
     public void match_passes_state_to_success_function_when_using_stateful_variant() {
         // Arrange
         GameStarted successValue = new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>());
-        Result<GameStarted, InvalidMoveError> result = Result<GameStarted, InvalidMoveError>.AsObsoleteSuccess(successValue);
+        Result<GameStarted, InvalidMoveError> result = Kurrent.Result.Success<GameStarted, InvalidMoveError>(successValue);
         string additionalInfo = "High stakes game";
 
         // Act
@@ -61,7 +61,7 @@ public class ResultMatchTests {
     public void match_passes_state_to_error_function_when_using_stateful_variant() {
         // Arrange
         InvalidMoveError errorValue = new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence());
-        Result<GameStarted, InvalidMoveError> result = Result<GameStarted, InvalidMoveError>.AsObsoleteError(errorValue);
+        Result<GameStarted, InvalidMoveError> result = Kurrent.Result.Failure<GameStarted, InvalidMoveError>(errorValue);
         string additionalInfo = "During critical phase";
 
         // Act
@@ -83,7 +83,7 @@ public class ResultMatchTests {
     public async Task match_async_executes_success_function_with_value_task() {
         // Arrange
         GameStarted successValue = new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>());
-        Result<GameStarted, InvalidMoveError> result = Result<GameStarted, InvalidMoveError>.AsObsoleteSuccess(successValue);
+        Result<GameStarted, InvalidMoveError> result = Kurrent.Result.Success<GameStarted, InvalidMoveError>(successValue);
 
         // Act
         string matchOutput = await result.MatchAsync(
@@ -99,7 +99,7 @@ public class ResultMatchTests {
     public async Task match_async_executes_error_function_with_value_task() {
         // Arrange
         InvalidMoveError errorValue = new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence());
-        Result<GameStarted, InvalidMoveError> result = Result<GameStarted, InvalidMoveError>.AsObsoleteError(errorValue);
+        Result<GameStarted, InvalidMoveError> result = Kurrent.Result.Failure<GameStarted, InvalidMoveError>(errorValue);
 
         // Act
         string matchOutput = await result.MatchAsync(
@@ -115,9 +115,9 @@ public class ResultMatchTests {
     public async Task match_async_handles_mixed_sync_async_scenarios() {
         // Arrange
         GameStarted successValue = new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>());
-        Result<GameStarted, InvalidMoveError> successResult = Result<GameStarted, InvalidMoveError>.AsObsoleteSuccess(successValue);
+        Result<GameStarted, InvalidMoveError> successResult = Kurrent.Result.Success<GameStarted, InvalidMoveError>(successValue);
         InvalidMoveError errorValue = new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence());
-        Result<GameStarted, InvalidMoveError> errorResult = Result<GameStarted, InvalidMoveError>.AsObsoleteError(errorValue);
+        Result<GameStarted, InvalidMoveError> errorResult = Kurrent.Result.Failure<GameStarted, InvalidMoveError>(errorValue);
 
         // Act
         string successMatch = await successResult.MatchAsync(
@@ -138,7 +138,7 @@ public class ResultMatchTests {
     public async Task match_async_passes_state_to_functions_when_using_stateful_variant() {
         // Arrange
         GameStarted successValue = new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>());
-        Result<GameStarted, InvalidMoveError> result = Result<GameStarted, InvalidMoveError>.AsObsoleteSuccess(successValue);
+        Result<GameStarted, InvalidMoveError> result = Kurrent.Result.Success<GameStarted, InvalidMoveError>(successValue);
         string additionalInfo = "High stakes game";
 
         // Act

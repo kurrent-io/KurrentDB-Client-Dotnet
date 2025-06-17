@@ -1,4 +1,5 @@
 using Kurrent.Client.Model;
+using Kurrent.Variant;
 
 namespace Kurrent.Client;
 

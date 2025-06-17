@@ -56,10 +56,10 @@ public static class CollectionsTraverseResultExtensions {
         await foreach (var item in source.ConfigureAwait(false)) {
             var result = selector(item);
             if (result.IsFailure)
-                return Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
+                return Kurrent.Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
             successValues.Add(result.Value);
         }
-        return Result.Success<IReadOnlyList<TNext>, TError>(successValues);
+        return Kurrent.Result.Success<IReadOnlyList<TNext>, TError>(successValues);
     }
 
     /// <summary>
@@ -86,10 +86,10 @@ public static class CollectionsTraverseResultExtensions {
         await foreach (var item in source.ConfigureAwait(false)) {
             var result = await selector(item).ConfigureAwait(false);
             if (result.IsFailure)
-                return Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
+                return Kurrent.Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
             successValues.Add(result.Value);
         }
-        return Result.Success<IReadOnlyList<TNext>, TError>(successValues);
+        return Kurrent.Result.Success<IReadOnlyList<TNext>, TError>(successValues);
     }
 
     /// <summary>
@@ -119,10 +119,10 @@ public static class CollectionsTraverseResultExtensions {
         await foreach (var item in source.ConfigureAwait(false)) {
             var result = selector(item, state);
             if (result.IsFailure)
-                return Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
+                return Kurrent.Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
             successValues.Add(result.Value);
         }
-        return Result.Success<IReadOnlyList<TNext>, TError>(successValues);
+        return Kurrent.Result.Success<IReadOnlyList<TNext>, TError>(successValues);
     }
 
     /// <summary>
@@ -150,9 +150,9 @@ public static class CollectionsTraverseResultExtensions {
         await foreach (var item in source.ConfigureAwait(false)) {
             var result = await selector(item, state).ConfigureAwait(false);
             if (result.IsFailure)
-                return Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
+                return Kurrent.Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
             successValues.Add(result.Value);
         }
-        return Result.Success<IReadOnlyList<TNext>, TError>(successValues);
+        return Kurrent.Result.Success<IReadOnlyList<TNext>, TError>(successValues);
     }
 }

@@ -1,3 +1,4 @@
+using Kurrent.Variant;
 using static Kurrent.Client.SchemaRegistry.MessageTypeMapperErrors;
 
 namespace Kurrent.Client.SchemaRegistry;

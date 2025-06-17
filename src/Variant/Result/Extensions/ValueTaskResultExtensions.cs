@@ -57,6 +57,8 @@ public static partial class ValueTaskResultExtensions {
 }
 
 public static partial class ValueTaskResultExtensions {
+    #region . result operation extensions .
+
     /// <summary>
     /// Asynchronously chains a new operation from the success value of the result in the <see cref="ValueTask"/>.
     /// </summary>
@@ -248,7 +250,7 @@ public static partial class ValueTaskResultExtensions {
         this ValueTask<Result<TValue, TCurrent>> resultTask,
         Func<TCurrent, ValueTask<TNext>> asyncMapper) where TValue : notnull where TCurrent : notnull where TNext : notnull {
         var result = await resultTask.ConfigureAwait(false);
-        return result.IsSuccess ? result.Value : Result.Failure<TValue, TNext>(await asyncMapper(result.Error).ConfigureAwait(false));
+        return result.IsSuccess ? result.Value : Kurrent.Result.Failure<TValue, TNext>(await asyncMapper(result.Error).ConfigureAwait(false));
     }
 
     /// <summary>
@@ -268,7 +270,7 @@ public static partial class ValueTaskResultExtensions {
         Func<TCurrent, TState, TNext> mapper, TState state
     ) where TValue : notnull where TCurrent : notnull where TNext : notnull {
         var result = await resultTask.ConfigureAwait(false);
-        return result.IsSuccess ? result.Value : Result.Failure<TValue, TNext>(mapper(result.Error, state));
+        return result.IsSuccess ? result.Value : Kurrent.Result.Failure<TValue, TNext>(mapper(result.Error, state));
     }
 
     /// <summary>
@@ -288,7 +290,7 @@ public static partial class ValueTaskResultExtensions {
         Func<TCurrent, TState, ValueTask<TNext>> asyncMapper, TState state
     ) where TValue : notnull where TCurrent : notnull where TNext : notnull {
         var result = await resultTask.ConfigureAwait(false);
-        return result.IsSuccess ? result.Value : Result.Failure<TValue, TNext>(await asyncMapper(result.Error, state).ConfigureAwait(false));
+        return result.IsSuccess ? result.Value : Kurrent.Result.Failure<TValue, TNext>(await asyncMapper(result.Error, state).ConfigureAwait(false));
     }
 
     /// <summary>
@@ -678,4 +680,162 @@ public static partial class ValueTaskResultExtensions {
         var result = await resultTask.ConfigureAwait(false);
         return await result.GetValueOrDefaultAsync(fallback, state).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided actions depending on whether the result in the <see cref="ValueTask"/> is a success or an error.
+    /// Both actions are synchronous and this method is designed for side effects without return values.
+    /// </summary>
+    /// <typeparam name="TValue">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The action to execute if the result is a success. It takes the success value as input.</param>
+    /// <param name="onError">The action to execute if the result is an error. It takes the error value as input.</param>
+    /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
+    public static async ValueTask SwitchAsync<TValue, TError>(
+        this ValueTask<Result<TValue, TError>> resultTask,
+        Action<TValue> onSuccess,
+        Action<TError> onError) where TValue : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        result.Switch(onSuccess, onError);
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided asynchronous actions depending on whether the result in the <see cref="ValueTask"/> is a success or an error.
+    /// Both actions are asynchronous and this method is designed for side effects without return values.
+    /// </summary>
+    /// <typeparam name="TValue">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The asynchronous action to execute if the result is a success. It takes the success value as input.</param>
+    /// <param name="onError">The asynchronous action to execute if the result is an error. It takes the error value as input.</param>
+    /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
+    public static async ValueTask SwitchAsync<TValue, TError>(
+        this ValueTask<Result<TValue, TError>> resultTask,
+        Func<TValue, ValueTask> onSuccess,
+        Func<TError, ValueTask> onError) where TValue : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        await result.SwitchAsync(onSuccess, onError).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided actions depending on whether the result in the <see cref="ValueTask"/> is a success or an error.
+    /// The success action is synchronous while the error action is asynchronous. This method is designed for side effects without return values.
+    /// </summary>
+    /// <typeparam name="TValue">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The synchronous action to execute if the result is a success. It takes the success value as input.</param>
+    /// <param name="onError">The asynchronous action to execute if the result is an error. It takes the error value as input.</param>
+    /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
+    public static async ValueTask SwitchAsync<TValue, TError>(
+        this ValueTask<Result<TValue, TError>> resultTask,
+        Action<TValue> onSuccess,
+        Func<TError, ValueTask> onError) where TValue : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        await result.SwitchAsync(onSuccess, onError).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided actions depending on whether the result in the <see cref="ValueTask"/> is a success or an error.
+    /// The success action is asynchronous while the error action is synchronous. This method is designed for side effects without return values.
+    /// </summary>
+    /// <typeparam name="TValue">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The asynchronous action to execute if the result is a success. It takes the success value as input.</param>
+    /// <param name="onError">The synchronous action to execute if the result is an error. It takes the error value as input.</param>
+    /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
+    public static async ValueTask SwitchAsync<TValue, TError>(
+        this ValueTask<Result<TValue, TError>> resultTask,
+        Func<TValue, ValueTask> onSuccess,
+        Action<TError> onError) where TValue : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        await result.SwitchAsync(onSuccess, onError).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided actions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, passing additional state.
+    /// Both actions are synchronous and this method is designed for side effects without return values.
+    /// </summary>
+    /// <typeparam name="TValue">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the actions.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The action to execute if the result is a success. It takes the success value and state as input.</param>
+    /// <param name="onError">The action to execute if the result is an error. It takes the error value and state as input.</param>
+    /// <param name="state">The state to pass to the actions.</param>
+    /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
+    public static async ValueTask SwitchAsync<TValue, TError, TState>(
+        this ValueTask<Result<TValue, TError>> resultTask,
+        Action<TValue, TState> onSuccess,
+        Action<TError, TState> onError,
+        TState state) where TValue : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        result.Switch(onSuccess, onError, state);
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided asynchronous actions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, passing additional state.
+    /// Both actions are asynchronous and this method is designed for side effects without return values.
+    /// </summary>
+    /// <typeparam name="TValue">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the actions.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The asynchronous action to execute if the result is a success. It takes the success value and state as input.</param>
+    /// <param name="onError">The asynchronous action to execute if the result is an error. It takes the error value and state as input.</param>
+    /// <param name="state">The state to pass to the actions.</param>
+    /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
+    public static async ValueTask SwitchAsync<TValue, TError, TState>(
+        this ValueTask<Result<TValue, TError>> resultTask,
+        Func<TValue, TState, ValueTask> onSuccess,
+        Func<TError, TState, ValueTask> onError,
+        TState state) where TValue : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        await result.SwitchAsync(onSuccess, onError, state).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided actions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, passing additional state.
+    /// The success action is synchronous while the error action is asynchronous. This method is designed for side effects without return values.
+    /// </summary>
+    /// <typeparam name="TValue">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the actions.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The synchronous action to execute if the result is a success. It takes the success value and state as input.</param>
+    /// <param name="onError">The asynchronous action to execute if the result is an error. It takes the error value and state as input.</param>
+    /// <param name="state">The state to pass to the actions.</param>
+    /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
+    public static async ValueTask SwitchAsync<TValue, TError, TState>(
+        this ValueTask<Result<TValue, TError>> resultTask,
+        Action<TValue, TState> onSuccess,
+        Func<TError, TState, ValueTask> onError,
+        TState state) where TValue : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        await result.SwitchAsync(onSuccess, onError, state).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Asynchronously executes one of the two provided actions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, passing additional state.
+    /// The success action is asynchronous while the error action is synchronous. This method is designed for side effects without return values.
+    /// </summary>
+    /// <typeparam name="TValue">The type of the success value.</typeparam>
+    /// <typeparam name="TError">The type of the error value.</typeparam>
+    /// <typeparam name="TState">The type of the state to pass to the actions.</typeparam>
+    /// <param name="resultTask">The value task containing the result.</param>
+    /// <param name="onSuccess">The asynchronous action to execute if the result is a success. It takes the success value and state as input.</param>
+    /// <param name="onError">The synchronous action to execute if the result is an error. It takes the error value and state as input.</param>
+    /// <param name="state">The state to pass to the actions.</param>
+    /// <returns>A <see cref="ValueTask"/> representing the asynchronous operation.</returns>
+    public static async ValueTask SwitchAsync<TValue, TError, TState>(
+        this ValueTask<Result<TValue, TError>> resultTask,
+        Func<TValue, TState, ValueTask> onSuccess,
+        Action<TError, TState> onError,
+        TState state) where TValue : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        await result.SwitchAsync(onSuccess, onError, state).ConfigureAwait(false);
+    }
+
+    #endregion
 }
