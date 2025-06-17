@@ -74,13 +74,19 @@ static class KurrentDBLegacyMapper {
 		SchemaRegistryPolicy registryPolicy,
 		CancellationToken ct
 	) {
-		var metadata = metadataDecoder.Decode(resolvedEvent.OriginalEvent.Metadata);
+        var metadata = metadataDecoder.Decode(resolvedEvent.OriginalEvent.Metadata, new(
+            resolvedEvent.OriginalEvent.EventStreamId,
+            resolvedEvent.OriginalEvent.EventType,
+            resolvedEvent.OriginalEvent.ContentType.GetSchemaDataFormat()
+        ));
 
-		// Handle backwards compatibility with old data by injecting the legacy schema in the metadata.
-		if (!metadata.TryGet<SchemaDataFormat>(SystemMetadataKeys.SchemaDataFormat, out var dataFormat)) {
-			metadata.With(SystemMetadataKeys.SchemaName, resolvedEvent.OriginalEvent.EventType);
-			metadata.With(SystemMetadataKeys.SchemaDataFormat, dataFormat = resolvedEvent.OriginalEvent.ContentType.GetSchemaDataFormat());
-		}
+		// // Handle backwards compatibility with old data by injecting the legacy schema in the metadata.
+		// if (!metadata.TryGet<SchemaDataFormat>(SystemMetadataKeys.SchemaDataFormat, out var dataFormat)) {
+		// 	metadata.With(SystemMetadataKeys.SchemaName, resolvedEvent.OriginalEvent.EventType);
+		// 	metadata.With(SystemMetadataKeys.SchemaDataFormat, dataFormat = resolvedEvent.OriginalEvent.ContentType.GetSchemaDataFormat());
+		// }
+
+        var dataFormat = metadata.Get<SchemaDataFormat>(SystemMetadataKeys.SchemaDataFormat);
 
 		var context = new SchemaSerializationContext {
 			Stream               = resolvedEvent.OriginalEvent.EventStreamId,

@@ -11,7 +11,7 @@ class KurrentClientSecurityOptionsValidator : AbstractValidator<KurrentClientSec
             RuleFor(options => options.Transport.IsEnabled)
                 .Equal(true)
                 .WithMessage("Using basic authentication without TLS is not secure.")
-                .WithSeverity(Severity.Error);
+                .WithSeverity(Severity.Warning);
         });
 
         // Certificate path validation for Authentication

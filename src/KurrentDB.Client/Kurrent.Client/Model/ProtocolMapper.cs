@@ -1,7 +1,7 @@
 using Google.Protobuf;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
-using KurrentDB.Protocol.Streams.V2;
+using KurrentDB.Protocol;
 
 namespace Kurrent.Client.Model;
 

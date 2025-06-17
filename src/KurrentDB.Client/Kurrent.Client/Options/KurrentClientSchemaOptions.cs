@@ -1,8 +1,4 @@
-using FluentValidation;
-using FluentValidation.Results;
 using Kurrent.Client.SchemaRegistry;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Kurrent.Client;
 

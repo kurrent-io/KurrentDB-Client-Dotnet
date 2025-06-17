@@ -56,14 +56,10 @@
                       OutputItemType="Analyzer"
                       ReferenceOutputAssembly="false" />
 
-    <ProjectReference Include="..\Whatever.SourceGenerators\Whatever.SourceGenerators.csproj"
-                      OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false"
-                      PrivateAssets="all" />
+    <ProjectReference Include="..\Variant.SourceGenerators\Variant.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
 
     <!-- Runtime Library: Include assembly but don't propagate as dependency -->
-    <ProjectReference Include="..\Whatever\Whatever.csproj"
-                      PrivateAssets="all" />
+    <ProjectReference Include="..\Variant\Variant.csproj" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
@@ -83,8 +79,6 @@
   <ItemGroup>
     <Folder Include="Kurrent.Client\Infra\Grpc\" />
     <Folder Include="Kurrent.Client\Infra\Result\" />
-    <Folder Include="Kurrent.Grpc\" />
-    <Folder Include="Kurrent.SchemaRegistry\" />
   </ItemGroup>
 
   <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">

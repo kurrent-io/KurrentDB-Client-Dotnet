@@ -18,6 +18,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.5" />
     <PackageReference Include="Shouldly" Version="4.3.0" />
     <PackageReference Include="TUnit" Version="0.25.21" />
+    <PackageReference Include="Ductus.FluentDocker" Version="2.10.59" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,12 +29,19 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\KurrentDB.Client\KurrentDB.Client.csproj" />
-    <ProjectReference Include="..\..\src\Whatever\Whatever.csproj" />
+    <ProjectReference Include="..\..\src\Variant\Variant.csproj" />
     <ProjectReference Include="..\Kurrent.Client.Testing\Kurrent.Client.Testing.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Registry\" />
     <Folder Include="Schema\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

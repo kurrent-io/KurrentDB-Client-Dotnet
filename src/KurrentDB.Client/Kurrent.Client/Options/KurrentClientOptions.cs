@@ -29,8 +29,7 @@ public record KurrentClientOptions : KurrentClientOptionsBase {
     public static KurrentClientOptionsBuilder FromConnectionString(string connectionString) =>
         KurrentClientOptionsBuilder.FromConnectionString(connectionString);
 
-    const string DefaultConnectionString = "kurrentdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false";
-
+    public static readonly string DefaultConnectionString = "kurrentdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false";
 
     // public bool ThrowExceptionOnResultError { get; init; }
 
@@ -180,7 +179,7 @@ public record KurrentClientOptions : KurrentClientOptionsBase {
 	/// Responsible for decoding metadata attached to events.
 	/// </para>
 	/// </remarks>
-	public MetadataDecoderBase MetadataDecoder { get; init; } = new MetadataDecoder();
+	public MetadataDecoder MetadataDecoder { get; init; } = new DefaultMetadataDecoder();
 
     /// <summary>
     /// An optional <see cref="ILoggerFactory"/> to use.

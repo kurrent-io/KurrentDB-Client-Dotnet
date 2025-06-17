@@ -11,6 +11,7 @@ using Kurrent.Client.SchemaRegistry.Serialization;
 using Kurrent.Client.SchemaRegistry.Serialization.Bytes;
 using Kurrent.Client.SchemaRegistry.Serialization.Json;
 using Kurrent.Client.SchemaRegistry.Serialization.Protobuf;
+using Kurrent.Variant;
 using KurrentDB.Client;
 using static KurrentDB.Protocol.Streams.V2.StreamsService;
 using Contracts = KurrentDB.Protocol.Streams.V2;
@@ -19,7 +20,7 @@ using StreamMetadata = Kurrent.Client.Model.StreamMetadata;
 
 namespace Kurrent.Client;
 
-public partial class KurrentStreamsClient { // Made partial
+public partial class KurrentStreamsClient {
     internal KurrentStreamsClient(CallInvoker callInvoker, KurrentClientOptions options) {
         Options  = options;
 
@@ -63,76 +64,69 @@ public partial class KurrentStreamsClient { // Made partial
 
     #region . Append .
 
-    public async ValueTask<MultiStreamAppendResult> Append(IAsyncEnumerable<AppendStreamRequest> requests, CancellationToken cancellationToken = default) {
-        using var session = ServiceClient.MultiStreamAppendSession(cancellationToken: cancellationToken);
+    public async ValueTask<Result<AppendStreamSuccesses, AppendStreamFailures>> Append(IAsyncEnumerable<AppendStreamRequest> requests, CancellationToken cancellationToken = default) {
+        try {
+            using var session = ServiceClient.MultiStreamAppendSession(cancellationToken: cancellationToken);
 
-        await foreach (var request in requests.WithCancellation(cancellationToken)) {
-            var records = await request.Messages
-                .Map(request.Stream, SerializerProvider, cancellationToken)
-                .ToArrayAsync(cancellationToken)
-                .ConfigureAwait(false);
+            // var temp = await requests.ToListAsync();
 
-            var serviceRequest = new Contracts.AppendStreamRequest {
-                Stream           = request.Stream,
-                ExpectedRevision = request.ExpectedState,
-                Records          = { records }
+            await foreach (var request in requests.WithCancellation(cancellationToken)) {
+                var records = await request.Messages
+                    .Map(request.Stream, SerializerProvider, cancellationToken)
+                    .ToArrayAsync(cancellationToken)
+                    .ConfigureAwait(false);
+
+                var serviceRequest = new Contracts.AppendStreamRequest {
+                    Stream           = request.Stream,
+                    ExpectedRevision = request.ExpectedState,
+                    Records          = { records }
+                };
+
+                // Cancellation of stream writes is not supported by this gRPC implementation.
+                // If you need to cancel the operation, you should cancel the entire session.
+                await session.RequestStream
+                    .WriteAsync(serviceRequest, CancellationToken.None)
+                    .ConfigureAwait(false);
+            }
+
+            await session.RequestStream.CompleteAsync();
+
+            // var responseResult = await session.ResponseAsync
+            //     .ToResultAsync()
+            //     .ThrowOnErrorAsync(ex => new KurrentClientException(
+            //         nameof(Append),
+            //         $"Error while appending stream: {ex.Message}",
+            //         ex
+            //     ));
+
+            // var result = await responseResult
+            //         .ThenAsync( async response =>
+            //             response.ResultCase switch {
+            //                 Contracts.MultiStreamAppendResponse.ResultOneofCase.Success => response.Success.Map(),
+            //                 Contracts.MultiStreamAppendResponse.ResultOneofCase.Failure => response.Failure.Map(),
+            //                 // _                                                           => throw KurrentClientException.CreateUnknown(nameof(Append), new UnreachableException($"Unreachable error while appending stream: {response.ResultCase}"))
+            //             });
+            //
+            //     .ThenAsync( async response =>
+            //         response.ResultCase switch {
+            //             Contracts.MultiStreamAppendResponse.ResultOneofCase.Success => Result<AppendStreamSuccesses, AppendStreamFailures>.Success(response.Success.Map()),
+            //             Contracts.MultiStreamAppendResponse.ResultOneofCase.Failure => Result<AppendStreamSuccesses, AppendStreamFailures>.Error(response.Failure.Map()),
+            //             _                                                           => throw KurrentClientException.CreateUnknown(nameof(Append), new UnreachableException($"Unreachable error while appending stream: {response.ResultCase}"))
+            //         });
+            //     // .MapErrorAsync(ex => throw ex);
+
+            var response = await session.ResponseAsync;
+
+            return response.ResultCase switch {
+                Contracts.MultiStreamAppendResponse.ResultOneofCase.Success => Kurrent.Result.Success<AppendStreamSuccesses, AppendStreamFailures>(response.Success.Map()),
+                Contracts.MultiStreamAppendResponse.ResultOneofCase.Failure => Kurrent.Result.Failure<AppendStreamSuccesses, AppendStreamFailures>(response.Failure.Map()),
+                _                                                           => throw KurrentClientException.CreateUnknown(nameof(Append), new UnreachableException($"Unreachable error while appending stream: {response.ResultCase}"))
             };
-
-            cancellationToken.ThrowIfCancellationRequested();
-
-            await session.RequestStream
-                .WriteAsync(serviceRequest, cancellationToken)
-                .ConfigureAwait(false);
         }
-
-        await session.RequestStream.CompleteAsync();
-
-        var response = await session.ResponseAsync;
-
-        return response.ResultCase switch {
-            Contracts.MultiStreamAppendResponse.ResultOneofCase.Success => MultiStreamAppendResult.Success(response.Success.Map()),
-            Contracts.MultiStreamAppendResponse.ResultOneofCase.Failure => MultiStreamAppendResult.Error(response.Failure.Map()),
-            _                                                => throw KurrentClientException.CreateUnknown(
-                nameof(Append), new UnreachableException($"Unreachable error while appending stream: {response.ResultCase}"))
-        };
+        catch (Exception ex) {
+            throw ex;
+        }
     }
-
-    public ValueTask<MultiStreamAppendResult> Append(IEnumerable<AppendStreamRequest> requests, CancellationToken cancellationToken = default) => Append(requests.ToAsyncEnumerable(), cancellationToken);
-
-    public ValueTask<MultiStreamAppendResult> Append(MultiStreamAppendRequest request, CancellationToken cancellationToken = default) => Append(request.Requests.ToAsyncEnumerable(), cancellationToken);
-
-    /// <summary>
-    /// Appends a series of messages to a specified stream in KurrentDB.
-    /// </summary>
-    /// <param name="request">The request object that specifies the stream, expected state, and messages to append.</param>
-    /// <param name="cancellationToken">A token to cancel the operation if needed.</param>
-    public async ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append(AppendStreamRequest request, CancellationToken cancellationToken) {
-        var result = await Append([request], cancellationToken).ConfigureAwait(false);
-
-        return result.Match<Result<AppendStreamSuccess, AppendStreamFailure>>(
-            success => success.First(),
-            failure => failure.First()
-        );
-    }
-
-    /// <summary>
-    /// Appends a series of messages to a specified stream while specifying the expected stream state.
-    /// </summary>
-    /// <param name="stream">The name of the stream to which the messages will be appended.</param>
-    /// <param name="expectedState">The expected state of the stream to ensure consistency during the append operation.</param>
-    /// <param name="messages">A collection of messages to be appended to the stream.</param>
-    /// <param name="cancellationToken">A token to observe while waiting for the operation to complete, allowing for cancellation if needed.</param>
-    /// <returns>An <see cref="AppendStreamResult"/> containing the outcome of the append operation, including success or failure details.</returns>
-    public ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append(string stream, ExpectedStreamState expectedState, IEnumerable<Message> messages, CancellationToken cancellationToken) =>
-        Append(new AppendStreamRequest(stream, expectedState, messages), cancellationToken);
-
-    public ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append(string stream, ExpectedStreamState expectedState, Message message, CancellationToken cancellationToken) => Append(new AppendStreamRequest(stream, expectedState, [message]), cancellationToken);
-
-    public ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append<T>(string stream, ExpectedStreamState expectedState, T message, CancellationToken cancellationToken) =>
-        Append(new AppendStreamRequest(stream, expectedState, [new Message { Value = message ?? throw new ArgumentNullException(nameof(message)) }]), cancellationToken);
-
-    public ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append<T>(string stream, T message, CancellationToken cancellationToken) =>
-        Append(new AppendStreamRequest(stream, ExpectedStreamState.Any, [new Message { Value = message ?? throw new ArgumentNullException(nameof(message)) }]), cancellationToken);
 
     #endregion
 
@@ -608,7 +602,7 @@ public partial class KurrentStreamsClient { // Made partial
 
             // return result.Match(
             //     success => success,
-            //     failure => Result.Failure<StreamRevision, TruncateStreamError>(
+            //     failure => Kurrent.Result.Failure<StreamRevision, TruncateStreamError>(
             //         failure.Value switch {
             //             ErrorDetails.StreamNotFound         => failure.AsStreamNotFound,
             //             ErrorDetails.StreamDeleted          => failure.AsStreamDeleted,
@@ -675,10 +669,10 @@ public partial class KurrentStreamsClient { // Made partial
                 .DeleteAsync(stream, legacyExpectedState, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return Result<LogPosition, DeleteStreamError>.Success(result.LogPosition.ConvertToLogPosition());
+            return Kurrent.Result.Success<LogPosition, DeleteStreamError>(result.LogPosition.ConvertToLogPosition());
         }
         catch (Exception ex) {
-            return Result<LogPosition, DeleteStreamError>.Error(ex switch {
+            return Kurrent.Result.Failure<LogPosition, DeleteStreamError>(ex switch {
                 StreamNotFoundException       => new ErrorDetails.StreamNotFound(stream),
                 AccessDeniedException         => new ErrorDetails.AccessDenied(stream),
                 WrongExpectedVersionException => new ErrorDetails.StreamRevisionConflict(stream, expectedState),
@@ -712,10 +706,10 @@ public partial class KurrentStreamsClient { // Made partial
                 .TombstoneAsync(stream, legacyExpectedState, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return Result<LogPosition, TombstoneStreamError>.Success(result.LogPosition.ConvertToLogPosition());
+            return Kurrent.Result.Success<LogPosition, TombstoneStreamError>(result.LogPosition.ConvertToLogPosition());
         }
         catch (Exception ex) {
-            return Result<LogPosition, TombstoneStreamError>.Error(ex switch {
+            return Kurrent.Result.Failure<LogPosition, TombstoneStreamError>(ex switch {
                 StreamNotFoundException       => new ErrorDetails.StreamNotFound(stream),
                 AccessDeniedException         => new ErrorDetails.AccessDenied(stream),
                 WrongExpectedVersionException => new ErrorDetails.StreamRevisionConflict(stream, expectedState),
@@ -762,7 +756,7 @@ public partial class KurrentStreamsClient { // Made partial
             return info;
         }
         catch (Exception ex) {
-            return Result<StreamInfo, GetStreamInfoError>.Error(ex switch {
+            return Kurrent.Result.Failure<StreamInfo, GetStreamInfoError>(ex switch {
                 StreamNotFoundException => new ErrorDetails.StreamNotFound(stream),
                 AccessDeniedException   => new ErrorDetails.AccessDenied(stream),
                 _                       => throw KurrentClientException.CreateUnknown(nameof(GetStreamInfo), ex)
@@ -798,7 +792,7 @@ public partial class KurrentStreamsClient { // Made partial
             return StreamRevision.From(result.NextExpectedStreamState.ToInt64());
         }
         catch (Exception ex) {
-            return Result<StreamRevision, SetStreamMetadataError>.Error(ex switch {
+            return Kurrent.Result.Failure<StreamRevision, SetStreamMetadataError>(ex switch {
                 StreamNotFoundException       => new ErrorDetails.StreamNotFound(stream),
                 StreamDeletedException        => new ErrorDetails.StreamDeleted(stream),
                 AccessDeniedException         => new ErrorDetails.AccessDenied(stream),

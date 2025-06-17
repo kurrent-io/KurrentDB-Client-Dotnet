@@ -301,7 +301,7 @@ public sealed class KurrentClientOptionsBuilder {
     /// </summary>
     /// <param name="decoder">The metadata decoder to use.</param>
     /// <returns>The builder instance for method chaining.</returns>
-    public KurrentClientOptionsBuilder WithCustomMetadataDecoder(MetadataDecoderBase decoder) =>
+    public KurrentClientOptionsBuilder WithCustomMetadataDecoder(MetadataDecoder decoder) =>
         With(options => options with { MetadataDecoder = decoder });
 
     /// <summary>

@@ -1,11 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Threading; // Added for Timeout.InfiniteTimeSpan
-using FluentValidation;
-using FluentValidation.Results;
+// Added for Timeout.InfiniteTimeSpan
 using Grpc.Core;
 using Grpc.Net.Client.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Kurrent.Client;
 

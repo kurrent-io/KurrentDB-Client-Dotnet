@@ -1,4 +1,4 @@
-using Kurrent.Whatever;
+using Kurrent.Variant;
 
 namespace Kurrent.Client.Model;
 
@@ -52,17 +52,17 @@ public class KurrentClientException(string errorCode, string message, Exception?
 }
 
 public static class KurrentClientExceptionExtensions {
-    public static KurrentClientException ToException(this IWhatever whateverError, Exception? innerException = null) {
-        if (whateverError.Value is KurrentClientErrorDetails error)
+    public static Exception ToException(this IVariant variantError, Exception? innerException = null) {
+        if (variantError.Value is IResultError error)
             return error.CreateException(innerException);
 
         var invalidEx = new InvalidOperationException(
             $"The error value is not a KurrentClientErrorDetails instance but rather " +
-            $"{whateverError.Value.GetType().FullName}", innerException);
+            $"{variantError.Value.GetType().FullName}", innerException);
 
         return KurrentClientException.CreateUnknown("KurrentClientExceptionExtensions.Throw", invalidEx);
     }
 
-    public static KurrentClientException Throw(this IWhatever whateverError, Exception? innerException = null) =>
-        throw whateverError.ToException(innerException);
+    public static Exception Throw(this IVariant variantError, Exception? innerException = null) =>
+        throw variantError.ToException(innerException);
 }

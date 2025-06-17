@@ -1,6 +1,5 @@
 using System.Runtime.InteropServices;
 using Kurrent.Client.Model;
-using Kurrent.Whatever;
 using OneOf;
 
 namespace Kurrent.Client.SchemaRegistry;
@@ -11,34 +10,37 @@ namespace Kurrent.Client.SchemaRegistry;
 [PublicAPI]
 public static class ErrorDetails {
     /// <summary>
-    ///  Represents an error indicating that the specified schema or schema version was not found.
+    /// Represents an error indicating that the specified schema or schema version was not found.
     /// </summary>
-    public record SchemaNotFound : KurrentClientErrorDetails {
+    /// <param name="Identifier">The identifier of the schema that could not be located.</param>
+    public readonly record struct SchemaNotFound(SchemaIdentifier Identifier) : IKurrentClientError {
         /// <summary>
-        /// Represents an error indicating that the specified schema or schema version was not found.
+        /// Gets the unique code identifying the error.
         /// </summary>
-        /// <param name="identifier">
-        /// The identifier of the schema that could not be located.
-        /// </param>
-        public SchemaNotFound(SchemaIdentifier identifier) : base() {
-            SchemaIdentifier = identifier;
+        public string ErrorCode => nameof(SchemaNotFound);
 
-            ErrorMessage = SchemaIdentifier.IsSchemaName
-                ? $"Schema '{SchemaIdentifier.AsSchemaName}' not found."
-                : $"Schema version '{SchemaIdentifier.AsSchemaVersionId}' not found.";
-        }
-
-        SchemaIdentifier SchemaIdentifier { get; }
-
-        public override string ErrorMessage { get; }
+        /// <summary>
+        /// Gets the error message indicating that the schema or schema version was not found.
+        /// </summary>
+        public string ErrorMessage => Identifier.IsSchemaName
+            ? $"Schema '{Identifier.AsSchemaName}' not found."
+            : $"Schema version '{Identifier.AsSchemaVersionId}' not found.";
     }
 
     /// <summary>
-    /// Represents an error indicating that the specified stream already exists.
+    /// Represents an error indicating that the specified schema already exists.
     /// </summary>
-    /// <param name="Stream">The name of the stream.</param>
-    public record SchemaAlreadyExists(SchemaName Stream) : KurrentClientErrorDetails {
-        public override string ErrorMessage => $"Stream '{Stream}' already exists.";
+    /// <param name="SchemaName">The name of the schema.</param>
+    public readonly record struct SchemaAlreadyExists(SchemaName SchemaName) : IKurrentClientError {
+        /// <summary>
+        /// Gets the unique code identifying the error.
+        /// </summary>
+        public string ErrorCode => nameof(SchemaAlreadyExists);
+
+        /// <summary>
+        /// Gets the error message indicating that the schema already exists.
+        /// </summary>
+        public string ErrorMessage => $"Schema '{SchemaName}' already exists.";
     }
 }
 
