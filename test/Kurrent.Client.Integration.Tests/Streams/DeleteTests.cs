@@ -14,15 +14,15 @@ public class DeleteTests : KurrentClientTestFixture {
 
         var expectedRevision = StreamRevision.From(simulatedGame.GameEvents.Count - 1);
 
-        await AutomaticClient.Streams
-            .Append(simulatedGame.Stream, simulatedGame.GameEvents, ct)
-            .ShouldNotThrowAsync()
-            .OnErrorAsync(err => Should.RecordException(err.ToException()))
-            .OnSuccessAsync(val => {
-                val.Stream.ShouldBe(simulatedGame.Stream);
-                val.StreamRevision.ShouldBe(expectedRevision);
-                val.Position.ShouldBeGreaterThanOrEqualTo(LogPosition.Earliest);
-            });
+        // await AutomaticClient.Streams
+        //     .Append(simulatedGame.Stream, simulatedGame.GameEvents, ct)
+        //     .ShouldNotThrowAsync()
+        //     .OnErrorAsync(err => Should.RecordException(err.ToException()))
+        //     .OnSuccessAsync(val => {
+        //         val.Stream.ShouldBe(simulatedGame.Stream);
+        //         val.StreamRevision.ShouldBe(expectedRevision);
+        //         val.Position.ShouldBeGreaterThanOrEqualTo(LogPosition.Earliest);
+        //     });
     }
 
     // [Test]

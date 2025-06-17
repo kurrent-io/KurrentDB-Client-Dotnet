@@ -75,7 +75,7 @@ public record KurrentClientResilienceOptions : KurrentClientOptionsBase {
     /// Specific profiles may override this.
     /// </para>
     /// </remarks>
-    public TimeSpan? Deadline { get; init; } = Timeout.InfiniteTimeSpan;
+    public TimeSpan? Deadline { get; init; } = null;
 
     /// <summary>
     /// Retry configuration options.
@@ -260,7 +260,6 @@ public record KurrentClientResilienceOptions : KurrentClientOptionsBase {
                 StatusCode.Unknown,
                 StatusCode.ResourceExhausted,
                 StatusCode.Internal
-                // DeadlineExceeded is intentionally omitted
             ]
         }
     };

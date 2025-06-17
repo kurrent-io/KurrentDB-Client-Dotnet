@@ -52,17 +52,23 @@ public class KurrentClientException(string errorCode, string message, Exception?
 }
 
 public static class KurrentClientExceptionExtensions {
-    public static Exception ToException(this IVariant variantError, Exception? innerException = null) {
-        if (variantError.Value is IResultError error)
-            return error.CreateException(innerException);
-
-        var invalidEx = new InvalidOperationException(
-            $"The error value is not a KurrentClientErrorDetails instance but rather " +
-            $"{variantError.Value.GetType().FullName}", innerException);
-
-        return KurrentClientException.CreateUnknown("KurrentClientExceptionExtensions.Throw", invalidEx);
-    }
-
-    public static Exception Throw(this IVariant variantError, Exception? innerException = null) =>
-        throw variantError.ToException(innerException);
+    // public static Exception ToException(this IVariantResultError variantError, Exception? innerException = null) {
+    //     if (variantError..Value is IResultError error)
+    //         return error.CreateException(innerException);
+    //
+    //     var invalidEx = new InvalidOperationException(
+    //         $"The error value is not a KurrentClientErrorDetails instance but rather " +
+    //         $"{variantError.Value.GetType().FullName}", innerException);
+    //
+    //     return KurrentClientException.CreateUnknown("KurrentClientExceptionExtensions.Throw", invalidEx);
+    // }
+    //
+    // public static Exception Throw(this IVariant variantError, Exception? innerException = null) =>
+    //     throw variantError.ToException(innerException);
+    //
+    // public static Exception ToException(this IVariantResultError variantError, Exception? innerException = null) =>
+    //     variantError.CreateException(innerException);
+    //
+    // public static Exception Throw(this IVariantResultError variantError, Exception? innerException = null) =>
+    //     throw variantError.Throw(innerException);
 }

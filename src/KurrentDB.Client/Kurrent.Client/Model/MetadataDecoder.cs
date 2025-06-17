@@ -1,3 +1,4 @@
+using Google.Protobuf.Collections;
 using Kurrent.Client.SchemaRegistry;
 using Kurrent.Client.SchemaRegistry.Serialization.Json;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -63,9 +64,24 @@ public abstract class MetadataDecoder : IMetadataDecoder {
 
 [PublicAPI]
 public sealed class DefaultMetadataDecoder : MetadataDecoder {
-    protected override Metadata DecodeCore(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context) =>
-	    JsonSerializer.Deserialize<Metadata>(bytes.Span, JsonSchemaSerializerOptions.DefaultJsonSerializerOptions)
-	 ?? throw new MetadataDecodingException("Decoded metadata cannot be null");
+    protected override Metadata DecodeCore(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context) {
+
+        try
+        {
+            var temp = JsonSerializer.Deserialize<MapField<string, object?>>(bytes.Span, JsonSchemaSerializerOptions.DefaultJsonSerializerOptions);
+
+            var kebas = new Metadata(temp);
+        }
+
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+
+        return JsonSerializer.Deserialize<Metadata>(bytes.Span, JsonSchemaSerializerOptions.DefaultJsonSerializerOptions)
+            ?? throw new MetadataDecodingException("Decoded metadata cannot be null");
+    }
 }
 
 public class MetadataDecodingException(string message, Exception? innerException = null)

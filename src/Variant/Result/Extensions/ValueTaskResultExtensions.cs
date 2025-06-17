@@ -330,24 +330,24 @@ public static partial class ValueTaskResultExtensions {
         return await result.MatchAsync(onSuccess, onError).ConfigureAwait(false);
     }
 
-    /// <summary>
-    /// Asynchronously executes one of the two provided functions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, returning a new value.
-    /// The success function is synchronous while the error function is asynchronous.
-    /// </summary>
-    /// <typeparam name="TValue">The type of the success value.</typeparam>
-    /// <typeparam name="TError">The type of the error value.</typeparam>
-    /// <typeparam name="TOut">The type of the value returned by the matching functions.</typeparam>
-    /// <param name="resultTask">The value task containing the result.</param>
-    /// <param name="onSuccess">The synchronous function to execute if the result is a success. It takes the success value as input.</param>
-    /// <param name="onError">The asynchronous function to execute if the result is an error. It takes the error value as input.</param>
-    /// <returns>A <see cref="ValueTask{TOut}"/> representing the asynchronous operation with the value returned by the executed function.</returns>
-    public static async ValueTask<TOut> MatchAsync<TValue, TError, TOut>(
-        this ValueTask<Result<TValue, TError>> resultTask,
-        Func<TValue, TOut> onSuccess,
-        Func<TError, ValueTask<TOut>> onError) where TValue : notnull where TError : notnull {
-        var result = await resultTask.ConfigureAwait(false);
-        return await result.MatchAsync(onSuccess, onError).ConfigureAwait(false);
-    }
+    // /// <summary>
+    // /// Asynchronously executes one of the two provided functions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, returning a new value.
+    // /// The success function is synchronous while the error function is asynchronous.
+    // /// </summary>
+    // /// <typeparam name="TValue">The type of the success value.</typeparam>
+    // /// <typeparam name="TError">The type of the error value.</typeparam>
+    // /// <typeparam name="TOut">The type of the value returned by the matching functions.</typeparam>
+    // /// <param name="resultTask">The value task containing the result.</param>
+    // /// <param name="onSuccess">The synchronous function to execute if the result is a success. It takes the success value as input.</param>
+    // /// <param name="onError">The asynchronous function to execute if the result is an error. It takes the error value as input.</param>
+    // /// <returns>A <see cref="ValueTask{TOut}"/> representing the asynchronous operation with the value returned by the executed function.</returns>
+    // public static async ValueTask<TOut> MatchAsync<TValue, TError, TOut>(
+    //     this ValueTask<Result<TValue, TError>> resultTask,
+    //     Func<TValue, TOut> onSuccess,
+    //     Func<TError, ValueTask<TOut>> onError) where TValue : notnull where TError : notnull {
+    //     var result = await resultTask.ConfigureAwait(false);
+    //     return await result.MatchAsync(onSuccess, onError).ConfigureAwait(false);
+    // }
 
     /// <summary>
     /// Asynchronously executes one of the two provided functions depending on whether the result in the <see cref="ValueTask"/> is a success or an error, returning a new value.

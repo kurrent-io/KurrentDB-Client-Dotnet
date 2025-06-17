@@ -12,7 +12,7 @@ public record AppendStreamSuccess(string Stream, LogPosition Position, StreamRev
 }
 
 [PublicAPI]
-public readonly partial record struct AppendStreamFailure : IVariant<
+public readonly partial record struct AppendStreamFailure : IVariantResultError<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,

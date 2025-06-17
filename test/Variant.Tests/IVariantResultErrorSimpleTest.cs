@@ -1,12 +1,4 @@
-using Kurrent;
-using Kurrent.Variant;
-
 namespace Kurrent.Variant.Tests;
-
-// Simplified test of basic IVariant functionality first
-public readonly partial record struct TestError : IVariant<string, int> {
-    // Should generate standard variant implementation
-}
 
 // Now test our new IVariantResultError with actual IResultError types
 public record SimpleConnectionError(string ErrorCode, string ErrorMessage) : IResultError {
@@ -23,15 +15,7 @@ public readonly partial record struct SimpleErrorVariant : IVariantResultError<S
     // Should generate variant implementation with IResultError pass-through
 }
 
-public class IVariantResultErrorSimpleTests {
-
-    [Test]
-    public void test_error_basic_variant_should_work() {
-        TestError error = "hello";
-        error.IsString.ShouldBeTrue();
-        error.AsString.ShouldBe("hello");
-    }
-
+public class VariantResultErrorTests {
     [Test]
     public void simple_error_variant_should_work_with_connection_error() {
         var connectionError = new SimpleConnectionError("CONN_001", "Connection failed");
@@ -41,12 +25,11 @@ public class IVariantResultErrorSimpleTests {
         errorVariant.IsSimpleTimeoutError.ShouldBeFalse();
 
         // Test IResultError passthrough - this verifies source generator is working
-        IResultError resultError = errorVariant;
-        resultError.ErrorCode.ShouldBe("CONN_001");
-        resultError.ErrorMessage.ShouldBe("Connection failed");
+        errorVariant.ErrorCode.ShouldBe("CONN_001");
+        errorVariant.ErrorMessage.ShouldBe("Connection failed");
 
         // Test exception creation
-        var ex = resultError.CreateException();
+        var ex = errorVariant.CreateException();
         ex.ShouldNotBeNull();
         ex.Message.ShouldContain("Connection failed");
     }

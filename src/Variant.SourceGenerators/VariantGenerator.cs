@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -8,7 +9,11 @@ namespace Kurrent.Variant.SourceGenerators;
 
 [Generator]
 public class VariantGenerator : ISourceGenerator {
-    public void Initialize(GeneratorInitializationContext context) { }
+    public void Initialize(GeneratorInitializationContext context) {
+#if DEBUG
+        if (!Debugger.IsAttached) Debugger.Launch();
+#endif
+    }
 
     public void Execute(GeneratorExecutionContext context) {
         var compilation = context.Compilation;
@@ -23,20 +28,20 @@ public class VariantGenerator : ISourceGenerator {
                 .Where(node => node is ClassDeclarationSyntax or RecordDeclarationSyntax or StructDeclarationSyntax);
 
             foreach (var typeDeclaration in typeDeclarations) {
-                var typeSymbol = semanticModel.GetDeclaredSymbol(typeDeclaration) as INamedTypeSymbol;
-                if (typeSymbol is null) continue;
+                if (semanticModel.GetDeclaredSymbol(typeDeclaration) is not INamedTypeSymbol typeSymbol)
+                    continue;
 
-                if (!ImplementsIVariantDirectly(typeSymbol, out var genericTypeArguments)) continue;
+                if (!ImplementsIVariantDirectly(typeSymbol, out var genericTypeArguments))
+                    continue;
 
-                if (genericTypeArguments.Any()) {
+                if (genericTypeArguments.Count != 0) {
                     // Validate IResultError constraints if this implements IVariantResultError
                     if (ImplementsIVariantResultError(typeSymbol)) {
-                        if (!ValidateIResultErrorConstraints(genericTypeArguments, context, typeSymbol)) {
+                        if (!ValidateIResultErrorConstraints(genericTypeArguments, context, typeSymbol))
                             continue; // Skip generation if validation fails
-                        }
                     }
 
-                    var source = GenerateVariantImplementation(typeSymbol, genericTypeArguments);
+                    var source = GenerateVariantImplementation(typeSymbol, genericTypeArguments, context);
                     if (!string.IsNullOrEmpty(source)) {
                         var sanitizedTypeArguments = string.Join("_", genericTypeArguments.Select(GetSafeFileNameFromType));
                         var fullTypeNameForFile    = $"{typeSymbol.Name}_{sanitizedTypeArguments}";
@@ -49,46 +54,74 @@ public class VariantGenerator : ISourceGenerator {
         }
     }
 
-    string GetSafeFileNameFromType(ITypeSymbol typeSymbol) {
-        var simpleName = GetCleanTypeName(typeSymbol);
-        return simpleName
+    #region . Diagnostic Helpers .
+
+    static readonly DiagnosticDescriptor SwitchMethodsGenerated = new(
+        "VARIANT002",
+        "Switch methods generated",
+        "Generated switch methods for type '{0}'",
+        "CodeGeneration",
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: true);
+
+    static readonly DiagnosticDescriptor MatchMethodsGenerated = new(
+        "VARIANT003",
+        "Match methods generated",
+        "Generated match methods for type '{0}'",
+        "CodeGeneration",
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: true);
+
+    static readonly DiagnosticDescriptor ResultErrorImplementationGenerated = new(
+        "VARIANT004",
+        "Result error implementation generated",
+        "Generated result error implementation for type '{0}'",
+        "CodeGeneration",
+        DiagnosticSeverity.Info,
+        isEnabledByDefault: true);
+
+    static void ReportDiagnostic(GeneratorExecutionContext context, DiagnosticDescriptor descriptor, INamedTypeSymbol classSymbol) {
+        var diagnostic = Diagnostic.Create(descriptor, Location.None, classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
+        context.ReportDiagnostic(diagnostic);
+    }
+
+    #endregion
+
+    static string GetSafeFileNameFromType(ITypeSymbol typeSymbol) =>
+        GetCleanTypeName(typeSymbol)
             .Replace("<", "_")
             .Replace(">", "_")
             .Replace(",", "_")
             .Replace(" ", "_")
             .Replace("?", "_nullable");
-    }
 
     static bool ImplementsIVariantDirectly(INamedTypeSymbol classSymbol, out List<ITypeSymbol> genericTypeArguments) {
         genericTypeArguments = [];
 
-        foreach (var implementedInterface in classSymbol.Interfaces) {
-            var namespaceName = implementedInterface.ContainingNamespace?.ToDisplayString();
-            var interfaceName = implementedInterface.Name;
-
-            if (namespaceName == "Kurrent.Variant" &&
-                interfaceName.StartsWith("IVariant") &&
-                implementedInterface.IsGenericType) {
-                genericTypeArguments.AddRange(implementedInterface.TypeArguments);
-            }
-        }
+        foreach (var implementedInterface in classSymbol.Interfaces.Where(Predicate))
+            genericTypeArguments.AddRange(implementedInterface.TypeArguments);
 
         return genericTypeArguments.Count != 0;
+
+        bool Predicate(INamedTypeSymbol implementedInterface) =>
+            implementedInterface.ContainingNamespace?.ToDisplayString() == "Kurrent.Variant" &&
+            implementedInterface.Name.StartsWith("IVariant") &&
+            implementedInterface.IsGenericType;
     }
 
     static bool ImplementsIVariantResultError(INamedTypeSymbol classSymbol) {
-        foreach (var implementedInterface in classSymbol.Interfaces)
-            if (implementedInterface.ContainingNamespace?.ToDisplayString() == "Kurrent.Variant" &&
-                implementedInterface.Name.StartsWith("IVariantResultError") &&
-                implementedInterface.IsGenericType)
-                return true;
+        return classSymbol.Interfaces.Any(Predicate);
 
-        return false;
+        bool Predicate(INamedTypeSymbol implementedInterface) =>
+            implementedInterface.ContainingNamespace?.ToDisplayString() == "Kurrent.Variant" &&
+            implementedInterface.Name.StartsWith("IVariantResultError") &&
+            implementedInterface.IsGenericType;
     }
 
     static bool ValidateIResultErrorConstraints(List<ITypeSymbol> typeArguments, GeneratorExecutionContext context, INamedTypeSymbol classSymbol) {
         var resultErrorInterface = context.Compilation.GetTypeByMetadataName("Kurrent.IResultError");
-        if (resultErrorInterface == null) return true; // Can't validate, proceed
+        if (resultErrorInterface == null)
+            return true; // Can't validate, proceed
 
         foreach (var typeArg in typeArguments) {
             var implementsIResultError = typeArg.AllInterfaces.Any(i =>
@@ -112,7 +145,7 @@ public class VariantGenerator : ISourceGenerator {
         return true;
     }
 
-    string GenerateVariantImplementation(INamedTypeSymbol classSymbol, List<ITypeSymbol> typeArguments) {
+    static string GenerateVariantImplementation(INamedTypeSymbol classSymbol, List<ITypeSymbol> typeArguments, GeneratorExecutionContext context) {
         var className                   = classSymbol.Name;
         var minimallyQualifiedClassName = classSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
         var namespaceName               = classSymbol.ContainingNamespace.IsGlobalNamespace ? null : classSymbol.ContainingNamespace.ToDisplayString();
@@ -122,7 +155,9 @@ public class VariantGenerator : ISourceGenerator {
         sb.AppendLine("#pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.");
         sb.AppendLine("// ReSharper disable SwitchStatementHandlesSomeKnownEnumValuesWithDefault");
         sb.AppendLine("#nullable enable");
+        sb.AppendLine();
         sb.AppendLine("using System;");
+        sb.AppendLine("using System.CodeDom.Compiler;");
         sb.AppendLine("using System.Collections.Generic;");
         sb.AppendLine("using System.Runtime.CompilerServices;");
         sb.AppendLine("using System.Threading.Tasks;");
@@ -145,17 +180,17 @@ public class VariantGenerator : ISourceGenerator {
         containingTypeSymbols.Reverse();
 
         foreach (var containingTypeSymbol in containingTypeSymbols) {
-            sb.AppendLine($"partial class {containingTypeSymbol.Name}");
-            sb.AppendLine("{");
+            sb.AppendLine($"partial class {containingTypeSymbol.Name} {{");
         }
 
         var baseIndent = string.Concat(Enumerable.Repeat("    ", containingTypeSymbols.Count));
 
         // Build the correct interface inheritance
         var typeParams = string.Join(", ", typeArguments.Select(t => t.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
-        // sb.AppendLine($"{baseIndent}public readonly partial record struct {className} : IVariant<{typeParams}>, IEquatable<{className}>");
-        sb.AppendLine($"{baseIndent}public readonly partial record struct {className}");
-        sb.AppendLine($"{baseIndent}{{");
+
+        sb.AppendLine("[GeneratedCode(\"VariantGenerator\", \"1.0.0\")]");
+        sb.AppendLine("[CompilerGenerated]");
+        sb.AppendLine($"{baseIndent}public readonly partial record struct {className} {{");
         var memberIndent = $"{baseIndent}    ";
 
         // Use optimized storage for better performance
@@ -167,8 +202,9 @@ public class VariantGenerator : ISourceGenerator {
             var typeArg                   = typeArguments[i];
             var typeArgNameForConstructor = typeArg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             var parameterName             = GetParameterName(typeArg);
-            sb.AppendLine($"{memberIndent}public {className}({typeArgNameForConstructor} {parameterName})");
-            sb.AppendLine($"{memberIndent}{{");
+
+            sb.AppendLine($"{memberIndent}public {className}({typeArgNameForConstructor} {parameterName}) {{");
+
             if (!typeArg.IsValueType && typeArg.SpecialType != SpecialType.System_Nullable_T)
                 if (typeArg.IsReferenceType)
                     sb.AppendLine($"{memberIndent}    ArgumentNullException.ThrowIfNull({parameterName});");
@@ -196,17 +232,12 @@ public class VariantGenerator : ISourceGenerator {
             var propertySuffix       = GetCleanTypeName(typeArg);
 
             sb.AppendLine($"{memberIndent}public bool Is{propertySuffix} => Case == {className}Case.{propertySuffix};");
-
             sb.AppendLine($"{memberIndent}public {typeArgNameForMember} As{propertySuffix} => Is{propertySuffix} ? ({typeArgNameForMember})Value! : throw new InvalidOperationException($\"Cannot return as {propertySuffix} as current type is {{Value?.GetType().Name ?? \"unknown\"}} (Case {{Case}})\");");
-
-            //
-            // sb.AppendLine($"{memberIndent}public {typeArgNameForMember} As{propertySuffix} => Case switch {{");
-            // sb.AppendLine($"{memberIndent}    {className}Case.{propertySuffix} => ({typeArgNameForMember})Value!,");
-            // sb.AppendLine($"{memberIndent}    _ => throw new InvalidOperationException($\"Cannot return as {propertySuffix} as current type is {{Value?.GetType().Name ?? \"unknown\"}} (Case {{Case}})\")");
-            // sb.AppendLine($"{memberIndent}}};");
             sb.AppendLine();
         }
 
+        sb.AppendLine("#region . Implicit Operators .");
+        sb.AppendLine();
         for (var i = 0; i < typeArguments.Count; i++) {
             var typeArg                = typeArguments[i];
             var typeArgNameForImplicit = typeArg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
@@ -217,30 +248,26 @@ public class VariantGenerator : ISourceGenerator {
             sb.AppendLine($"{memberIndent}public static implicit operator {minimallyQualifiedClassName}({typeArgNameForImplicit} _) => new(_);");
             sb.AppendLine($"{memberIndent}public static implicit operator {typeArgNameForImplicit}({minimallyQualifiedClassName} _) => _.As{propertySuffix};");
         }
-
+        sb.AppendLine();
+        sb.AppendLine("#endregion");
         sb.AppendLine();
 
         GenerateSwitchMethods(sb, memberIndent, className, typeArguments);
+        ReportDiagnostic(context, SwitchMethodsGenerated, classSymbol);
+
         GenerateMatchMethods(sb, memberIndent, className, typeArguments);
+        ReportDiagnostic(context, MatchMethodsGenerated, classSymbol);
+
         // GenerateTryPickMethods(sb, memberIndent, className, typeArguments);
         // GenerateGetValueOrDefaultMethods(sb, memberIndent, className, typeArguments);
 
-        // Generate ToString override for record structs to avoid PrintMembers issues
-        if (classSymbol.TypeKind == TypeKind.Struct)
-            GenerateToStringOverride(sb, memberIndent);
-
-        // Generate IResultError implementation if the type implements IVariantResultError
         if (ImplementsIVariantResultError(classSymbol)) {
             GenerateResultErrorImplementation(sb, memberIndent, className, typeArguments);
-			// GenerateResultErrorImplementation(sb, memberIndent, className, typeArguments);
-			// GenerateResultErrorImplementation(sb, memberIndent, className, typeArguments);
+            ReportDiagnostic(context, ResultErrorImplementationGenerated, classSymbol);
         }
 
-        // // Only generate equality members for regular classes, not record structs
-        // // Record structs automatically generate Equals, GetHashCode, ToString, and operators
-        // if (classSymbol.TypeKind == TypeKind.Class) {
-        //     GenerateEqualityMembers(sb, memberIndent, className);
-        // }
+        if (classSymbol.TypeKind == TypeKind.Struct)
+            GenerateToStringOverride(sb, memberIndent);
 
         sb.AppendLine($"{baseIndent}}}");
         for (var i = containingTypeSymbols.Count - 1; i >= 0; i--)
@@ -248,56 +275,11 @@ public class VariantGenerator : ISourceGenerator {
         return sb.ToString();
     }
 
-    static void GenerateToStringOverride(StringBuilder sb, string indent) {
-        sb.AppendLine($"{indent}/// <summary>");
-        sb.AppendLine($"{indent}/// Returns a string representation of the current variant value.");
-        sb.AppendLine($"{indent}/// </summary>");
-        sb.AppendLine($"{indent}public override string? ToString() => _value?.ToString();");
-        sb.AppendLine();
-    }
-
-	static void GenerateEqualityMembers(StringBuilder sb, string indent, string className) {
-        sb.AppendLine($"{indent}public bool Equals({className}? other)");
-        sb.AppendLine($"{indent}{{");
-        sb.AppendLine($"{indent}    if (ReferenceEquals(null, other)) return false;");
-        sb.AppendLine($"{indent}    if (ReferenceEquals(this, other)) return true;");
-        sb.AppendLine($"{indent}    return _index == other._index && EqualityComparer<object>.Default.Equals(_value, other._value);");
-        sb.AppendLine($"{indent}}}");
-        sb.AppendLine();
-
-        sb.AppendLine($"{indent}public override bool Equals(object? obj)");
-        sb.AppendLine($"{indent}{{");
-        sb.AppendLine($"{indent}    return Equals(obj as {className});");
-        sb.AppendLine($"{indent}}}");
-        sb.AppendLine();
-
-        sb.AppendLine($"{indent}public override int GetHashCode()");
-        sb.AppendLine($"{indent}{{");
-        sb.AppendLine($"{indent}    unchecked");
-        sb.AppendLine($"{indent}    {{");
-        sb.AppendLine($"{indent}        return ((_value?.GetHashCode() ?? 0) * 397) ^ _index;");
-        sb.AppendLine($"{indent}    }}");
-        sb.AppendLine($"{indent}}}");
-        sb.AppendLine();
-
-        sb.AppendLine($"{indent}public static bool operator ==({className}? left, {className}? right)");
-        sb.AppendLine($"{indent}{{");
-        sb.AppendLine($"{indent}    if (ReferenceEquals(left, null)) return ReferenceEquals(right, null);");
-        sb.AppendLine($"{indent}    return left.Equals(right);");
-        sb.AppendLine($"{indent}}}");
-        sb.AppendLine();
-
-        sb.AppendLine($"{indent}public static bool operator !=({className}? left, {className}? right)");
-        sb.AppendLine($"{indent}{{");
-        sb.AppendLine($"{indent}    return !(left == right);");
-        sb.AppendLine($"{indent}}}");
-        sb.AppendLine();
-
-        sb.AppendLine($"{indent}public override string? ToString() => _value?.ToString();");
-        sb.AppendLine();
-    }
-
     static void GenerateSwitchMethods(StringBuilder sb, string indent, string className, List<ITypeSymbol> typeArguments) {
+        sb.AppendLine();
+        sb.AppendLine($"{indent}#region . Switch .");
+        sb.AppendLine();
+
         sb.Append($"{indent}public void Switch(");
         for (var i = 0; i < typeArguments.Count; i++) {
             var typeArg       = typeArguments[i];
@@ -325,16 +307,16 @@ public class VariantGenerator : ISourceGenerator {
 
             sb.AppendLine($"{indent}        case {className}Case.{propertySuffix}: {paramName}(As{propertySuffix}); break;");
         }
-        // sb.AppendLine($"{indent}        default: throw new InvalidOperationException(\"Unhandled case in Switch statement.\");");
+
         sb.AppendLine($"{indent}    }}");
         sb.AppendLine($"{indent}}}");
         sb.AppendLine();
 
-        // Generate Switch with state parameter
         GenerateSwitchWithState(sb, indent, className, typeArguments);
 
-        // Generate async Switch variants
         GenerateSwitchAsync(sb, indent, className, typeArguments);
+
+        sb.AppendLine($"{indent}#endregion");
     }
 
     static void GenerateSwitchWithState(StringBuilder sb, string indent, string className, List<ITypeSymbol> typeArguments) {
@@ -365,14 +347,12 @@ public class VariantGenerator : ISourceGenerator {
             sb.AppendLine($"{indent}        case {className}Case.{propertySuffix}: {paramName}(As{propertySuffix}, state); break;");
         }
 
-        // sb.AppendLine($"{indent}        default: throw new InvalidOperationException(\"Unhandled case in Switch statement.\");");
         sb.AppendLine($"{indent}    }}");
         sb.AppendLine($"{indent}}}");
         sb.AppendLine();
     }
 
     static void GenerateSwitchAsync(StringBuilder sb, string indent, string className, List<ITypeSymbol> typeArguments) {
-        // All async variant
         sb.Append($"{indent}public ValueTask SwitchAsync(");
         for (var i = 0; i < typeArguments.Count; i++) {
             var typeArg       = typeArguments[i];
@@ -399,11 +379,9 @@ public class VariantGenerator : ISourceGenerator {
             sb.AppendLine($"{indent}    {className}Case.{propertySuffix} => {paramName}(As{propertySuffix}),");
         }
 
-        // sb.AppendLine($"{indent}    _ => throw new InvalidOperationException(\"Unhandled case in SwitchAsync statement.\")");
         sb.AppendLine($"{indent}}};");
         sb.AppendLine();
 
-        // Async with state variant
         sb.Append($"{indent}public ValueTask SwitchAsync<TState>(");
         for (var i = 0; i < typeArguments.Count; i++) {
             var typeArg       = typeArguments[i];
@@ -430,12 +408,15 @@ public class VariantGenerator : ISourceGenerator {
             sb.AppendLine($"{indent}    {className}Case.{propertySuffix} => {paramName}(As{propertySuffix}, state),");
         }
 
-        // sb.AppendLine($"{indent}    _ => throw new InvalidOperationException(\"Unhandled case in SwitchAsync statement.\")");
         sb.AppendLine($"{indent}}};");
         sb.AppendLine();
     }
 
     static void GenerateMatchMethods(StringBuilder sb, string indent, string className, List<ITypeSymbol> typeArguments) {
+        sb.AppendLine();
+        sb.AppendLine($"{indent}#region . Match .");
+        sb.AppendLine();
+
         sb.Append($"{indent}public TResult Match<TResult>(");
         for (var i = 0; i < typeArguments.Count; i++) {
             var typeArg       = typeArguments[i];
@@ -461,15 +442,14 @@ public class VariantGenerator : ISourceGenerator {
             sb.AppendLine($"{indent}    {className}Case.{propertySuffix} => {paramName}(As{propertySuffix}),");
         }
 
-        // sb.AppendLine($"{indent}    _ => throw new InvalidOperationException(\"Unhandled case in Match statement.\")");
         sb.AppendLine($"{indent}}};");
         sb.AppendLine();
 
-        // Generate Match with state parameter
         GenerateMatchWithState(sb, indent, className, typeArguments);
 
-        // Generate async Match variants
         GenerateMatchAsync(sb, indent, className, typeArguments);
+
+        sb.AppendLine($"{indent}#endregion");
     }
 
     static void GenerateMatchWithState(StringBuilder sb, string indent, string className, List<ITypeSymbol> typeArguments) {
@@ -566,25 +546,6 @@ public class VariantGenerator : ISourceGenerator {
         // sb.AppendLine($"{indent}    _ => throw new InvalidOperationException(\"Unhandled case in MatchAsync statement.\")");
         sb.AppendLine($"{indent}}};");
         sb.AppendLine();
-    }
-
-	static void GenerateTryPickMethods(StringBuilder sb, string indent, string className, List<ITypeSymbol> typeArguments) {
-        for (var i = 0; i < typeArguments.Count; i++) {
-            var pickType          = typeArguments[i];
-            var pickTypeName      = pickType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-            var pickTypeCleanName = GetCleanTypeName(pickType);
-            sb.AppendLine($"{indent}public bool TryPick{pickTypeCleanName}(out {pickTypeName} value) {{");
-            sb.AppendLine($"{indent}    switch (Case) {{");
-            sb.AppendLine($"{indent}        case {className}Case.{pickTypeCleanName}:");
-            sb.AppendLine($"{indent}            value = As{pickTypeCleanName};");
-            sb.AppendLine($"{indent}            return true;");
-            sb.AppendLine($"{indent}        default:");
-            sb.AppendLine($"{indent}            value = default({pickTypeName})!;");
-            sb.AppendLine($"{indent}            return false;");
-            sb.AppendLine($"{indent}    }}");
-            sb.AppendLine($"{indent}}}");
-            sb.AppendLine();
-        }
     }
 
     static void GenerateCaseEnum(StringBuilder sb, string indent, string className, List<ITypeSymbol> typeArguments) {
@@ -755,6 +716,77 @@ public class VariantGenerator : ISourceGenerator {
         return paramNameBase;
     }
 
+	static void GenerateResultErrorImplementation(StringBuilder sb, string indent, string className, List<ITypeSymbol> typeArguments) {
+        sb.AppendLine();
+        sb.AppendLine($"{indent}#region . IResultError .");
+        sb.AppendLine();
+
+        // Generate Error property
+        sb.AppendLine($"{indent}///<inheritdoc />");
+        sb.AppendLine($"{indent}public IResultError Error => (IResultError)_value;");
+        sb.AppendLine();
+
+        // Generate ErrorCode property
+        sb.AppendLine($"{indent}/// <summary>");
+        sb.AppendLine($"{indent}/// Gets the error code from the currently stored error.");
+        sb.AppendLine($"{indent}/// </summary>");
+        sb.AppendLine($"{indent}public string ErrorCode => Error.ErrorCode;");
+        sb.AppendLine();
+
+        // Generate ErrorMessage property
+        sb.AppendLine($"{indent}/// <summary>");
+        sb.AppendLine($"{indent}/// Gets the error message from the currently stored error.");
+        sb.AppendLine($"{indent}/// </summary>");
+        sb.AppendLine($"{indent}public string ErrorMessage => Error.ErrorMessage;");
+        sb.AppendLine();
+
+        // Generate CreateException method
+        sb.AppendLine($"{indent}/// <summary>");
+        sb.AppendLine($"{indent}/// Creates an exception from the currently stored error.");
+        sb.AppendLine($"{indent}/// </summary>");
+        sb.AppendLine($"{indent}/// <param name=\"innerException\">The exception that is the cause of the current exception, or a null reference if no inner exception is specified.</param>");
+        sb.AppendLine($"{indent}/// <returns>An exception that represents the current error.</returns>");
+        sb.AppendLine($"{indent}public Exception CreateException(Exception? innerException = null) => Error.CreateException(innerException);");
+        sb.AppendLine();
+
+        // Generate Throw method
+        sb.AppendLine($"{indent}/// <summary>");
+        sb.AppendLine($"{indent}/// Creates and throws an exception from the currently stored error.");
+        sb.AppendLine($"{indent}/// </summary>");
+        sb.AppendLine($"{indent}/// <param name=\"innerException\">The exception that is the cause of the current exception, or a null reference if no inner exception is specified.</param>");
+        sb.AppendLine($"{indent}public Exception Throw(Exception? innerException = null) => Error.Throw(innerException);");
+        sb.AppendLine();
+
+        sb.AppendLine($"{indent}#endregion");
+    }
+
+    static void GenerateToStringOverride(StringBuilder sb, string indent) {
+        sb.AppendLine();
+        sb.AppendLine($"{indent}/// <summary>");
+        sb.AppendLine($"{indent}/// Returns a string representation of the current variant value.");
+        sb.AppendLine($"{indent}/// </summary>");
+        sb.AppendLine($"{indent}public override string? ToString() => _value?.ToString();");
+    }
+
+    static void GenerateTryPickMethods(StringBuilder sb, string indent, string className, List<ITypeSymbol> typeArguments) {
+        for (var i = 0; i < typeArguments.Count; i++) {
+            var pickType          = typeArguments[i];
+            var pickTypeName      = pickType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            var pickTypeCleanName = GetCleanTypeName(pickType);
+            sb.AppendLine($"{indent}public bool TryPick{pickTypeCleanName}(out {pickTypeName} value) {{");
+            sb.AppendLine($"{indent}    switch (Case) {{");
+            sb.AppendLine($"{indent}        case {className}Case.{pickTypeCleanName}:");
+            sb.AppendLine($"{indent}            value = As{pickTypeCleanName};");
+            sb.AppendLine($"{indent}            return true;");
+            sb.AppendLine($"{indent}        default:");
+            sb.AppendLine($"{indent}            value = default({pickTypeName})!;");
+            sb.AppendLine($"{indent}            return false;");
+            sb.AppendLine($"{indent}    }}");
+            sb.AppendLine($"{indent}}}");
+            sb.AppendLine();
+        }
+    }
+
 	static void GenerateGetValueOrDefaultMethods(StringBuilder sb, string indent, string className, List<ITypeSymbol> typeArguments) {
         // Generate sync GetValueOrDefault methods for each type
         for (var i = 0; i < typeArguments.Count; i++) {
@@ -808,7 +840,7 @@ public class VariantGenerator : ISourceGenerator {
         }
     }
 
-	static void GenerateResultErrorImplementation(StringBuilder sb, string indent, string className, List<ITypeSymbol> typeArguments) {
+    static void GenerateCaseBasedResultErrorImplementation(StringBuilder sb, string indent, string className, List<ITypeSymbol> typeArguments) {
         sb.AppendLine($"{indent}#region . IResultError .");
         sb.AppendLine();
 
@@ -837,6 +869,20 @@ public class VariantGenerator : ISourceGenerator {
         }
         sb.AppendLine($"{indent}}};");
         sb.AppendLine();
+
+
+        // /// <summary>
+        // /// Creates an exception from the currently stored error.
+        // /// </summary>
+        // /// <param name="innerException">The exception that is the cause of the current exception, or a null reference if no inner exception is specified.</param>
+        // /// <returns>An exception that represents the current error.</returns>
+        // public Exception CreateException(Exception? innerException = null) => ((IResultError)Value).CreateException(innerException);
+        //
+        // /// <summary>
+        // /// Creates and throws an exception from the currently stored error.
+        // /// </summary>
+        // /// <param name="innerException">The exception that is the cause of the current exception, or a null reference if no inner exception is specified.</param>
+        // public Exception Throw(Exception? innerException = null) => ((IResultError)Value).Throw(innerException);
 
         // Generate CreateException method
         sb.AppendLine($"{indent}/// <summary>");
