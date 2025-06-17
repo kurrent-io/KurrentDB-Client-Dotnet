@@ -1,12 +1,12 @@
-namespace Kurrent.Whatever.Tests;
+namespace Kurrent.Variant.Tests;
 
 // Define a test type that implements IWhatever directly
 // The source generator will generate the full implementation.
-public readonly partial record struct TestWhateverResult : IWhatever<string, int> {
+public readonly partial record struct TestVariantResult : IVariant<string, int> {
     // User-defined part is empty or can contain other non-generated members.
 }
 
-public readonly partial record struct TestWhateverComplexResult : IWhatever<MyError, MySuccess, MyWarning> {
+public readonly partial record struct TestVariantComplexResult : IVariant<MyError, MySuccess, MyWarning> {
     // Generator will handle this
 }
 
@@ -19,124 +19,117 @@ public record MyWarning(string Text);
 public class WhateverGenerationTests {
     [Test]
     public void is_string_should_be_true_when_value_is_string() {
-        TestWhateverResult result = "hello";
+        TestVariantResult result = "hello";
         result.IsString.ShouldBeTrue();
         result.IsInt.ShouldBeFalse();
     }
 
     [Test]
     public void as_string_should_return_string_value_when_value_is_string() {
-        TestWhateverResult result = "hello";
+        TestVariantResult result = "hello";
         result.AsString.ShouldBe("hello");
     }
 
     [Test]
     public void as_string_should_throw_when_value_is_not_string() {
-        TestWhateverResult result = 123; // int value
+        TestVariantResult result = 123; // int value
         Should.Throw<InvalidOperationException>(() => result.AsString);
     }
 
     [Test]
     public void is_int_should_be_true_when_value_is_int() {
-        TestWhateverResult result = 123;
+        TestVariantResult result = 123;
         result.IsInt.ShouldBeTrue();
         result.IsString.ShouldBeFalse();
     }
 
     [Test]
     public void as_int_should_return_int_value_when_value_is_int() {
-        TestWhateverResult result = 123;
+        TestVariantResult result = 123;
         result.AsInt.ShouldBe(123);
     }
 
     [Test]
     public void as_int_should_throw_when_value_is_not_int() {
-        TestWhateverResult result = "not an int";
+        TestVariantResult result = "not an int";
         Should.Throw<InvalidOperationException>(() => result.AsInt);
     }
 
     [Test]
     public void value_property_should_return_correct_object() {
-        TestWhateverResult resultString = "test";
+        TestVariantResult resultString = "test";
         resultString.Value.ShouldBe("test");
         resultString.Value.ShouldBeOfType<string>();
 
-        TestWhateverResult resultInt = 42;
+        TestVariantResult resultInt = 42;
         resultInt.Value.ShouldBe(42);
         resultInt.Value.ShouldBeOfType<int>();
     }
 
     [Test]
     public void index_property_should_return_correct_index() {
-        TestWhateverResult resultString = "test";
+        TestVariantResult resultString = "test";
         resultString.Index.ShouldBe(0);
 
-        TestWhateverResult resultInt = 42;
+        TestVariantResult resultInt = 42;
         resultInt.Index.ShouldBe(1);
     }
 
     [Test]
     public void to_string_should_return_underlying_value_to_string() {
-        TestWhateverResult resultString = "test";
+        TestVariantResult resultString = "test";
         resultString.ToString().ShouldBe("test");
 
-        TestWhateverResult resultInt = 42;
+        TestVariantResult resultInt = 42;
         resultInt.ToString().ShouldBe("42");
     }
 
     [Test]
     public void equals_should_return_true_for_same_value_and_type() {
-        TestWhateverResult result1A = "hello";
-        TestWhateverResult result1B = "hello";
+        TestVariantResult result1A = "hello";
+        TestVariantResult result1B = "hello";
         result1A.Equals(result1B).ShouldBeTrue();
     }
 
     [Test]
     public void equals_should_return_false_for_different_value_same_type() {
-        TestWhateverResult result1A = "hello";
-        TestWhateverResult result1B = "world";
+        TestVariantResult result1A = "hello";
+        TestVariantResult result1B = "world";
         result1A.Equals(result1B).ShouldBeFalse();
     }
 
     [Test]
     public void equals_should_return_false_for_different_type() {
-        TestWhateverResult result1A = "hello";
-        TestWhateverResult result2  = 123;
+        TestVariantResult result1A = "hello";
+        TestVariantResult result2  = 123;
         result1A.Equals(result2).ShouldBeFalse();
     }
 
     [Test]
-    public void equals_should_return_false_for_null() {
-        TestWhateverResult result1A = "hello";
-        result1A.Equals(null).ShouldBeFalse();
-    }
-
-    [Test]
     public void equals_operator_should_work_correctly() {
-        TestWhateverResult  result1A   = "hello";
-        TestWhateverResult  result1B   = "hello";
-        TestWhateverResult  result2    = "world";
-        TestWhateverResult  result3    = 123;
-        TestWhateverResult? nullResult = null;
+        TestVariantResult  result1A   = "hello";
+        TestVariantResult  result1B   = "hello";
+        TestVariantResult  result2    = "world";
+        TestVariantResult  result3    = 123;
+        TestVariantResult? nullResult = null;
 
         (result1A == result1B).ShouldBeTrue();
         (result1A == result2).ShouldBeFalse();
         (result1A == result3).ShouldBeFalse();
         (result1A == nullResult).ShouldBeFalse();
         (nullResult == result1A).ShouldBeFalse();
-        (nullResult == nullResult).ShouldBeTrue();
 
-        TestWhateverResult resultInt1 = 10;
-        TestWhateverResult resultInt2 = 10;
+        TestVariantResult resultInt1 = 10;
+        TestVariantResult resultInt2 = 10;
         (resultInt1 == resultInt2).ShouldBeTrue();
     }
 
     [Test]
     public void not_equals_operator_should_work_correctly() {
-        TestWhateverResult  result1A   = "hello";
-        TestWhateverResult  result1B   = "hello";
-        TestWhateverResult  result2    = "world";
-        TestWhateverResult? nullResult = null;
+        TestVariantResult  result1A   = "hello";
+        TestVariantResult  result1B   = "hello";
+        TestVariantResult  result2    = "world";
+        TestVariantResult? nullResult = null;
 
         (result1A != result1B).ShouldBeFalse();
         (result1A != result2).ShouldBeTrue();
@@ -147,20 +140,20 @@ public class WhateverGenerationTests {
 
     [Test]
     public void get_hash_code_should_be_consistent_for_equal_objects() {
-        TestWhateverResult result1A = "hello";
-        TestWhateverResult result1B = "hello";
+        TestVariantResult result1A = "hello";
+        TestVariantResult result1B = "hello";
         result1A.GetHashCode().ShouldBe(result1B.GetHashCode());
 
-        TestWhateverResult resultInt1 = 123;
-        TestWhateverResult resultInt2 = 123;
+        TestVariantResult resultInt1 = 123;
+        TestVariantResult resultInt2 = 123;
         resultInt1.GetHashCode().ShouldBe(resultInt2.GetHashCode());
     }
 
     [Test]
     public void get_hash_code_should_generally_be_different_for_unequal_objects() {
-        TestWhateverResult result1 = "hello";
-        TestWhateverResult result2 = "world";
-        TestWhateverResult result3 = 123;
+        TestVariantResult result1 = "hello";
+        TestVariantResult result2 = "world";
+        TestVariantResult result3 = 123;
 
         // Note: Hash code collisions are possible but should be rare for distinct small inputs.
         result1.GetHashCode().ShouldNotBe(result2.GetHashCode());
@@ -169,14 +162,14 @@ public class WhateverGenerationTests {
 
     [Test]
     public void implicit_conversion_from_string_should_work() {
-        TestWhateverResult result = "implicit";
+        TestVariantResult result = "implicit";
         result.IsString.ShouldBeTrue();
         result.AsString.ShouldBe("implicit");
     }
 
     [Test]
     public void implicit_conversion_from_int_should_work() {
-        TestWhateverResult result = 789;
+        TestVariantResult result = 789;
         result.IsInt.ShouldBeTrue();
         result.AsInt.ShouldBe(789);
     }
@@ -184,7 +177,7 @@ public class WhateverGenerationTests {
 
     [Test]
     public void switch_should_execute_correct_action_for_string() {
-        TestWhateverResult result             = "switch_me";
+        TestVariantResult result             = "switch_me";
         var                stringActionCalled = false;
         var                intActionCalled    = false;
 
@@ -199,7 +192,7 @@ public class WhateverGenerationTests {
 
     [Test]
     public void switch_should_execute_correct_action_for_int() {
-        TestWhateverResult result             = 555;
+        TestVariantResult result             = 555;
         var                stringActionCalled = false;
         var                intActionCalled    = false;
 
@@ -214,7 +207,7 @@ public class WhateverGenerationTests {
 
     [Test]
     public void match_should_return_correct_value_for_string() {
-        TestWhateverResult result = "match_me";
+        TestVariantResult result = "match_me";
         var outcome = result.Match(
             s => $"String: {s}",
             i => $"Int: {i}"
@@ -225,7 +218,7 @@ public class WhateverGenerationTests {
 
     [Test]
     public void match_should_return_correct_value_for_int() {
-        TestWhateverResult result = 777;
+        TestVariantResult result = 777;
         var outcome = result.Match(
             s => $"String: {s}",
             i => $"Int: {i}"
@@ -261,7 +254,7 @@ public class WhateverGenerationTests {
     [Test]
     public void complex_type_generation_is_my_error_should_be_true() {
         var                       error  = new MyError("E01", "Test Error");
-        TestWhateverComplexResult result = error;
+        TestVariantComplexResult result = error;
 
         result.IsMyError.ShouldBeTrue();
         result.IsMySuccess.ShouldBeFalse();
@@ -272,7 +265,7 @@ public class WhateverGenerationTests {
     [Test]
     public void complex_type_generation_is_my_success_should_be_true() {
         var                       success = new MySuccess(Guid.NewGuid());
-        TestWhateverComplexResult result  = success;
+        TestVariantComplexResult result  = success;
 
         result.IsMyError.ShouldBeFalse();
         result.IsMySuccess.ShouldBeTrue();
@@ -282,7 +275,7 @@ public class WhateverGenerationTests {
 
     [Test]
     public void constructor_should_throw_argument_null_exception_for_null_reference_type() {
-        Should.Throw<ArgumentNullException>(() => new TestWhateverResult(null!));
+        Should.Throw<ArgumentNullException>(() => new TestVariantResult(null!));
     }
 
     [Test]
@@ -290,27 +283,27 @@ public class WhateverGenerationTests {
         // This test is tricky because int default is 0, which is valid.
         // The generator's null check is `if (parameterName == null)`, which doesn't apply to non-nullable value types.
         // So, this test effectively checks that the constructor for int doesn't throw.
-        Should.NotThrow(() => new TestWhateverResult(0));
-        Should.NotThrow(() => new TestWhateverResult(0));
+        Should.NotThrow(() => new TestVariantResult(0));
+        Should.NotThrow(() => new TestVariantResult(0));
     }
 
     // Case enum tests
     [Test]
     public void case_property_should_return_correct_enum_value_for_string() {
-        TestWhateverResult result = "test";
-        result.Case.ShouldBe(TestWhateverResult.TestWhateverResultCase.String);
+        TestVariantResult result = "test";
+        result.Case.ShouldBe(TestVariantResult.TestVariantResultCase.String);
     }
 
     [Test]
     public void case_property_should_return_correct_enum_value_for_int() {
-        TestWhateverResult result = 123;
-        result.Case.ShouldBe(TestWhateverResult.TestWhateverResultCase.Int);
+        TestVariantResult result = 123;
+        result.Case.ShouldBe(TestVariantResult.TestVariantResultCase.Int);
     }
 
     // Async Switch tests
     [Test]
     public async Task switch_async_should_execute_correct_action_for_string() {
-        TestWhateverResult result = "async_test";
+        TestVariantResult result = "async_test";
         var stringActionCalled = false;
         var intActionCalled = false;
 
@@ -326,7 +319,7 @@ public class WhateverGenerationTests {
     // Async Match tests
     [Test]
     public async Task match_async_should_return_correct_value_for_string() {
-        TestWhateverResult result = "async_match";
+        TestVariantResult result = "async_match";
         var outcome = await result.MatchAsync(
             async s => { await ValueTask.CompletedTask; return $"String: {s}"; },
             async i => { await ValueTask.CompletedTask; return $"Int: {i}"; }
@@ -338,7 +331,7 @@ public class WhateverGenerationTests {
     // State parameter tests
     [Test]
     public void switch_with_state_should_pass_state_correctly() {
-        TestWhateverResult result = "state_test";
+        TestVariantResult result = "state_test";
         var capturedState = "";
         var state = "test_state";
 

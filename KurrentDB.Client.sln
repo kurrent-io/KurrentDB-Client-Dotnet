@@ -17,11 +17,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole", "src\TestCons
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.SourceGenerators", "src\Kurrent.Client.SourceGenerators\Kurrent.Client.SourceGenerators.csproj", "{4C4E9633-270B-4BF2-A480-6B6D9E2BF433}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Whatever", "src\Whatever\Whatever.csproj", "{E35FC9A2-5A97-494B-B84D-5CED23762883}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Variant", "src\Variant\Variant.csproj", "{E35FC9A2-5A97-494B-B84D-5CED23762883}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Whatever.SourceGenerators", "src\Whatever.SourceGenerators\Whatever.SourceGenerators.csproj", "{926107C3-EA1D-48AB-8C5A-B097A0D53DEB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Variant.SourceGenerators", "src\Variant.SourceGenerators\Variant.SourceGenerators.csproj", "{926107C3-EA1D-48AB-8C5A-B097A0D53DEB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Whatever.Tests", "test\Whatever.Tests\Whatever.Tests.csproj", "{FE062A56-9FAA-4963-A560-DADF250C76F9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Variant.Tests", "test\Variant.Tests\Variant.Tests.csproj", "{FE062A56-9FAA-4963-A560-DADF250C76F9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kurrent.Client.Integration.Tests", "test\Kurrent.Client.Integration.Tests\Kurrent.Client.Integration.Tests.csproj", "{7EC03CE3-A2DD-46E4-983C-FDA4BFFDCABB}"
 EndProject

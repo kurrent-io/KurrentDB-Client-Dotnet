@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using Kurrent.Whatever;
+using Kurrent.Variant;
 
 namespace Kurrent.Client.Model;
 
@@ -12,7 +12,7 @@ public record AppendStreamSuccess(string Stream, LogPosition Position, StreamRev
 }
 
 [PublicAPI]
-public readonly partial record struct AppendStreamFailure : IWhatever<
+public readonly partial record struct AppendStreamFailure : IVariant<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,
@@ -96,16 +96,16 @@ public readonly record struct HeartbeatOptions(bool Enable, int RecordsThreshold
 }
 
 [PublicAPI]
-public readonly partial record struct ReadMessage : IWhatever<Record, Heartbeat>;
+public readonly partial record struct ReadMessage : IVariant<Record, Heartbeat>;
 
 [PublicAPI]
-public readonly partial record struct SubscribeMessage : IWhatever<Record, Heartbeat>;
+public readonly partial record struct SubscribeMessage : IVariant<Record, Heartbeat>;
 
 /// <summary>
 /// Represents the result of a delete operation on a stream in KurrentDB.
 /// </summary>
 [PublicAPI]
-public readonly partial record struct DeleteStreamError : IWhatever<
+public readonly partial record struct DeleteStreamError : IVariant<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,
@@ -115,26 +115,26 @@ public readonly partial record struct DeleteStreamError : IWhatever<
 /// Represents the result of a tombstone operation on a stream in KurrentDB.
 /// </summary>
 [PublicAPI]
-public readonly partial record struct TombstoneStreamError : IWhatever<
+public readonly partial record struct TombstoneStreamError : IVariant<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,
     ErrorDetails.StreamRevisionConflict>;
 
 [PublicAPI]
-public readonly partial record struct GetStreamInfoError : IWhatever<
+public readonly partial record struct GetStreamInfoError : IVariant<
     ErrorDetails.StreamNotFound,
     ErrorDetails.AccessDenied>;
 
 [PublicAPI]
-public readonly partial record struct SetStreamMetadataError : IWhatever<
+public readonly partial record struct SetStreamMetadataError : IVariant<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,
     ErrorDetails.StreamRevisionConflict>;
 
 [PublicAPI]
-public readonly partial record struct TruncateStreamError : IWhatever<
+public readonly partial record struct TruncateStreamError : IVariant<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,

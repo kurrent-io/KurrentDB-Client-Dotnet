@@ -6,7 +6,7 @@
 		<IsPackable>false</IsPackable>
     <IsRoslynComponent>true</IsRoslynComponent>
     <Nullable>enable</Nullable>
-    <RootNamespace>Kurrent.Whatever.SourceGenerators</RootNamespace>
+    <RootNamespace>Kurrent.Variant.SourceGenerators</RootNamespace>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <!-- This ensures the project itself is treated as an analyzer package -->
     <DevelopmentDependency>true</DevelopmentDependency>
@@ -30,7 +30,7 @@
       of projects that consume this generator.
       ReferenceOutputAssembly="false" is also important for this.
     -->
-    <ProjectReference Include="..\Whatever\Whatever.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Variant\Variant.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>
