@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <LangVersion>latest</LangVersion>
 		<IsPackable>false</IsPackable>
     <IsRoslynComponent>true</IsRoslynComponent>
@@ -20,17 +20,6 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
-<!--    &lt;!&ndash;-->
-<!--      The generator needs to compile against the IWhatever interfaces.-->
-<!--      This ProjectReference is for the generator's own compilation.-->
-<!--      PrivateAssets="all" ensures that the Whatever.dll is not passed along as a dependency-->
-<!--      of projects that consume this generator.-->
-<!--      ReferenceOutputAssembly="false" is also important for this.-->
-<!--    &ndash;&gt;-->
-<!--    <ProjectReference Include="..\Variant\Variant.csproj" PrivateAssets="all" ReferenceOutputAssembly="false" />-->
   </ItemGroup>
 
 </Project>

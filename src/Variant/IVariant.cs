@@ -16,17 +16,6 @@ namespace Kurrent.Variant {
         int Index { get; }
     }
 
-    /// <summary>
-    /// Base struct for efficient Variant implementations when all types are reference types.
-    /// This provides better performance than object-based storage for certain scenarios.
-    /// </summary>
-    public readonly struct VariantValue<T>(T? value, int index) where T : class? {
-        public T?   Value { get; } = value;
-        public int  Index { get; } = index;
-
-        public bool HasValue => Value is not null;
-    }
-
     public interface IVariant<T0> : IVariant;
     public interface IVariant<T0, T1> : IVariant;
     public interface IVariant<T0, T1, T2> : IVariant;

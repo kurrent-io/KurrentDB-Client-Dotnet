@@ -1,28 +1,53 @@
 using Kurrent.Client.Model;
 using Kurrent.Client.Testing.Sample;
-using Kurrent.Variant;
-using KurrentDB.Client;
 
 namespace Kurrent.Client.Tests.Streams;
 
 public class AppendTests : KurrentClientTestFixture {
     [Test]
     [Timeout(60000)]
-    public async Task appends_message_to_new_stream_with_no_stream_expected_state(CancellationToken ct) {
+    public async Task appends_message_to_create_stream(CancellationToken ct) {
         var simulatedGame = Result.Try(() => SimulateGame(GamesAvailable.TicTacToe))
             .ThrowOnError(Should.RecordException);
 
         var expectedRevision = StreamRevision.From(simulatedGame.GameEvents.Count - 1);
 
         await AutomaticClient.Streams
+            .Append(simulatedGame.Stream, ExpectedStreamState.NoStream, simulatedGame.GameEvents, ct) // this could be a Create Stream operation
+            .ShouldNotThrowAsync()
+            .OnSuccessAsync(success => {
+                success.Stream.ShouldBe(simulatedGame.Stream);
+                success.StreamRevision.ShouldBe(expectedRevision);
+                success.Position.ShouldBeGreaterThanOrEqualTo(LogPosition.Earliest);
+            });
+    }
+
+    [Test]
+    [Timeout(60000)]
+    public async Task appends_message(CancellationToken ct) {
+        var simulatedGame = Result.Try(() => SimulateGame(GamesAvailable.TicTacToe))
+            .ThrowOnError(Should.RecordException);
+
+        //var expectedRevision = StreamRevision.From(simulatedGame.GameEvents.Count - 1);
+
+        var expectedRevision = await AutomaticClient.Streams
+            .Append(simulatedGame.Stream, ExpectedStreamState.NoStream, simulatedGame.GameEvents, ct)
+            //.ShouldNotThrowAsync()
+            .MatchAsync(
+                success => success.StreamRevision,
+                failure => throw failure.CreateException()
+            );
+
+        await AutomaticClient.Streams
             .Append(simulatedGame.Stream, simulatedGame.GameEvents, ct)
             .ShouldNotThrowAsync()
-            .OnErrorAsync(err => Should.RecordException(err.ToException()))
             .OnSuccessAsync(val => {
                 val.Stream.ShouldBe(simulatedGame.Stream);
                 val.StreamRevision.ShouldBe(expectedRevision);
                 val.Position.ShouldBeGreaterThanOrEqualTo(LogPosition.Earliest);
             });
+
+
     }
 
     // [Test]

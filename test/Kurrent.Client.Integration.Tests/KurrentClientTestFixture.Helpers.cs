@@ -17,27 +17,6 @@ namespace Kurrent.Client.Tests;
 
 public partial class KurrentClientTestFixture : TestFixture {
     /// <summary>
-    /// Creates a new instance of <see cref="KurrentClient"/> with the specified configuration options.
-    /// </summary>
-    /// <param name="configure">
-    /// An optional action to configure the <see cref="KurrentClientOptionsBuilder"/>. If not provided, default options will be used.
-    /// </param>
-    /// <returns>
-    /// A new instance of <see cref="KurrentClient"/> configured with the specified options.
-    /// </returns>
-    public static KurrentClient CreateClient(Action<KurrentClientOptionsBuilder>? configure = null) {
-        var options = KurrentClientOptions
-            .FromConnectionString(AuthenticatedConnectionString)
-            .WithLoggerFactory(new SerilogLoggerFactory(Log.Logger))
-            .WithSchema(KurrentClientSchemaOptions.Disabled)
-            .WithResilience(KurrentClientResilienceOptions.NoResilience);
-
-        configure?.Invoke(options);
-
-        return options.CreateClient();
-    }
-
-    /// <summary>
     /// Creates a unique stream name for KurrentDB operations, combining the given category with the last part of a randomly generated guid.
     /// </summary>
     /// <param name="category">The category associated with the stream name.</param>
@@ -73,7 +52,7 @@ public partial class KurrentClientTestFixture : TestFixture {
 
         var (stream, logPosition, streamRevision) = result.Match(
             success => success ,
-            error   => throw error.ToException()
+            error   => throw error.CreateException()
         );
 
         Log.Information(
@@ -107,7 +86,7 @@ public partial class KurrentClientTestFixture : TestFixture {
 
             var (_, logPosition, streamRevision) = result.Match(
                 success => success ,
-                error   => throw error.ToException()
+                error   => throw error.CreateException()
             );
 
             Log.Debug(

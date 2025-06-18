@@ -68,8 +68,6 @@ public partial class KurrentStreamsClient {
         try {
             using var session = ServiceClient.MultiStreamAppendSession(cancellationToken: cancellationToken);
 
-            // var temp = await requests.ToListAsync();
-
             await foreach (var request in requests.WithCancellation(cancellationToken)) {
                 var records = await request.Messages
                     .Map(request.Stream, SerializerProvider, cancellationToken)
@@ -123,7 +121,7 @@ public partial class KurrentStreamsClient {
                 _                                                           => throw KurrentClientException.CreateUnknown(nameof(Append), new UnreachableException($"Unreachable error while appending stream: {response.ResultCase}"))
             };
         }
-        catch (Exception ex) {
+        catch (RpcException ex) {
             throw ex;
         }
     }

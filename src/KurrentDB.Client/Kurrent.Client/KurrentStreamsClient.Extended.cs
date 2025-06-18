@@ -38,7 +38,7 @@ public partial class KurrentStreamsClient {
 
     public ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append(string stream, ExpectedStreamState expectedState, Message message, CancellationToken cancellationToken) => Append(new AppendStreamRequest(stream, expectedState, [message]), cancellationToken);
 
-    public ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append(string stream, List<Message> messages, CancellationToken cancellationToken) =>
+    public ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append(string stream, IEnumerable<Message> messages, CancellationToken cancellationToken) =>
         Append(new AppendStreamRequest(stream, ExpectedStreamState.Any, messages), cancellationToken);
 
     // public ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append<T>(string stream, ExpectedStreamState expectedState, T message, CancellationToken cancellationToken) =>
