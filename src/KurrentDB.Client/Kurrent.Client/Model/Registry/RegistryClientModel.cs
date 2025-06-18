@@ -1,7 +1,6 @@
 using System.Runtime.InteropServices;
 using Kurrent.Client.Model;
 using Kurrent.Variant;
-using OneOf;
 
 namespace Kurrent.Client.SchemaRegistry;
 
@@ -43,6 +42,18 @@ public static class ErrorDetails {
 		/// </summary>
 		public string ErrorMessage => $"Schema '{SchemaName}' already exists.";
 	}
+
+    public readonly record struct AccessDenied : IKurrentClientError {
+        /// <summary>
+        /// Gets the unique code identifying the error.
+        /// </summary>
+        public string ErrorCode => nameof(AccessDenied);
+
+        /// <summary>
+        /// Gets the error message indicating that access to the stream was denied.
+        /// </summary>
+        public string ErrorMessage => "Access denied to the requested resource.";
+    }
 }
 
 [StructLayout(LayoutKind.Sequential, Size = 1)]
@@ -51,16 +62,27 @@ public readonly struct Success {
 }
 
 [PublicAPI]
-public readonly partial record struct CreateSchemaError : IVariant<ErrorDetails.SchemaAlreadyExists>;
+public readonly partial record struct CreateSchemaError : IVariant<
+	ErrorDetails.SchemaAlreadyExists,
+	ErrorDetails.AccessDenied>;
 
 [PublicAPI]
-public readonly partial record struct GetSchemaError : IVariant<ErrorDetails.SchemaNotFound>;
+public readonly partial record struct GetSchemaError : IVariant<
+	ErrorDetails.SchemaNotFound,
+	ErrorDetails.AccessDenied>;
 
 [PublicAPI]
-public readonly partial record struct GetSchemaVersionError : IVariant<ErrorDetails.SchemaNotFound>;
+public readonly partial record struct GetSchemaVersionError : IVariant<
+	ErrorDetails.SchemaNotFound,
+	ErrorDetails.AccessDenied>;
 
 [PublicAPI]
-public readonly partial record struct DeleteSchemaError : IVariant<ErrorDetails.SchemaNotFound>;
+public readonly partial record struct DeleteSchemaError : IVariant<
+	ErrorDetails.SchemaNotFound,
+	ErrorDetails.AccessDenied>;
 
 [PublicAPI]
-public readonly partial record struct CheckSchemaCompatibilityError : IVariant<SchemaCompatibilityErrors, ErrorDetails.SchemaNotFound>;
+public readonly partial record struct CheckSchemaCompatibilityError : IVariant<
+	SchemaCompatibilityErrors,
+	ErrorDetails.SchemaNotFound,
+	ErrorDetails.AccessDenied>;

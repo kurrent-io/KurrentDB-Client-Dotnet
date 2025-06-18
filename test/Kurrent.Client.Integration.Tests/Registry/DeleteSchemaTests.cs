@@ -28,12 +28,12 @@ public class DeleteSchemaTests : KurrentClientTestFixture {
 		// Arrange
 		var schemaName = NewSchemaName();
 		var v1 = NewJsonSchemaDefinition();
-
+	
 		await AutomaticClient.Registry
 			.CreateSchema(schemaName, v1.ToJson(), SchemaDataFormat.Json, ct)
 			.ShouldNotThrowAsync()
 			.OnErrorAsync(error => Should.RecordException(error.ToException()));
-
+	
 		// Act & Assert
 		await AutomaticClient.Registry
 			.DeleteSchema(schemaName, ct)

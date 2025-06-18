@@ -73,8 +73,9 @@ public class KurrentRegistryClient {
 		} catch (RpcException ex) {
 			return Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(
 				ex.StatusCode switch {
-					StatusCode.AlreadyExists => new ErrorDetails.SchemaAlreadyExists(schemaName),
-					_                        => throw KurrentClientException.Throw(ex)
+					StatusCode.AlreadyExists    => new ErrorDetails.SchemaAlreadyExists(schemaName),
+					StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+					_                           => throw KurrentClientException.Throw(ex)
 				}
 			);
 		} catch (Exception ex) {
@@ -149,8 +150,9 @@ public class KurrentRegistryClient {
 		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
 			return Result.Failure<Schema, GetSchemaError>(
 				ex.StatusCode switch {
-					StatusCode.NotFound => new ErrorDetails.SchemaNotFound(schemaName),
-					_                   => throw KurrentClientException.CreateUnknown(nameof(GetSchema), ex)
+					StatusCode.NotFound         => new ErrorDetails.SchemaNotFound(schemaName),
+					StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+					_                           => throw KurrentClientException.CreateUnknown(nameof(GetSchema), ex)
 				}
 			);
 		} catch (Exception ex) {
@@ -195,8 +197,9 @@ public class KurrentRegistryClient {
 		} catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound) {
 			return Result.Failure<SchemaVersion, GetSchemaVersionError>(
 				ex.StatusCode switch {
-					StatusCode.NotFound => new ErrorDetails.SchemaNotFound(schemaName),
-					_                   => throw KurrentClientException.CreateUnknown(nameof(GetSchemaVersion), ex)
+					StatusCode.NotFound         => new ErrorDetails.SchemaNotFound(schemaName),
+					StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+					_                           => throw KurrentClientException.CreateUnknown(nameof(GetSchemaVersion), ex)
 				}
 			);
 		} catch (Exception ex) {
@@ -236,8 +239,9 @@ public class KurrentRegistryClient {
 		} catch (RpcException ex) {
 			return Result.Failure<SchemaVersion, GetSchemaVersionError>(
 				ex.StatusCode switch {
-					StatusCode.NotFound => new ErrorDetails.SchemaNotFound(schemaVersionId),
-					_                   => throw KurrentClientException.CreateUnknown(nameof(GetSchemaVersionById), ex)
+					StatusCode.NotFound         => new ErrorDetails.SchemaNotFound(schemaVersionId),
+					StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+					_                           => throw KurrentClientException.CreateUnknown(nameof(GetSchemaVersionById), ex)
 				}
 			);
 		} catch (Exception ex) {
@@ -275,8 +279,9 @@ public class KurrentRegistryClient {
 		} catch (RpcException ex) {
 			return Result.Failure<Success, DeleteSchemaError>(
 				ex.StatusCode switch {
-					StatusCode.NotFound => new ErrorDetails.SchemaNotFound(schemaName),
-					_                   => throw KurrentClientException.CreateUnknown(nameof(DeleteSchema), ex)
+					StatusCode.NotFound         => new ErrorDetails.SchemaNotFound(schemaName),
+					StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+					_                           => throw KurrentClientException.CreateUnknown(nameof(DeleteSchema), ex)
 				}
 			);
 		} catch (Exception ex) {
@@ -327,8 +332,9 @@ public class KurrentRegistryClient {
 		} catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound) {
 			return Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(
 				ex.StatusCode switch {
-					StatusCode.NotFound => new ErrorDetails.SchemaNotFound(identifier.AsSchemaName),
-					_                   => throw KurrentClientException.CreateUnknown(nameof(CheckSchemaCompatibility), ex)
+					StatusCode.NotFound         => new ErrorDetails.SchemaNotFound(identifier.AsSchemaName),
+					StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+					_                           => throw KurrentClientException.CreateUnknown(nameof(CheckSchemaCompatibility), ex)
 				}
 			);
 		} catch (Exception ex) {
