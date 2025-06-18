@@ -19,7 +19,6 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 		await AutomaticClient.Registry
 			.GetSchemaVersion(schemaName, cancellationToken: ct)
 			.ShouldNotThrowAsync()
-			.OnErrorAsync(error => Should.RecordException(error.ToException()))
 			.OnSuccessAsync(schemaVersion => {
 				schemaVersion.VersionId.ShouldBeGuid();
 				schemaVersion.VersionNumber.ShouldBe(1);
@@ -41,7 +40,6 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 		await AutomaticClient.Registry
 			.GetSchemaVersion(schemaName, createResult.Value.VersionNumber, cancellationToken: ct)
 			.ShouldNotThrowAsync()
-			.OnErrorAsync(error => Should.RecordException(error.ToException()))
 			.OnSuccessAsync(schemaVersion => {
 				schemaVersion.VersionId.ShouldBeGuid();
 				schemaVersion.VersionNumber.ShouldBe(1);
@@ -63,7 +61,6 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 		await AutomaticClient.Registry
 			.GetSchemaVersionById(createResult.Value.VersionId, cancellationToken: ct)
 			.ShouldNotThrowAsync()
-			.OnErrorAsync(error => Should.RecordException(error.ToException()))
 			.OnSuccessAsync(schemaVersion => {
 				schemaVersion.VersionId.ShouldBeGuid();
 				schemaVersion.VersionNumber.ShouldBe(1);
@@ -83,9 +80,9 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 			.GetSchemaVersion(nonExistentSchemaName, cancellationToken: ct)
 			.ShouldNotThrowAsync()
 			.OnErrorAsync(error => {
-				var exception = error.ToException().ShouldBeOfType<KurrentClientException>();
-				exception.Message.ShouldBe($"Schema '{nonExistentSchemaName}' not found.");
-				exception.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
+				error.IsSchemaNotFound.ShouldBeTrue();
+				error.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
+				error.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema '{nonExistentSchemaName}' not found.");
 			});
 	}
 
@@ -97,8 +94,7 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 
 		await AutomaticClient.Registry
 			.CreateSchema(schemaName, schema.ToJson(), SchemaDataFormat.Json, ct)
-			.ShouldNotThrowAsync()
-			.OnErrorAsync(error => Should.RecordException(error.ToException()));
+			.ShouldNotThrowAsync();
 
 		const int nonExistentVersionNumber = 999;
 
@@ -107,9 +103,9 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 			.GetSchemaVersion(schemaName, nonExistentVersionNumber, cancellationToken: ct)
 			.ShouldNotThrowAsync()
 			.OnErrorAsync(error => {
-				var exception = error.ToException().ShouldBeOfType<KurrentClientException>();
-				exception.Message.ShouldBe($"Schema '{schemaName}' not found.");
-				exception.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
+				error.IsSchemaNotFound.ShouldBeTrue();
+				error.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
+				error.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema '{schemaName}' not found.");
 			});
 	}
 
@@ -123,9 +119,9 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 			.GetSchemaVersionById(nonExistentVersionId, cancellationToken: ct)
 			.ShouldNotThrowAsync()
 			.OnErrorAsync(error => {
-				var exception = error.ToException().ShouldBeOfType<KurrentClientException>();
-				exception.Message.ShouldBe($"Schema version '{nonExistentVersionId}' not found.");
-				exception.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
+				error.IsSchemaNotFound.ShouldBeTrue();
+				error.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
+				error.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema version '{nonExistentVersionId}' not found.");
 			});
 	}
 }

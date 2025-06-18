@@ -26,7 +26,6 @@ public class GetSchemaTests : KurrentClientTestFixture {
 		await AutomaticClient.Registry
 			.GetSchema(schemaName, cancellationToken: ct)
 			.ShouldNotThrowAsync()
-			.OnErrorAsync(error => Should.RecordException(error.ToException()))
 			.OnSuccessAsync(schema => {
 				schema.LatestSchemaVersion.ShouldBe(createdSchemaResult.Value.VersionNumber);
 				schema.SchemaName.Value.ShouldBe(schemaName);
@@ -49,9 +48,9 @@ public class GetSchemaTests : KurrentClientTestFixture {
 			.GetSchema(schemaName, cancellationToken: ct)
 			.ShouldNotThrowAsync()
 			.OnErrorAsync(error => {
-				var exception = error.ToException().ShouldBeOfType<KurrentClientException>();
-				exception.Message.ShouldBe($"Schema '{schemaName}' not found.");
-				exception.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
+				error.IsSchemaNotFound.ShouldBeTrue();
+				error.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
+				error.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema '{schemaName}' not found.");
 			});
 	}
 
@@ -69,9 +68,9 @@ public class GetSchemaTests : KurrentClientTestFixture {
 			.GetSchema(schemaName, cancellationToken: ct)
 			.ShouldNotThrowAsync()
 			.OnErrorAsync(error => {
-				var exception = error.ToException().ShouldBeOfType<KurrentClientException>();
-				exception.Message.ShouldBe($"Schema '{schemaName}' not found.");
-				exception.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
+				error.IsSchemaNotFound.ShouldBeTrue();
+				error.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
+				error.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema '{schemaName}' not found.");
 			});
 	}
 }

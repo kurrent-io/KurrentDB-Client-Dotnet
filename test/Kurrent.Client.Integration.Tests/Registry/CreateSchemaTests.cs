@@ -17,7 +17,6 @@ public class CreateSchemaTests : KurrentClientTestFixture {
 		await AutomaticClient.Registry
 			.CreateSchema(schemaName, v1.ToJson(), SchemaDataFormat.Json, ct)
 			.ShouldNotThrowAsync()
-            .OnErrorAsync(error => Should.RecordException(error.ToException()))
 			.OnSuccessAsync(async schemaVersionDescriptor => {
 				schemaVersionDescriptor.VersionId.ShouldBeGuid();
 				schemaVersionDescriptor.VersionNumber.ShouldBe(1);
@@ -45,7 +44,6 @@ public class CreateSchemaTests : KurrentClientTestFixture {
 		await AutomaticClient.Registry
 			.CreateSchema(schemaName, v1.ToJson(), SchemaDataFormat.Json, ct)
 			.ShouldNotThrowAsync()
-            .OnErrorAsync(error => Should.RecordException(error.ToException()))
 			.OnSuccessAsync(async schemaVersionDescriptor => {
 				schemaVersionDescriptor.VersionId.ShouldBeGuid();
 				schemaVersionDescriptor.VersionNumber.ShouldBe(1);
@@ -67,10 +65,9 @@ public class CreateSchemaTests : KurrentClientTestFixture {
 			.CreateSchema(schemaName, v2.ToJson(), SchemaDataFormat.Json, ct)
 			.ShouldNotThrowAsync()
 			.OnErrorAsync(error => {
-				var exception = error.ToException().ShouldBeOfType<KurrentClientException>();
-
-				exception.Message.ShouldBe($"Schema '{schemaName}' already exists.");
-				exception.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaAlreadyExists));
+				error.IsSchemaAlreadyExists.ShouldBeTrue();
+				error.AsSchemaAlreadyExists.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaAlreadyExists));
+				error.AsSchemaAlreadyExists.ErrorMessage.ShouldBe($"Schema '{schemaName}' already exists.");
 			});
 	}
 }
