@@ -59,7 +59,7 @@ public class KurrentRegistryClient {
 			SchemaName = schemaName,
 			Details = new Contracts.SchemaDetails {
 				DataFormat    = (Contracts.SchemaDataFormat)dataFormat,
-				Compatibility = (Contracts.CompatibilityMode)compatibilityMode, // how to do this, unspecified and the server will set the value?
+				Compatibility = (Contracts.CompatibilityMode)compatibilityMode,
 				Description   = description,
 				Tags          = { tags }
 			},
@@ -78,9 +78,7 @@ public class KurrentRegistryClient {
 				onError: exception => {
 					if (exception is RpcException rpcEx) {
 						return rpcEx.StatusCode switch {
-							StatusCode.AlreadyExists => Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(
-								new ErrorDetails.SchemaAlreadyExists(schemaName)
-							),
+							StatusCode.AlreadyExists    => Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(new ErrorDetails.SchemaAlreadyExists(schemaName)),
 							StatusCode.PermissionDenied => Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(new ErrorDetails.AccessDenied()),
 							StatusCode.InvalidArgument  => throw KurrentClientException.Throw<BadRequest>(rpcEx),
 							_                           => throw KurrentClientException.CreateUnknown(nameof(CreateSchema), rpcEx)
@@ -252,10 +250,10 @@ public class KurrentRegistryClient {
 				onError: exception => {
 					if (exception is RpcException rpcEx) {
 						return rpcEx.StatusCode switch {
-							StatusCode.NotFound => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.SchemaNotFound(schemaVersionId)),
+							StatusCode.NotFound         => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.SchemaNotFound(schemaVersionId)),
 							StatusCode.PermissionDenied => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.AccessDenied()),
-							StatusCode.InvalidArgument => throw KurrentClientException.Throw<BadRequest>(rpcEx),
-							_ => throw KurrentClientException.CreateUnknown(nameof(GetSchemaVersionById), rpcEx)
+							StatusCode.InvalidArgument  => throw KurrentClientException.Throw<BadRequest>(rpcEx),
+							_                           => throw KurrentClientException.CreateUnknown(nameof(GetSchemaVersionById), rpcEx)
 						};
 					}
 
