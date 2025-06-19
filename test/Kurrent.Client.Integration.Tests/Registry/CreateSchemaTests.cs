@@ -17,6 +17,7 @@ public class CreateSchemaTests : KurrentClientTestFixture {
 		await AutomaticClient.Registry
 			.CreateSchema(schemaName, v1.ToJson(), SchemaDataFormat.Json, ct)
 			.ShouldNotThrowAsync()
+			.OnErrorAsync(error => KurrentClientException.Throw(error))
 			.OnSuccessAsync(async schemaVersionDescriptor => {
 				schemaVersionDescriptor.VersionId.ShouldBeGuid();
 				schemaVersionDescriptor.VersionNumber.ShouldBe(1);
@@ -44,6 +45,7 @@ public class CreateSchemaTests : KurrentClientTestFixture {
 		await AutomaticClient.Registry
 			.CreateSchema(schemaName, v1.ToJson(), SchemaDataFormat.Json, ct)
 			.ShouldNotThrowAsync()
+			.OnErrorAsync(error => KurrentClientException.Throw(error))
 			.OnSuccessAsync(async schemaVersionDescriptor => {
 				schemaVersionDescriptor.VersionId.ShouldBeGuid();
 				schemaVersionDescriptor.VersionNumber.ShouldBe(1);
