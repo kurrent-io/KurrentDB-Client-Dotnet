@@ -7,6 +7,8 @@ using KurrentDB.Protocol;
 
 namespace Kurrent.Client.Model;
 
+public interface IKurrentOperationError : IResultError;
+
 /// <summary>
 /// Represents a contract for Kurrent client-specific errors.
 /// Extends IResultError with default KurrentClientException creation behavior.

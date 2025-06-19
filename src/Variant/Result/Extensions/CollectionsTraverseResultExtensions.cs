@@ -1,5 +1,10 @@
 namespace Kurrent;
 
+/// <summary>
+/// Provides extension methods for traversing collections and transforming elements to Results,
+/// combining mapping and sequencing operations for functional composition.
+/// </summary>
+[PublicAPI]
 public static class CollectionsTraverseResultExtensions {
     /// <summary>
     /// Projects each element of a sequence to a <see cref="Result{TValue,TError}"/> and collects them into a single <see cref="Result{TValue,TError}"/>.
@@ -56,10 +61,10 @@ public static class CollectionsTraverseResultExtensions {
         await foreach (var item in source.ConfigureAwait(false)) {
             var result = selector(item);
             if (result.IsFailure)
-                return Kurrent.Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
+                return Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
             successValues.Add(result.Value);
         }
-        return Kurrent.Result.Success<IReadOnlyList<TNext>, TError>(successValues);
+        return Result.Success<IReadOnlyList<TNext>, TError>(successValues);
     }
 
     /// <summary>
@@ -86,10 +91,10 @@ public static class CollectionsTraverseResultExtensions {
         await foreach (var item in source.ConfigureAwait(false)) {
             var result = await selector(item).ConfigureAwait(false);
             if (result.IsFailure)
-                return Kurrent.Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
+                return Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
             successValues.Add(result.Value);
         }
-        return Kurrent.Result.Success<IReadOnlyList<TNext>, TError>(successValues);
+        return Result.Success<IReadOnlyList<TNext>, TError>(successValues);
     }
 
     /// <summary>
@@ -119,10 +124,10 @@ public static class CollectionsTraverseResultExtensions {
         await foreach (var item in source.ConfigureAwait(false)) {
             var result = selector(item, state);
             if (result.IsFailure)
-                return Kurrent.Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
+                return Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
             successValues.Add(result.Value);
         }
-        return Kurrent.Result.Success<IReadOnlyList<TNext>, TError>(successValues);
+        return Result.Success<IReadOnlyList<TNext>, TError>(successValues);
     }
 
     /// <summary>
@@ -150,9 +155,9 @@ public static class CollectionsTraverseResultExtensions {
         await foreach (var item in source.ConfigureAwait(false)) {
             var result = await selector(item, state).ConfigureAwait(false);
             if (result.IsFailure)
-                return Kurrent.Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
+                return Result.Failure<IReadOnlyList<TNext>, TError>(result.Error);
             successValues.Add(result.Value);
         }
-        return Kurrent.Result.Success<IReadOnlyList<TNext>, TError>(successValues);
+        return Result.Success<IReadOnlyList<TNext>, TError>(successValues);
     }
 }

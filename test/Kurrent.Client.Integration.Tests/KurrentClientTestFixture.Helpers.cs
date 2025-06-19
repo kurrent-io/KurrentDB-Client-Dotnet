@@ -44,10 +44,10 @@ public partial class KurrentClientTestFixture : TestFixture {
 
         var result = await AutomaticClient.Streams
             .Append(streamName, messages, cancellationToken)
-            .OnErrorAsync(err => err.Throw())
+            .OnFailureAsync(err => err.Throw())
             .MatchAsync(
-                 Kurrent.Result.Success<AppendStreamSuccess, AppendStreamFailure>,
-                 Kurrent.Result.Failure<AppendStreamSuccess, AppendStreamFailure>)
+                 Result.Success<AppendStreamSuccess, AppendStreamFailure>,
+                 Result.Failure<AppendStreamSuccess, AppendStreamFailure>)
             .ConfigureAwait(false);
 
         var (stream, logPosition, streamRevision) = result.Match(
@@ -62,50 +62,94 @@ public partial class KurrentClientTestFixture : TestFixture {
         return (logPosition, streamRevision, messages);
     }
 
-    public async IAsyncEnumerable<(Guid GameId, StreamName Stream, List<Message> GameEvents, LogPosition Position, StreamRevision Revision)> SeedGameSimulations(
-        int simulationsCount,
-        Action<Metadata>? transformMetadata = null,
-        SchemaDataFormat dataFormat = SchemaDataFormat.Json,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default
+    public async IAsyncEnumerable<SeededGame> SeedGameSimulations(
+        int simulationsCount, Action<Metadata>? transformMetadata = null, SchemaDataFormat dataFormat = SchemaDataFormat.Json, [EnumeratorCancellation] CancellationToken ct = default
     ) {
         transformMetadata ??= _ => { };
 
         foreach (var i in Enumerable.Range(0, simulationsCount)) {
-            var simulatedGame = (i % 2) switch {
-                0 => SimulateGame(GamesAvailable.TicTacToe, transformMetadata, dataFormat),
-                _ => SimulateGame(GamesAvailable.RockPaperScissors, transformMetadata, dataFormat)
-            };
+            // Uncomment the following lines to alternate between different games for simulation.
+            // RockPaperScissors is currently broken and not supported in the tests.
+            // var simulatedGame = (i % 2) switch {
+            //     0 => SimulateGame(GamesAvailable.TicTacToe, transformMetadata, dataFormat),
+            //     _ => SimulateGame(GamesAvailable.RockPaperScissors, transformMetadata, dataFormat)
+            // };
 
-            var result = await AutomaticClient.Streams
-                .Append(simulatedGame.Stream, simulatedGame.GameEvents, cancellationToken)
-                .OnErrorAsync(err => err.Throw())
-                .MatchAsync(
-                    Kurrent.Result.Success<AppendStreamSuccess, AppendStreamFailure>,
-                    Kurrent.Result.Failure<AppendStreamSuccess, AppendStreamFailure>)
+            var simulatedGame = SimulateGame(GamesAvailable.TicTacToe, transformMetadata, dataFormat);
+
+            var (stream, logPosition, streamRevision) = await AutomaticClient.Streams
+                .Append(simulatedGame.Stream, ExpectedStreamState.NoStream, simulatedGame.GameEvents, ct)
+                .ShouldNotThrowOrFailAsync()
                 .ConfigureAwait(false);
-
-            var (_, logPosition, streamRevision) = result.Match(
-                success => success ,
-                error   => throw error.CreateException()
-            );
 
             Log.Debug(
                 "Simulated game {GameId} and with {Count} events to stream {StreamName} at position {LogPosition} with revision {StreamRevision}",
                 simulatedGame.GameId, simulatedGame.GameEvents.Count, simulatedGame.Stream, logPosition, streamRevision);
 
-            yield return (
-                simulatedGame.GameId,
-                simulatedGame.Stream,
-                simulatedGame.GameEvents,
-                logPosition,
-                streamRevision
+            yield return new(
+                new SimulatedGame(simulatedGame.GameId, simulatedGame.Stream, simulatedGame.GameEvents),
+                logPosition, streamRevision
             );
         }
+
+        // the following code is an attempt to simulate multiple games and append them in a single request.
+        // This is currently commented out because it is not used in the tests, but it can be useful for future scenarios.
+
+        // List<AppendStreamRequest> requests = [];
+        //
+        // foreach (var i in Enumerable.Range(0, simulationsCount)) {
+        //     var simulatedGame = TrySimulateGame(GamesAvailable.TicTacToe, transformMetadata, dataFormat);
+        //
+        //     var request = new AppendStreamRequest(
+        //         simulatedGame.Stream,
+        //         ExpectedStreamState.NoStream,
+        //         simulatedGame.GameEvents
+        //     );
+        //
+        //     requests.Add(request);
+        // }
+        //
+        // var result = await AutomaticClient.Streams
+        //     .Append(requests, ct)
+        //     .ShouldNotThrowAsync()
+        //     .OnFailureAsync(failures => {
+        //         failures.Count.ShouldBeGreaterThan(0);
+        //         Should.NotThrow(() => failures.FirstOrDefault().Error.Throw());
+        //     })
+        //     .MatchAsync(
+        //         success => success.Traverse(map: x => {
+        //             return (
+        //                 // GameId,
+        //                 // simulatedGame.Stream,
+        //                 // simulatedGame.GameEvents,
+        //                 x.Position,
+        //                 x.StreamRevision
+        //             );
+        //
+        //         }),
+        //         Result.Failure<List<AppendStreamSuccess>, List<AppendStreamFailure>>
+        //     )
+        //     .ConfigureAwait(false);
     }
+
+    public async ValueTask<SeededGame> SeedGame(
+        Action<Metadata>? transformMetadata = null, SchemaDataFormat dataFormat = SchemaDataFormat.Json, CancellationToken ct = default
+    ) => await SeedGameSimulations(1, transformMetadata, dataFormat, ct).SingleAsync(ct).ConfigureAwait(false);
+
+    public ValueTask<SeededGame> SeedGame(SchemaDataFormat dataFormat = SchemaDataFormat.Json, CancellationToken ct = default) =>
+         SeedGame(null, dataFormat, ct);
+
+    public ValueTask<SeededGame> SeedGame(CancellationToken ct = default) =>
+         SeedGame(SchemaDataFormat.Json, ct);
+
+    public record SeededGame(SimulatedGame Game, LogPosition Position, StreamRevision Revision);
 
     public record SimulatedGame(Guid GameId, StreamName Stream, List<Message> GameEvents);
 
-    public SimulatedGame SimulateGame(GamesAvailable game, Action<Metadata>? transformMetadata = null, SchemaDataFormat dataFormat = SchemaDataFormat.Json) {
+    public SimulatedGame TrySimulateGame(GamesAvailable game, Action<Metadata>? transformMetadata = null, SchemaDataFormat dataFormat = SchemaDataFormat.Json) =>
+        Result.Try(() => SimulateGame(GamesAvailable.TicTacToe)).ShouldNotThrow();
+
+    SimulatedGame SimulateGame(GamesAvailable game, Action<Metadata>? transformMetadata = null, SchemaDataFormat dataFormat = SchemaDataFormat.Json) {
         var simulatedGame = SimulatedGame();
         var metadata = new Metadata().Transform(transformMetadata ?? (_ => { }));
 
@@ -193,16 +237,23 @@ public partial class KurrentClientTestFixture : TestFixture {
 
     protected static IEnumerable<Message> GenerateTestMessages(SchemaDataFormat dataFormat = SchemaDataFormat.Json) =>
         GenerateTestMessages(-1, _ => { }, dataFormat);
-}
 
-//
-// // TODO: Remove this when we have a better way to handle exceptions in tests.
-// static class ShouldThrowAsyncExtensions {
-//     public static Task<TException> ShouldThrowAsync<TException>(this KurrentDBClient.ReadStreamResult source) where TException : Exception =>
-//         source.ToArrayAsync().AsTask().ShouldThrowAsync<TException>();
-//
-//     public static async Task ShouldThrowAsync<TException>(this KurrentDBClient.ReadStreamResult source, Action<TException> handler) where TException : Exception {
-//         var ex = await source.ShouldThrowAsync<TException>();
-//         handler(ex);
-//     }
-// }
+    /// <summary>
+    /// Generates multiple append requests for a specified number of streams, all with different simulated games.
+    /// </summary>
+    public List<AppendStreamRequest> GenerateMultipleCreateGameRequests(int streams) =>
+        Enumerable.Range(0, streams).Select(sequence => GenerateSingleGameAppendRequest(sequence, ExpectedStreamState.NoStream)).ToList();
+
+    /// <summary>
+    /// Generates a single append request for a stream with a simulated game.
+    /// </summary>
+    public AppendStreamRequest GenerateSingleGameAppendRequest(int sequence, ExpectedStreamState expectedState) {
+        var simulatedGame = TrySimulateGame(GamesAvailable.TicTacToe);
+
+        return new AppendStreamRequest(
+            $"{simulatedGame.Stream}-{sequence:000}",
+            expectedState,
+            simulatedGame.GameEvents
+        );
+    }
+}

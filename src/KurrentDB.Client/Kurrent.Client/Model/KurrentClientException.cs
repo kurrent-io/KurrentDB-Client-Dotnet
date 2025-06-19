@@ -1,3 +1,5 @@
+using Humanizer;
+
 namespace Kurrent.Client.Model;
 
 /// <summary>
@@ -28,6 +30,10 @@ public class KurrentClientException(string errorCode, string message, Metadata? 
     public static KurrentClientException Throw<T>(T error, Exception? innerException = null) where T : notnull =>
         throw new KurrentClientException(typeof(T).Name, error.ToString()!, null, innerException);
 
+    public static KurrentClientException Wrap<T>(T exception, string? errorCode = null) where T : Exception =>
+        new KurrentClientException(errorCode ?? exception.GetType().Name, exception.Message, null, exception);
+
+
     /// <summary>
     /// Creates a <see cref="KurrentClientException"/> for an unknown or unexpected error that occurred during a specific operation.
     /// </summary>
@@ -52,4 +58,21 @@ public class KurrentClientException(string errorCode, string message, Metadata? 
     /// <exception cref="ArgumentException"><paramref name="operation"/> is empty or consists only of white-space characters.</exception>
     public static KurrentClientException ThrowUnknown(string operation, Exception innerException) =>
         throw CreateUnknown(operation, innerException);
+
+
+    public static KurrentClientException CreateUnexpected(string operation, Exception innerException) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
+        return new(operation.Underscore().ToUpperInvariant(), $"Unexpected behaviour detected during {operation}: {innerException.Message}", null, innerException);
+    }
+    public static KurrentClientException CreateUnexpected(string operation, Metadata metadata, Exception innerException) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
+        return new(operation.Underscore().ToUpperInvariant(), $"Unexpected behaviour detected during {operation}: {innerException.Message}", metadata, innerException);
+    }
+
+    public static KurrentClientException ThrowUnexpected(string operation, Exception innerException) =>
+        throw CreateUnexpected(operation, innerException);
+
+    public static KurrentClientException ThrowUnexpected(string operation, Metadata metadata, Exception innerException) =>
+        throw CreateUnexpected(operation, metadata, innerException);
+
 }

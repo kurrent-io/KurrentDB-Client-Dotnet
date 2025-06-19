@@ -11,8 +11,8 @@ public static class ResultThrowExtensions {
     /// <typeparam name="TError">The type of the error value.</typeparam>
     /// <typeparam name="TException">The type of the exception to throw.</typeparam>
     /// <returns>The success value if the result represents success.</returns>
-    /// <exception sref="TException">Thrown when the result represents an error.</exception>
-    public static TValue ThrowOnError<TValue, TError, TException>(this Result<TValue, TError> result, Func<TError, TException> exceptionFactory) where TException : Exception where TError : notnull =>
+    /// <exception cref="TException">Thrown when the result represents an error.</exception>
+    public static TValue ThrowOnException<TValue, TError, TException>(this Result<TValue, TError> result, Func<TError, TException> exceptionFactory) where TException : Exception where TError : notnull =>
         result.IsFailure ? throw exceptionFactory(result.Error) : result.Value;
 
     /// <summary>
@@ -24,21 +24,32 @@ public static class ResultThrowExtensions {
     /// <typeparam name="TError">The type of the error value.</typeparam>
     /// <returns>The success value if the result represents success.</returns>
     /// <exception cref="Exception">Thrown when the result represents an error.</exception>
-    public static TValue ThrowOnError<TValue, TError>(this Result<TValue, TError> result, Func<TError, Exception> exceptionFactory) where TError : notnull =>
+    public static TValue ThrowOnException<TValue, TError>(this Result<TValue, TError> result, Func<TError, Exception> exceptionFactory) where TError : notnull =>
         result.IsFailure ? throw exceptionFactory(result.Error) : result.Value;
 
     public static async ValueTask<TSuccess> ThrowOnErrorAsync<TSuccess, TError, TException>(
         this ValueTask<Result<TSuccess, TError>> resultTask, Func<TError, TException> exceptionFactory)
         where TException : Exception where TSuccess : notnull where TError : notnull {
         var result = await resultTask.ConfigureAwait(false);
-        return result.ThrowOnError(exceptionFactory);
+        return result.ThrowOnException(exceptionFactory);
     }
 
-    public static async ValueTask<TValue> ThrowOnErrorAsync<TValue, TError>(
+    public static async ValueTask<TValue> ThrowOnExceptionAsync<TValue, TError>(
         this ValueTask<Result<TValue, TError>> resultTask, Func<TError, Exception> exceptionFactory)
         where TValue : notnull where TError : notnull {
 
         var result = await resultTask.ConfigureAwait(false);
-        return result.ThrowOnError(exceptionFactory);
+        return result.ThrowOnException(exceptionFactory);
+    }
+
+    public static TValue ThrowOnException<TValue>(this Result<TValue, Exception> result) =>
+        result.IsFailure ? throw result.Error : result.Value;
+
+    public static async ValueTask<TValue> ThrowOnExceptionAsync<TValue>(
+        this ValueTask<Result<TValue, Exception>> resultTask)
+        where TValue : notnull {
+
+        var result = await resultTask.ConfigureAwait(false);
+        return result.ThrowOnException();
     }
 }

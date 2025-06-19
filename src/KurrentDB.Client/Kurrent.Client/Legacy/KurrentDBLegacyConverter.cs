@@ -77,7 +77,7 @@ static class KurrentDBLegacyMapper {
         var metadata = metadataDecoder.Decode(resolvedEvent.OriginalEvent.Metadata, new(
             resolvedEvent.OriginalEvent.EventStreamId,
             resolvedEvent.OriginalEvent.EventType,
-            resolvedEvent.OriginalEvent.ContentType.GetSchemaDataFormat()
+            resolvedEvent.OriginalEvent.ContentType.GetSchemaDataFormat() // it will always be json or octet-stream
         ));
 
 		// // Handle backwards compatibility with old data by injecting the legacy schema in the metadata.

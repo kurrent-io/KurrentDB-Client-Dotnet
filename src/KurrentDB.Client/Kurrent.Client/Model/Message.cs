@@ -83,7 +83,7 @@ public class MessageBuilder {
 			throw new InvalidOperationException("Message value cannot be null");
 
 		// Create a copy of metadata to avoid modifying the original
-		var metadata = new Metadata(_message.Metadata)
+		var metadata = _message.Metadata.CreateUnlockedCopy()
 			.With(SystemMetadataKeys.SchemaDataFormat, _message.DataFormat);
 
 		return _message with { Metadata = metadata };

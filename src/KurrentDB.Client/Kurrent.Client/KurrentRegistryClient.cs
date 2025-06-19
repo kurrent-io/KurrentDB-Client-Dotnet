@@ -74,10 +74,10 @@ public class KurrentRegistryClient {
             return new ErrorDetails.SchemaAlreadyExists(schemaName);
         }
         catch (RpcException ex) {
-            throw new KurrentClientException(ex.StatusCode.ToString(), $"An error occurred while creating the schema: {ex.Message}", ex);
+            throw new KurrentClientException(ex.StatusCode.ToString(), $"An error occurred while creating the schema: {ex.Message}", null, ex);
         }
         catch (Exception ex) {
-            throw new KurrentClientException("CreateSchema", "An error occurred while creating the schema.", ex);
+            throw new KurrentClientException("CreateSchema", "An error occurred while creating the schema.", null, ex);
         }
     }
 

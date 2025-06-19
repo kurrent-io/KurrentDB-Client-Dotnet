@@ -1,75 +1,57 @@
 using Kurrent.Client.Model;
 using Kurrent.Client.Testing.Sample;
-using Kurrent.Variant;
-using KurrentDB.Client;
+using Kurrent.Client.Testing.TUnit;
 
 namespace Kurrent.Client.Tests.Streams;
 
 public class DeleteTests : KurrentClientTestFixture {
-    [Test]
-    [Timeout(60000)]
-    public async Task appends_message_to_new_stream_with_no_stream_expected_state(CancellationToken ct) {
-        var simulatedGame = Result.Try(() => SimulateGame(GamesAvailable.TicTacToe))
-            .ThrowOnError(Should.RecordException);
-
-        var expectedRevision = StreamRevision.From(simulatedGame.GameEvents.Count - 1);
-
-        // await AutomaticClient.Streams
-        //     .Append(simulatedGame.Stream, simulatedGame.GameEvents, ct)
-        //     .ShouldNotThrowAsync()
-        //     .OnErrorAsync(err => Should.RecordException(err.ToException()))
-        //     .OnSuccessAsync(val => {
-        //         val.Stream.ShouldBe(simulatedGame.Stream);
-        //         val.StreamRevision.ShouldBe(expectedRevision);
-        //         val.Position.ShouldBeGreaterThanOrEqualTo(LogPosition.Earliest);
-        //     });
+    public class DeletesStreamTestCases : TestCaseGenerator<ExpectedStreamState, string> {
+        protected override IEnumerable<(ExpectedStreamState, string)> Data() => [
+            (ExpectedStreamState.StreamExists, nameof(ExpectedStreamState.StreamExists)),
+            (ExpectedStreamState.Any, nameof(ExpectedStreamState.Any)),
+        ];
     }
 
-    // [Test]
-    // [Timeout(60000)]
-    // public async Task deletes_existing_stream_with_expected_revision(CancellationToken ct) {
-    //     // Arrange
-    //     var stream = $"Game-{Guid.NewGuid().ToString().Substring(24, 12)}";
-    //
-    //     var msg = new GameStarted(Guid.NewGuid(), Player.X);
-    //
-    //     var appendResult = await AutomaticClient.Streams
-    //         .Append(stream, [msg], ct)
-    //         .ConfigureAwait(false);
-    //
-    //     if (appendResult.IsError)
-    //         appendResult.AsError.Throw();
-    //
-    //     // Act
-    //     var deleteResult = await AutomaticClient.Streams
-    //         .Delete(stream, appendResult.AsSuccess.StreamRevision, ct)
-    //         .ConfigureAwait(false);
-    //
-    //     // Assert
-    //     deleteResult.IsSuccess.ShouldBeTrue();
-    // }
-    //
-    // [Test]
-    // [Timeout(60000)]
-    // public async Task tombstones_existing_stream_with_expected_revision(CancellationToken ct) {
-    //     // Arrange
-    //     var stream = $"Game-{Guid.NewGuid():N[24,12]}";
-    //
-    //     var msg = new GameStarted(Guid.NewGuid(), Player.X);
-    //
-    //     var appendResult = await AutomaticClient.Streams
-    //         .Append(stream, msg, ct)
-    //         .ConfigureAwait(false);
-    //
-    //     if (appendResult.IsError)
-    //         appendResult.AsError.Throw();
-    //
-    //     // Act
-    //     var deleteResult = await AutomaticClient.Streams
-    //         .Tombstone(stream, appendResult.AsSuccess.StreamRevision, ct)
-    //         .ConfigureAwait(false);
-    //
-    //     // Assert
-    //     deleteResult.IsSuccess.ShouldBeTrue();
-    // }
+    [Test]
+    [DeletesStreamTestCases]
+    public async Task deletes_stream(ExpectedStreamState expectedState, string testCase, CancellationToken ct) {
+        var seededGame = await SeedGame(ct);
+
+        await AutomaticClient.Streams
+            .Delete(seededGame.Game.Stream, expectedState, ct)
+            .ShouldNotThrowOrFailAsync(
+                position => position.ShouldBeGreaterThanOrEqualTo(seededGame.Position));
+    }
+
+    [Test]
+    public async Task deletes_stream_with_expected_revision(CancellationToken ct) {
+        var simulation = await SeedGame(ct);
+
+        await AutomaticClient.Streams
+            .Delete(simulation.Game.Stream, simulation.Revision, ct)
+            .ShouldNotThrowOrFailAsync(position =>
+                position.ShouldBeGreaterThanOrEqualTo(simulation.Position));
+    }
+
+    [Test]
+    public async Task returns_revision_conflict_error_when_revision_is_not_matched(CancellationToken ct) {
+        var simulation = await SeedGame(ct);
+
+        await AutomaticClient.Streams
+            .Delete(simulation.Game.Stream, simulation.Revision + 1, ct)
+            .ShouldFailAsync(deleteError =>
+                deleteError.Value.ShouldBeOfType<ErrorDetails.StreamRevisionConflict>());
+    }
+
+    [Test]
+    public async Task returns_stream_not_found_error_when_deleting_non_existing_stream(CancellationToken ct) {
+        var game = TrySimulateGame(GamesAvailable.TicTacToe);
+
+        // TODO: This is failing because we have a real error in the legacy client or the db
+        //       Should return not found or already deleted errors but returns revision conflict error
+        await AutomaticClient.Streams
+            .Delete(game.Stream, ExpectedStreamState.StreamExists, ct)
+            .ShouldFailAsync(deleteError =>
+                deleteError.Value.ShouldBeOfType<ErrorDetails.StreamNotFound>());
+    }
 }

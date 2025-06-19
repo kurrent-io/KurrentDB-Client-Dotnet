@@ -33,7 +33,7 @@ public readonly partial record struct Result<TValue, TError> {
     /// </summary>
     /// <param name="action">The action to perform on the error value.</param>
     /// <returns>The current <see cref="Result{TValue,TError}"/> instance.</returns>
-    public Result<TValue, TError> OnError(Action<TError> action) {
+    public Result<TValue, TError> OnFailure(Action<TError> action) {
         if (IsFailure) action(Error);
         return this;
     }
@@ -46,7 +46,7 @@ public readonly partial record struct Result<TValue, TError> {
     /// <param name="action">The action to perform on the error value, taking additional state.</param>
     /// <param name="state">The state to pass to the action.</param>
     /// <returns>The current <see cref="Result{TValue,TError}"/> instance.</returns>
-    public Result<TValue, TError> OnError<TState>(Action<TError, TState> action, TState state) {
+    public Result<TValue, TError> OnFailure<TState>(Action<TError, TState> action, TState state) {
         if (IsFailure) action(Error, state);
         return this;
     }
@@ -85,7 +85,7 @@ public readonly partial record struct Result<TValue, TError> {
     /// </summary>
     /// <param name="action">The asynchronous action to perform on the error value.</param>
     /// <returns>A <see cref="ValueTask{Result}"/> containing the current <see cref="Result{TValue,TError}"/> instance.</returns>
-    public async ValueTask<Result<TValue, TError>> OnErrorAsync(Func<TError, ValueTask> action) {
+    public async ValueTask<Result<TValue, TError>> OnFailureAsync(Func<TError, ValueTask> action) {
         if (IsFailure) await action(Error).ConfigureAwait(false);
         return this;
     }
@@ -98,7 +98,7 @@ public readonly partial record struct Result<TValue, TError> {
     /// <param name="action">The asynchronous action to perform on the error value, taking additional state.</param>
     /// <param name="state">The state to pass to the action.</param>
     /// <returns>A <see cref="ValueTask{Result}"/> containing the current <see cref="Result{TValue,TError}"/> instance.</returns>
-    public async ValueTask<Result<TValue, TError>> OnErrorAsync<TState>(Func<TError, TState, ValueTask> action, TState state) {
+    public async ValueTask<Result<TValue, TError>> OnFailureAsync<TState>(Func<TError, TState, ValueTask> action, TState state) {
         if (IsFailure) await action(Error, state).ConfigureAwait(false);
         return this;
     }

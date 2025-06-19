@@ -13,7 +13,7 @@
     <PackageReference Include="Google.Protobuf" Version="3.31.1" />
     <PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0" />
     <PackageReference Include="Humanizer.Core" Version="2.14.1" />
-    <PackageReference Include="LruCacheNet" Version="1.2.0" />
+<!--    <PackageReference Include="LruCacheNet" Version="1.2.0" />-->
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
     <PackageReference Include="NJsonSchema" Version="11.3.2" />
     <PackageReference Include="OneOf" Version="3.0.271" />
@@ -53,10 +53,10 @@
   <ItemGroup>
     <!-- Source Generators: Embed as analyzer, don't propagate as dependency -->
     <ProjectReference Include="..\Kurrent.Client.SourceGenerators\Kurrent.Client.SourceGenerators.csproj"
-                      OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false" />
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
 
-    <ProjectReference Include="..\Variant.SourceGenerators\Variant.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\Variant.SourceGenerators\Variant.SourceGenerators.csproj" 
+                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
 
     <!-- Runtime Library: Include assembly but don't propagate as dependency -->
     <ProjectReference Include="..\Variant\Variant.csproj" PrivateAssets="all" />

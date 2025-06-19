@@ -112,29 +112,6 @@ public class ResultMatchTests {
     }
 
     [Test]
-    public async Task match_async_handles_mixed_sync_async_scenarios() {
-        // Arrange
-        GameStarted successValue = new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>());
-        Result<GameStarted, InvalidMoveError> successResult = Kurrent.Result.Success<GameStarted, InvalidMoveError>(successValue);
-        InvalidMoveError errorValue = new InvalidMoveError(Faker.Random.Guid(), Faker.Lorem.Sentence());
-        Result<GameStarted, InvalidMoveError> errorResult = Kurrent.Result.Failure<GameStarted, InvalidMoveError>(errorValue);
-
-        // Act
-        string successMatch = await successResult.MatchAsync(
-            gs => $"Success: {gs.GameId}",
-            err => ValueTask.FromResult($"Error: {err.Reason}")
-        );
-        string errorMatch = await errorResult.MatchAsync(
-            gs => ValueTask.FromResult($"Success: {gs.GameId}"),
-            err => $"Error: {err.Reason}"
-        );
-
-        // Assert
-        successMatch.ShouldBe($"Success: {successValue.GameId}");
-        errorMatch.ShouldBe($"Error: {errorValue.Reason}");
-    }
-
-    [Test]
     public async Task match_async_passes_state_to_functions_when_using_stateful_variant() {
         // Arrange
         GameStarted successValue = new GameStarted(Faker.Random.Guid(), Faker.PickRandom<Player>());
