@@ -14,14 +14,12 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 	public async Task backward_mode_incompatible_when_deleting_required_field(CancellationToken ct) {
 		// Arrange
 		var schemaName  = NewSchemaName();
-		var description = Faker.Lorem.Sentences();
-		var tags        = new Dictionary<string, string> { ["tag1"] = Faker.Lorem.Word() };
 
 		var v1 = NewJsonSchemaDefinition().AddRequired("email", JsonObjectType.String);
 		var v2 = v1.Remove("email");
 
 		var createResult = await AutomaticClient.Registry
-			.CreateSchema(schemaName, v1.ToJson(), Json, Backward, description, tags, ct)
+			.CreateSchema(schemaName, v1.ToJson(), Json, Backward, Faker.Lorem.Sentences(), [], ct)
 			.ShouldNotThrowAsync();
 
 		// Act & Assert

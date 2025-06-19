@@ -5,7 +5,6 @@ using Google.Rpc;
 using Grpc.Core;
 using Kurrent.Client.Model;
 using Kurrent.Client.SchemaRegistry;
-using KurrentDB.Client.Interceptors;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 using Contracts = KurrentDB.Protocol.Registry.V2;
 using ErrorDetails = Kurrent.Client.SchemaRegistry.ErrorDetails;
@@ -14,8 +13,7 @@ using Success = Kurrent.Client.SchemaRegistry.Success;
 namespace Kurrent.Client;
 
 public class KurrentRegistryClient {
-	internal KurrentRegistryClient(CallInvoker invoker) =>
-		ServiceClient = new SchemaRegistryServiceClient(invoker);
+	internal KurrentRegistryClient(CallInvoker invoker) => ServiceClient = new SchemaRegistryServiceClient(invoker);
 
 	SchemaRegistryServiceClient ServiceClient { get; }
 
@@ -68,23 +66,30 @@ public class KurrentRegistryClient {
 			SchemaDefinition = ByteString.CopyFromUtf8(schemaDefinition)
 		};
 
-		try {
-			var response = await ServiceClient
-				.CreateSchemaAsync(request, cancellationToken: cancellationToken)
-				.ConfigureAwait(false);
+		return await ServiceClient
+			.CreateSchemaAsync(request, cancellationToken: cancellationToken)
+			.ResponseAsync
+			.ToResultAsync()
+			.MatchAsync(
+				onSuccess: response =>
+					Result.Success<SchemaVersionDescriptor, CreateSchemaError>(
+						new SchemaVersionDescriptor(Guid.Parse(response.SchemaVersionId), response.VersionNumber)
+					),
+				onError: exception => {
+					if (exception is RpcException rpcEx) {
+						return rpcEx.StatusCode switch {
+							StatusCode.AlreadyExists => Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(
+								new ErrorDetails.SchemaAlreadyExists(schemaName)
+							),
+							StatusCode.PermissionDenied => Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(new ErrorDetails.AccessDenied()),
+							StatusCode.InvalidArgument  => throw KurrentClientException.Throw<BadRequest>(rpcEx),
+							_                           => throw KurrentClientException.CreateUnknown(nameof(CreateSchema), rpcEx)
+						};
+					}
 
-			return new SchemaVersionDescriptor(Guid.Parse(response.SchemaVersionId), response.VersionNumber);
-		} catch (RpcException ex) {
-			return Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(
-				ex.StatusCode switch {
-					StatusCode.AlreadyExists    => new ErrorDetails.SchemaAlreadyExists(schemaName),
-					StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-					_                           => throw KurrentClientException.Throw(ex)
+					throw KurrentClientException.Throw(exception);
 				}
 			);
-		} catch (Exception ex) {
-			throw KurrentClientException.Throw(ex);
-		}
 	}
 
 	/// <summary>
@@ -114,15 +119,16 @@ public class KurrentRegistryClient {
 		string schemaDefinition,
 		SchemaDataFormat dataFormat,
 		CancellationToken cancellationToken = default
-	) => CreateSchema(
-		schemaName,
-		schemaDefinition,
-		dataFormat,
-		CompatibilityMode.None,
-		"",
-		[],
-		cancellationToken
-	);
+	) =>
+		CreateSchema(
+			schemaName,
+			schemaDefinition,
+			dataFormat,
+			CompatibilityMode.None,
+			"",
+			[],
+			cancellationToken
+		);
 
 	/// <summary>
 	/// Retrieves the schema details for the specified schema name from the registry.
@@ -144,24 +150,25 @@ public class KurrentRegistryClient {
 			SchemaName = schemaName
 		};
 
-		try {
-			var response = await ServiceClient
-				.GetSchemaAsync(request, cancellationToken: cancellationToken)
-				.ConfigureAwait(false);
+		return await ServiceClient
+			.GetSchemaAsync(request, cancellationToken: cancellationToken)
+			.ResponseAsync
+			.ToResultAsync()
+			.MatchAsync(
+				onSuccess: response => Result.Success<Schema, GetSchemaError>(Schema.FromProto(response.Schema)),
+				onError: exception => {
+					if (exception is RpcException rpcEx) {
+						return rpcEx.StatusCode switch {
+							StatusCode.NotFound         => Result.Failure<Schema, GetSchemaError>(new ErrorDetails.SchemaNotFound(schemaName)),
+							StatusCode.PermissionDenied => Result.Failure<Schema, GetSchemaError>(new ErrorDetails.AccessDenied()),
+							StatusCode.InvalidArgument  => throw KurrentClientException.Throw<BadRequest>(rpcEx),
+							_                           => throw KurrentClientException.CreateUnknown(nameof(GetSchema), rpcEx)
+						};
+					}
 
-			return Schema.FromProto(response.Schema);
-		}
-		catch (RpcException ex) when (ex.StatusCode == StatusCode.NotFound) {
-			return Result.Failure<Schema, GetSchemaError>(
-				ex.StatusCode switch {
-					StatusCode.NotFound         => new ErrorDetails.SchemaNotFound(schemaName),
-					StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(GetSchema), ex)
+					throw KurrentClientException.Throw(exception);
 				}
 			);
-		} catch (Exception ex) {
-			throw KurrentClientException.Throw(ex);
-		}
 	}
 
 	/// <summary>
@@ -192,23 +199,25 @@ public class KurrentRegistryClient {
 		if (versionNumber.HasValue)
 			request.VersionNumber = versionNumber.Value;
 
-		try {
-			var response = await ServiceClient
-				.GetSchemaVersionAsync(request, cancellationToken: cancellationToken)
-				.ConfigureAwait(false);
+		return await ServiceClient
+			.GetSchemaVersionAsync(request, cancellationToken: cancellationToken)
+			.ResponseAsync
+			.ToResultAsync()
+			.MatchAsync(
+				onSuccess: response => Result.Success<SchemaVersion, GetSchemaVersionError>(SchemaVersion.FromProto(response.Version)),
+				onError: exception => {
+					if (exception is RpcException rpcEx) {
+						return rpcEx.StatusCode switch {
+							StatusCode.NotFound         => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.SchemaNotFound(schemaName)),
+							StatusCode.PermissionDenied => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.AccessDenied()),
+							StatusCode.InvalidArgument  => throw KurrentClientException.Throw<BadRequest>(rpcEx),
+							_                           => throw KurrentClientException.CreateUnknown(nameof(GetSchemaVersion), rpcEx)
+						};
+					}
 
-			return SchemaVersion.FromProto(response.Version);
-		} catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound) {
-			return Result.Failure<SchemaVersion, GetSchemaVersionError>(
-				ex.StatusCode switch {
-					StatusCode.NotFound         => new ErrorDetails.SchemaNotFound(schemaName),
-					StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(GetSchemaVersion), ex)
+					throw KurrentClientException.Throw(exception);
 				}
 			);
-		} catch (Exception ex) {
-			throw KurrentClientException.Throw(ex);
-		}
 	}
 
 	/// <summary>
@@ -234,23 +243,25 @@ public class KurrentRegistryClient {
 			SchemaVersionId = schemaVersionId
 		};
 
-		try {
-			var response = await ServiceClient
-				.GetSchemaVersionByIdAsync(request, cancellationToken: cancellationToken)
-				.ConfigureAwait(false);
+		return await ServiceClient
+			.GetSchemaVersionByIdAsync(request, cancellationToken: cancellationToken)
+			.ResponseAsync
+			.ToResultAsync()
+			.MatchAsync(
+				onSuccess: response => Result.Success<SchemaVersion, GetSchemaVersionError>(SchemaVersion.FromProto(response.Version)),
+				onError: exception => {
+					if (exception is RpcException rpcEx) {
+						return rpcEx.StatusCode switch {
+							StatusCode.NotFound => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.SchemaNotFound(schemaVersionId)),
+							StatusCode.PermissionDenied => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.AccessDenied()),
+							StatusCode.InvalidArgument => throw KurrentClientException.Throw<BadRequest>(rpcEx),
+							_ => throw KurrentClientException.CreateUnknown(nameof(GetSchemaVersionById), rpcEx)
+						};
+					}
 
-			return SchemaVersion.FromProto(response.Version);
-		} catch (RpcException ex) {
-			return Result.Failure<SchemaVersion, GetSchemaVersionError>(
-				ex.StatusCode switch {
-					StatusCode.NotFound         => new ErrorDetails.SchemaNotFound(schemaVersionId),
-					StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(GetSchemaVersionById), ex)
+					throw KurrentClientException.Throw(exception);
 				}
 			);
-		} catch (Exception ex) {
-			throw KurrentClientException.Throw(ex);
-		}
 	}
 
 	/// <summary>
@@ -274,23 +285,25 @@ public class KurrentRegistryClient {
 			SchemaName = schemaName
 		};
 
-		try {
-			await ServiceClient
-				.DeleteSchemaAsync(request, cancellationToken: cancellationToken)
-				.ConfigureAwait(false);
+		return await ServiceClient
+			.DeleteSchemaAsync(request, cancellationToken: cancellationToken)
+			.ResponseAsync
+			.ToResultAsync()
+			.MatchAsync(
+				onSuccess: _ => Result.Success<Success, DeleteSchemaError>(Success.Instance),
+				onError: exception => {
+					if (exception is RpcException rpcEx) {
+						return rpcEx.StatusCode switch {
+							StatusCode.NotFound         => Result.Failure<Success, DeleteSchemaError>(new ErrorDetails.SchemaNotFound(schemaName)),
+							StatusCode.PermissionDenied => Result.Failure<Success, DeleteSchemaError>(new ErrorDetails.AccessDenied()),
+							StatusCode.InvalidArgument  => throw KurrentClientException.Throw<BadRequest>(rpcEx),
+							_                           => throw KurrentClientException.CreateUnknown(nameof(DeleteSchema), rpcEx)
+						};
+					}
 
-			return Result.Success<Success, DeleteSchemaError>(Success.Instance);
-		} catch (RpcException ex) {
-			return Result.Failure<Success, DeleteSchemaError>(
-				ex.StatusCode switch {
-					StatusCode.NotFound         => new ErrorDetails.SchemaNotFound(schemaName),
-					StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(DeleteSchema), ex)
+					throw KurrentClientException.Throw(exception);
 				}
 			);
-		} catch (Exception ex) {
-			throw KurrentClientException.Throw(ex);
-		}
 	}
 
 	/// <summary>
@@ -336,7 +349,9 @@ public class KurrentRegistryClient {
 				onError: exception => {
 					if (exception is RpcException rpcEx) {
 						return rpcEx.StatusCode switch {
-							StatusCode.NotFound         => Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(new ErrorDetails.SchemaNotFound(identifier.AsSchemaName)),
+							StatusCode.NotFound => Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(
+								new ErrorDetails.SchemaNotFound(identifier.AsSchemaName)
+							),
 							StatusCode.PermissionDenied => Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(new ErrorDetails.AccessDenied()),
 							StatusCode.InvalidArgument  => throw KurrentClientException.Throw<BadRequest>(rpcEx),
 							_                           => throw KurrentClientException.CreateUnknown(nameof(CheckSchemaCompatibility), rpcEx)
