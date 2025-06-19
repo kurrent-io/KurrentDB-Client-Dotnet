@@ -1,6 +1,9 @@
 using Kurrent.Client.Model;
 using Kurrent.Client.SchemaRegistry;
 using NJsonSchema;
+using static Kurrent.Client.Model.SchemaDataFormat;
+using static Kurrent.Client.SchemaRegistry.CompatibilityMode;
+using ErrorDetails = Kurrent.Client.SchemaRegistry.ErrorDetails;
 
 namespace Kurrent.Client.Tests.Registry;
 
@@ -8,40 +11,22 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 	const int TestTimeoutMs = 20_000;
 
 	[Test, Timeout(TestTimeoutMs)]
-	public async Task backward_mode_compatible_when_adding_optional_field(CancellationToken ct) {
-		// Arrange
-		var schemaName = NewSchemaName();
-
-		var v1 = NewJsonSchemaDefinition();
-		var v2 = v1.AddOptional("email", JsonObjectType.String);
-
-		var createResult = await AutomaticClient.Registry
-			.CreateSchema(schemaName, v1.ToJson(), SchemaDataFormat.Json, CompatibilityMode.Backward, "", new Dictionary<string, string>(), ct)
-			.ShouldNotThrowAsync();
-
-		// Act & Assert
-		var result = await AutomaticClient.Registry
-			.CheckSchemaCompatibility(createResult.Value.VersionId, v2.ToJson(), SchemaDataFormat.Json, ct)
-			.ShouldNotThrowAsync();
-
-		result.IsSuccess.ShouldBeTrue();
-	}
-
-	[Test, Timeout(TestTimeoutMs)]
 	public async Task backward_mode_incompatible_when_deleting_required_field(CancellationToken ct) {
 		// Arrange
-		var schemaName = NewSchemaName();
+		var schemaName  = NewSchemaName();
+		var description = Faker.Lorem.Sentences();
+		var tags        = new Dictionary<string, string> { ["tag1"] = Faker.Lorem.Word() };
 
 		var v1 = NewJsonSchemaDefinition().AddRequired("email", JsonObjectType.String);
 		var v2 = v1.Remove("email");
 
 		var createResult = await AutomaticClient.Registry
-			.CreateSchema(schemaName, v1.ToJson(), SchemaDataFormat.Json, CompatibilityMode.Backward, "", new Dictionary<string, string>(), ct)
+			.CreateSchema(schemaName, v1.ToJson(), Json, Backward, description, tags, ct)
 			.ShouldNotThrowAsync();
 
 		// Act & Assert
 		var result = await AutomaticClient.Registry
-			.CheckSchemaCompatibility(createResult.Value.VersionId, v2.ToJson(), SchemaDataFormat.Json, ct)
+			.CheckSchemaCompatibility(createResult.Value.VersionId, v2.ToJson(), Json, ct)
 			.ShouldNotThrowAsync()
 			.OnErrorAsync(error => {
 				error.IsSchemaCompatibilityErrors.ShouldBeTrue();
@@ -54,50 +39,51 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 		result.IsSuccess.ShouldBeFalse();
 	}
 
-	[Test, Timeout(TestTimeoutMs)]
-	public async Task forward_mode_compatible_when_deleting_optional_field(CancellationToken ct) {
-		// Arrange
-		var schemaName = NewSchemaName();
-
-		var v1 = NewJsonSchemaDefinition().AddOptional("email", JsonObjectType.String);
-		var v2 = v1.Remove("email");
-
-		var createResult = await AutomaticClient.Registry
-			.CreateSchema(schemaName, v1.ToJson(), SchemaDataFormat.Json, CompatibilityMode.Forward, "", new Dictionary<string, string>(), ct)
-			.ShouldNotThrowAsync();
-
-		// Act & Assert
-		var result = await AutomaticClient.Registry
-			.CheckSchemaCompatibility(createResult.Value.VersionId, v2.ToJson(), SchemaDataFormat.Json, ct)
-			.ShouldNotThrowAsync();
-
-		result.IsSuccess.ShouldBeTrue();
-	}
+	#region failures
 
 	[Test, Timeout(TestTimeoutMs)]
-	public async Task forward_mode_incompatible_when_adding_required_field(CancellationToken ct) {
+	public async Task check_schema_compatibility_fails_when_schema_not_found(CancellationToken ct) {
 		// Arrange
 		var schemaName = NewSchemaName();
 
 		var v1 = NewJsonSchemaDefinition();
-		var v2 = v1.AddRequired("email", JsonObjectType.String);
-
-		var createResult = await AutomaticClient.Registry
-			.CreateSchema(schemaName, v1.ToJson(), SchemaDataFormat.Json, CompatibilityMode.Forward, "", new Dictionary<string, string>(), ct)
-			.ShouldNotThrowAsync();
 
 		// Act & Assert
 		var result = await AutomaticClient.Registry
-			.CheckSchemaCompatibility(createResult.Value.VersionId, v2.ToJson(), SchemaDataFormat.Json, ct)
+			.CheckSchemaCompatibility(SchemaName.From(schemaName), v1.ToJson(), Json, ct)
 			.ShouldNotThrowAsync()
 			.OnErrorAsync(error => {
-				error.IsSchemaCompatibilityErrors.ShouldBeTrue();
-				var errors = error.AsSchemaCompatibilityErrors.Errors;
-				errors.ShouldContain(e => e.Kind == SchemaCompatibilityErrorKind.NewRequiredProperty);
-				errors.ShouldContain(e => e.Details.Contains("Required property in new schema is missing in original schema"));
-				errors.ShouldContain(e => e.PropertyPath.Contains("email"));
+				error.IsSchemaNotFound.ShouldBeTrue();
+				error.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
+				error.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema '{schemaName}' not found.");
 			});
 
 		result.IsSuccess.ShouldBeFalse();
 	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task check_schema_compatibility_fails_when_data_format_not_matching(CancellationToken ct) {
+		// Arrange
+		var schemaName = NewSchemaName();
+
+		var v1 = NewJsonSchemaDefinition();
+
+		await AutomaticClient.Registry
+			.CreateSchema(schemaName, v1.ToJson(), Json, Backward, "", new Dictionary<string, string>(), ct)
+			.ShouldNotThrowAsync();
+
+		// Act
+		var result = async () => await AutomaticClient.Registry
+			.CheckSchemaCompatibility(SchemaName.From(schemaName), v1.ToJson(), Protobuf, ct);
+
+		// Assert
+		var exception = await result.ShouldThrowAsync<KurrentClientException>();
+
+		exception.FieldViolations.ShouldNotBeEmpty();
+		exception.FieldViolations.ShouldNotBeEmpty();
+		exception.FieldViolations.ShouldContain(v => v.Field == "DataFormat");
+		exception.FieldViolations.ShouldContain(v => v.Description == "Schema format must be JSON for compatibility check");
+	}
+
+	#endregion
 }

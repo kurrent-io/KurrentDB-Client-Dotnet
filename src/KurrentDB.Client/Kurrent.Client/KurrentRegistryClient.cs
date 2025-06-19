@@ -1,7 +1,11 @@
+// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+
 using Google.Protobuf;
+using Google.Rpc;
 using Grpc.Core;
 using Kurrent.Client.Model;
 using Kurrent.Client.SchemaRegistry;
+using KurrentDB.Client.Interceptors;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 using Contracts = KurrentDB.Protocol.Registry.V2;
 using ErrorDetails = Kurrent.Client.SchemaRegistry.ErrorDetails;
@@ -321,24 +325,26 @@ public class KurrentRegistryClient {
 		request.Definition = ByteString.CopyFromUtf8(schemaDefinition);
 		request.DataFormat = (Contracts.SchemaDataFormat)dataFormat;
 
-		try {
-			var response = await ServiceClient
-				.CheckSchemaCompatibilityAsync(request, cancellationToken: cancellationToken)
-				.ConfigureAwait(false);
+		return await ServiceClient
+			.CheckSchemaCompatibilityAsync(request, cancellationToken: cancellationToken)
+			.ResponseAsync
+			.ToResultAsync()
+			.MatchAsync(
+				onSuccess: result => result.Success is not null
+					? Result.Success<SchemaVersionId, CheckSchemaCompatibilityError>(SchemaVersionId.From(result.Success.SchemaVersionId))
+					: Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(SchemaCompatibilityErrors.FromProto(result.Failure.Errors)),
+				onError: exception => {
+					if (exception is RpcException rpcEx) {
+						return rpcEx.StatusCode switch {
+							StatusCode.NotFound         => Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(new ErrorDetails.SchemaNotFound(identifier.AsSchemaName)),
+							StatusCode.PermissionDenied => Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(new ErrorDetails.AccessDenied()),
+							StatusCode.InvalidArgument  => throw KurrentClientException.Throw<BadRequest>(rpcEx),
+							_                           => throw KurrentClientException.CreateUnknown(nameof(CheckSchemaCompatibility), rpcEx)
+						};
+					}
 
-			return response.Success is not null
-				? Result.Success<SchemaVersionId, CheckSchemaCompatibilityError>(SchemaVersionId.From(response.Success.SchemaVersionId))
-				: Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(SchemaCompatibilityErrors.FromProto(response.Failure.Errors));
-		} catch (RpcException ex) when (ex.StatusCode is StatusCode.NotFound) {
-			return Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(
-				ex.StatusCode switch {
-					StatusCode.NotFound         => new ErrorDetails.SchemaNotFound(identifier.AsSchemaName),
-					StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(CheckSchemaCompatibility), ex)
+					throw KurrentClientException.Throw(exception);
 				}
 			);
-		} catch (Exception ex) {
-			throw KurrentClientException.Throw(ex);
-		}
 	}
 }

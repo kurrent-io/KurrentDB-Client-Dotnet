@@ -1,4 +1,6 @@
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using Grpc.Core;
 using Kurrent.Client.Model;
 using Kurrent.Variant;
 
@@ -9,49 +11,20 @@ namespace Kurrent.Client.SchemaRegistry;
 /// </summary>
 [PublicAPI]
 public static class ErrorDetails {
-	/// <summary>
-	/// Represents an error indicating that the specified schema or schema version was not found.
-	/// </summary>
-	/// <param name="Identifier">The identifier of the schema that could not be located.</param>
 	public readonly record struct SchemaNotFound(SchemaIdentifier Identifier) : IKurrentClientError {
-		/// <summary>
-		/// Gets the unique code identifying the error.
-		/// </summary>
 		public string ErrorCode => nameof(SchemaNotFound);
-
-		/// <summary>
-		/// Gets the error message indicating that the schema or schema version was not found.
-		/// </summary>
 		public string ErrorMessage => Identifier.IsSchemaName
 			? $"Schema '{Identifier.AsSchemaName}' not found."
 			: $"Schema version '{Identifier.AsSchemaVersionId}' not found.";
 	}
 
-	/// <summary>
-	/// Represents an error indicating that the specified schema already exists.
-	/// </summary>
-	/// <param name="SchemaName">The name of the schema.</param>
 	public readonly record struct SchemaAlreadyExists(SchemaName SchemaName) : IKurrentClientError {
-		/// <summary>
-		/// Gets the unique code identifying the error.
-		/// </summary>
 		public string ErrorCode => nameof(SchemaAlreadyExists);
-
-		/// <summary>
-		/// Gets the error message indicating that the schema already exists.
-		/// </summary>
 		public string ErrorMessage => $"Schema '{SchemaName}' already exists.";
 	}
 
     public readonly record struct AccessDenied : IKurrentClientError {
-        /// <summary>
-        /// Gets the unique code identifying the error.
-        /// </summary>
         public string ErrorCode => nameof(AccessDenied);
-
-        /// <summary>
-        /// Gets the error message indicating that access to the stream was denied.
-        /// </summary>
         public string ErrorMessage => "Access denied to the requested resource.";
     }
 }
