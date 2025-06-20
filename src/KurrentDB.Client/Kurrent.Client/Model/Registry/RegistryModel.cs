@@ -122,6 +122,7 @@ public readonly record struct SchemaCompatibilityError() {
 	}
 }
 
+// public readonly record struct SchemaCompatibilityErrors() : IResultError {
 public readonly record struct SchemaCompatibilityErrors() : IEnumerable<SchemaCompatibilityError> {
 	public IReadOnlyList<SchemaCompatibilityError> Errors { get; init; } = [];
 

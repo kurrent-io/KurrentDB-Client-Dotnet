@@ -347,9 +347,7 @@ public class KurrentRegistryClient {
 				onError: exception => {
 					if (exception is RpcException rpcEx) {
 						return rpcEx.StatusCode switch {
-							StatusCode.NotFound => Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(
-								new ErrorDetails.SchemaNotFound(identifier.AsSchemaName)
-							),
+							StatusCode.NotFound => Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(new ErrorDetails.SchemaNotFound(identifier)),
 							StatusCode.PermissionDenied => Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(new ErrorDetails.AccessDenied()),
 							StatusCode.InvalidArgument  => throw KurrentClientException.Throw<BadRequest>(rpcEx),
 							_                           => throw KurrentClientException.CreateUnknown(nameof(CheckSchemaCompatibility), rpcEx)

@@ -71,7 +71,7 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 			.CheckSchemaCompatibility(SchemaName.From(schemaName), v1.ToJson(), Protobuf, ct);
 
 		// Assert
-		var exception = await result.ShouldThrowAsync<KurrentClientException>();
+		var exception = await result.ShouldThrowAsync<KurrentClientException>(); // should be domain exception
 
 		exception.FieldViolations.ShouldNotBeEmpty();
 		exception.FieldViolations.ShouldNotBeEmpty();
