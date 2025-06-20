@@ -1,6 +1,8 @@
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using Grpc.Core;
 using Kurrent.Client.Model;
-using OneOf;
+using Kurrent.Variant;
 
 namespace Kurrent.Client.SchemaRegistry;
 
@@ -9,92 +11,51 @@ namespace Kurrent.Client.SchemaRegistry;
 /// </summary>
 [PublicAPI]
 public static class ErrorDetails {
-    /// <summary>
-    /// Represents an error indicating that the specified schema or schema version was not found.
-    /// </summary>
-    /// <param name="Identifier">The identifier of the schema that could not be located.</param>
-    public readonly record struct SchemaNotFound(SchemaIdentifier Identifier) : IKurrentClientError {
-        /// <summary>
-        /// Gets the unique code identifying the error.
-        /// </summary>
-        public string ErrorCode => nameof(SchemaNotFound);
+	public readonly record struct SchemaNotFound(SchemaIdentifier Identifier) : IKurrentClientError {
+		public string ErrorCode => nameof(SchemaNotFound);
+		public string ErrorMessage => Identifier.IsSchemaName
+			? $"Schema '{Identifier.AsSchemaName}' not found."
+			: $"Schema version '{Identifier.AsSchemaVersionId}' not found.";
+	}
 
-        /// <summary>
-        /// Gets the error message indicating that the schema or schema version was not found.
-        /// </summary>
-        public string ErrorMessage => Identifier.IsSchemaName
-            ? $"Schema '{Identifier.AsSchemaName}' not found."
-            : $"Schema version '{Identifier.AsSchemaVersionId}' not found.";
-    }
+	public readonly record struct SchemaAlreadyExists(SchemaName SchemaName) : IKurrentClientError {
+		public string ErrorCode => nameof(SchemaAlreadyExists);
+		public string ErrorMessage => $"Schema '{SchemaName}' already exists.";
+	}
 
-    /// <summary>
-    /// Represents an error indicating that the specified schema already exists.
-    /// </summary>
-    /// <param name="SchemaName">The name of the schema.</param>
-    public readonly record struct SchemaAlreadyExists(SchemaName SchemaName) : IKurrentClientError {
-        /// <summary>
-        /// Gets the unique code identifying the error.
-        /// </summary>
-        public string ErrorCode => nameof(SchemaAlreadyExists);
-
-        /// <summary>
-        /// Gets the error message indicating that the schema already exists.
-        /// </summary>
-        public string ErrorMessage => $"Schema '{SchemaName}' already exists.";
+    public readonly record struct AccessDenied : IKurrentClientError {
+        public string ErrorCode => nameof(AccessDenied);
+        public string ErrorMessage => "Access denied to the requested resource.";
     }
 }
 
 [StructLayout(LayoutKind.Sequential, Size = 1)]
 public readonly struct Success {
-    public static readonly Success Instance = new();
+	public static readonly Success Instance = new();
 }
 
-// TODO: all results should be represented using Result<T, E>
-// TODO: all Errors should be represented using OneOf<ErrorDetails.Something, ErrorDetails.SomethingElse>
+[PublicAPI]
+public readonly partial record struct CreateSchemaError : IVariant<
+	ErrorDetails.SchemaAlreadyExists,
+	ErrorDetails.AccessDenied>;
 
-[GenerateOneOf]
-public partial class CreateSchemaResult : OneOfBase<SchemaVersionDescriptor, ErrorDetails.SchemaAlreadyExists> {
-    public bool IsSchemaVersionDescriptor => IsT0;
-    public bool IsSchemaAlreadyExists     => IsT1;
+[PublicAPI]
+public readonly partial record struct GetSchemaError : IVariant<
+	ErrorDetails.SchemaNotFound,
+	ErrorDetails.AccessDenied>;
 
-    public SchemaVersionDescriptor          AsSchemaVersionDescriptor => AsT0;
-    public ErrorDetails.SchemaAlreadyExists AsSchemaAlreadyExists     => AsT1;
-}
+[PublicAPI]
+public readonly partial record struct GetSchemaVersionError : IVariant<
+	ErrorDetails.SchemaNotFound,
+	ErrorDetails.AccessDenied>;
 
-[GenerateOneOf]
-public partial class GetSchemaResult : OneOfBase<Schema, ErrorDetails.SchemaNotFound> {
-    public bool IsSchema         => IsT0;
-    public bool IsSchemaNotFound => IsT1;
+[PublicAPI]
+public readonly partial record struct DeleteSchemaError : IVariant<
+	ErrorDetails.SchemaNotFound,
+	ErrorDetails.AccessDenied>;
 
-    public Schema                      AsSchema         => AsT0;
-    public ErrorDetails.SchemaNotFound AsSchemaNotFound => AsT1;
-}
-
-[GenerateOneOf]
-public partial class GetSchemaVersionResult : OneOfBase<SchemaVersion, ErrorDetails.SchemaNotFound> {
-    public bool IsSchemaVersion  => IsT0;
-    public bool IsSchemaNotFound => IsT1;
-
-    public SchemaVersion               AsSchemaVersion  => AsT0;
-    public ErrorDetails.SchemaNotFound AsSchemaNotFound => AsT1;
-}
-
-[GenerateOneOf]
-public partial class DeleteSchemaResult : OneOfBase<Success, ErrorDetails.SchemaNotFound> {
-    public bool IsSuccess        => IsT0;
-    public bool IsSchemaNotFound => IsT1;
-
-    public Success                     AsSuccess        => AsT0;
-    public ErrorDetails.SchemaNotFound AsSchemaNotFound => AsT1;
-}
-
-[GenerateOneOf]
-public partial class CheckSchemaCompatibilityResult : OneOfBase<SchemaVersionId, SchemaCompatibilityErrors, ErrorDetails.SchemaNotFound> {
-    public bool IsSchemaVersionId => IsT0;
-    public bool IsSchemaErrors    => IsT1;
-    public bool IsSchemaNotFound  => IsT2;
-
-    public SchemaVersionId             AsSchemaVersionId => AsT0;
-    public SchemaCompatibilityErrors   AsSchemaErrors    => AsT1;
-    public ErrorDetails.SchemaNotFound AsSchemaNotFound  => AsT2;
-}
+[PublicAPI]
+public readonly partial record struct CheckSchemaCompatibilityError : IVariant<
+	SchemaCompatibilityErrors,
+	ErrorDetails.SchemaNotFound,
+	ErrorDetails.AccessDenied>;

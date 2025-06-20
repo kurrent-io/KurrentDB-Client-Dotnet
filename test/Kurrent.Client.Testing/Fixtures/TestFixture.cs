@@ -96,7 +96,7 @@ public class TestFixture : ITestStartEventReceiver, ITestEndEventReceiver, ITest
                 await disposable.DisposeAsync().ConfigureAwait(false);
         }
         catch (Exception ex) {
-            throw new TUnitException($"Impossibru!!! An error occurred during the manual cleanup of {FixtureName}", ex);
+            throw new TUnitException($"Impossible!!! An error occurred during the manual cleanup of {FixtureName}", ex);
         }
 
         await TestingToolkitAutoWireUp

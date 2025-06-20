@@ -122,6 +122,7 @@ public readonly record struct SchemaCompatibilityError() {
 	}
 }
 
+// public readonly record struct SchemaCompatibilityErrors() : IResultError {
 public readonly record struct SchemaCompatibilityErrors() : IEnumerable<SchemaCompatibilityError> {
 	public IReadOnlyList<SchemaCompatibilityError> Errors { get; init; } = [];
 
@@ -147,6 +148,7 @@ public enum SchemaCompatibilityErrorKind {
 	NewRequiredProperty,      // Forward compatibility: New required property added
 	RemovedProperty,          // Forward compatibility: Property removed from schema
 	ArrayTypeIncompatibility, // Issues with array item types
+	DataFormatMismatch,       // Data format mismatch between schema versions
 }
 
 public readonly record struct SchemaVersionId(Guid Value) {
