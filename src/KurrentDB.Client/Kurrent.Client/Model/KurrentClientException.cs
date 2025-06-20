@@ -18,11 +18,6 @@ public class KurrentClientException : Exception {
 	public string ErrorCode { get; }
 
     /// <summary>
-    /// Gets the gRPC status code if this exception originated from an RpcException.
-    /// </summary>
-    public StatusCode? StatusCode { get; }
-
-    /// <summary>
     /// Gets the validation errors if this exception represents validation failures.
     /// </summary>
     public IReadOnlyCollection<FieldViolation> FieldViolations { get; }
@@ -33,11 +28,10 @@ public class KurrentClientException : Exception {
     public IReadOnlyDictionary<string, string> Metadata { get; }
 
     public KurrentClientException(
-	    string errorCode, string message, Exception? innerException = null, StatusCode? statusCode = null,
+	    string errorCode, string message, Exception? innerException = null,
 	    IEnumerable<FieldViolation>? fieldViolations = null, IDictionary<string, string>? metadata = null
     ) : base(message, innerException) {
         ErrorCode = errorCode;
-        StatusCode = statusCode;
         FieldViolations = fieldViolations?.ToList().AsReadOnly() ?? new List<FieldViolation>().AsReadOnly();
         Metadata = metadata?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value).AsReadOnly() ?? new Dictionary<string, string>().AsReadOnly();
     }
@@ -76,7 +70,6 @@ public class KurrentClientException : Exception {
 			    code,
 			    message,
 			    exception,
-			    exception.StatusCode,
 			    fieldViolations,
 			    metadata
 		    );
@@ -108,7 +101,6 @@ public class KurrentClientException : Exception {
 		    code,
 		    message,
 		    exception,
-		    exception.StatusCode,
 		    fieldViolations,
 		    metadata
 	    );

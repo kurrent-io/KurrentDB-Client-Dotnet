@@ -66,16 +66,15 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 			.CreateSchema(schemaName, v1.ToJson(), Json, Backward, Faker.Lorem.Sentences(), [], ct)
 			.ShouldNotThrowAsync();
 
-		// Act
-		var result = async () => await AutomaticClient.Registry
-			.CheckSchemaCompatibility(SchemaName.From(schemaName), v1.ToJson(), Protobuf, ct);
-
-		// Assert
-		var exception = await result.ShouldThrowAsync<KurrentClientException>(); // should be domain exception
-
-		exception.FieldViolations.ShouldNotBeEmpty();
-		exception.FieldViolations.ShouldNotBeEmpty();
-		exception.FieldViolations.ShouldContain(v => v.Field == "DataFormat");
-		exception.FieldViolations.ShouldContain(v => v.Description == "Schema format must be JSON for compatibility check");
+		// Act & Assert
+		await AutomaticClient.Registry
+			.CheckSchemaCompatibility(SchemaName.From(schemaName), v1.ToJson(), Protobuf, ct)
+			.ShouldNotThrowAsync()
+			.OnSuccessAsync(_ => KurrentClientException.Throw("Expected compatibility check to fail, but it succeeded."))
+			.OnErrorAsync((error) => {
+				error.IsSchemaCompatibilityErrors.ShouldBeTrue();
+				var errors = error.AsSchemaCompatibilityErrors.Errors;
+				errors.ShouldContain(e => e.Kind == SchemaCompatibilityErrorKind.DataFormatMismatch);
+			});
 	}
 }

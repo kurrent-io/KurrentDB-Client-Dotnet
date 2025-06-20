@@ -148,6 +148,7 @@ public enum SchemaCompatibilityErrorKind {
 	NewRequiredProperty,      // Forward compatibility: New required property added
 	RemovedProperty,          // Forward compatibility: Property removed from schema
 	ArrayTypeIncompatibility, // Issues with array item types
+	DataFormatMismatch,       // Data format mismatch between schema versions
 }
 
 public readonly record struct SchemaVersionId(Guid Value) {
