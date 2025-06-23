@@ -14,7 +14,6 @@ public record FieldViolation(string Field, string Description);
 /// Provides relevant error details, including error codes, statuses, field violations, and associated metadata.
 /// </summary>
 [PublicAPI]
-// public class KurrentClientException(string errorCode, string message, Exception? innerException = null) : Exception(message, innerException) {
 public class KurrentClientException(string errorCode, string message, Metadata? metadata = null, Exception? innerException = null) : Exception(message, innerException) {
     /// <summary>
     /// Gets the error code associated with this exception.
