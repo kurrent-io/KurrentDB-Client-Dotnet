@@ -1,3 +1,4 @@
+using Grpc.Core;
 using Kurrent.Client.Model;
 using Kurrent.Client.SchemaRegistry;
 using NJsonSchema;
@@ -53,6 +54,23 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 				error.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
 				error.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema '{schemaName}' not found.");
 			});
+	}
+
+	[Test, Timeout(TestTimeoutMs)]
+	public async Task check_schema_compatibility_handles_fatal_errors(CancellationToken ct) {
+		// Arrange
+		var v1 = NewJsonSchemaDefinition();
+
+		// Act & Assert
+		var result = async () => await AutomaticClient.Registry
+			.CheckSchemaCompatibility(SchemaName.From("#"), v1.ToJson(), Json, ct);
+
+		var exception = await result.ShouldThrowAsync<KurrentClientException>();
+		exception.ErrorCode.ShouldBe(nameof(StatusCode.InvalidArgument));
+		exception.FieldViolations.ShouldNotBeEmpty();
+		exception.FieldViolations.ShouldHaveSingleItem();
+		exception.FieldViolations.ShouldContain(v => v.Field == "SchemaName");
+		exception.FieldViolations.ShouldContain(v => v.Description == "Schema name must not be empty and can only contain alphanumeric characters, underscores, dashes, and periods");
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
