@@ -59,32 +59,18 @@ public class KurrentOperationErrorGenerator : ISourceGenerator {
                 if (!HasKurrentOperationErrorAttribute(typeSymbol, context))
                     continue;
 
+                GenerateAndAddSource(typeSymbol);
+
                 ReportDiagnostic(context,
                     new DiagnosticDescriptor(
                         "Kurrent001",
                         "KurrentOperationErrorSourceGenerator",
-                        "Generating source for '{0}'",
+                        "Generated KurrentOperationError source for '{0}'",
                         "Usage",
                         DiagnosticSeverity.Warning,
                         isEnabledByDefault: true),
                     typeSymbol);
-
-                GenerateAndAddSource(typeSymbol);
             }
-
-            // foreach (var typeSymbol in ExtractKurrentOperationErrorTypes(compilation, context)) {
-            //     ReportDiagnostic(context,
-            //         new DiagnosticDescriptor(
-            //             "Kurrent001",
-            //             "KurrentOperationErrorSourceGenerator",
-            //             "Generating source for '{0}'",
-            //             "Usage",
-            //             DiagnosticSeverity.Warning,
-            //             isEnabledByDefault: true),
-            //         typeSymbol);
-            //
-            //     GenerateAndAddSource(typeSymbol);
-            // }
         }
         catch (Exception ex) {
             ReportDiagnostic(context,
@@ -94,7 +80,8 @@ public class KurrentOperationErrorGenerator : ISourceGenerator {
                     "Source generator error: {0}",
                     "Error",
                     DiagnosticSeverity.Error,
-                    isEnabledByDefault: true), ex.ToString());
+                    isEnabledByDefault: true),
+                ex.ToString());
         }
 
         return;
@@ -155,25 +142,10 @@ public class KurrentOperationErrorGenerator : ISourceGenerator {
     static bool HasKurrentOperationErrorAttribute(INamedTypeSymbol typeSymbol, GeneratorExecutionContext context) {
         var attr = typeSymbol.GetAttributes().Where(Predicate).FirstOrDefault();
 
-        if (attr is null) return false;
+        return attr is not null;
 
-        ReportDiagnostic(context,
-            new DiagnosticDescriptor(
-                "Kurrent002",
-                "KurrentOperationErrorSourceGenerator",
-                "Found KurrentOperationError attribute on '{0}'",
-                "Usage",
-                DiagnosticSeverity.Warning,
-                isEnabledByDefault: true),
-            typeSymbol.ToDisplayString());
-
-        return true;
-
-        static bool Predicate(AttributeData attr) {
-            return attr.AttributeClass!.ToDisplayString().Equals("KurrentOperationErrorAttribute") ||
-                   attr.AttributeClass!.ToDisplayString().Equals("KurrentOperationError") ||
-                   attr.AttributeClass!.ToDisplayString().Equals(KurrentOperationErrorAttributeKey);
-        }
+        static bool Predicate(AttributeData attr) =>
+            attr.AttributeClass!.ToDisplayString().Equals(KurrentOperationErrorAttributeKey);
     }
 
     static SourceText GenerateImplementation(INamedTypeSymbol typeSymbol, GeneratorExecutionContext context) {
@@ -188,6 +160,7 @@ public class KurrentOperationErrorGenerator : ISourceGenerator {
             {USING_STATEMENTS}
             
             {NAMESPACE_DECLARATION}
+            
             """);
 
         var (name, ns) = GetInstanceNameAndNamespace(typeSymbol);
@@ -219,6 +192,7 @@ public class KurrentOperationErrorGenerator : ISourceGenerator {
         var memberIndent = declarationIndent;
 
         const string codeBlock = """
+            
             [PublicAPI, CompilerGenerated, GeneratedCode("KurrentOperationErrorGenerator", "1.0.0")]
             public readonly partial record struct {INSTANCE_NAME} : IResultError {
                 static readonly KurrentOperationErrorAttribute Info =
@@ -268,15 +242,11 @@ public class KurrentOperationErrorGenerator : ISourceGenerator {
             return stringBuilder.ToString().TrimEnd();
         }
 
-        static string GenerateNamespaceDeclaration(string ns) {
-            // Handle nested types properly by generating in the original namespace with proper type hierarchy
-            return ns != string.Empty ? $"namespace {ns};" : "// Global namespace";
-        }
+        static string GenerateNamespaceDeclaration(string ns) =>
+            ns != string.Empty ? $"namespace {ns};" : "// Global namespace";
     }
 
     static string GenerateTypeDeclaration(INamedTypeSymbol containingTypeSymbol) {
-        // public readonly partial record struct
-
         var typeDeclarationBuilder = new StringBuilder();
 
         var accessibility = containingTypeSymbol.DeclaredAccessibility switch {

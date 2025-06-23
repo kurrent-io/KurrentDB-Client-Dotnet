@@ -77,7 +77,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Kurrent.Client\Infra\Grpc\" />
+    <Folder Include="Kurrent.Client\Infra\" />
   </ItemGroup>
 
   <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">
