@@ -1,3 +1,5 @@
+// ReSharper disable InvertIf
+
 using Google.Protobuf;
 using Google.Rpc;
 using Grpc.Core;
@@ -59,46 +61,34 @@ public class KurrentClientException : Exception {
     public static KurrentClientException Throw<T>(RpcException exception) where T : class, IMessage<T>, new() {
 	    var fieldViolations = new List<FieldViolation>();
 
-	    var code     = exception.StatusCode.ToString();
 	    var message  = exception.Status.Detail;
 	    var metadata = new Dictionary<string, string>();
 
 	    var status = exception.GetRpcStatus();
 
-	    if (status is null)
-		    throw new KurrentClientException(
-			    code,
-			    message,
-			    exception,
-			    fieldViolations,
-			    metadata
-		    );
+	    if (status is not null) {
+		    foreach (var detail in status.Details) {
+			    if (detail.TryUnpack<BadRequest>(out var badRequest))
+				    fieldViolations.AddRange(badRequest.FieldViolations.Select(fv => new FieldViolation(fv.Field, fv.Description)));
 
-	    foreach (var detail in status.Details) {
-		    if (detail.TryUnpack<BadRequest>(out var badRequest))
-			    fieldViolations.AddRange(badRequest.FieldViolations.Select(fv => new FieldViolation(fv.Field, fv.Description)));
+			    else if (detail.TryUnpack<PreconditionFailure>(out var preconditionFailure))
+				    fieldViolations.AddRange(preconditionFailure.Violations.Select(v => new FieldViolation(v.Subject, v.Description)));
 
-		    else if (detail.TryUnpack<PreconditionFailure>(out var preconditionFailure))
-			    fieldViolations.AddRange(preconditionFailure.Violations.Select(v => new FieldViolation(v.Subject, v.Description)));
+			    else if (detail.TryUnpack<ErrorInfo>(out var errorInfo))
+				    foreach (var kvp in errorInfo.Metadata)
+					    metadata[kvp.Key] = kvp.Value;
 
-		    else if (detail.TryUnpack<ErrorInfo>(out var errorInfo)) {
-			    code = errorInfo.Reason;
-			    foreach (var kvp in errorInfo.Metadata)
-				    metadata[kvp.Key] = kvp.Value;
-		    }
-
-		    else if (detail.TryUnpack<ResourceInfo>(out var resourceInfo)) {
-			    if (!string.IsNullOrEmpty(resourceInfo.Description))
-				    message = resourceInfo.Description;
-
-			    metadata[nameof(resourceInfo.ResourceType)] = resourceInfo.ResourceType;
-			    metadata[nameof(resourceInfo.ResourceName)] = resourceInfo.ResourceName;
-			    metadata[nameof(resourceInfo.Owner)]        = resourceInfo.Owner;
+			    else if (detail.TryUnpack<ResourceInfo>(out var resourceInfo)) {
+					message = resourceInfo.Description;
+				    metadata[nameof(resourceInfo.ResourceType)] = resourceInfo.ResourceType;
+				    metadata[nameof(resourceInfo.ResourceName)] = resourceInfo.ResourceName;
+				    metadata[nameof(resourceInfo.Owner)]        = resourceInfo.Owner;
+			    }
 		    }
 	    }
 
 	    throw new KurrentClientException(
-		    code,
+		    exception.StatusCode.ToString(),
 		    message,
 		    exception,
 		    fieldViolations,
