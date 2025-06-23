@@ -71,7 +71,7 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 			.CheckSchemaCompatibility(SchemaName.From(schemaName), v1.ToJson(), Protobuf, ct)
 			.ShouldNotThrowAsync()
 			.OnSuccessAsync(_ => KurrentClientException.Throw("Expected compatibility check to fail, but it succeeded."))
-			.OnErrorAsync((error) => {
+			.OnErrorAsync(error => {
 				error.IsSchemaCompatibilityErrors.ShouldBeTrue();
 				var errors = error.AsSchemaCompatibilityErrors.Errors;
 				errors.ShouldContain(e => e.Kind == SchemaCompatibilityErrorKind.DataFormatMismatch);

@@ -68,21 +68,28 @@ public class KurrentClientException : Exception {
 
 	    if (status is not null) {
 		    foreach (var detail in status.Details) {
-			    if (detail.TryUnpack<BadRequest>(out var badRequest))
-				    fieldViolations.AddRange(badRequest.FieldViolations.Select(fv => new FieldViolation(fv.Field, fv.Description)));
+			    if (!detail.TryUnpack<T>(out var unpackedDetail))
+				    continue;
 
-			    else if (detail.TryUnpack<PreconditionFailure>(out var preconditionFailure))
-				    fieldViolations.AddRange(preconditionFailure.Violations.Select(v => new FieldViolation(v.Subject, v.Description)));
+			    switch (unpackedDetail) {
+				    case BadRequest badRequest:
+					    fieldViolations.AddRange(badRequest.FieldViolations.Select(fv => new FieldViolation(fv.Field, fv.Description)));
+					    break;
 
-			    else if (detail.TryUnpack<ErrorInfo>(out var errorInfo))
-				    foreach (var kvp in errorInfo.Metadata)
-					    metadata[kvp.Key] = kvp.Value;
+				    case PreconditionFailure preconditionFailure:
+					    fieldViolations.AddRange(preconditionFailure.Violations.Select(v => new FieldViolation(v.Subject, v.Description)));
+					    break;
 
-			    else if (detail.TryUnpack<ResourceInfo>(out var resourceInfo)) {
-					message = resourceInfo.Description;
-				    metadata[nameof(resourceInfo.ResourceType)] = resourceInfo.ResourceType;
-				    metadata[nameof(resourceInfo.ResourceName)] = resourceInfo.ResourceName;
-				    metadata[nameof(resourceInfo.Owner)]        = resourceInfo.Owner;
+				    case ErrorInfo errorInfo:
+					    metadata = errorInfo.Metadata.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+					    break;
+
+				    case ResourceInfo resourceInfo:
+					    message                                     = resourceInfo.Description;
+					    metadata[nameof(resourceInfo.ResourceType)] = resourceInfo.ResourceType;
+					    metadata[nameof(resourceInfo.ResourceName)] = resourceInfo.ResourceName;
+					    metadata[nameof(resourceInfo.Owner)]        = resourceInfo.Owner;
+					    break;
 			    }
 		    }
 	    }
