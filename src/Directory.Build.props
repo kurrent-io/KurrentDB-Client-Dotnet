@@ -29,6 +29,8 @@
 
     <MinVerTagPrefix>v</MinVerTagPrefix>
 
+    <!-- NETSDK1057 - You are using a preview version of .NET -->
+    <NoWarn>$(NoWarn);NETSDK1057</NoWarn>
   </PropertyGroup>
 
   <ItemGroup Label="Default Packages">

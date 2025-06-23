@@ -1,7 +1,4 @@
-using Google.Protobuf.Collections;
 using Kurrent.Client.SchemaRegistry;
-using Kurrent.Client.SchemaRegistry.Serialization.Json;
-using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Kurrent.Client.Model;
 
@@ -47,10 +44,10 @@ public abstract class MetadataDecoder : IMetadataDecoder {
 		try {
 			var metadata = DecodeCore(bytes, context);
 
-            // Handle backwards compatibility with old data by injecting the legacy schema in the metadata.
             if (metadata.ContainsKey(SystemMetadataKeys.SchemaDataFormat))
                 return metadata;
 
+            // Handle backwards compatibility with old data by injecting the legacy schema in the metadata.
             return metadata
                 .With(SystemMetadataKeys.SchemaName, context.SchemaName)
                 .With(SystemMetadataKeys.SchemaDataFormat, context.SchemaDataFormat);
@@ -62,27 +59,28 @@ public abstract class MetadataDecoder : IMetadataDecoder {
 	 protected abstract Metadata DecodeCore(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context);
 }
 
+/// <summary>
+/// The default metadata decoder that deserializes metadata from JSON-encoded byte arrays.
+/// This allows for backward compatibility with previous metadata formats.
+/// </summary>
 [PublicAPI]
-public sealed class DefaultMetadataDecoder : MetadataDecoder {
+public sealed class JsonMetadataDecoder : MetadataDecoder {
+    static readonly Kurrent.Client.SchemaRegistry.Serialization.Json.JsonSerializer Serializer = new();
+
     protected override Metadata DecodeCore(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context) {
+        return Serializer.Deserialize<Dictionary<string, string?>>(bytes) is { Count: > 0 } deserialized
+            ? new(deserialized.ToDictionary(x => x.Key, EvolveValue))
+            : new();
 
-        try
-        {
-            var temp = JsonSerializer.Deserialize<MapField<string, object?>>(bytes.Span, JsonSchemaSerializerOptions.DefaultJsonSerializerOptions);
-
-            var kebas = new Metadata(temp);
+        static object? EvolveValue(KeyValuePair<string, string?> kvp) {
+            return kvp switch {
+                { Key: SystemMetadataKeys.SchemaDataFormat, Value: not null } => Enum.Parse<SchemaDataFormat>(kvp.Value, ignoreCase: true),
+                { Key: SystemMetadataKeys.SchemaName,       Value: not null } => SchemaName.From(kvp.Value),
+                _                                                             => kvp.Value
+            };
         }
-
-        catch (Exception e)
-        {
-            Console.WriteLine(e);
-            throw;
-        }
-
-        return JsonSerializer.Deserialize<Metadata>(bytes.Span, JsonSchemaSerializerOptions.DefaultJsonSerializerOptions)
-            ?? throw new MetadataDecodingException("Decoded metadata cannot be null");
     }
 }
 
 public class MetadataDecodingException(string message, Exception? innerException = null)
-    : KurrentClientException(errorCode: "MetadataDecodingError", message, innerException);
+    : KurrentClientException(errorCode: "MetadataDecodingError", message, null, innerException);

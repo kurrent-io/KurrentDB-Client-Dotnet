@@ -26,7 +26,7 @@ public readonly partial record struct Result<TValue, TError> {
     /// <c>true</c> if the operation failed and <paramref name="error"/> contains the error value;
     /// otherwise, <c>false</c>.
     /// </returns>
-    public bool TryGetError([NotNullWhen(false)] out TError? error) {
+    public bool TryGetError([NotNullWhen(true)] out TError? error) {
         error = IsFailure ? _error : default;
         return IsFailure;
     }

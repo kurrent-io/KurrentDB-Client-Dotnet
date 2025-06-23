@@ -28,7 +28,7 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 			.CheckSchemaCompatibility(createResult.Value.VersionId, v2.ToJson(), Json, ct)
 			.ShouldNotThrowAsync()
 			.OnSuccessAsync(_ => KurrentClientException.Throw("Expected compatibility check to fail, but it succeeded."))
-			.OnErrorAsync(error => {
+			.OnFailureAsync(error => {
 				error.IsSchemaCompatibilityErrors.ShouldBeTrue();
 				var errors = error.AsSchemaCompatibilityErrors.Errors;
 				errors.ShouldContain(e => e.Kind == SchemaCompatibilityErrorKind.MissingRequiredProperty);
@@ -49,10 +49,10 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 			.CheckSchemaCompatibility(SchemaName.From(schemaName), v1.ToJson(), Json, ct)
 			.ShouldNotThrowAsync()
 			.OnSuccessAsync(_ => KurrentClientException.Throw("Expected compatibility check to fail, but it succeeded."))
-			.OnErrorAsync(error => {
-				error.IsSchemaNotFound.ShouldBeTrue();
-				error.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
-				error.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema '{schemaName}' not found.");
+			.OnFailureAsync(failure => {
+				failure.IsSchemaNotFound.ShouldBeTrue();
+				failure.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
+				failure.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema '{schemaName}' not found.");
 			});
 	}
 
@@ -67,10 +67,13 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 
 		var exception = await result.ShouldThrowAsync<KurrentClientException>();
 		exception.ErrorCode.ShouldBe(nameof(StatusCode.InvalidArgument));
-		exception.FieldViolations.ShouldNotBeEmpty();
-		exception.FieldViolations.ShouldHaveSingleItem();
-		exception.FieldViolations.ShouldContain(v => v.Field == "SchemaName");
-		exception.FieldViolations.ShouldContain(v => v.Description == "Schema name must not be empty and can only contain alphanumeric characters, underscores, dashes, and periods");
+
+		exception.Metadata.Get<List<FieldViolation>>("FieldViolations").ShouldSatisfyAllConditions(
+			vs => vs.ShouldNotBeEmpty(),
+			vs => vs.ShouldHaveSingleItem(),
+			vs => vs.ShouldContain(v => v.Field == "SchemaName"),
+			vs => vs.ShouldContain(v => v.Description == "Schema name must not be empty and can only contain alphanumeric characters, underscores, dashes, and periods")
+		);
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -89,9 +92,9 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 			.CheckSchemaCompatibility(SchemaName.From(schemaName), v1.ToJson(), Protobuf, ct)
 			.ShouldNotThrowAsync()
 			.OnSuccessAsync(_ => KurrentClientException.Throw("Expected compatibility check to fail, but it succeeded."))
-			.OnErrorAsync(error => {
-				error.IsSchemaCompatibilityErrors.ShouldBeTrue();
-				var errors = error.AsSchemaCompatibilityErrors.Errors;
+			.OnFailureAsync(failure => {
+				failure.IsSchemaCompatibilityErrors.ShouldBeTrue();
+				var errors = failure.AsSchemaCompatibilityErrors.Errors;
 				errors.ShouldContain(e => e.Kind == SchemaCompatibilityErrorKind.DataFormatMismatch);
 			});
 	}

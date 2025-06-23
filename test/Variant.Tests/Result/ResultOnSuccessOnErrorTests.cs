@@ -45,7 +45,7 @@ public class ResultOnSuccessOnErrorTests {
         bool actionExecuted = false;
 
         // Act
-        Result<GameStarted, InvalidMoveError> returnedResult = originalResult.OnError(_ => actionExecuted = true);
+        Result<GameStarted, InvalidMoveError> returnedResult = originalResult.OnFailure(_ => actionExecuted = true);
 
         // Assert
         actionExecuted.ShouldBeTrue();
@@ -60,7 +60,7 @@ public class ResultOnSuccessOnErrorTests {
         bool actionExecuted = false;
 
         // Act
-        Result<GameStarted, InvalidMoveError> returnedResult = originalResult.OnError(_ => actionExecuted = true);
+        Result<GameStarted, InvalidMoveError> returnedResult = originalResult.OnFailure(_ => actionExecuted = true);
 
         // Assert
         actionExecuted.ShouldBeFalse();
@@ -91,7 +91,7 @@ public class ResultOnSuccessOnErrorTests {
         string? capturedState = null;
 
         // Act
-        originalResult.OnError((err, state) => capturedState = $"{state}: {err.Reason}", contextState);
+        originalResult.OnFailure((err, state) => capturedState = $"{state}: {err.Reason}", contextState);
 
         // Assert
         capturedState.ShouldBe($"{contextState}: {errorValue.Reason}");
@@ -127,7 +127,7 @@ public class ResultOnSuccessOnErrorTests {
         bool actionExecuted = false;
 
         // Act
-        Result<GameStarted, InvalidMoveError> returnedResult = await originalResult.OnErrorAsync(async _ => {
+        Result<GameStarted, InvalidMoveError> returnedResult = await originalResult.OnFailureAsync(async _ => {
             await Task.Delay(1);
             actionExecuted = true;
         });
@@ -164,7 +164,7 @@ public class ResultOnSuccessOnErrorTests {
         string? capturedState = null;
 
         // Act
-        await originalResult.OnErrorAsync(async (err, state) => {
+        await originalResult.OnFailureAsync(async (err, state) => {
             await Task.Delay(1);
             capturedState = $"{state}: {err.Reason}";
         }, contextState);

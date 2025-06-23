@@ -27,7 +27,8 @@ public static class MessageTypeMapperExtensions {
             .Select(msgMap => mapper
                 .Map(msgMap.SchemaName, msgMap.MessageType)
                 .Map(_ => msgMap))
-            .SequenceToArray();
+            .Sequence()
+            .Map(maps => maps.ToArray());
     }
 
     /// <summary>
@@ -50,7 +51,8 @@ public static class MessageTypeMapperExtensions {
             .Select(msgMap => mapper
                 .Map(msgMap.SchemaName, msgMap.MessageType)
                 .Map(_ => msgMap))
-            .SequenceToArray();
+            .Sequence()
+            .Map(maps => maps.ToArray());
     }
 
     /// <summary>

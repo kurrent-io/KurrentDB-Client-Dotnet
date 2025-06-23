@@ -25,30 +25,7 @@ public static class CollectionsSequenceResultExtensions {
             if (result.IsFailure) return result.Error;
             successes.Add(result.Value);
         }
-        return Kurrent.Result.Success<IEnumerable<TValue>, TError>(successes);
-    }
-
-    /// <summary>
-    /// Transforms a collection of <see cref="Result{TValue,TError}"/> into a single <see cref="Result{TValue,TError}"/> containing an array of success values.
-    /// </summary>
-    /// <remarks>
-    /// This method follows a fail-fast approach. If any result in the input collection is an <see cref="Result{TValue,TError}.IsFailure"/>,
-    /// the entire operation will short-circuit and return the first encountered error.
-    /// If all results are successful, it returns a single success result containing an array of all the success values.
-    /// </remarks>
-    /// <typeparam name="TValue">The type of the success value.</typeparam>
-    /// <typeparam name="TError">The type of the error value.</typeparam>
-    /// <param name="results">The collection of results to sequence.</param>
-    /// <returns>
-    /// A <see cref="Result{TValue,TError}"/> containing either an array of all success values or the first error encountered.
-    /// </returns>
-    public static Result<TValue[], TError> SequenceToArray<TValue, TError>(this IEnumerable<Result<TValue, TError>> results) where TError : notnull {
-        var successes = new List<TValue>();
-        foreach (var result in results) {
-            if (result.IsFailure) return result.Error;
-            successes.Add(result.Value);
-        }
-        return Kurrent.Result.Success<TValue[], TError>(successes.ToArray());
+        return successes;
     }
 
     /// <summary>
@@ -86,9 +63,9 @@ public static class CollectionsSequenceResultExtensions {
         var successValues = new List<TValue>();
         await foreach (var result in source.ConfigureAwait(false)) {
             if (result.IsFailure)
-                return Kurrent.Result.Failure<IReadOnlyList<TValue>, TError>(result.Error);
+                return Result.Failure<IReadOnlyList<TValue>, TError>(result.Error);
             successValues.Add(result.Value);
         }
-        return Kurrent.Result.Success<IReadOnlyList<TValue>, TError>(successValues);
+        return Result.Success<IReadOnlyList<TValue>, TError>(successValues);
     }
 }

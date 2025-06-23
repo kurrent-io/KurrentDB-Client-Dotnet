@@ -108,17 +108,18 @@ static class StreamsMapper {
 			RecordsThreshold = source.RecordsThreshold
 		};
 
-	public static AppendStreamFailure Map(this Contracts.AppendStreamFailure source) =>
-		source.ErrorCase switch {
-			Contracts.AppendStreamFailure.ErrorOneofCase.StreamNotFound             => new ErrorDetails.StreamNotFound(source.Stream),
-			Contracts.AppendStreamFailure.ErrorOneofCase.StreamDeleted              => new ErrorDetails.StreamDeleted(source.Stream),
-			Contracts.AppendStreamFailure.ErrorOneofCase.StreamRevisionConflict     => new ErrorDetails.StreamRevisionConflict(source.Stream, source.StreamRevisionConflict.StreamRevision),
-			Contracts.AppendStreamFailure.ErrorOneofCase.AccessDenied               => new ErrorDetails.AccessDenied(source.Stream),
-			Contracts.AppendStreamFailure.ErrorOneofCase.TransactionMaxSizeExceeded => new ErrorDetails.TransactionMaxSizeExceeded(source.TransactionMaxSizeExceeded.MaxSize),
-			_                                                                       => throw new UnreachableException($"Unexpected append stream failure error case: {source.ErrorCase}")
-		};
+    public static AppendStreamFailure Map(this Contracts.AppendStreamFailure source) {
+        return source.ErrorCase switch {
+            Contracts.AppendStreamFailure.ErrorOneofCase.StreamRevisionConflict     => new ErrorDetails.StreamRevisionConflict(meta => meta.With("Stream", source.Stream).With("ExpectedRevision", source.StreamRevisionConflict.StreamRevision)),
+            Contracts.AppendStreamFailure.ErrorOneofCase.AccessDenied               => new ErrorDetails.AccessDenied(meta => meta.With("Stream", source.Stream)),
+            Contracts.AppendStreamFailure.ErrorOneofCase.StreamDeleted              => new ErrorDetails.StreamDeleted(meta => meta.With("Stream", source.Stream)),
+            Contracts.AppendStreamFailure.ErrorOneofCase.StreamNotFound             => new ErrorDetails.StreamNotFound(meta => meta.With("Stream", source.Stream)),
+            Contracts.AppendStreamFailure.ErrorOneofCase.TransactionMaxSizeExceeded => new ErrorDetails.TransactionMaxSizeExceeded(meta => meta.With("MaxSize", source.TransactionMaxSizeExceeded.MaxSize) ),
+            _                                                                       => throw new UnreachableException($"Unexpected append stream failure error category: {source.ErrorCase}")
+        };
+    }
 
-	public static AppendStreamSuccess Map(this Contracts.AppendStreamSuccess source) =>
+    public static AppendStreamSuccess Map(this Contracts.AppendStreamSuccess source) =>
 		new(source.Stream, source.Position, source.StreamRevision);
 
 	public static AppendStreamFailures Map(this RepeatedField<Contracts.AppendStreamFailure> source) =>

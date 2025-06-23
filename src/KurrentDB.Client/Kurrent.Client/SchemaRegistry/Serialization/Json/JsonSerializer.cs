@@ -71,4 +71,7 @@ public class JsonSerializer(JsonSerializerOptions? options = null, bool useProto
 			return await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
 		}
 	}
+
+    public T? Deserialize<T>(ReadOnlyMemory<byte> data) where T : class =>
+        Deserialize(data, typeof(T)) as T;
 }

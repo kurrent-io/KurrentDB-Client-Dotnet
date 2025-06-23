@@ -116,6 +116,10 @@ public static partial class Result {
     /// Creates a new <see cref="Result{TValue,TError}"/> representing a failed operation with the specified error.
     /// </summary>
     public static Result<TValue, TError> Failure<TValue, TError>(TError error) => new(error);
+
+    public static ValueTask<Result<TValue, TError>> SuccessValueTask<TValue, TError>(TValue value) =>
+        ValueTask.FromResult(Success<TValue, TError>(value));
+
 }
 
 public enum ResultCase {

@@ -75,7 +75,7 @@ public class KurrentRegistryClient {
 					Result.Success<SchemaVersionDescriptor, CreateSchemaError>(
 						new SchemaVersionDescriptor(Guid.Parse(response.SchemaVersionId), response.VersionNumber)
 					),
-				onError: exception => {
+				onFailure: exception => {
 					if (exception is RpcException rpcEx) {
 						return rpcEx.StatusCode switch {
 							StatusCode.AlreadyExists    => Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(new ErrorDetails.SchemaAlreadyExists(schemaName)),
@@ -154,7 +154,7 @@ public class KurrentRegistryClient {
 			.ToResultAsync()
 			.MatchAsync(
 				onSuccess: response => Result.Success<Schema, GetSchemaError>(Schema.FromProto(response.Schema)),
-				onError: exception => {
+				onFailure: exception => {
 					if (exception is RpcException rpcEx) {
 						return rpcEx.StatusCode switch {
 							StatusCode.NotFound         => Result.Failure<Schema, GetSchemaError>(new ErrorDetails.SchemaNotFound(schemaName)),
@@ -203,7 +203,7 @@ public class KurrentRegistryClient {
 			.ToResultAsync()
 			.MatchAsync(
 				onSuccess: response => Result.Success<SchemaVersion, GetSchemaVersionError>(SchemaVersion.FromProto(response.Version)),
-				onError: exception => {
+				onFailure: exception => {
 					if (exception is RpcException rpcEx) {
 						return rpcEx.StatusCode switch {
 							StatusCode.NotFound         => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.SchemaNotFound(schemaName)),
@@ -247,7 +247,7 @@ public class KurrentRegistryClient {
 			.ToResultAsync()
 			.MatchAsync(
 				onSuccess: response => Result.Success<SchemaVersion, GetSchemaVersionError>(SchemaVersion.FromProto(response.Version)),
-				onError: exception => {
+				onFailure: exception => {
 					if (exception is RpcException rpcEx) {
 						return rpcEx.StatusCode switch {
 							StatusCode.NotFound         => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.SchemaNotFound(schemaVersionId)),
@@ -289,7 +289,7 @@ public class KurrentRegistryClient {
 			.ToResultAsync()
 			.MatchAsync(
 				onSuccess: _ => Result.Success<Success, DeleteSchemaError>(Success.Instance),
-				onError: exception => {
+				onFailure: exception => {
 					if (exception is RpcException rpcEx) {
 						return rpcEx.StatusCode switch {
 							StatusCode.NotFound         => Result.Failure<Success, DeleteSchemaError>(new ErrorDetails.SchemaNotFound(schemaName)),
@@ -344,7 +344,7 @@ public class KurrentRegistryClient {
 				onSuccess: result => result.Success is not null
 					? Result.Success<SchemaVersionId, CheckSchemaCompatibilityError>(SchemaVersionId.From(result.Success.SchemaVersionId))
 					: Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(SchemaCompatibilityErrors.FromProto(result.Failure.Errors)),
-				onError: exception => {
+				onFailure: exception => {
 					if (exception is RpcException rpcEx) {
 						return rpcEx.StatusCode switch {
 							StatusCode.NotFound => Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(new ErrorDetails.SchemaNotFound(identifier)),

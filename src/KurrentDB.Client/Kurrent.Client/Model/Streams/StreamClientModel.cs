@@ -105,7 +105,7 @@ public readonly partial record struct SubscribeMessage : IVariant<Record, Heartb
 /// Represents the result of a delete operation on a stream in KurrentDB.
 /// </summary>
 [PublicAPI]
-public readonly partial record struct DeleteStreamError : IVariant<
+public readonly partial record struct DeleteStreamError : IVariantResultError<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,
@@ -115,26 +115,26 @@ public readonly partial record struct DeleteStreamError : IVariant<
 /// Represents the result of a tombstone operation on a stream in KurrentDB.
 /// </summary>
 [PublicAPI]
-public readonly partial record struct TombstoneStreamError : IVariant<
+public readonly partial record struct TombstoneError : IVariantResultError<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,
     ErrorDetails.StreamRevisionConflict>;
 
 [PublicAPI]
-public readonly partial record struct GetStreamInfoError : IVariant<
+public readonly partial record struct GetStreamInfoError : IVariantResultError<
     ErrorDetails.StreamNotFound,
     ErrorDetails.AccessDenied>;
 
 [PublicAPI]
-public readonly partial record struct SetStreamMetadataError : IVariant<
+public readonly partial record struct SetStreamMetadataError : IVariantResultError<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,
     ErrorDetails.StreamRevisionConflict>;
 
 [PublicAPI]
-public readonly partial record struct TruncateStreamError : IVariant<
+public readonly partial record struct TruncateStreamError : IVariantResultError<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,

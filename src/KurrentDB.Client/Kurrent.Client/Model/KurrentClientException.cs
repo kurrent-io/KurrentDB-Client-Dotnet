@@ -3,6 +3,7 @@
 using Google.Protobuf;
 using Google.Rpc;
 using Grpc.Core;
+using Humanizer;
 
 namespace Kurrent.Client.Model;
 
@@ -13,30 +14,20 @@ public record FieldViolation(string Field, string Description);
 /// Provides relevant error details, including error codes, statuses, field violations, and associated metadata.
 /// </summary>
 [PublicAPI]
-public class KurrentClientException : Exception {
-	/// <summary>
-	/// Gets the error code associated with this exception.
-	/// </summary>
-	public string ErrorCode { get; }
+// public class KurrentClientException(string errorCode, string message, Exception? innerException = null) : Exception(message, innerException) {
+public class KurrentClientException(string errorCode, string message, Metadata? metadata = null, Exception? innerException = null) : Exception(message, innerException) {
+    /// <summary>
+    /// Gets the error code associated with this exception.
+    /// </summary>
+    public string ErrorCode { get; } = errorCode;
 
     /// <summary>
-    /// Gets the validation errors if this exception represents validation failures.
+    /// Additional context about the error.
     /// </summary>
-    public IReadOnlyCollection<FieldViolation> FieldViolations { get; }
+    public Metadata Metadata { get; } = metadata is not null ? new(metadata) : [];
 
-    /// <summary>
-    /// Gets additional metadata associated with this exception.
-    /// </summary>
-    public IReadOnlyDictionary<string, string> Metadata { get; }
-
-    public KurrentClientException(
-	    string errorCode, string message, Exception? innerException = null,
-	    IEnumerable<FieldViolation>? fieldViolations = null, IDictionary<string, string>? metadata = null
-    ) : base(message, innerException) {
-        ErrorCode = errorCode;
-        FieldViolations = fieldViolations?.ToList().AsReadOnly() ?? new List<FieldViolation>().AsReadOnly();
-        Metadata = metadata?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value).AsReadOnly() ?? new Dictionary<string, string>().AsReadOnly();
-    }
+    public static KurrentClientException Wrap<T>(T exception, string? errorCode = null) where T : Exception =>
+        new KurrentClientException(errorCode ?? exception.GetType().Name, exception.Message, null, exception);
 
     /// <summary>
     /// Creates and throws a <see cref="KurrentClientException"/> with an error code derived from the type name of <typeparamref name="T"/>
@@ -48,7 +39,7 @@ public class KurrentClientException : Exception {
     /// <returns>This method always throws an exception, so it never returns a value.</returns>
     /// <exception cref="KurrentClientException">Always thrown by this method.</exception>
     public static KurrentClientException Throw<T>(T error, Exception? innerException = null) where T : notnull =>
-	    throw new KurrentClientException(typeof(T).Name, error.ToString()!, innerException);
+        throw new KurrentClientException(typeof(T).Name, error.ToString()!, null, innerException);
 
     /// <summary>
     /// Creates and throws a <see cref="KurrentClientException"/> with an error code derived from the type name of <typeparamref name="T"/>
@@ -61,8 +52,8 @@ public class KurrentClientException : Exception {
     public static KurrentClientException Throw<T>(RpcException exception) where T : class, IMessage<T>, new() {
 	    var fieldViolations = new List<FieldViolation>();
 
-	    var message  = exception.Status.Detail;
-	    var metadata = new Dictionary<string, string>();
+	    var message = exception.Status.Detail;
+	    var metadata = new Metadata();
 
 	    var status = exception.GetRpcStatus();
 
@@ -81,25 +72,29 @@ public class KurrentClientException : Exception {
 					    break;
 
 				    case ErrorInfo errorInfo:
-					    metadata = errorInfo.Metadata.ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+					    foreach (var kvp in errorInfo.Metadata) {
+                            metadata.With(kvp.Key, kvp.Value);
+                        }
 					    break;
 
 				    case ResourceInfo resourceInfo:
-					    message                                     = resourceInfo.Description;
-					    metadata[nameof(resourceInfo.ResourceType)] = resourceInfo.ResourceType;
-					    metadata[nameof(resourceInfo.ResourceName)] = resourceInfo.ResourceName;
-					    metadata[nameof(resourceInfo.Owner)]        = resourceInfo.Owner;
+					    message = resourceInfo.Description;
+					    metadata.With(nameof(resourceInfo.ResourceType), resourceInfo.ResourceType)
+                            .With(nameof(resourceInfo.ResourceName), resourceInfo.ResourceName)
+                            .With(nameof(resourceInfo.Owner), resourceInfo.Owner);
 					    break;
 			    }
 		    }
 	    }
 
+	    if (fieldViolations.Count > 0)
+		    metadata.With("FieldViolations", fieldViolations);
+
 	    throw new KurrentClientException(
 		    exception.StatusCode.ToString(),
 		    message,
-		    exception,
-		    fieldViolations,
-		    metadata
+		    metadata,
+		    exception
 	    );
     }
 
@@ -113,7 +108,7 @@ public class KurrentClientException : Exception {
     /// <exception cref="ArgumentException"><paramref name="operation"/> is empty or consists only of white-space characters.</exception>
     public static KurrentClientException CreateUnknown(string operation, Exception innerException) {
         ArgumentException.ThrowIfNullOrWhiteSpace(operation);
-        return new("Unknown", $"Unexpected error on {operation}: {innerException.Message}", innerException);
+        return new("Unknown", $"Unexpected error on {operation}: {innerException.Message}", null, innerException);
     }
 
     /// <summary>
@@ -127,26 +122,21 @@ public class KurrentClientException : Exception {
     /// <exception cref="ArgumentException"><paramref name="operation"/> is empty or consists only of white-space characters.</exception>
     public static KurrentClientException ThrowUnknown(string operation, Exception innerException) =>
         throw CreateUnknown(operation, innerException);
-}
 
-public static class KurrentClientExceptionExtensions {
-	// public static Exception ToException(this IVariantResultError variantError, Exception? innerException = null) {
-	//     if (variantError..Value is IResultError error)
-	//         return error.CreateException(innerException);
-	//
-	//     var invalidEx = new InvalidOperationException(
-	//         $"The error value is not a KurrentClientErrorDetails instance but rather " +
-	//         $"{variantError.Value.GetType().FullName}", innerException);
-	//
-	//     return KurrentClientException.CreateUnknown("KurrentClientExceptionExtensions.Throw", invalidEx);
-	// }
-	//
-	// public static Exception Throw(this IVariant variantError, Exception? innerException = null) =>
-	//     throw variantError.ToException(innerException);
-	//
-	// public static Exception ToException(this IVariantResultError variantError, Exception? innerException = null) =>
-	//     variantError.CreateException(innerException);
-	//
-	// public static Exception Throw(this IVariantResultError variantError, Exception? innerException = null) =>
-	//     throw variantError.Throw(innerException);
+
+    public static KurrentClientException CreateUnexpected(string operation, Exception innerException) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
+        return new(operation.Underscore().ToUpperInvariant(), $"Unexpected behaviour detected during {operation}: {innerException.Message}", null, innerException);
+    }
+    public static KurrentClientException CreateUnexpected(string operation, Metadata metadata, Exception innerException) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
+        return new(operation.Underscore().ToUpperInvariant(), $"Unexpected behaviour detected during {operation}: {innerException.Message}", metadata, innerException);
+    }
+
+    public static KurrentClientException ThrowUnexpected(string operation, Exception innerException) =>
+	     throw CreateUnexpected(operation,innerException);
+
+	 public static KurrentClientException ThrowUnexpected(string operation, Metadata metadata, Exception innerException) =>
+	throw CreateUnexpected(operation, metadata,innerException);
+
 }
