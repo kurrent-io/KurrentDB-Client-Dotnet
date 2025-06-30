@@ -53,10 +53,13 @@ public record ReadFilter {
 	    if (prefixes.Length == 0)
 		    throw new ArgumentException("Prefixes cannot be empty.", nameof(prefixes));
 
+	    var expression = CreatePattern(prefixes);
+
 	    return new ReadFilter {
-            Scope = scope,
-            Type  = ReadFilterType.Regex,
-            Regex = new Regex(CreatePattern(prefixes))
+            Scope      = scope,
+            Type       = ReadFilterType.Regex,
+            Expression = expression,
+            Regex      = new Regex(expression)
         };
 
         // Escape special characters in the prefixes and join them with '|'

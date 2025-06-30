@@ -1,3 +1,8 @@
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using JetBrains.Annotations;
+using Kurrent.Client.Model;
+
 namespace Kurrent.Client.Tests;
 
 public static class ShouldlyResultExtensions {
@@ -13,34 +18,62 @@ public static class ShouldlyResultExtensions {
         return result.Value;
     }
 
-    public static async ValueTask<TValue> ShouldNotThrowAsync<TValue>(this ValueTask<TValue> operation, string? customMessage = null) {
-        TValue taskResult = default!;
+    public static async ValueTask<TValue> ShouldNotThrowAsync<TValue>(this ValueTask<TValue> operation, string? customMessage = null, [CallerMemberName] string shouldlyMethod = null!) =>
+        await NotThrowAsync(() => operation, customMessage, shouldlyMethod).ConfigureAwait(false);
 
-        await Should
-            .NotThrowAsync(async () => taskResult = await operation.AsTask().ConfigureAwait(false), customMessage)
-            .ConfigureAwait(false);
+    public static async ValueTask<Result<TValue, Exception>> ShouldNotThrowAsync<TValue>(this ValueTask<Result<TValue, Exception>> operation, string? customMessage = null, [CallerMemberName] string shouldlyMethod = null!) =>
+        await NotThrowAsync(() => operation, customMessage, shouldlyMethod).ConfigureAwait(false);
 
-        return taskResult;
-    }
+    public static async ValueTask<Result<TValue, TError>> ShouldNotThrowAsync<TValue, TError>(this ValueTask<Result<TValue, TError>> operation, string? customMessage = null, [CallerMemberName] string shouldlyMethod = null!) =>
+        await NotThrowAsync(() => operation, customMessage, shouldlyMethod).ConfigureAwait(false);
 
-    public static async ValueTask<Result<TValue, Exception>> ShouldNotThrowAsync<TValue>(this ValueTask<Result<TValue, Exception>> operation, string? customMessage = null) {
-        Result<TValue, Exception> result = default!;
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    static ValueTask<T> NotThrowAsync<T>(Func<ValueTask<T>> actual, string? customMessage = null, string shouldlyMethod = null!) =>
+        NotThrowAsyncInternal(actual, customMessage, shouldlyMethod);
 
-        await Should
-            .NotThrowAsync(async () => result = await operation.AsTask().ConfigureAwait(false), customMessage)
-            .ConfigureAwait(false);
+    internal static async ValueTask<T> NotThrowAsyncInternal<T>([InstantHandle] Func<ValueTask<T>> actual, string? customMessage, string shouldlyMethod = null!) {
+        var operation = actual();
 
-        return result;
-    }
+        if (operation.IsCompletedSuccessfully)
+            return operation.Result;
 
-    public static async ValueTask<Result<TValue, TError>> ShouldNotThrowAsync<TValue, TError>(this ValueTask<Result<TValue, TError>> operation, string? customMessage = null) {
-        Result<TValue, TError> result = default!;
+        return await operation.AsTask().ContinueWith(t => {
+                if (!t.IsFaulted) return t.Result;
 
-        await Should
-            .NotThrowAsync(async () => result = await operation.AsTask().ConfigureAwait(false), customMessage)
-            .ConfigureAwait(false);
+                var ex = t.Exception!.Flatten() is { InnerExceptions.Count: 1, InnerException: { } inner } ? inner : t.Exception;
 
-        return result;
+                throw new ShouldAssertException(
+                    new AsyncShouldlyNotThrowShouldlyMessage(
+                        ex.GetType(), null, new StackTrace(ex),
+                        ex.ToString(), shouldlyMethod
+                    ).ToString(), ex
+                );
+
+                // throw new ShouldAssertException(
+                //     new AsyncShouldlyNotThrowShouldlyMessage(
+                //         ex.GetType(), null, new StackTrace(ex),
+                //         ex is KurrentClientException kex ? kex.Message : ex.Message, shouldlyMethod
+                //     ).ToString(), ex
+                // );
+
+                // var flattened = t.Exception!.Flatten();
+                // if (flattened.InnerExceptions.Count == 1 && flattened.InnerException is { } inner) {
+                //     throw new ShouldAssertException(
+                //         new AsyncShouldlyNotThrowShouldlyMessage(
+                //             inner.GetType(), customMessage, new StackTrace(inner),
+                //             inner.Message, shouldlyMethod
+                //         ).ToString(), inner
+                //     );
+                // }
+                //
+                // throw new ShouldAssertException(
+                //     new AsyncShouldlyNotThrowShouldlyMessage(
+                //         t.Exception.GetType(), customMessage, new StackTrace(t.Exception),
+                //         t.Exception.Message, shouldlyMethod
+                //     ).ToString(), t.Exception
+                // );
+            }
+        );
     }
 
     #endregion

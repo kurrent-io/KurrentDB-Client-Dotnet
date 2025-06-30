@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using EventStore.Client.Streams;
 using Kurrent.Client.Model;
 using Kurrent.Client.SchemaRegistry;
 using Kurrent.Client.SchemaRegistry.Serialization;
@@ -18,6 +19,9 @@ class KurrentDBLegacyConverter(ISchemaSerializerProvider serializerProvider, IMe
 
 	public ValueTask<Record> ConvertToRecord(ResolvedEvent resolvedEvent, CancellationToken ct) =>
 		resolvedEvent.ConvertToRecord(SerializerProvider, MetadataDecoder, RegistryPolicy, ct);
+
+	public ValueTask<Record> ConvertToRecord(ReadResp.Types.ReadEvent readEvent, CancellationToken ct) =>
+		readEvent.ConvertToRecord(SerializerProvider, MetadataDecoder, RegistryPolicy, ct);
 
 	public IAsyncEnumerable<EventData> ConvertAllToEventData(IEnumerable<Message> messages, string stream, CancellationToken ct) =>
 		messages.ConvertAllToEventData(stream, SerializerProvider, RegistryPolicy, ct);
@@ -114,6 +118,72 @@ static class KurrentDBLegacyMapper {
 
 		return record;
 	}
+
+	public static async ValueTask<Record> ConvertToRecord(
+		this ReadResp.Types.ReadEvent.Types.RecordedEvent recordedEvent,
+		ISchemaSerializerProvider serializerProvider,
+		IMetadataDecoder metadataDecoder,
+		SchemaRegistryPolicy registryPolicy,
+		CancellationToken ct
+	) {
+		// first parse all info from the event
+		var stream           = StreamName.From(recordedEvent.StreamIdentifier!);
+		var recordId         = Uuid.FromDto(recordedEvent.Id).ToGuid();
+		var revision         = StreamRevision.From((long)recordedEvent.StreamRevision);
+		var position         = LogPosition.From((long)recordedEvent.CommitPosition);
+		var schemaName       = SchemaName.From(recordedEvent.Metadata[Constants.Metadata.Type]);
+		var schemaDataFormat = recordedEvent.Metadata[Constants.Metadata.ContentType].GetSchemaDataFormat(); // it will always be json or octet-stream
+		var data             = recordedEvent.Data.Memory;
+		var rawMetadata      = recordedEvent.CustomMetadata.Memory;
+		var timestamp        = Convert.ToInt64(recordedEvent.Metadata[Constants.Metadata.Created]).FromTicksSinceEpoch();
+		var metadata         = metadataDecoder.Decode(rawMetadata, new(stream, schemaName, schemaDataFormat));
+
+		// now deserialize the value
+		var (value, valueType) = await Deserialize();
+
+		// and we are done
+		var record = new Record {
+			Id             = recordId,
+			Position       = position,
+			Stream         = stream,
+			StreamRevision = revision,
+			Timestamp      = timestamp,
+			Metadata       = metadata,
+			Data           = data,
+			Value          = value,
+			ValueType      = valueType,
+		};
+
+		return record;
+
+		async ValueTask<(object Value, Type Type)> Deserialize() {
+			var context = new SchemaSerializationContext {
+				Stream               = stream,
+				Metadata             = metadata,
+				SchemaRegistryPolicy = registryPolicy,
+				CancellationToken    = ct
+			};
+
+			var val = await serializerProvider
+				.GetSerializer(schemaDataFormat)
+				.Deserialize(data, context)
+				.ConfigureAwait(false);
+
+			var type = val is not null
+				? val.GetType()
+				: Type.Missing.GetType();
+
+			return new(val!, type);
+		}
+	}
+
+	public static ValueTask<Record> ConvertToRecord(
+		this ReadResp.Types.ReadEvent readEvent,
+		ISchemaSerializerProvider serializerProvider,
+		IMetadataDecoder metadataDecoder,
+		SchemaRegistryPolicy registryPolicy,
+		CancellationToken ct
+	) => ConvertToRecord(readEvent.Event, serializerProvider, metadataDecoder, registryPolicy, ct);
 
 	public static async IAsyncEnumerable<EventData> ConvertAllToEventData(
 		this IEnumerable<Message> messages,
@@ -224,7 +294,7 @@ static class KurrentDBLegacyMapper {
 	public static LogPosition ConvertToLogPosition(this Position? position) =>
 		position switch {
 			null => LogPosition.Unset,
-			_    => ConvertToLogPosition(position)
+			_    => ConvertToLogPosition((Position)position)
 		};
 
 	/// <summary>

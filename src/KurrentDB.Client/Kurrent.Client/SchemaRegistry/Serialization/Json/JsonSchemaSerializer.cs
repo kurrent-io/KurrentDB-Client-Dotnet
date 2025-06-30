@@ -15,6 +15,9 @@ public class JsonSchemaSerializer(JsonSchemaSerializerOptions options, SchemaMan
 	protected override ReadOnlyMemory<byte> Serialize(object? value) =>
 		Serializer.Serialize(value);
 
-	protected override object Deserialize(ReadOnlyMemory<byte> data, Type resolvedType) =>
-		Serializer.Deserialize(data, resolvedType)!;
+	protected override object Deserialize(ReadOnlyMemory<byte> data, Type resolvedType) {
+		var temp =  Serializer.Deserialize(data, resolvedType)!;
+
+		return temp;
+	}
 }

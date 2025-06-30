@@ -368,13 +368,8 @@ docs/public
 # Ignore multiple experimental and development directories and files
 docs/dev/**
 tasks/**
-CLAUDE.md
 CLAUDE.local.md
-.mcp.json
 ai-agent-system/
 .cursor/
 .clinerules/
 .github/instructions/**
-/ai-agent-system/
-/docs/dev/
-/.claude/commands/

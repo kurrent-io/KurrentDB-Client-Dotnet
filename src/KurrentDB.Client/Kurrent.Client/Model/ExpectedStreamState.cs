@@ -22,11 +22,13 @@ public readonly record struct ExpectedStreamState {
     public long Value { get; }
 
     internal ExpectedStreamState(long value) {
-        Value = value switch {
-            -1 or -2 or -4 or >= 0 => value,
-            _                      => throw new ArgumentOutOfRangeException(
-                nameof(value), value, "ExpectedStreamState must be NoStream(-1), Any(-2), StreamExists(-4), or a StreamRevision(0+)")
-        };
+	    Value = value switch {
+		    -1 or -2 or -4 or >= 0 => value,
+		    -1000                  => -2, // Special case for unset revision to Any
+		    _ => throw new ArgumentOutOfRangeException(
+			    nameof(value), value, "ExpectedStreamState must be NoStream(-1), Any(-2), StreamExists(-4), or a StreamRevision(0+)"
+		    )
+	    };
 	}
 
     public static implicit operator ExpectedStreamState(long _)           => new(_);

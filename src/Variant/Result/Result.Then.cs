@@ -1,8 +1,15 @@
 namespace Kurrent;
 
 public readonly partial record struct Result<TValue, TError> {
+    // NOTE: All Then methods have been moved to Result.Extensions.Then.cs
+    // The extension methods now work on both Result<TValue, TError> and ResultBase<TValue, TError>
+    // via the IResult<TValue, TError> interface.
+    
+    // Commented out original partial methods - extension methods provide the same functionality:
+    
     #region . sync .
 
+    /*
     /// <summary>
     /// Chains a new operation based on the success value of this result using the specified binding function.
     /// If this result is an error, the error is propagated.
@@ -59,11 +66,13 @@ public readonly partial record struct Result<TValue, TError> {
     /// </example>
     public Result<TOut, TError> Then<TOut, TState>(Func<TValue, TState, Result<TOut, TError>> binder, TState state) where TOut : notnull =>
         IsSuccess ? binder(Value, state) : Error;
+    */
 
     #endregion
 
     #region . async .
 
+    /*
     /// <summary>
     /// Asynchronously chains a new operation based on the success value of this result using the specified binding function.
     /// If this result is an error, the error is propagated.
@@ -132,6 +141,7 @@ public readonly partial record struct Result<TValue, TError> {
     /// </example>
     public async ValueTask<Result<TOut, TError>> ThenAsync<TOut, TState>(Func<TValue, TState, ValueTask<Result<TOut, TError>>> binder, TState state) where TOut : notnull =>
         IsSuccess ? await binder(Value, state).ConfigureAwait(false) : Error;
+    */
 
     #endregion
 }

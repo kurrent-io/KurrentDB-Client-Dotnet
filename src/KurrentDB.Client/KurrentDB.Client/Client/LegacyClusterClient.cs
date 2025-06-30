@@ -21,7 +21,7 @@ class LegacyClusterClient {
 
 	bool _disposed;
 
-	public LegacyClusterClient(KurrentDBClientSettings settings, Dictionary<string, Func<RpcException, Exception>> exceptionMap) {
+	public LegacyClusterClient(KurrentDBClientSettings settings, Dictionary<string, Func<RpcException, Exception>> exceptionMap, bool dontLoadServerCapabilities = false) {
 		_cancellator  = new CancellationTokenSource();
 		_channelCache = new(settings);
 
@@ -32,16 +32,16 @@ class LegacyClusterClient {
 		var requiresLeader = settings.ConnectivitySettings.NodePreference == NodePreference.Leader ? bool.TrueString : bool.FalseString;
 
 		Interceptor[] interceptors = [
-			new TypedExceptionInterceptor(exceptionMap),
+			..settings.Interceptors,
+			HeadersInterceptor.InjectHeaders(
+				Constants.Headers.RequiresLeader, requiresLeader,
+				operationsToExclude: "MultiStreamAppendSession"),
             HeadersInterceptor.InjectHeaders(new() {
                 [Constants.Headers.ClientName]     = clientName,
                 [Constants.Headers.ClientVersion]  = clientVersion,
                 [Constants.Headers.ConnectionName] = settings.ConnectionName!,
 			}),
-            HeadersInterceptor.InjectHeaders(
-                Constants.Headers.RequiresLeader, requiresLeader,
-                operationsToExclude: "MultiStreamAppendSession"),
-			..settings.Interceptors,
+			new TypedExceptionInterceptor(exceptionMap),
 			new ClusterTopologyChangesInterceptor(this, settings.LoggerFactory.CreateLogger<ClusterTopologyChangesInterceptor>()),
 		];
 
@@ -50,6 +50,8 @@ class LegacyClusterClient {
 			: new GossipChannelSelector(settings, _channelCache, new GrpcGossipClient(settings));
 
 		var token = _cancellator.Token;
+
+		var logger = settings.LoggerFactory.CreateLogger<SharingProvider>();
 
 		_channelInfoProvider = new SharingProvider<ReconnectionRequired, ChannelInfo>(
 			factory: async (reconnectionRequired, _) => {
@@ -60,9 +62,19 @@ class LegacyClusterClient {
 
 				var invoker = channel.CreateCallInvoker().Intercept(interceptors);
 
-				var capabilities = await new GrpcServerCapabilitiesClient(settings)
-					.GetAsync(invoker, token)
-					.ConfigureAwait(false);
+				if(dontLoadServerCapabilities)
+					return new(channel, new ServerCapabilities(), invoker);
+
+				ServerCapabilities capabilities = new();
+
+				try {
+					 capabilities = await new GrpcServerCapabilitiesClient(settings)
+						.GetAsync(invoker, token)
+						.ConfigureAwait(false);
+				}
+				catch (Exception ex) {
+					logger.LogWarning(ex, "Failed to get server capabilities. This may lead to unexpected behavior.");
+				}
 
 				return new(channel, capabilities, invoker);
 			},
@@ -75,7 +87,7 @@ class LegacyClusterClient {
 		ResolverScheme = settings.ConnectivitySettings.IsSingleNode ? "kurrentdb" : "kurrentdb+discover";
 	}
 
-	public LegacyClusterClient(KurrentDBClientSettings settings) : this(settings, KurrentDBClient.ExceptionMap) { }
+	public LegacyClusterClient(KurrentDBClientSettings settings) : this(settings, KurrentDBClient.ExceptionMap, true) { }
 
 	public string ResolverScheme { get; }
 
@@ -86,8 +98,18 @@ class LegacyClusterClient {
 
 	public async ValueTask<ChannelInfo> ForceReconnect(DnsEndPoint? leaderEndpoint = null) {
 		ThrowIfDisposed();
-		_channelInfoProvider.Reset(leaderEndpoint is not null ? new ReconnectionRequired.NewLeader(leaderEndpoint) : null);
+		ReconnectionRequired reconnectionRequired = leaderEndpoint is not null
+			? new ReconnectionRequired.NewLeader(leaderEndpoint)
+			: ReconnectionRequired.Rediscover.Instance;
+		_channelInfoProvider.Reset(reconnectionRequired);
 		return await _channelInfoProvider.CurrentAsync.ConfigureAwait(false);
+	}
+
+	internal void TriggerReconnect(DnsEndPoint? leaderEndpoint = null) {
+		ThrowIfDisposed();
+		_channelInfoProvider.Reset(leaderEndpoint is not null
+			? new ReconnectionRequired.NewLeader(leaderEndpoint)
+			: ReconnectionRequired.Rediscover.Instance);
 	}
 
 	public async ValueTask DisposeAsync() {

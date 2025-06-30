@@ -15,7 +15,7 @@ using GameWon = TicTacToe.GameWon;
 
 namespace Kurrent.Client.Tests;
 
-public partial class KurrentClientTestFixture : TestFixture {
+public partial class KurrentClientTestFixture {
     /// <summary>
     /// Creates a unique stream name for KurrentDB operations, combining the given category with the last part of a randomly generated guid.
     /// </summary>
@@ -55,7 +55,7 @@ public partial class KurrentClientTestFixture : TestFixture {
             error   => throw error.CreateException()
         );
 
-        Log.Information(
+        Log.Verbose(
             "Seeded {Count} messages to stream {StreamName} at position {LogPosition} with revision {StreamRevision}",
             messages.Count, stream, logPosition, streamRevision);
 
@@ -82,7 +82,7 @@ public partial class KurrentClientTestFixture : TestFixture {
                 .ShouldNotThrowOrFailAsync()
                 .ConfigureAwait(false);
 
-            Log.Debug(
+            Log.Verbose(
                 "Simulated game {GameId} and with {Count} events to stream {StreamName} at position {LogPosition} with revision {StreamRevision}",
                 simulatedGame.GameId, simulatedGame.GameEvents.Count, simulatedGame.Stream, logPosition, streamRevision);
 

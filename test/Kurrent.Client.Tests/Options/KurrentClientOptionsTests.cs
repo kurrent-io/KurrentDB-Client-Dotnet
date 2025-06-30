@@ -1,4 +1,5 @@
 using System.Net;
+using Kurrent.Client.Testing.Shouldly;
 using KurrentDB.Client;
 
 namespace Kurrent.Client.Tests.Options;
@@ -26,10 +27,10 @@ public class KurrentClientOptionsTests {
         // Verify default values
         options.ConnectionScheme.ShouldBe(KurrentConnectionScheme.Direct);
         options.Endpoints.ShouldHaveSingleItem();
-        options.Gossip.ShouldBeEquivalentTo(KurrentClientGossipOptions.Default);
+        ShouldlyObjectGraphTestExtensions.ShouldBeEquivalentTo(options.Gossip, KurrentClientGossipOptions.Default);
         options.Security.ShouldBe(KurrentClientSecurityOptions.Default);
-        options.Resilience.ShouldBeEquivalentTo(KurrentClientResilienceOptions.NoResilience);
-        options.Schema.ShouldBeEquivalentTo(KurrentClientSchemaOptions.FullValidation);
+        ShouldlyObjectGraphTestExtensions.ShouldBeEquivalentTo(options.Resilience, KurrentClientResilienceOptions.NoResilience);
+        ShouldlyObjectGraphTestExtensions.ShouldBeEquivalentTo(options.Schema, KurrentClientSchemaOptions.FullValidation);
         options.Interceptors.ShouldBeEmpty();
     }
 

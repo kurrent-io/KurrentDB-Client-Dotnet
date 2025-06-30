@@ -64,7 +64,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(1, count);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task multiple_idempotent_writes() {
 		var stream = Fixture.GetStreamName();
 		var events = Fixture.CreateTestEvents(4).ToArray();
@@ -76,7 +76,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(new(3), writeResult.NextExpectedStreamState);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task multiple_idempotent_writes_with_same_id_bug_case() {
 		var stream = Fixture.GetStreamName();
 
@@ -88,7 +88,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(new(5), writeResult.NextExpectedStreamState);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task
 		in_case_where_multiple_writes_of_multiple_events_with_the_same_ids_using_expected_version_any_then_next_expected_version_is_unreliable() {
 		var stream = Fixture.GetStreamName();
@@ -105,7 +105,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(new(0), writeResult.NextExpectedStreamState);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task
 		in_case_where_multiple_writes_of_multiple_events_with_the_same_ids_using_expected_version_nostream_then_next_expected_version_is_correct() {
 		var stream = Fixture.GetStreamName();
@@ -123,7 +123,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(streamRevision, writeResult.NextExpectedStreamState);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task writing_with_correct_expected_version_to_deleted_stream_throws_stream_deleted() {
 		var stream = Fixture.GetStreamName();
 
@@ -134,7 +134,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			.ShouldThrowAsync<StreamDeletedException>();
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task returns_log_position_when_writing() {
 		var stream = Fixture.GetStreamName();
 
@@ -148,7 +148,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.True(0 < result.LogPosition.CommitPosition);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task writing_with_any_expected_version_to_deleted_stream_throws_stream_deleted() {
 		var stream = Fixture.GetStreamName();
 		await Fixture.Streams.TombstoneAsync(stream, StreamState.NoStream);
@@ -158,7 +158,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			.ShouldThrowAsync<StreamDeletedException>();
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task writing_with_invalid_expected_version_to_deleted_stream_throws_stream_deleted() {
 		var stream = Fixture.GetStreamName();
 
@@ -169,7 +169,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			.ShouldThrowAsync<StreamDeletedException>();
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task append_with_correct_expected_version_to_existing_stream() {
 		var stream = Fixture.GetStreamName();
 
@@ -188,7 +188,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(new(1), writeResult.NextExpectedStreamState);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task append_with_any_expected_version_to_existing_stream() {
 		var stream = Fixture.GetStreamName();
 
@@ -209,7 +209,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(new(1), writeResult.NextExpectedStreamState);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task appending_with_wrong_expected_version_to_existing_stream_throws_wrong_expected_version() {
 		var stream = Fixture.GetStreamName();
 
@@ -223,7 +223,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		ex.ExpectedStreamState.ShouldBe(new(999));
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task appending_with_wrong_expected_version_to_existing_stream_returns_wrong_expected_version() {
 		var stream = Fixture.GetStreamName();
 
@@ -239,7 +239,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(new(1), wrongExpectedVersionResult.NextExpectedStreamState);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task append_with_stream_exists_expected_version_to_existing_stream() {
 		var stream = Fixture.GetStreamName();
 
@@ -252,7 +252,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task append_with_stream_exists_expected_version_to_stream_with_multiple_events() {
 		var stream = Fixture.GetStreamName();
 
@@ -266,7 +266,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task append_with_stream_exists_expected_version_if_metadata_stream_exists() {
 		var stream = Fixture.GetStreamName();
 
@@ -283,7 +283,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task
 		appending_with_stream_exists_expected_version_and_stream_does_not_exist_throws_wrong_expected_version() {
 		var stream = Fixture.GetStreamName();
@@ -295,7 +295,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		ex.ActualStreamState.ShouldBe(StreamState.NoStream);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task
 		appending_with_stream_exists_expected_version_and_stream_does_not_exist_returns_wrong_expected_version() {
 		var stream = Fixture.GetStreamName();
@@ -312,7 +312,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(StreamState.Any, wrongExpectedVersionResult.NextExpectedStreamState);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task appending_with_stream_exists_expected_version_to_hard_deleted_stream_throws_stream_deleted() {
 		var stream = Fixture.GetStreamName();
 
@@ -323,7 +323,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			.ShouldThrowAsync<StreamDeletedException>();
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task appending_with_stream_exists_expected_version_to_deleted_stream_throws_stream_deleted() {
 		var stream = Fixture.GetStreamName();
 
@@ -336,7 +336,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			.ShouldThrowAsync<StreamDeletedException>();
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task can_append_multiple_events_at_once() {
 		var stream = Fixture.GetStreamName();
 
@@ -349,7 +349,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(new(99), writeResult.NextExpectedStreamState);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task returns_failure_status_when_conditionally_appending_with_version_mismatch() {
 		var stream = Fixture.GetStreamName();
 
@@ -365,7 +365,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task returns_success_status_when_conditionally_appending_with_matching_version() {
 		var stream = Fixture.GetStreamName();
 
@@ -381,7 +381,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task returns_failure_status_when_conditionally_appending_to_a_deleted_stream() {
 		var stream = Fixture.GetStreamName();
 
@@ -398,7 +398,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(ConditionalWriteResult.StreamDeleted, result);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task expected_version_no_stream() {
 		var result = await Fixture.Streams.AppendToStreamAsync(
 			Fixture.GetStreamName(),
@@ -409,7 +409,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(new(0), result!.NextExpectedStreamState);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task expected_version_no_stream_returns_position() {
 		var result = await Fixture.Streams.AppendToStreamAsync(
 			Fixture.GetStreamName(),
@@ -420,7 +420,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.True(result.LogPosition > Position.Start);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task with_timeout_any_stream_revision_fails_when_operation_expired() {
 		var stream = Fixture.GetStreamName();
 
@@ -434,7 +434,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		ex.StatusCode.ShouldBe(StatusCode.DeadlineExceeded);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task with_timeout_stream_revision_fails_when_operation_expired() {
 		var stream = Fixture.GetStreamName();
 
@@ -450,7 +450,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		ex.StatusCode.ShouldBe(StatusCode.DeadlineExceeded);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task when_events_enumerator_throws_the_write_does_not_succeed() {
 		var streamName = Fixture.GetStreamName();
 
@@ -482,7 +482,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task fails_when_size_exceeds_max_append_size() {
 		// Arrange
 		var maxAppendSize    = 4194304u;
@@ -502,7 +502,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		ex.MaxAppendSize.ShouldBe(maxAppendSize);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0em1_idempotent() {
 		var stream = Fixture.GetStreamName();
 
@@ -517,7 +517,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(events.Length, count);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_0em1_1e0_2e1_3e2_4e3_4e4_0any_idempotent() {
 		var stream = Fixture.GetStreamName();
 
@@ -532,7 +532,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(events.Length, count);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e5_non_idempotent() {
 		var stream = Fixture.GetStreamName();
 
@@ -547,7 +547,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(events.Length + 1, count);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e6_throws_wev() {
 		var stream = Fixture.GetStreamName();
 
@@ -558,7 +558,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Assert.ThrowsAsync<WrongExpectedVersionException>(() => Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(6), events.Take(1)));
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e6_returns_wev() {
 		var stream = Fixture.GetStreamName();
 
@@ -576,7 +576,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.IsType<WrongExpectedVersionResult>(writeResult);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e4_throws_wev() {
 		var stream = Fixture.GetStreamName();
 
@@ -587,7 +587,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Assert.ThrowsAsync<WrongExpectedVersionException>(() => Fixture.Streams.AppendToStreamAsync(stream, StreamState.StreamRevision(4), events.Take(1)));
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_0em1_1e0_2e1_3e2_4e3_5e4_0e4_returns_wev() {
 		var stream = Fixture.GetStreamName();
 
@@ -605,7 +605,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.IsType<WrongExpectedVersionResult>(writeResult);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_0em1_0e0_non_idempotent() {
 		var stream = Fixture.GetStreamName();
 
@@ -620,7 +620,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(events.Length + 1, count);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_0em1_0any_idempotent() {
 		var stream = Fixture.GetStreamName();
 
@@ -636,7 +636,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(events.Length, count);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_0em1_0em1_idempotent() {
 		var stream = Fixture.GetStreamName();
 
@@ -651,7 +651,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(events.Length, count);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_0em1_1e0_2e1_1any_1any_idempotent() {
 		var stream = Fixture.GetStreamName();
 
@@ -667,7 +667,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(events.Length, count);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_S_0em1_1em1_E_S_0em1_E_idempotent() {
 		var stream = Fixture.GetStreamName();
 
@@ -682,7 +682,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(events.Length, count);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_S_0em1_1em1_E_S_0any_E_idempotent() {
 		var stream = Fixture.GetStreamName();
 
@@ -697,7 +697,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(events.Length, count);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_S_0em1_1em1_E_S_1e0_E_idempotent() {
 		var stream = Fixture.GetStreamName();
 
@@ -713,7 +713,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(events.Length, count);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_S_0em1_1em1_E_S_1any_E_idempotent() {
 		var stream = Fixture.GetStreamName();
 
@@ -728,7 +728,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		Assert.Equal(events.Length, count);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_S_0em1_1em1_E_S_0em1_1em1_2em1_E_idempotancy_fail_throws() {
 		var stream = Fixture.GetStreamName();
 
@@ -745,7 +745,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		);
 	}
 
-	[RetryFact]
+	[Fact]
 	public async Task sequence_S_0em1_1em1_E_S_0em1_1em1_2em1_E_idempotancy_fail_returns() {
 		var stream = Fixture.GetStreamName();
 

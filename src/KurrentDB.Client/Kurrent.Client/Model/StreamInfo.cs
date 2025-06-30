@@ -3,11 +3,12 @@ namespace Kurrent.Client.Model;
 /// <summary>
 /// Represents information about a stream in KurrentDB.
 /// </summary>
+[PublicAPI]
 public record StreamInfo {
     /// <summary>
     /// The metadata associated with the stream.
     /// </summary>
-    public StreamMetadata? Metadata { get; init; } // = StreamMetadata.None;
+    public StreamMetadata Metadata { get; init; } = StreamMetadata.None;
 
     /// <summary>
     /// The revision of the metadata stream
@@ -32,5 +33,5 @@ public record StreamInfo {
     /// <summary>
     /// Indicates whether the stream has metadata associated with it.
     /// </summary>
-    public bool HasMetadata => Metadata is not null;
+    public bool HasMetadata => Metadata != StreamMetadata.None;
 }

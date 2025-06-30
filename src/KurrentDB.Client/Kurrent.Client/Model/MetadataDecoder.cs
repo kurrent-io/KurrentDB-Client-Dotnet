@@ -44,10 +44,11 @@ public abstract class MetadataDecoder : IMetadataDecoder {
 		try {
 			var metadata = DecodeCore(bytes, context);
 
-            if (metadata.ContainsKey(SystemMetadataKeys.SchemaDataFormat))
+            if (metadata.ContainsKey(SystemMetadataKeys.SchemaName))
                 return metadata;
 
-            // Handle backwards compatibility with old data by injecting the legacy schema in the metadata.
+            // Handle backwards compatibility with old data by
+            // injecting the legacy schema in the metadata.
             return metadata
                 .With(SystemMetadataKeys.SchemaName, context.SchemaName)
                 .With(SystemMetadataKeys.SchemaDataFormat, context.SchemaDataFormat);
@@ -65,7 +66,7 @@ public abstract class MetadataDecoder : IMetadataDecoder {
 /// </summary>
 [PublicAPI]
 public sealed class JsonMetadataDecoder : MetadataDecoder {
-    static readonly Kurrent.Client.SchemaRegistry.Serialization.Json.JsonSerializer Serializer = new();
+    static readonly SchemaRegistry.Serialization.Json.JsonSerializer Serializer = new();
 
     protected override Metadata DecodeCore(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context) {
         return Serializer.Deserialize<Dictionary<string, string?>>(bytes) is { Count: > 0 } deserialized

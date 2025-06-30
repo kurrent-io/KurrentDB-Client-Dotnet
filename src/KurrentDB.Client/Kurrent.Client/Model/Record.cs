@@ -16,7 +16,7 @@ public readonly record struct Record() {
 	/// <summary>
 	/// The position of the record in the stream.
 	/// </summary>
-	public LogPosition Position { get; init; } = long.MaxValue;
+	public LogPosition Position { get; init; } = LogPosition.Unset;
 
 	/// <summary>
 	/// Represents the stream associated with the record.
@@ -57,11 +57,7 @@ public readonly record struct Record() {
 	/// <summary>
 	/// The schema information associated with the record.
 	/// </summary>
-	public RecordSchemaInfo Schema => new RecordSchemaInfo(
-		Metadata.TryGet<string>(SystemMetadataKeys.SchemaName, out var schemaName) ? SchemaName.From(schemaName!) : SchemaName.None,
-		Metadata.GetOrDefault(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Unspecified),
-		Metadata.GetOrDefault(SystemMetadataKeys.SchemaVersionId, Guid.Empty)
-	);
+	public RecordSchemaInfo Schema => Metadata.GetSchemaInfo();
 
 	public bool IsDecoded => Value is not null
 	                      && !Data.IsEmpty

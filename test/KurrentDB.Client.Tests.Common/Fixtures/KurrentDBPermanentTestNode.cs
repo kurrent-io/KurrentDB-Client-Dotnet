@@ -32,12 +32,11 @@
 // 	}
 // }
 
-using System.Net;
-using System.Net.Sockets;
+using System.Diagnostics.CodeAnalysis;
 using Ductus.FluentDocker.Builders;
-using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
-using Ductus.FluentDocker.Services.Extensions;
+using Ductus.FluentDocker.Model.Containers;
+using Ductus.FluentDocker.Services;
 using KurrentDB.Client;
 using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
@@ -45,25 +44,24 @@ using Serilog.Extensions.Logging;
 using static System.TimeSpan;
 
 public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null) : TestContainerService {
-	static readonly NetworkPortProvider NetworkPortProvider = new(NetworkPortProvider.DefaultEsdbPort);
-
 	KurrentDBFixtureOptions Options { get; } = options ?? DefaultOptions();
 
 	static Version? _version;
 
-	public static Version Version => _version ??= GetVersion();
+	public static Version Version => _version;
 
 	public static KurrentDBFixtureOptions DefaultOptions() {
 		const string connString = "kurrentdb://admin:changeit@localhost:{port}/?tlsVerifyCert=false";
 
-		var port = NetworkPortProvider.NextAvailablePort;
+		var port = 2113; // NetworkPortProvider.NextAvailablePort;
 
 		var defaultSettings = KurrentDBClientSettings
 			.Create(connString.Replace("{port}", $"{port}"))
 			.With(x => x.LoggerFactory = new SerilogLoggerFactory(Log.Logger))
-			.With(x => x.DefaultDeadline = Application.DebuggerIsAttached ? null : FromSeconds(30))
-			.With(x => x.ConnectivitySettings.MaxDiscoverAttempts = 20)
-			.With(x => x.ConnectivitySettings.DiscoveryInterval = FromSeconds(1));
+			.With(x => x.RetrySettings = KurrentDBClientRetrySettings.Default);
+			// .With(x => x.DefaultDeadline = Application.DebuggerIsAttached ? null : FromSeconds(30))
+			// .With(x => x.ConnectivitySettings.MaxDiscoverAttempts = 20)
+			// .With(x => x.ConnectivitySettings.DiscoveryInterval = FromSeconds(1));
 
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
 			["KURRENTDB_MEM_DB"]                           = "true",
@@ -78,7 +76,9 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 			["KURRENTDB_DISABLE_LOG_FILE"]                 = "true",
 			["KURRENTDB_START_STANDARD_PROJECTIONS"]       = "true",
 			["KURRENTDB_RUN_PROJECTIONS"]                  = "All",
-			["KURRENTDB_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}",
+			["KURRENTDB_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = "2113",
+			["KURRENTDB_ADVERTISE_NODE_PORT_TO_CLIENT_AS"] = "2113",
+			["KURRENTDB_NODE_PORT"]                        = "2113",
 			["KURRENTDB_MAX_APPEND_SIZE"]                  = "4194304"  // Sets the limit to 4MB
 		};
 
@@ -89,112 +89,107 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 			defaultEnvironment["EventStore__Plugins__UserCertificates__Enabled"] = "true";
 		}
 
-		if (port != NetworkPortProvider.DefaultEsdbPort) {
-			if (GlobalEnvironment.Variables.TryGetValue("ES_DOCKER_TAG", out var tag) && tag == "ci")
-				defaultEnvironment["KURRENTDB_ADVERTISE_NODE_PORT_TO_CLIENT_AS"] = $"{port}";
-			else
-				defaultEnvironment["KURRENTDB_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{port}";
-		}
-
 		return new(defaultSettings, defaultEnvironment);
 	}
 
-	static Version GetVersion() {
-		const string versionPrefix = "KurrentDB version";
-
-		using var cts = new CancellationTokenSource(FromSeconds(30));
-		using var eventstore = new Builder().UseContainer()
-			.UseImage(GlobalEnvironment.DockerImage)
-			.Command("--version")
-			.Build()
-			.Start();
-
-		using var log = eventstore.Logs(true, cts.Token);
-		foreach (var line in log.ReadToEnd()) {
-			if (line.StartsWith(versionPrefix) &&
-			    Version.TryParse(new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()), out var version)) {
-				return version;
-			}
-		}
-
-		throw new InvalidOperationException("Could not determine server version.");
-
-		IEnumerable<char> ReadVersion(string s) {
-			foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c)))
-				yield return c;
-		}
-	}
-
 	protected override ContainerBuilder Configure() {
-		var env       = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
-		var port      = Options.DBClientSettings.ConnectivitySettings.Address?.Port ?? KurrentDBClientConnectivitySettings.DefaultPort;
-		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
+		var env  = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
+		var port = Options.DBClientSettings.ConnectivitySettings.Address?.Port ?? KurrentDBClientConnectivitySettings.DefaultPort;
 
-		var containerName = port == 2113
-			? "kurrentdb-dotnet-test"
-			: $"kurrentdb-dotnet-test-{port}-{Guid.NewGuid().ToString()[30..]}";
+		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
 
 		CertificatesManager.VerifyCertificatesExist(certsPath);
 
 		return new Builder()
 			.UseContainer()
 			.UseImage(Options.Environment["ES_DOCKER_IMAGE"])
-			.WithName(containerName)
+			.WithName("kurrentdb-dotnet-test")
 			.WithPublicEndpointResolver()
 			.WithEnvironment(env)
 			.MountVolume(certsPath, "/etc/kurrentdb/certs", MountType.ReadOnly)
 			.ExposePort(port, 2113)
 			.KeepContainer().KeepRunning().ReuseIfExists()
-			.WaitUntilReadyWithConstantBackoff(
-				1_000,
-				60,
-				service => {
-					var output = service.ExecuteCommand("curl -u admin:changeit --cacert /etc/kurrentdb/certs/ca/ca.crt https://localhost:2113/health/live");
-					if (!output.Success)
-						throw new Exception(output.Error);
-				}
-			);
-	}
-}
+			.WaitUntilReadyWithConstantBackoff(500, 10, service => {
+                var output = service.ExecuteCommand("curl -u admin:changeit --cacert /etc/kurrentdb/certs/ca/ca.crt https://localhost:2113/health/live");
+                if (!output.Success) {
+	                var connectionError = output.Log.FirstOrDefault(x => x.Contains("curl:"));
+	                throw connectionError is not null
+		                ? new Exception($"KurrentDB health check failed: {connectionError}")
+		                : new Exception(
+			                $"KurrentDB is not running or not reachable. {Environment.NewLine}{output.Error}"
+		                );
+                }
 
-/// <summary>
-/// Using the default 2113 port assumes that the test is running sequentially.
-/// </summary>
-/// <param name="port"></param>
-class NetworkPortProvider(int port = 2114) {
-	public const int DefaultEsdbPort = 2113;
-
-	static readonly SemaphoreSlim Semaphore = new(1, 1);
-
-	async Task<int> GetNextAvailablePort(TimeSpan delay = default) {
-		// TODO SS: find a way to enable parallel tests on CI
-		if (port == DefaultEsdbPort)
-			return port;
-
-		await Semaphore.WaitAsync();
-
-		try {
-			using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-			while (true) {
-				var nexPort = Interlocked.Increment(ref port);
-
-				try {
-					await socket.ConnectAsync(IPAddress.Any, nexPort);
-				} catch (SocketException ex) {
-					if (ex.SocketErrorCode is SocketError.ConnectionRefused or not SocketError.IsConnected) {
-						return nexPort;
-					}
-
-					await Task.Delay(delay);
-				} finally {
-					if (socket.Connected) await socket.DisconnectAsync(true);
-				}
-			}
-		} finally {
-			Semaphore.Release();
-		}
+                var versionOutput = service.ExecuteCommand("/opt/kurrentdb/kurrentd --version");
+                if (versionOutput.Success && TryParseKurrentDBVersion(versionOutput.Log.FirstOrDefault(), out var version))
+	                _version ??= version;
+            });
 	}
 
-	public int NextAvailablePort => GetNextAvailablePort(FromMilliseconds(100)).GetAwaiter().GetResult();
+    static bool TryParseKurrentDBVersion(ReadOnlySpan<char> input, [MaybeNullWhen(false)] out Version version) {
+        version = null!;
+
+        if (input.IsEmpty)
+            return false;
+
+        var versionPrefix = "KurrentDB version ".AsSpan();
+
+        if (!input.StartsWith(versionPrefix))
+            return false;
+
+        try {
+            // Skip past "KurrentDB version "
+            var versionPart = input[versionPrefix.Length..];
+
+            // Extract the version portion (everything before the first space)
+            var spaceIndex  = versionPart.IndexOf(' ');
+            var versionText = spaceIndex >= 0 ? versionPart[..spaceIndex] : versionPart;
+
+            // Parse version components by finding dots
+            Span<int> components = stackalloc int[4];
+
+            var componentCount = 0;
+            var start          = 0;
+
+            for (var i = 0; i <= versionText.Length; i++) {
+                if (i != versionText.Length && versionText[i] != '.') continue;
+
+                if (componentCount >= 4)
+                    break;
+
+                var componentSpan = versionText.Slice(start, i - start);
+
+                // Extract only the numeric part of the component
+                var numericEnd = 0;
+                while (numericEnd < componentSpan.Length && char.IsDigit(componentSpan[numericEnd]))
+	                numericEnd++;
+
+                if (numericEnd == 0 || !int.TryParse(componentSpan[..numericEnd], out components[componentCount]))
+	                return false;
+
+                componentCount++;
+                start = i + 1;
+
+            }
+
+            if (componentCount < 2)
+                return false;
+
+            // Create Version object with appropriate constructor
+            version = componentCount switch {
+                2 => new Version(components[0], components[1]),
+                3 => new Version(components[0], components[1], components[2]),
+                >= 4 => new Version(
+                    components[0], components[1], components[2],
+                    components[3]
+                ),
+                _ => null
+            };
+
+            return version is not null;
+        }
+        catch (Exception ex) {
+	        throw new Exception($"Failed to parse KurrentDB version from: {input.ToString()}", ex);
+        }
+    }
 }

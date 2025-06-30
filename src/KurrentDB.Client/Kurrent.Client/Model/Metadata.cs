@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace Kurrent.Client.Model;
 
@@ -30,8 +31,9 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// Initializes a new instance of the Metadata class from a dictionary.
 	/// </summary>
 	/// <param name="items">The dictionary to copy from.</param>
-    public Metadata(Dictionary<string, object?> items) =>
-		_dictionary = new Dictionary<string, object?>(items, StringComparer.OrdinalIgnoreCase);
+    public Metadata(Dictionary<string, object?> items) {
+	    _dictionary = new Dictionary<string, object?>(items, StringComparer.OrdinalIgnoreCase);
+	}
 
 	/// <summary>
 	/// Initializes a new instance of the Metadata class from a collection of key-value pairs.
@@ -668,6 +670,38 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <returns>This metadata instance for method chaining.</returns>
 	public Metadata TransformIf(Func<Metadata, bool> predicate, Func<Metadata, Metadata> transform) =>
         !predicate(this) ? this : transform(this);
+
+	/// <summary>
+	/// Creates a new Metadata instance where all values are converted to their string representation
+	/// using appropriate formatting for common types (ISO dates, etc.).
+	/// </summary>
+	/// <returns>A new Metadata instance with all values as formatted strings.</returns>
+	public Metadata Stringify() {
+		return new Metadata()
+			.WithMany(this.Select(kvp => new KeyValuePair<string, object?>(kvp.Key, ConvertValueToString(kvp.Value))));
+
+		static string? ConvertValueToString(object? value) =>
+			value switch {
+				null                          => null,
+				DateTime dateTime             => dateTime.ToString("O"),
+				DateTimeOffset dateTimeOffset => dateTimeOffset.ToString("O"),
+				DateOnly dateOnly             => dateOnly.ToString("O"),
+				TimeOnly timeOnly             => timeOnly.ToString("O"),
+				TimeSpan timeSpan             => timeSpan.ToString("c"),
+				Guid guid                     => guid.ToString("D"),
+				decimal dec                   => dec.ToString(CultureInfo.InvariantCulture),
+				double dbl                    => dbl.ToString(CultureInfo.InvariantCulture),
+				float flt                     => flt.ToString(CultureInfo.InvariantCulture),
+				byte[] bytes                  => Convert.ToBase64String(bytes),
+				ReadOnlyMemory<byte> memory   => Convert.ToBase64String(memory.ToArray()),
+				string str                    => str,
+				IEnumerable enumerable        => string.Join(", ", enumerable.Cast<object?>().Select(ConvertValueToString)),
+				_                             => value.ToString()
+			};
+	}
+
+
+
 
     #endregion
 

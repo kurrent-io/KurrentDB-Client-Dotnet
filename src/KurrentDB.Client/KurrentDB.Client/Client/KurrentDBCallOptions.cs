@@ -6,15 +6,15 @@ namespace KurrentDB.Client;
 static class KurrentDBCallOptions {
 	// deadline falls back to infinity
 	public static CallOptions CreateStreaming(
-		this KurrentDBClientSettings settings, TimeSpan? deadline = null, UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) =>
+		KurrentDBClientSettings settings, TimeSpan? deadline = null, UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) =>
 		Create(settings, deadline, userCredentials, cancellationToken);
 
 	// deadline falls back to connection DefaultDeadline
-	public static CallOptions CreateNonStreaming(this KurrentDBClientSettings settings, CancellationToken cancellationToken) =>
+	public static CallOptions CreateNonStreaming(KurrentDBClientSettings settings, CancellationToken cancellationToken) =>
 		Create(settings, settings.DefaultDeadline, settings.DefaultCredentials, cancellationToken);
 
 	public static CallOptions CreateNonStreaming(
-		this KurrentDBClientSettings settings, TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) =>
+		KurrentDBClientSettings settings, TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) =>
 		Create(settings, deadline ?? settings.DefaultDeadline, userCredentials, cancellationToken);
 
 	static CallOptions Create(KurrentDBClientSettings settings, TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {

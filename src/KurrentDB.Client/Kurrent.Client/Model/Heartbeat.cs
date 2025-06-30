@@ -16,22 +16,26 @@ namespace Kurrent.Client.Model;
 /// </param>
 [PublicAPI]
 [method: SetsRequiredMembers]
-public readonly record struct Heartbeat(HeartbeatType Type, LogPosition Position, DateTimeOffset Timestamp) {
+public readonly record struct Heartbeat(HeartbeatType Type, LogPosition Position, StreamRevision StreamRevision, DateTimeOffset Timestamp) {
 	/// <summary>
-	/// Gets the type of the heartbeat, representing the nature of the event
-	/// (e.g., indicating whether it is a checkpoint or a caught-up event).
+	/// The type of the heartbeat, representing the nature of the event
+	/// (e.g. indicating whether it is a checkpoint or a caught-up event).
 	/// </summary>
 	public required HeartbeatType Type { get; init; } = Type;
 
 	/// <summary>
-	/// Gets the position in the stream or sequence associated with this heartbeat.
+	/// The position in the stream or sequence associated with this heartbeat.
 	/// This indicates the progress or location of the event in the processing sequence.
 	/// </summary>
 	public required LogPosition Position { get; init; } = Position;
 
 	/// <summary>
-	/// Gets the timestamp indicating when the heartbeat message was generated.
-	/// This provides temporal context for the event or progress it represents.
+	/// Represents a specific point in the stream or sequence.
+	/// </summary>
+	public required StreamRevision StreamRevision { get; init; } = StreamRevision;
+
+	/// <summary>
+	/// The timestamp indicating when this heartbeat message was generated.
 	/// </summary>
 	public required DateTimeOffset Timestamp { get; init; } = Timestamp;
 
@@ -42,27 +46,51 @@ public readonly record struct Heartbeat(HeartbeatType Type, LogPosition Position
 	public bool IsCheckpoint => Type == HeartbeatType.Checkpoint;
 
 	/// <summary>
-	/// Indicates whether the heartbeat represents a "CaughtUp" event, signaling that processing is up to date
+	/// Indicates whether the heartbeat represents a "CaughtUp" event, signalling that processing is up to date
 	/// with the current state of the stream or sequence.
 	/// </summary>
 	public bool IsCaughtUp => Type == HeartbeatType.CaughtUp;
 
+	/// <summary>
+	/// Indicates whether the heartbeat represents a "fell behind" event,
+	/// meaning the process is no longer caught up with the expected stream position.
+	/// </summary>
+	public bool IsFellBehind => Type == HeartbeatType.FellBehind;
+
+
+	public bool HasPosition => Position != LogPosition.Unset;
+
+	public bool HasStreamRevision => StreamRevision != StreamRevision.Unset;
+
 	public override string ToString() =>
-		$"Heartbeat {{ Type = {Type}, Position = {Position}, Timestamp = {Timestamp:O} }}";
+		$"Heartbeat {{ Type = {Type}, Position = {Position}, StreamRevision = {StreamRevision}, Timestamp = {Timestamp:O} }}";
 
 	public static Heartbeat CreateCheckpoint(LogPosition position, DateTimeOffset timestamp) =>
-		new(HeartbeatType.Checkpoint, position, timestamp);
+		new(HeartbeatType.Checkpoint, position, StreamRevision.Unset, timestamp);
 
 	public static Heartbeat CreateCaughtUp(LogPosition position, DateTimeOffset timestamp) =>
-		new(HeartbeatType.CaughtUp, position, timestamp);
+		new(HeartbeatType.CaughtUp, position, StreamRevision.Unset,  timestamp);
+
+	public static Heartbeat CreateFellBehind(LogPosition position, DateTimeOffset timestamp) =>
+		new(HeartbeatType.FellBehind, position, StreamRevision.Unset,  timestamp);
+
+	public static Heartbeat CreateCheckpoint(LogPosition position, StreamRevision streamRevision, DateTimeOffset timestamp) =>
+		new(HeartbeatType.Checkpoint, position, streamRevision, timestamp);
+
+	public static Heartbeat CreateCaughtUp(LogPosition position, StreamRevision streamRevision, DateTimeOffset timestamp) =>
+		new(HeartbeatType.CaughtUp, position, streamRevision, timestamp);
+
+	public static Heartbeat CreateFellBehind(LogPosition position, StreamRevision streamRevision, DateTimeOffset timestamp) =>
+		new(HeartbeatType.FellBehind, position, streamRevision, timestamp);
 }
 
 /// <summary>
-/// Represents the type of a heartbeat message.
+/// Represents the type of heartbeat message.
 /// A heartbeat indicates progress or a significant event in a sequence of operations.
 /// </summary>
 public enum HeartbeatType {
     Unspecified = 0,
     Checkpoint  = 1,
     CaughtUp    = 2,
+    FellBehind  = 3,
 }

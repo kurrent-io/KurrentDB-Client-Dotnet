@@ -15,12 +15,12 @@ public class DeleteTests : KurrentClientTestFixture {
     [Test]
     [DeletesStreamTestCases]
     public async Task deletes_stream(ExpectedStreamState expectedState, string testCase, CancellationToken ct) {
-        var seededGame = await SeedGame(ct);
+        var simulation = await SeedGame(ct);
 
         await AutomaticClient.Streams
-            .Delete(seededGame.Game.Stream, expectedState, ct)
+            .Delete(simulation.Game.Stream, expectedState, ct)
             .ShouldNotThrowOrFailAsync(
-                position => position.ShouldBeGreaterThanOrEqualTo(seededGame.Position));
+                position => position.ShouldBeGreaterThanOrEqualTo(simulation.Position));
     }
 
     [Test]

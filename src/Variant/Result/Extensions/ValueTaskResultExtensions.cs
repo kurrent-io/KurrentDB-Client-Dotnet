@@ -135,7 +135,14 @@ public static partial class ValueTaskResultExtensions {
         this ValueTask<Result<TCurrent, TError>> resultTask,
         Func<TCurrent, ValueTask<TNext>> asyncMapper) where TCurrent : notnull where TNext : notnull where TError : notnull {
         var result = await resultTask.ConfigureAwait(false);
-        return await result.MapAsync(asyncMapper);
+        return await result.MapAsync(asyncMapper).ConfigureAwait(false);
+    }
+
+    public static async ValueTask<Result<TNext, TError>> MapAsync<TCurrent, TNext, TError, TState>(
+        this ValueTask<Result<TCurrent, TError>> resultTask,
+        Func<TCurrent, TState, ValueTask<TNext>> asyncMapper, TState state) where TCurrent : notnull where TNext : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        return await result.MapAsync(asyncMapper, state).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -307,6 +314,13 @@ public static partial class ValueTaskResultExtensions {
         Func<TError, TOut> onFailure) where TValue : notnull where TError : notnull {
         var result = await resultTask.ConfigureAwait(false);
         return result.Match(onSuccess, onFailure);
+    }
+
+    public static async ValueTask<Result<TValue, TError>> MatchDirectlyAsync<TValue, TError, TOut>(this ValueTask<Result<TValue, TError>> resultTask) where TValue : notnull where TError : notnull {
+        var result = await resultTask.ConfigureAwait(false);
+        var temp   = result.Match(Result.Success<TValue, TError>, Result.Failure<TValue, TError>);
+
+        return temp;
     }
 
     /// <summary>

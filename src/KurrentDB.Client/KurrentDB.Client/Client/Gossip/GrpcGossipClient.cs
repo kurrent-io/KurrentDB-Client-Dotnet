@@ -9,7 +9,7 @@ class GrpcGossipClient(KurrentDBClientSettings settings) : IGossipClient {
 	public async ValueTask<ClusterMessages.ClusterInfo> GetAsync(ChannelBase channel, CancellationToken ct) {
 		var client = new Gossip.GossipClient(channel);
 
-		using var call = client.ReadAsync(new Empty(), settings.CreateNonStreaming(ct));
+		using var call = client.ReadAsync(new Empty(), KurrentDBCallOptions.CreateNonStreaming(settings, ct));
 
 		var result = await call.ResponseAsync.ConfigureAwait(false);
 

@@ -98,6 +98,7 @@ static class StreamsMapper {
 				_                                  => throw new UnreachableException($"Unexpected heartbeat type: {source.Type}")
 			},
 			source.Position,
+			StreamRevision.Unset,
 			source.Timestamp.ToDateTimeOffset()
 		);
 	}

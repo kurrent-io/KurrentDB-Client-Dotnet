@@ -1,8 +1,15 @@
 namespace Kurrent;
 
 public readonly partial record struct Result<TValue, TError> {
+    // NOTE: All Map methods have been moved to IResultMapExtensions.cs
+    // The extension methods now work on both Result<TValue, TError> and ResultBase<TValue, TError>
+    // via the IResult<TValue, TError> interface.
+    
+    // Commented out original partial methods - extension methods provide the same functionality:
+    
     #region . sync .
 
+    /*
     /// <summary>
     /// Transforms the success value of this result using the specified mapping function.
     /// If this result is an error, the error is propagated.
@@ -79,11 +86,13 @@ public readonly partial record struct Result<TValue, TError> {
     /// </example>
     public Result<TValue, TOut> MapError<TOut>(Func<TError, TOut> mapper) where TOut : notnull =>
         IsSuccess ? Result.Success<TValue, TOut>(Value) : Result.Failure<TValue, TOut>(mapper(Error));
+    */
 
     #endregion
 
     #region . async .
 
+    /*
     /// <summary>
     /// Asynchronously transforms the success value of this result using the specified mapping function.
     /// If this result is an error, the error is propagated.
@@ -170,6 +179,7 @@ public readonly partial record struct Result<TValue, TError> {
     /// </example>
     public async ValueTask<Result<TValue, TOut>> MapErrorAsync<TOut>(Func<TError, ValueTask<TOut>> mapper) where TOut : notnull =>
         IsSuccess ? Value : await mapper(Error).ConfigureAwait(false);
+    */
 
     #endregion
 }

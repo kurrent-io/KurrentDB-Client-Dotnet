@@ -11,7 +11,7 @@ namespace Kurrent;
 /// <typeparam name="TError">The type of the error value.</typeparam>
 [PublicAPI]
 [DebuggerDisplay("{ToString(),nq}")]
-public readonly partial record struct Result<TValue, TError> {
+public readonly partial record struct Result<TValue, TError> : IResult<TValue, TError> where TValue : notnull where TError : notnull {
     readonly TValue? _value;
     readonly TError? _error;
 

@@ -15,12 +15,12 @@ public class TombstoneTests : KurrentClientTestFixture {
     [Test]
     [TombstonesStreamTestCases]
     public async Task tombstones_stream(ExpectedStreamState expectedState, string testCase, CancellationToken ct) {
-        var seededGame = await SeedGame(ct);
+        var simulation = await SeedGame(ct);
 
         await AutomaticClient.Streams
-            .Tombstone(seededGame.Game.Stream, expectedState, ct)
+            .Tombstone(simulation.Game.Stream, expectedState, ct)
             .ShouldNotThrowOrFailAsync(
-                position => position.ShouldBeGreaterThanOrEqualTo(seededGame.Position));
+                position => position.ShouldBeGreaterThanOrEqualTo(simulation.Position));
     }
 
     [Test]

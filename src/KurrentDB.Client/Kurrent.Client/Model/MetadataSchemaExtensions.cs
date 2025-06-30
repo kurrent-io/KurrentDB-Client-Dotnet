@@ -12,12 +12,18 @@ public static class MetadataSchemaExtensions {
 	public static SchemaDataFormat GetSchemaDataFormat(this Metadata metadata) =>
 		metadata.GetOrDefault(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Unspecified);
 
-	public static SchemaVersionId GetSchemaVersionId(this Metadata metadata) =>
-		metadata.TryGet<string>(SystemMetadataKeys.SchemaVersionId, out var schemaVersionId)
-			? SchemaVersionId.From(schemaVersionId!)
-			: SchemaVersionId.None;
+	public static SchemaVersionId GetSchemaVersionId(this Metadata metadata) {
+		return metadata.TryGet<string>(SystemMetadataKeys.SchemaVersionId, out var value)
+			? SchemaVersionId.From(value!)
+			: metadata.TryGet<SchemaVersionId>(SystemMetadataKeys.SchemaVersionId, out var schemaVersionId)
+				? schemaVersionId
+				: SchemaVersionId.None;
+	}
 
 	public static bool TryGetSchemaName(this Metadata metadata, out SchemaName schemaName) {
+		if (metadata.TryGet(SystemMetadataKeys.SchemaName, out schemaName))
+			return true;
+
 		if (metadata.TryGet<string>(SystemMetadataKeys.SchemaName, out var value)) {
 			schemaName = SchemaName.From(value!);
 			return true;

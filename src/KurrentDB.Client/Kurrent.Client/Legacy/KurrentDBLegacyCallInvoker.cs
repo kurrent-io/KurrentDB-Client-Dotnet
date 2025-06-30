@@ -69,6 +69,9 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
 	    if (_disposed)
 		    throw new ObjectDisposedException(nameof(KurrentDBLegacyCallInvoker));
 
+	    // Use Task.Run to avoid deadlocks in synchronous contexts
+	    // This is necessary because the legacy client may block on network operations
+	    // and we want to ensure we don't block the calling thread.
 	    return Task.Run(
 	        () => GetInvokerAsync().ConfigureAwait(false).GetAwaiter().GetResult(),
 	        cancellationToken
@@ -89,6 +92,8 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
     ///  Updates the server capabilities in a thread-safe manner.
     /// </summary>
     async Task UpdateServerCapabilities(ServerCapabilities capabilities, CancellationToken cancellationToken) {
+	    if (capabilities == _currentCapabilities) return;
+
 	    // update capabilities in a thread-safe manner
 	    await _capabilitiesLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 	    try {

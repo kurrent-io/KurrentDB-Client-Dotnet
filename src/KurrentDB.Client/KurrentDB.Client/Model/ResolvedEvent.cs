@@ -3,7 +3,9 @@ namespace KurrentDB.Client;
 /// <summary>
 /// A structure representing a single event or a resolved link event.
 /// </summary>
-public readonly struct ResolvedEvent {
+public readonly record struct ResolvedEvent {
+	public static readonly ResolvedEvent None = new ResolvedEvent();
+
 	/// <summary>
 	/// If this <see cref="ResolvedEvent"/> represents a link event, the <see cref="Event"/>
 	/// will be the resolved link event, otherwise it will be the single event.
@@ -55,6 +57,6 @@ public readonly struct ResolvedEvent {
 		Link  = link;
 		OriginalPosition = commitPosition.HasValue
 			? new Position(commitPosition.Value, (link ?? @event).Position.PreparePosition)
-			: new Position?();
+			: null;
 	}
 }

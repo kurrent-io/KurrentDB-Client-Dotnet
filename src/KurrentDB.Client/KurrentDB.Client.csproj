@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+<!--    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>-->
     <PackageId>KurrentDB.Client</PackageId>
     <IsPackable>true</IsPackable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -14,10 +14,11 @@
     <PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0" />
     <PackageReference Include="Humanizer.Core" Version="2.14.1" />
 <!--    <PackageReference Include="LruCacheNet" Version="1.2.0" />-->
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
     <PackageReference Include="NJsonSchema" Version="11.3.2" />
     <PackageReference Include="OneOf" Version="3.0.271" />
-    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.3" 
+                      Condition="'$(TargetFramework)' != 'net8.0' OR '$(TargetFramework)' != 'net9.0'" />   
     <PackageReference Include="OpenTelemetry.Api" Version="1.12.0" />
 
     <PackageReference Include="OneOf.SourceGenerator" Version="3.0.271">
@@ -78,6 +79,7 @@
 
   <ItemGroup>
     <Folder Include="Kurrent.Client\Infra\" />
+    <Folder Include="Kurrent.Client\Model\PersistentSubscriptions\" />
   </ItemGroup>
 
   <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">

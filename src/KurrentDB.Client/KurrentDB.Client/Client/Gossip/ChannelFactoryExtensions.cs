@@ -46,8 +46,10 @@ static class ChannelFactoryExtensions {
 				EnableMultipleHttp2Connections = true
 			};
 
-			if (settings.ConnectivitySettings.Insecure)
+			if (settings.ConnectivitySettings.Insecure) {
+				handler.SslOptions.RemoteCertificateValidationCallback = (_, _, _, _) => true;
 				return handler;
+			}
 
 			if (settings.ConnectivitySettings.ClientCertificate is not null) {
 				handler.SslOptions.ClientCertificates = new X509CertificateCollection {

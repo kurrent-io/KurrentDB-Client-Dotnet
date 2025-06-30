@@ -1,6 +1,7 @@
 #pragma warning disable CA1822 // Mark members as static
 
 using JetBrains.Annotations;
+using Kurrent.Client.Model;
 using Kurrent.Client.Testing;
 using Kurrent.Client.Testing.Containers.KurrentDB;
 using Kurrent.Client.Testing.Fixtures;
@@ -10,40 +11,21 @@ using Serilog.Extensions.Logging;
 
 namespace Kurrent.Client.Tests;
 
-public record KurrentClientTestFixtureOptions {
-    public static string SectionName => "KurrentClient:Tests";
-
-    /// <summary>
-    /// If true, the test fixture will automatically wire up KurrentDB test containers
-    /// </summary>
-    [ConfigurationKeyName("AutoWireUpContainers")]
-    public bool AutoWireUpContainers { get; init; } = true;
-
-    /// <summary>
-    /// The connection string for authenticated access to the KurrentDB test container.
-    /// </summary>
-    public static string AuthenticatedConnectionString { get; private set; } = "kurrentdb://admin:changeit@localhost:2113/?tls=false";
-
-    /// <summary>
-    /// The connection string for anonymous access to the KurrentDB test container.
-    /// </summary>
-    public static string AnonymousConnectionString { get; private set; } = "kurrentdb://localhost:2113/?tls=false";
-
-}
 
 [PublicAPI]
 public partial class KurrentClientTestFixture : TestFixture {
-    public static bool AutoWireUpContainers { get; set; }
-
     [Before(Assembly)]
     public static async Task AssemblySetUp(AssemblyHookContext context, CancellationToken cancellationToken) {
+
+        // "TESTCONTAINER_KURRENTDB_IMAGE"
+
         var options = ApplicationContext.Configuration
             .GetOptionsOrDefault<KurrentClientTestFixtureOptions>(KurrentClientTestFixtureOptions.SectionName);
 
-        if (AutoWireUpContainers || options.AutoWireUpContainers) {
+        if (options.AutoWireUpContainers) {
             Log.Information("KurrentDB test container auto wire up enabled, starting container...");
 
-            Container = new KurrentDBTestContainer();
+            Container = new KurrentDBTestContainer(KurrentDBConfiguration.Insecure.ToDictionary());
             await Container.Start().ConfigureAwait(false);
 
             AuthenticatedConnectionString = Container.AuthenticatedConnectionString;
@@ -52,7 +34,7 @@ public partial class KurrentClientTestFixture : TestFixture {
         else {
             Log.Warning("KurrentDB test container auto wire up disabled, using default connection strings");
 
-            AuthenticatedConnectionString = "kurrentdb://admin:changeit@localhost:2113/?tls=false"; // &tlsVerifyCert=false
+            AuthenticatedConnectionString = "kurrentdb://admin:changeit@localhost:2113/?tls=false";
             AnonymousConnectionString     = "kurrentdb://localhost:2113/?tls=false";
         }
     }
@@ -89,7 +71,7 @@ public partial class KurrentClientTestFixture : TestFixture {
     /// <summary>
     /// The connection string for anonymous access to the KurrentDB test container.
     /// </summary>
-    public static string AnonymousConnectionString     { get; private set; } = null!;
+    public static string AnonymousConnectionString { get; private set; } = null!;
 
     readonly Lazy<KurrentClient> _lazyLightweightClient = new(() => CreateClient());
     readonly Lazy<KurrentClient> _lazyAutomaticClient   = new(() => CreateClient(options => options.WithSchema(KurrentClientSchemaOptions.NoValidation)));
@@ -124,10 +106,31 @@ public partial class KurrentClientTestFixture : TestFixture {
             .FromConnectionString(AuthenticatedConnectionString)
             .WithLoggerFactory(new SerilogLoggerFactory(Log.Logger))
             .WithSchema(KurrentClientSchemaOptions.Disabled)
-            .WithResilience(KurrentClientResilienceOptions.NoResilience);
+            .WithResilience(KurrentClientResilienceOptions.NoResilience)
+            .WithMessages(options => options.Map<StreamMetadata>("$metadata"));
 
         configure?.Invoke(options);
 
         return options.CreateClient();
     }
+}
+
+public record KurrentClientTestFixtureOptions {
+    public static string SectionName => "KurrentClient:Tests";
+
+    /// <summary>
+    /// If true, the test fixture will automatically wire up KurrentDB test containers
+    /// </summary>
+    [ConfigurationKeyName("AutoWireUpContainers")]
+    public bool AutoWireUpContainers { get; init; } = true;
+
+    /// <summary>
+    /// The connection string for authenticated access to the KurrentDB test container.
+    /// </summary>
+    public static string AuthenticatedConnectionString { get; private set; } = "kurrentdb://admin:changeit@localhost:2113/?tls=false";
+
+    /// <summary>
+    /// The connection string for anonymous access to the KurrentDB test container.
+    /// </summary>
+    public static string AnonymousConnectionString { get; private set; } = "kurrentdb://localhost:2113/?tls=false";
 }

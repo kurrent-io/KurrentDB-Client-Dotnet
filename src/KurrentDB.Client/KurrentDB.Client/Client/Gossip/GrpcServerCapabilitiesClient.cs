@@ -3,32 +3,28 @@ using Grpc.Core;
 
 namespace KurrentDB.Client;
 
-class GrpcServerCapabilitiesClient : IServerCapabilitiesClient {
-	readonly KurrentDBClientSettings _settings;
-
-	public GrpcServerCapabilitiesClient(KurrentDBClientSettings settings) => _settings = settings;
-
+class GrpcServerCapabilitiesClient(KurrentDBClientSettings settings) : IServerCapabilitiesClient {
 	public async Task<ServerCapabilities> GetAsync(CallInvoker callInvoker, CancellationToken cancellationToken) {
 		var client = new ServerFeatures.ServerFeaturesClient(callInvoker);
+
 		using var call = client.GetSupportedMethodsAsync(
 			new(),
 			KurrentDBCallOptions.CreateNonStreaming(
-				_settings,
-				_settings.ConnectivitySettings.GossipTimeout,
-				null,
-				cancellationToken
+				settings,
+				settings.ConnectivitySettings.GossipTimeout,
+				null, cancellationToken
 			)
 		);
 
 		try {
+			var response = await call.ResponseAsync.ConfigureAwait(false);
+
 			var supportsBatchAppend                             = false;
 			var supportsPersistentSubscriptionsToAll            = false;
 			var supportsPersistentSubscriptionsGetInfo          = false;
 			var supportsPersistentSubscriptionsRestartSubsystem = false;
 			var supportsPersistentSubscriptionsReplayParked     = false;
 			var supportsPersistentSubscriptionsList             = false;
-
-			var response = await call.ResponseAsync.ConfigureAwait(false);
 
 			foreach (var supportedMethod in response.Methods)
 				switch (supportedMethod.ServiceName, supportedMethod.MethodName) {

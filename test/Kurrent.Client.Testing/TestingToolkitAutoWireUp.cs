@@ -38,7 +38,6 @@ public class TestingToolkitAutoWireUp {
 	        .CaptureTestLogs(testUid, _ => TestContext.Current.TestUid(defaultValue: Guid.Empty).Equals(testUid));
 
         context.SetLogger(logger);
-        // context.SetLoggerSubscription(subscription);
 
         context.SetOtelServiceMetadata(
             new(context.TestDetails.TestClass.Name) {

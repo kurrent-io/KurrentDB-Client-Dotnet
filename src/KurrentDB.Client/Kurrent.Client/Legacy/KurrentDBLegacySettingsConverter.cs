@@ -76,8 +76,8 @@ public static class KurrentDBLegacySettingsConverter {
         };
 
         // Convert default credentials
-        var defaultCredentials = options.Security.Authentication.Value is UserCredentials credentials
-            ? new UserCredentials(credentials.Username ?? string.Empty, credentials.Password ?? string.Empty)
+        var defaultCredentials = options.Security.Authentication.Value is BasicCredentials credentials
+            ? new UserCredentials(credentials.Username, credentials.Password ?? string.Empty)
             : UserCredentials.Empty;
 
         return new KurrentDBClientSettings {

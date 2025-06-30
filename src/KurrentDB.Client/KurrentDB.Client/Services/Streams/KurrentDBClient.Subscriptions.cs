@@ -144,9 +144,8 @@ public partial class KurrentDBClient {
 		/// </summary>
 		public string? SubscriptionId { get; private set; }
 
-		/// <summary>
-		/// An <see cref="IAsyncEnumerable{StreamMessage}"/>. Do not enumerate more than once.
-		/// </summary>
+		internal ChannelReader<StreamMessage> MessageReader => _channel.Reader;
+
 		public IAsyncEnumerable<StreamMessage> Messages {
 			get {
 				if (Interlocked.Exchange(ref _messagesEnumerated, 1) == 1)

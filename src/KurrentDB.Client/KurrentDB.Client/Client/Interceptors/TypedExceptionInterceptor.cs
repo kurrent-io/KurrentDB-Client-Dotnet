@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using static KurrentDB.Client.Constants;
@@ -7,22 +8,30 @@ namespace KurrentDB.Client.Interceptors;
 
 class TypedExceptionInterceptor : Interceptor {
 	static readonly Dictionary<string, Func<RpcException, Exception>> DefaultExceptionMap = new() {
-		[Exceptions.AccessDenied] = ex => ex.ToAccessDeniedException(),
-		[Exceptions.NotLeader]    = ex => ex.ToNotLeaderException(),
+		[Exceptions.AccessDenied] = ex => ex.ToAccessDeniedException()
 	};
 
 	public TypedExceptionInterceptor(Dictionary<string, Func<RpcException, Exception>> customExceptionMap) {
 		var map = new Dictionary<string, Func<RpcException, Exception>>(DefaultExceptionMap.Concat(customExceptionMap));
 
-		ConvertRpcException = rpcEx => {
-			if (rpcEx.TryMapException(map, out var ex))
+		ConvertRpcException = rex => {
+			var dispatchInfo = ExceptionDispatchInfo.Capture(rex);
+
+			if (rex.TryMapException(map, out var ex))
 				throw ex;
 
-			throw rpcEx.StatusCode switch {
-				Unavailable when rpcEx.Status.Detail == "Deadline Exceeded" => rpcEx.ToDeadlineExceededRpcException(),
-				Unauthenticated                                             => rpcEx.ToNotAuthenticatedException(),
-				_                                                           => rpcEx
+			Exception convertedException = rex.StatusCode switch {
+				Unavailable when rex.Status.Detail == "Deadline Exceeded" => rex.ToDeadlineExceededRpcException(),
+				Unauthenticated                                           => rex.ToNotAuthenticatedException(),
+				_                                                         => rex
 			};
+
+			// If we created a new exception, throw it normally (it will have RpcException as inner exception)
+			// If it's the original RpcException, preserve its stack trace
+			if (ReferenceEquals(convertedException, rex))
+				dispatchInfo.Throw();
+
+			throw convertedException;
 		};
 	}
 
@@ -98,24 +107,53 @@ static class RpcExceptionConversionExtensions {
 		new ExceptionConverterStreamReader<TRequest>(reader, convertException);
 
 	public static Task<TResponse> Apply<TResponse>(this Task<TResponse> task, Func<RpcException, Exception> convertException) =>
-		task.ContinueWith(t => t.Exception?.InnerException is RpcException ex ? throw convertException(ex) : t.Result);
+		task.ContinueWith(t => {
+			if (t.Exception?.InnerException is RpcException ex) {
+				var dispatchInfo = ExceptionDispatchInfo.Capture(ex);
+				try {
+					throw convertException(ex);
+				} catch (Exception convertedException) when (!ReferenceEquals(convertedException, ex)) {
+					// New exception was created, throw it normally
+					throw;
+				} catch {
+					// Same exception, preserve stack trace
+					dispatchInfo.Throw();
+					throw; // Never reached
+				}
+			}
+			return t.Result;
+		});
 
 	public static IClientStreamWriter<TRequest> Apply<TRequest>(
 		this IClientStreamWriter<TRequest> writer, Func<RpcException, Exception> convertException
-	) =>
-		new ExceptionConverterStreamWriter<TRequest>(writer, convertException);
+	) => new ExceptionConverterStreamWriter<TRequest>(writer, convertException);
 
 	public static Task Apply(this Task task, Func<RpcException, Exception> convertException) =>
-		task.ContinueWith(t => t.Exception?.InnerException is RpcException ex ? throw convertException(ex) : t);
+		task.ContinueWith(t => {
+			if (t.Exception?.InnerException is RpcException ex) {
+				var dispatchInfo = ExceptionDispatchInfo.Capture(ex);
+				try {
+					throw convertException(ex);
+				} catch (Exception convertedException) when (!ReferenceEquals(convertedException, ex)) {
+					// New exception was created, throw it normally
+					throw;
+				} catch {
+					// Same exception, preserve stack trace
+					dispatchInfo.Throw();
+					throw; // Never reached
+				}
+			}
+			return t;
+		});
 
 	public static AccessDeniedException ToAccessDeniedException(this RpcException exception) =>
 		new(exception.Message, exception);
 
-	public static NotLeaderException ToNotLeaderException(this RpcException exception) {
-		var host = exception.Trailers.FirstOrDefault(x => x.Key == Exceptions.LeaderEndpointHost)?.Value!;
-		var port = exception.Trailers.GetIntValueOrDefault(Exceptions.LeaderEndpointPort);
-		return new NotLeaderException(host, port, exception);
-	}
+	// public static NotLeaderException ToNotLeaderException(this RpcException exception) {
+	// 	var host = exception.Trailers.FirstOrDefault(x => x.Key == Exceptions.LeaderEndpointHost)?.Value!;
+	// 	var port = exception.Trailers.GetIntValueOrDefault(Exceptions.LeaderEndpointPort);
+	// 	return new NotLeaderException(host, port, exception);
+	// }
 
 	public static NotAuthenticatedException ToNotAuthenticatedException(this RpcException exception) =>
 		new(exception.Message, exception);
@@ -142,7 +180,14 @@ class ExceptionConverterStreamReader<TResponse>(IAsyncStreamReader<TResponse> re
 			return await reader.MoveNext(cancellationToken).ConfigureAwait(false);
 		}
 		catch (RpcException ex) {
-			throw convertException(ex);
+			var dispatchInfo = ExceptionDispatchInfo.Capture(ex);
+			var convertedException = convertException(ex);
+
+			// If conversion returned the same exception, preserve stack trace
+			if (ReferenceEquals(convertedException, ex)) {
+				dispatchInfo.Throw();
+			}
+			throw convertedException;
 		}
 	}
 }
