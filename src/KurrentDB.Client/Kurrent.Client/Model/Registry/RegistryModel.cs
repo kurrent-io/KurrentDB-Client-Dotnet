@@ -122,7 +122,7 @@ public readonly record struct SchemaCompatibilityError() {
 	}
 }
 
-public readonly record struct SchemaCompatibilityErrors() : IEnumerable<SchemaCompatibilityError> {
+public readonly record struct SchemaCompatibilityErrors() : IResultError, IEnumerable<SchemaCompatibilityError> {
 	public IReadOnlyList<SchemaCompatibilityError> Errors { get; init; } = [];
 
 	public static SchemaCompatibilityErrors From(params SchemaCompatibilityError[] errors) =>
@@ -137,6 +137,14 @@ public readonly record struct SchemaCompatibilityErrors() : IEnumerable<SchemaCo
 	public IEnumerator<SchemaCompatibilityError> GetEnumerator() => Errors.GetEnumerator();
 
 	IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public string ErrorCode => nameof(SchemaCompatibilityErrors);
+
+    public string ErrorMessage =>
+	    $"Schema compatibility check failed with {Errors.Count} error(s): {string.Join("; ", Errors.Select(e => e.ToString()))}";
+
+    public Exception CreateException(Exception? innerException = null) =>
+        new InvalidOperationException(ErrorMessage, innerException);
 }
 
 public enum SchemaCompatibilityErrorKind {
@@ -147,6 +155,7 @@ public enum SchemaCompatibilityErrorKind {
 	NewRequiredProperty,      // Forward compatibility: New required property added
 	RemovedProperty,          // Forward compatibility: Property removed from schema
 	ArrayTypeIncompatibility, // Issues with array item types
+	DataFormatMismatch,       // Data format mismatch between schema versions
 }
 
 public readonly record struct SchemaVersionId(Guid Value) {

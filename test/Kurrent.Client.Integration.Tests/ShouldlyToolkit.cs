@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace Kurrent.Client.Tests;
 
 public static class ShouldlyResultExtensions {
@@ -124,6 +126,34 @@ public static class ShouldlyResultExtensions {
             ResultCase.Failure => result.Error,
             ResultCase.Success => result.Value.ShouldBeOfType<TError>(errorMessage)
         };
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static Guid ShouldBeGuid(this string guidString, string? customMessage = null) {
+        if (Guid.TryParse(guidString, out Guid result)) {
+            return result;
+        }
+
+        throw new Shouldly.ShouldAssertException(
+            customMessage ?? $"String \"{guidString}\" should be a valid GUID but was not");
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static Guid ShouldBeGuid(this Guid guid) {
+        return guid;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static T ShouldBeGuid<T>(this T obj, string? customMessage = null) {
+        if (obj == null) {
+            throw new Shouldly.ShouldAssertException(
+                customMessage ?? "Value should be a valid GUID but was null");
+        }
+
+        Guid.TryParse(obj.ToString(), out Guid _).ShouldBeTrue(
+            customMessage ?? $"Value \"{obj}\" should be a valid GUID but was not");
+
+        return obj;
     }
 
     public static async ValueTask ShouldFailAsync<TValue, TError>(this ValueTask<Result<TValue, TError>> operation, Action<TError> assert)
