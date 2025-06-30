@@ -12,7 +12,7 @@ public class ReadTests : KurrentClientTestFixture {
         var now = TimeProvider.GetUtcNow();
 
         var messages = await AutomaticClient.Streams
-            .ReadStream(simulation.Game.Stream)
+            .ReadStream(simulation.Game.Stream, ct)
             .ShouldNotThrowOrFailAsync()
             .ConfigureAwait(false);
 

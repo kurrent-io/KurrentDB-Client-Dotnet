@@ -1,9 +1,9 @@
 #pragma warning disable CS8509
 
 using System.Threading.Channels;
-using EventStore.Client;
 using EventStore.Client.Streams;
 using Grpc.Core;
+using Kurrent.Client.Legacy;
 using Kurrent.Client.Model;
 using KurrentDB.Client;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
@@ -13,158 +13,12 @@ namespace Kurrent.Client;
 
 public partial class KurrentStreamsClient {
     public ValueTask<Result<Subscription, SubscriptionError>> Subscribe(SubscriptionOptions options) =>
-        SubscribeInternal(options.CreateSubscriptionRequest(), options.BufferSize, options.SubscriptionTimeout, options.StoppingToken);
+        SubscribeCore(StreamsV1Mapper.CreateSubscriptionRequest(options), options.BufferSize, options.SubscriptionTimeout, options.StoppingToken);
 
     public ValueTask<Result<Subscription, SubscriptionError>> Subscribe(StreamSubscriptionOptions options) =>
-        SubscribeInternal(options.CreateStreamSubscriptionRequest(), options.BufferSize, options.SubscriptionTimeout, options.StoppingToken);
+        SubscribeCore(StreamsV1Mapper.CreateStreamSubscriptionRequest(options), options.BufferSize, options.SubscriptionTimeout, options.StoppingToken);
 
-    // public async Task<Result<Subscription, StreamSubscriptionError>> Subscribe(
-    //     SubscriptionOptions options,
-    //     int bufferSize = 100
-    // ) {
-    //     // Create a linked cancellation token source for background task control
-    //     var cancellator = CancellationTokenSource.CreateLinkedTokenSource(options.StoppingToken);
-    //
-    //     var stoppingToken = cancellator.Token;
-    //
-    //     var session = LegacyStreamsClient.Read(
-    //         StreamsV1Converter.CreateSubscriptionRequest(options),
-    //         cancellationToken: stoppingToken);
-    //
-    //     // Check for access denied. the legacy exception mapper throws this exception....
-    //     try {
-    //         await session.ResponseStream.MoveNext(stoppingToken).ConfigureAwait(false);
-    //     }
-    //     catch (AccessDeniedException) {
-    //         return Result.Failure<Subscription, StreamSubscriptionError>(new ErrorDetails.AccessDenied());
-    //     }
-    //
-    //     if (session.ResponseStream.Current.ContentCase == StreamNotFound)
-    //         return Result.Failure<Subscription, StreamSubscriptionError>(new ErrorDetails.StreamNotFound());
-    //
-    //     if (session.ResponseStream.Current.ContentCase != Confirmation)
-    //         throw KurrentClientException.CreateUnknown(
-    //             nameof(SubscribeToStream), new Exception($"Expected confirmation message but got {session.ResponseStream.Current.ContentCase}"));
-    //
-    //     var subscriptionId = session.ResponseStream.Current.Confirmation.SubscriptionId;
-    //
-    //     // Create a bounded channel for backpressure control
-    //     var channel = Channel.CreateBounded<SubscriptionMessage>(
-    //         new BoundedChannelOptions(bufferSize) {
-    //             FullMode     = BoundedChannelFullMode.Wait,
-    //             SingleReader = true,
-    //             SingleWriter = true
-    //         }
-    //     );
-    //
-    //     // Start a background task to pump remaining messages through the channel
-    //     _ = Task.Run(
-    //         async () => {
-    //             try {
-    //                 var messages = session.ResponseStream.ReadAllAsync(stoppingToken)
-    //                     .Where(x => x.ContentCase is Event or Checkpoint or CaughtUp or FellBehind)
-    //                     .SelectAwait<ReadResp, SubscriptionMessage>(async x => x.ContentCase switch {
-    //                         Event      => await LegacyConverter.ConvertToRecord(x.Event, stoppingToken).ConfigureAwait(false),
-    //                         Checkpoint => StreamsV1Converter.ConvertToHeartbeat(x.Checkpoint),
-    //                         CaughtUp   => StreamsV1Converter.ConvertToHeartbeat(x.CaughtUp),
-    //                         FellBehind => StreamsV1Converter.ConvertToHeartbeat(x.FellBehind),
-    //                     });
-    //
-    //                 await foreach (var message in messages.ConfigureAwait(false))
-    //                     await channel.Writer.WriteAsync(message, stoppingToken).ConfigureAwait(false);
-    //
-    //                 channel.Writer.Complete();
-    //             } catch (OperationCanceledException) {
-    //                 channel.Writer.Complete();
-    //             } catch (Exception ex) {
-    //                 channel.Writer.TryComplete(ex);
-    //             } finally {
-    //                 cancellator.Dispose();
-    //                 session.Dispose();
-    //             }
-    //         }, stoppingToken
-    //     );
-    //
-    //     return new Subscription(subscriptionId, channel.Reader.ReadAllAsync(stoppingToken));
-    //
-    // }
-    //
-    // public async Task<Result<Subscription, StreamSubscriptionError>> Subscribe(
-    //     StreamName streamName,
-    //     StreamSubscriptionOptions options,
-    //     int bufferSize = 100
-    // ) {
-    //     // Create a linked cancellation token source for background task control
-    //     var cancellator = CancellationTokenSource.CreateLinkedTokenSource(options.CancellationToken);
-    //
-    //     var stoppingToken = cancellator.Token;
-    //
-    //     var session = LegacyStreamsClient.Read(
-    //         StreamsV1Converter.CreateStreamSubscriptionRequest(streamName, options),
-    //         cancellationToken: stoppingToken);
-    //
-    //     // Check for access denied. the legacy exception mapper throws this exception....
-    //     try {
-    //         await session.ResponseStream.MoveNext(stoppingToken).ConfigureAwait(false);
-    //     }
-    //     catch (AccessDeniedException) {
-    //         return Result.Failure<Subscription, StreamSubscriptionError>(new ErrorDetails.AccessDenied());
-    //     }
-    //
-    //     if (session.ResponseStream.Current.ContentCase == StreamNotFound)
-    //         return Result.Failure<Subscription, StreamSubscriptionError>(new ErrorDetails.StreamNotFound());
-    //
-    //     if (session.ResponseStream.Current.ContentCase != Confirmation)
-    //         throw KurrentClientException.CreateUnknown(
-    //             nameof(SubscribeToStream), new Exception($"Expected confirmation message but got {session.ResponseStream.Current.ContentCase}"));
-    //
-    //     var subscriptionId = session.ResponseStream.Current.Confirmation.SubscriptionId;
-    //
-    //     // Create a bounded channel for backpressure control
-    //     var channel = Channel.CreateBounded<SubscriptionMessage>(
-    //         new BoundedChannelOptions(bufferSize) {
-    //             FullMode     = BoundedChannelFullMode.Wait,
-    //             SingleReader = true,
-    //             SingleWriter = true
-    //         }
-    //     );
-    //
-    //     // Start a background task to pump remaining messages through the channel
-    //     _ = Task.Run(
-    //         async () => {
-    //             try {
-    //                 var messages = session.ResponseStream.ReadAllAsync(stoppingToken)
-    //                     .Where(x => x.ContentCase is Event or Checkpoint or CaughtUp or FellBehind)
-    //                     .SelectAwait<ReadResp, SubscriptionMessage>(async x => x.ContentCase switch {
-    //                         Event      => await LegacyConverter.ConvertToRecord(x.Event, stoppingToken).ConfigureAwait(false),
-    //                         Checkpoint => StreamsV1Converter.ConvertToHeartbeat(x.Checkpoint),
-    //                         CaughtUp   => StreamsV1Converter.ConvertToHeartbeat(x.CaughtUp),
-    //                         FellBehind => StreamsV1Converter.ConvertToHeartbeat(x.FellBehind),
-    //                     });
-    //
-    //                 await foreach (var message in messages.ConfigureAwait(false))
-    //                     await channel.Writer.WriteAsync(message, stoppingToken).ConfigureAwait(false);
-    //
-    //                 channel.Writer.Complete();
-    //             } catch (OperationCanceledException) {
-    //                 channel.Writer.Complete();
-    //             } catch (Exception ex) {
-    //                 channel.Writer.TryComplete(ex);
-    //             } finally {
-    //                 cancellator.Dispose();
-    //                 session.Dispose();
-    //             }
-    //         }, stoppingToken
-    //     );
-    //
-    //     return new Subscription(subscriptionId, channel.Reader.ReadAllAsync(stoppingToken));
-    // }
-}
-
-public partial class KurrentStreamsClient {
-    async ValueTask<Result<Subscription, SubscriptionError>> SubscribeInternal(
-        ReadReq request, int bufferSize, TimeSpan subscriptionTimeout, CancellationToken cancellationToken
-    ) {
+    async ValueTask<Result<Subscription, SubscriptionError>> SubscribeCore(ReadReq request, int bufferSize, TimeSpan subscriptionTimeout, CancellationToken cancellationToken) {
         // Create a linked cancellation token source for background task control
         var cancellator = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
@@ -201,9 +55,7 @@ public partial class KurrentStreamsClient {
     /// <param name="subscriptionTimeout">The maximum time to wait for a subscription message before timing out.</param>
     /// <param name="cancellator">A cancellation token source used to signal termination of the message relay process.</param>
     /// <returns>A bounded channel that streams subscription messages.</returns>
-    Channel<SubscriptionMessage> StartMessageRelay(
-        AsyncServerStreamingCall<ReadResp> session, int bufferSize, TimeSpan subscriptionTimeout, CancellationTokenSource cancellator
-    ) {
+    Channel<SubscriptionMessage> StartMessageRelay(AsyncServerStreamingCall<ReadResp> session, int bufferSize, TimeSpan subscriptionTimeout, CancellationTokenSource cancellator) {
         // create a bounded channel for backpressure control
         var channel = Channel.CreateBounded<SubscriptionMessage>(
             new BoundedChannelOptions(bufferSize) {
@@ -223,9 +75,9 @@ public partial class KurrentStreamsClient {
                         .Where(x => x.ContentCase is Event or Checkpoint or CaughtUp or FellBehind)
                         .SelectAwait<ReadResp, SubscriptionMessage>(async x => x.ContentCase switch {
                             Event      => await LegacyConverter.ConvertToRecord(x.Event, stoppingToken).ConfigureAwait(false),
-                            Checkpoint => x.Checkpoint.ConvertCheckpointToHeartbeat(),
-                            CaughtUp   => x.CaughtUp.ConvertCaughtUpToHeartbeat(),
-                            FellBehind => x.FellBehind.ConvertFellBehindToHeartbeat()
+                            Checkpoint => x.Checkpoint.MapToHeartbeat(),
+                            CaughtUp   => x.CaughtUp.MapToHeartbeat(),
+                            FellBehind => x.FellBehind.MapToHeartbeat()
                         });
 
                     await foreach (var message in messages.ConfigureAwait(false)) {
@@ -233,7 +85,7 @@ public partial class KurrentStreamsClient {
                         if (channel.Writer.TryWrite(message))
                             continue; // no timeout needed
 
-                        // the channel is full, now we need timeout protection
+                        // the channel is full, we must add timeout protection
                         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
                         timeout.CancelAfter(subscriptionTimeout);
 
@@ -260,51 +112,14 @@ public partial class KurrentStreamsClient {
 
         return channel;
     }
-
-    // async Task<Result<Subscription, StreamSubscriptionError>> SubscribeToStreamOriginalInternal(
-    //     ReadReq request,
-    //     int bufferSize,
-    //     TimeSpan subscriptionTimeout,
-    //     CancellationToken cancellationToken
-    // ) {
-    //     // Create a linked cancellation token source for background task control
-    //     var cancellator = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-    //
-    //     var stoppingToken = cancellator.Token;
-    //
-    //     var session = LegacyStreamsClient.Read(request, cancellationToken: stoppingToken);
-    //
-    //     // Check for access denied. the legacy exception mapper throws this exception...
-    //     // we could skip it for this operation... requires refactoring the interceptor
-    //     // or we could execute this logic outside by doing another call.
-    //     try {
-    //         await session.ResponseStream.MoveNext(stoppingToken).ConfigureAwait(false);
-    //     }
-    //     catch (AccessDeniedException) {
-    //         return Result.Failure<Subscription, StreamSubscriptionError>(new ErrorDetails.AccessDenied());
-    //     }
-    //
-    //     if (session.ResponseStream.Current.ContentCase == StreamNotFound)
-    //         return Result.Failure<Subscription, StreamSubscriptionError>(new ErrorDetails.StreamNotFound());
-    //
-    //     if (session.ResponseStream.Current.ContentCase != Confirmation)
-    //         throw KurrentClientException.CreateUnknown(
-    //             nameof(SubscribeToStream), new Exception($"Expected confirmation message but got {session.ResponseStream.Current.ContentCase}"));
-    //
-    //     var subscriptionId = session.ResponseStream.Current.Confirmation.SubscriptionId;
-    //
-    //     var channel = StartMessageRelay(session, bufferSize, subscriptionTimeout,  cancellator);
-    //
-    //     return new Subscription(subscriptionId, channel);
-    // }
 }
 
-#region . subscription processor .
+#region . subscription processor - experimental .
 /// <summary>
 /// Configuration options for processor-based subscriptions.
 /// </summary>
 [PublicAPI]
-public record SubscriptionProcessorOptions {
+record SubscriptionProcessorOptions {
     /// <summary>
     /// Maximum number of records to batch together for processing.
     /// Default: 100
@@ -335,7 +150,7 @@ public record SubscriptionProcessorOptions {
 /// Similar to AWS Kinesis IRecordProcessor pattern.
 /// </summary>
 [PublicAPI]
-public interface ISubscriptionProcessor {
+interface ISubscriptionProcessor {
     /// <summary>
     /// Called when records are available for processing.
     /// </summary>
@@ -375,7 +190,7 @@ public interface ISubscriptionProcessor {
 /// Represents the reason why a subscription was shut down.
 /// </summary>
 [PublicAPI]
-public enum SubscriptionShutdownReason {
+enum SubscriptionShutdownReason {
     /// <summary>
     /// Subscription was explicitly stopped by the client
     /// (via StopAsync(), DisposeAsync(), or CancellationToken).
@@ -422,115 +237,3 @@ public enum SubscriptionShutdownReason {
 }
 
 #endregion
-
-static class StreamsV1Converter {
-    static readonly ReadReq.Types.Options.Types.SubscriptionOptions DefaultSubscriptionOptions = new();
-    static readonly ReadReq.Types.Options.Types.UUIDOption          DefaultUuidOptions         = new();
-    static readonly Empty                                           DefaultEmpty               = new();
-
-    public static ReadReq CreateSubscriptionRequest(this SubscriptionOptions options) {
-        return NewSubscriptionRequest()
-            .With(x => x.Options.All = ConvertToAllOptions(options.Start))
-            .With(x => x.Options.Filter = ConvertToFilterOptions(options.Filter, options.Heartbeat));
-
-        // return new() {
-        //     Options = new ReadReq.Types.Options {
-        //         ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
-        //         All           = ConvertToAllOptions(options.StartPosition),
-        //         Subscription  = DefaultSubscriptionOptions,
-        //         Filter        = GetFilterOptions(options.Filter, options.Heartbeat)!,
-        //         UuidOption    = DefaultUuidOptions
-        //     }
-        // };
-    }
-
-    public static ReadReq CreateStreamSubscriptionRequest(this StreamSubscriptionOptions options) {
-        return NewSubscriptionRequest()
-            .With(x => x.Options.Stream = ConvertToStreamOptions(options.Stream, options.Start));
-
-        // return NewSubscriptionRequest()
-        //     .With(x => x.Options.Stream = ConvertToStreamOptions(options.Stream, options.Start))
-        //     .With(x => x.Options.Filter = ConvertToFilterOptions(options.Filter, options.Heartbeat)); // not sure if it works and we will do it locally.
-
-
-        // return new() {
-        //     Options = new() {
-        //         ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
-        //         Stream        = ConvertToStreamOptions(stream, options.StartRevision),
-        //         Subscription  = DefaultSubscriptionOptions,
-        //         UuidOption    = DefaultUuidOptions,
-        //         NoFilter      = DefaultEmpty
-        //     }
-        // };
-    }
-
-    static ReadReq.Types.Options.Types.FilterOptions? ConvertToFilterOptions(this ReadFilter filter, HeartbeatOptions heartbeat) {
-        if (filter == ReadFilter.None)
-            return null;
-
-        var options = filter.Scope switch {
-            ReadFilterScope.Stream => new ReadReq.Types.Options.Types.FilterOptions {
-                StreamIdentifier = new() { Regex = filter.Expression }
-            },
-            ReadFilterScope.Record => new ReadReq.Types.Options.Types.FilterOptions {
-                EventType = new() { Regex = filter.Expression }
-            },
-        };
-
-        // what is this?!
-        //options.Count = DefaultEmpty;
-        // if (filter.MaxSearchWindow.HasValue)
-        //     options.Max = (uint)heartbeatRecordsThreshold;
-        // else
-        //     options.Count = DefaultEmpty;
-
-        options.Max                          = (uint)heartbeat.RecordsThreshold;
-        options.CheckpointIntervalMultiplier = 1;
-
-        return options;
-    }
-
-    static ReadReq NewSubscriptionRequest() =>
-        new() {
-            Options = new() {
-                ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
-                Subscription  = DefaultSubscriptionOptions,
-                UuidOption    = DefaultUuidOptions,
-                NoFilter      = DefaultEmpty
-            }
-        };
-
-    static ReadReq.Types.Options.Types.AllOptions ConvertToAllOptions(LogPosition start) =>
-        start switch {
-            _ when start == LogPosition.Latest   => new() { End      = DefaultEmpty },
-            _ when start == LogPosition.Earliest => new() { Start    = DefaultEmpty },
-            _                                    => new() { Position = new() { CommitPosition = start, PreparePosition = start } }
-        };
-
-    static ReadReq.Types.Options.Types.StreamOptions ConvertToStreamOptions(string stream, StreamRevision start) =>
-        start switch {
-            _ when start == StreamRevision.Max => new() { StreamIdentifier = stream, End      = DefaultEmpty },
-            _ when start == StreamRevision.Min => new() { StreamIdentifier = stream, Start    = DefaultEmpty },
-            _                                  => new() { StreamIdentifier = stream, Revision = (ulong)start.Value }
-        };
-
-    public static Heartbeat ConvertCheckpointToHeartbeat(this ReadResp.Types.Checkpoint checkpoint) {
-        var position  = LogPosition.From((long)checkpoint.CommitPosition);
-        var timestamp = checkpoint.Timestamp.ToDateTimeOffset();
-        return Heartbeat.CreateCheckpoint(position, timestamp);
-    }
-
-    public static Heartbeat ConvertCaughtUpToHeartbeat(this ReadResp.Types.CaughtUp caughtUp) {
-        var position  = caughtUp.Position is not null ? LogPosition.From((long)caughtUp.Position.CommitPosition) : LogPosition.Unset;
-        var revision  = caughtUp.HasStreamRevision ? StreamRevision.From(caughtUp.StreamRevision) : StreamRevision.Unset;
-        var timestamp = caughtUp.Timestamp.ToDateTimeOffset();
-        return Heartbeat.CreateCaughtUp(position, revision, timestamp);
-    }
-
-    public static Heartbeat ConvertFellBehindToHeartbeat(this ReadResp.Types.FellBehind fellBehind) {
-        var position  = fellBehind.Position is not null ? LogPosition.From((long)fellBehind.Position.CommitPosition) : LogPosition.Unset;
-        var revision  = fellBehind.HasStreamRevision ? StreamRevision.From(fellBehind.StreamRevision) : StreamRevision.Unset;
-        var timestamp = fellBehind.Timestamp.ToDateTimeOffset();
-        return Heartbeat.CreateFellBehind(position, revision, timestamp);
-    }
-}

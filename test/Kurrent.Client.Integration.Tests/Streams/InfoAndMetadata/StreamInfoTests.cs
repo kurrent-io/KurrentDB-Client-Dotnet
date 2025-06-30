@@ -1,0 +1,120 @@
+using System.Text.Json;
+using Kurrent.Client.Model;
+using Kurrent.Client.Testing.Shouldly;
+
+namespace Kurrent.Client.Tests.Streams;
+
+[Category("Streams"), Category("Integration")]
+public class StreamInfoTests : KurrentClientTestFixture {
+    [Test]
+    public async Task returns_existing_stream_info(CancellationToken ct) {
+        var simulation = await SeedGame(ct);
+
+        var customMetadata = JsonDocument.Parse("""{"key1":"value1"}""");
+
+        var meta = new StreamMetadata {
+            MaxAge         = TimeSpan.FromDays(1),
+            TruncateBefore = null,
+            CacheControl   = TimeSpan.FromHours(1),
+            MaxCount       = 100,
+            CustomMetadata = customMetadata
+        };
+
+        await AutomaticClient.Streams
+            .SetStreamMetadata(simulation.Game.Stream, meta, ExpectedStreamState.Any, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Streams
+            .GetStreamInfo(simulation.Game.Stream, ct)
+            .ShouldNotThrowOrFailAsync(info => {
+                info.Metadata.ShouldBeEquivalentTo(meta, x => x.Using<JsonDocument>((left, right) => left.ToString() == right.ToString()));
+
+                // Other properties
+                info.MetadataRevision.ShouldBe(0);
+                info.LastStreamPosition.ShouldBeGreaterThan(LogPosition.Earliest);
+                info.LastStreamRevision.ShouldBe(simulation.Revision);
+                info.IsDeleted.ShouldBeFalse();
+            });
+    }
+
+    [Test]
+    public async Task returns_stream_info_with_empty_metadata_when_not_set(CancellationToken ct) {
+        var simulation = await SeedGame(ct);
+
+        await AutomaticClient.Streams
+            .GetStreamInfo(simulation.Game.Stream, ct)
+            .ShouldNotThrowOrFailAsync(info => {
+                info.HasMetadata.ShouldBeFalse();
+                info.MetadataRevision.ShouldBe(StreamRevision.Unset);
+                info.LastStreamPosition.ShouldBeGreaterThan(LogPosition.Earliest);
+                info.LastStreamRevision.ShouldBe(simulation.Revision);
+                info.IsDeleted.ShouldBeFalse();
+            });
+    }
+
+    [Test]
+    public async Task fails_with_stream_not_found_when_stream_is_deleted(CancellationToken ct) {
+        var simulation = await SeedGame(ct);
+
+        await AutomaticClient.Streams
+            .Delete(simulation.Game.Stream, ExpectedStreamState.Any, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Streams
+            .GetStreamInfo(simulation.Game.Stream, ct)
+            .ShouldFailAsync(err => err.IsStreamNotFound.ShouldBeTrue());
+    }
+
+    [Test, Skip("Must setup a client with invalid credentials, and for that I need user management wrapped")]
+    public async Task fails_with_access_denied_without_permissions(CancellationToken ct) {
+        var simulation = await SeedGame(ct);
+
+        await AutomaticClient.Streams
+            .GetStreamInfo(simulation.Game.Stream, ct)
+            .ShouldFailAsync(err => err.IsAccessDenied.ShouldBeTrue());
+    }
+
+    [Test]
+    public async Task sets_stream_metadata(CancellationToken ct) {
+        var simulation = await SeedGame(ct);
+
+        var customMetadata = JsonDocument.Parse("""{ "key1": "value1" }""");
+
+        var meta = new StreamMetadata {
+            MaxAge         = TimeSpan.FromDays(1),
+            TruncateBefore = null,
+            CacheControl   = TimeSpan.FromHours(1),
+            MaxCount       = 100,
+            CustomMetadata = customMetadata
+        };
+
+        await AutomaticClient.Streams
+            .SetStreamMetadata(simulation.Game.Stream, meta, ExpectedStreamState.Any, ct)
+            .ShouldNotThrowOrFailAsync(revision => revision.ShouldBe(0));
+    }
+
+    [Test]
+    public async Task gets_stream_metadata(CancellationToken ct) {
+        var simulation = await SeedGame(ct);
+
+        var customMetadata = JsonDocument.Parse("""{"key1":"value1"}""");
+
+        var meta = new StreamMetadata {
+            MaxAge         = TimeSpan.FromDays(7),
+            TruncateBefore = null,
+            CacheControl   = TimeSpan.FromHours(3),
+            MaxCount       = 200,
+            CustomMetadata = customMetadata
+        };
+
+        await AutomaticClient.Streams
+            .SetStreamMetadata(simulation.Game.Stream, meta, ExpectedStreamState.Any, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Streams
+            .GetStreamMetadata(simulation.Game.Stream, ct)
+            .ShouldNotThrowOrFailAsync(streamMeta => {
+                streamMeta.ShouldBeEquivalentTo(meta, x => x.Using<JsonDocument>((l, r) => l.ToString() == r.ToString()));
+            });
+    }
+}

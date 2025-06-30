@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Kurrent.Variant;
 
@@ -97,39 +98,37 @@ public readonly record struct HeartbeatOptions(bool Enable, int RecordsThreshold
 }
 
 [PublicAPI]
-public readonly record struct ReadAllOptions(
-    LogPosition StartPosition,
-    ReadFilter Filter,
-    HeartbeatOptions Heartbeat,
-    long Limit = long.MaxValue,
-    ReadDirection Direction = ReadDirection.Forwards,
-    CancellationToken CancellationToken = default
-) {
-    public static readonly ReadAllOptions Default = new(
-        LogPosition.Earliest,
-        ReadFilter.None,
-        HeartbeatOptions.Disabled,
-        long.MaxValue,
-        ReadDirection.Forwards,
-        CancellationToken.None
-    );
+public record ReadAllOptions {
+
+    public static readonly ReadAllOptions Default = new ReadAllOptions();
+
+    public LogPosition       Start             { get; init; } = LogPosition.Latest;
+    public ReadFilter        Filter            { get; init; } = ReadFilter.None;
+    public HeartbeatOptions  Heartbeat         { get; init; } = HeartbeatOptions.Default;
+    public long              Limit             { get; init; } = long.MaxValue;
+    public ReadDirection     Direction         { get; init; } = ReadDirection.Forwards;
+    public CancellationToken CancellationToken { get; init; } = CancellationToken.None;
 
     public static ReadAllOptions FirstRecord(CancellationToken cancellationToken = default) =>
-        Default with {
+        new() {
+            Start             = LogPosition.Earliest,
+            Direction         = ReadDirection.Forwards,
             Limit             = 1,
+            Heartbeat         = HeartbeatOptions.Disabled,
             CancellationToken = cancellationToken
         };
 
     public static ReadAllOptions LastRecord(CancellationToken cancellationToken = default) =>
-        Default with {
+        new() {
+            Start             = LogPosition.Latest,
             Direction         = ReadDirection.Backwards,
-            StartPosition     = LogPosition.Latest,
             Limit             = 1,
+            Heartbeat         = HeartbeatOptions.Disabled,
             CancellationToken = cancellationToken
         };
 
     public void EnsureValid() {
-        ArgumentOutOfRangeException.ThrowIfLessThan(StartPosition, LogPosition.Earliest);
+        ArgumentOutOfRangeException.ThrowIfLessThan(Start, LogPosition.Earliest);
         ArgumentOutOfRangeException.ThrowIfLessThan(Limit, 1);
     }
 }
@@ -139,22 +138,40 @@ public readonly partial record struct ReadAllError : IVariantResultError<
     ErrorDetails.AccessDenied>;
 
 [PublicAPI]
-public readonly record struct ReadStreamOptions(
-    StreamRevision StartRevision,
-    long Limit = long.MaxValue,
-    ReadDirection Direction = ReadDirection.Forwards,
-    CancellationToken CancellationToken = default
-) {
-    public static readonly ReadStreamOptions Default = new(StreamRevision.Min, long.MaxValue, ReadDirection.Forwards, CancellationToken.None);
+public record ReadStreamOptions {
+    public static readonly ReadStreamOptions Default = new ReadStreamOptions();
 
-    public static ReadStreamOptions FirstRecord(CancellationToken cancellationToken = default) =>
-        new(StreamRevision.Min, 1, ReadDirection.Forwards, cancellationToken);
+    /// <summary>
+    /// The stream from which the read operation starts.
+    /// </summary>
+    public StreamName Stream { get; init; } = StreamName.None;
 
-    public static ReadStreamOptions LastRecord(CancellationToken cancellationToken = default) =>
-        new(StreamRevision.Max, 1, ReadDirection.Backwards, cancellationToken);
+    public StreamRevision    Start             { get; init; } = StreamRevision.Min;
+    public long              Limit             { get; init; } = long.MaxValue;
+    public ReadDirection     Direction         { get; init; } = ReadDirection.Forwards;
+    public CancellationToken CancellationToken { get; init; } = CancellationToken.None;
+
+    public static ReadStreamOptions FirstRecord(StreamName stream, CancellationToken cancellationToken = default) =>
+        new() {
+            Stream            = stream,
+            Start             = StreamRevision.Min,
+            Limit             = 1,
+            Direction         = ReadDirection.Forwards,
+            CancellationToken = cancellationToken
+        };
+
+    public static ReadStreamOptions LastRecord(StreamName stream, CancellationToken cancellationToken = default) =>
+        new() {
+            Stream            = stream,
+            Start             = StreamRevision.Max,
+            Limit             = 1,
+            Direction         = ReadDirection.Backwards,
+            CancellationToken = cancellationToken
+        };
 
     public void EnsureValid() {
-        ArgumentOutOfRangeException.ThrowIfLessThan(StartRevision, StreamRevision.Min);
+        ArgumentException.ThrowIfNullOrEmpty(Stream);
+        ArgumentOutOfRangeException.ThrowIfLessThan(Start, StreamRevision.Min);
         ArgumentOutOfRangeException.ThrowIfLessThan(Limit, 1);
     }
 }
@@ -187,34 +204,6 @@ public readonly partial record struct SubscriptionError : IVariantResultError<
 [PublicAPI]
 public readonly partial record struct SubscriptionMessage : IVariant<Record, Heartbeat>;
 
-// [PublicAPI]
-// public readonly record struct SubscriptionEnhanced : IAsyncEnumerable<SubscriptionMessage>, IAsyncDisposable {
-//     internal SubscriptionEnhanced(string subscriptionId, ChannelReader<SubscriptionMessage> reader, CancellationTokenSource cancellator) {
-//         SubscriptionId = subscriptionId;
-//         Reader         = reader;
-//         Cancellator    = cancellator;
-//         Messages       = reader.ReadAllAsync();
-//     }
-//
-//     ChannelReader<SubscriptionMessage> Reader      { get; }
-//     CancellationTokenSource            Cancellator { get; }
-//
-//     public string                                SubscriptionId { get; }
-//     public IAsyncEnumerable<SubscriptionMessage> Messages       { get; }
-//
-//     public IAsyncEnumerator<SubscriptionMessage> GetAsyncEnumerator(CancellationToken cancellationToken = default) =>
-//         Messages.GetAsyncEnumerator(cancellationToken);
-//
-//     public async ValueTask DisposeAsync() {
-//         if (Cancellator is not null) {
-//             await Cancellator.CancelAsync().ConfigureAwait(false);
-//             Cancellator.Dispose();
-//         }
-//
-//         await Reader.Completion.ConfigureAwait(false);
-//     }
-// }
-
 [PublicAPI]
 public readonly record struct Subscription : IAsyncDisposable {
     internal Subscription(string subscriptionId, Channel<SubscriptionMessage> channel) {
@@ -225,15 +214,23 @@ public readonly record struct Subscription : IAsyncDisposable {
 
     Channel<SubscriptionMessage> Channel { get; }
 
-    public string                                SubscriptionId { get; }
+    /// <summary>
+    /// Gets the unique identifier associated with the subscription.
+    /// </summary>
+    public string SubscriptionId { get; }
+
+    /// <summary>
+    /// The stream of subscription messages, which can include records or heartbeat notifications,
+    /// depending on the subscription type and the state of the subscribed stream.
+    /// </summary>
     public IAsyncEnumerable<SubscriptionMessage> Messages       { get; }
 
-    public int BufferedMessages => Channel.Reader.Count;
+    public int QueuedMessages => Channel.Reader.Count;
 
-    // public async ValueTask Stop() {
-    //     Channel.Writer.TryComplete();
-    //     await Channel.Reader.Completion.ConfigureAwait(false);
-    // }
+    public async ValueTask Stop() {
+        Channel.Writer.TryComplete();
+        await Channel.Reader.Completion.ConfigureAwait(false);
+    }
 
     public ValueTask DisposeAsync() {
         Channel.Writer.TryComplete();
@@ -296,7 +293,7 @@ public record StreamSubscriptionOptions {
     public CancellationToken StoppingToken { get; init; } = CancellationToken.None;
 
     public void EnsureValid() {
-        ArgumentNullException.ThrowIfNullOrEmpty(Stream);
+        ArgumentException.ThrowIfNullOrEmpty(Stream);
 
         ArgumentOutOfRangeException.ThrowIfLessThan(Start, StreamRevision.Min);
 

@@ -6,172 +6,47 @@ namespace Kurrent.Client.Model;
 /// <summary>
 /// Represents metadata associated with a stream in KurrentDB.
 /// </summary>
-public class StreamMetadata {
+[JsonConverter(typeof(StreamMetadataJsonConverter))]
+public record StreamMetadata {
     public static readonly StreamMetadata None = new();
 
     /// <summary>
     /// The optional maximum age of events allowed in the stream.
     /// </summary>
-    [JsonPropertyName("$maxAge")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonConverter(typeof(TimeSpanSecondsConverter))]
-    public TimeSpan? MaxAge { get; set; }
+    public TimeSpan? MaxAge { get; init; }
 
     /// <summary>
     /// The optional <see cref="StreamRevision"/> from which previous events can be scavenged.
     /// This is used to implement soft-deletion of streams.
     /// </summary>
-    [JsonPropertyName("$tb")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonConverter(typeof(StreamRevisionConverter))]
-    public StreamRevision? TruncateBefore { get; set; }
+    public StreamRevision? TruncateBefore { get; init; }
 
     /// <summary>
     /// The optional amount of time for which the stream head is cacheable.
     /// </summary>
-    [JsonPropertyName("$cacheControl")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [JsonConverter(typeof(TimeSpanSecondsConverter))]
-    public TimeSpan? CacheControl { get; set; }
+    public TimeSpan? CacheControl { get; init; }
 
     /// <summary>
     /// The optional maximum number of events allowed in the stream.
     /// </summary>
-    [JsonPropertyName("$maxCount")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public int? MaxCount { get; set; }
+    public int? MaxCount { get; init; }
+
+    /// <summary>
+    /// The optional <see cref="JsonDocument"/> of user provided metadata.
+    /// </summary>
+    public JsonDocument? CustomMetadata { get; init; }
 
     /// <summary>
     /// The optional <see cref="StreamAcl"/> for the stream.
     /// </summary>
-    [JsonPropertyName("$acl")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public StreamAcl? Acl { get; set; }
+    public StreamAcl? Acl { get; init; }
 
-    /// <summary>
-    /// Custom metadata properties that are serialized as additional JSON properties.
-    /// </summary>
-    [JsonExtensionData]
-    public Dictionary<string, object?> CustomProperties { get; set; } = new();
-
-    /// <summary>
-    /// The optional <see cref="JsonDocument"/> of user provided metadata.
-    /// This represents all custom properties that are not system metadata.
-    /// For backward compatibility - prefer using CustomProperties for new code.
-    /// </summary>
-    [JsonIgnore]
-    public JsonDocument? CustomMetadata {
-        get {
-            if (CustomProperties.Count == 0)
-                return null;
-
-            using var stream = new MemoryStream();
-            using var writer = new Utf8JsonWriter(stream);
-
-            writer.WriteStartObject();
-            foreach (var kvp in CustomProperties) {
-                writer.WritePropertyName(kvp.Key);
-                JsonSerializer.Serialize(writer, kvp.Value);
-            }
-
-            writer.WriteEndObject();
-            writer.Flush();
-
-            stream.Position = 0;
-            return JsonDocument.Parse(stream);
-        }
-        set {
-            CustomProperties.Clear();
-            if (value is null) return;
-
-            foreach (var property in value.RootElement.EnumerateObject()) {
-                // Deserialize JsonElement to object
-                object? deserializedValue = property.Value.ValueKind switch {
-                    JsonValueKind.Null                        => null,
-                    JsonValueKind.String                      => property.Value.GetString(),
-                    JsonValueKind.Number                      => property.Value.GetDouble(),
-                    JsonValueKind.True or JsonValueKind.False => property.Value.GetBoolean(),
-                    _                                         => property.Value // Keep as JsonElement for complex types
-                };
-
-                CustomProperties[property.Name] = deserializedValue;
-            }
-        }
-    }
-
-    [JsonIgnore] public bool HasMaxAge => MaxAge.HasValue && MaxAge > TimeSpan.Zero;
-
-    [JsonIgnore] public bool HasTruncateBefore => TruncateBefore is not null;
-
-    [JsonIgnore] public bool HasCacheControl => CacheControl.HasValue && CacheControl.Value > TimeSpan.Zero;
-
-    [JsonIgnore] public bool HasMaxCount => MaxCount is > 0;
-
-    [JsonIgnore] public bool HasCustomMetadata => CustomProperties.Count > 0;
-
-    [JsonIgnore] public bool HasAcl => Acl is not null && Acl != StreamAcl.None;
-
-    /// <summary>
-    /// Gets a custom metadata property value.
-    /// </summary>
-    /// <typeparam name="T">The type to cast the value to</typeparam>
-    /// <param name="key">The property key</param>
-    /// <returns>The property value cast to T, or default if not found or not convertible</returns>
-    public T? GetCustomProperty<T>(string key) {
-        if (!CustomProperties.TryGetValue(key, out var value)) return default;
-
-        // Handle JsonElement values from deserialization
-        if (value is JsonElement element) return element.Deserialize<T>();
-
-        return value is T typed ? typed : default;
-    }
-
-    /// <summary>
-    /// Creates a new StreamMetadata instance with an additional custom property.
-    /// </summary>
-    /// <param name="key">The property key</param>
-    /// <param name="value">The property value</param>
-    /// <returns>A new StreamMetadata instance with the custom property added</returns>
-    public StreamMetadata WithCustomProperty(string key, object? value) {
-        var newProperties = new Dictionary<string, object?>(CustomProperties);
-        if (value is null)
-            newProperties.Remove(key);
-        else
-            newProperties[key] = value;
-
-        return new StreamMetadata {
-            MaxAge           = MaxAge,
-            TruncateBefore   = TruncateBefore,
-            CacheControl     = CacheControl,
-            MaxCount         = MaxCount,
-            Acl              = Acl,
-            CustomProperties = newProperties
-        };
-    }
-
-    /// <summary>
-    /// Creates a new StreamMetadata instance with multiple custom properties added.
-    /// </summary>
-    /// <param name="customProperties">Dictionary of custom properties to add</param>
-    /// <returns>A new StreamMetadata instance with the custom properties added</returns>
-    public StreamMetadata WithCustomProperties(IReadOnlyDictionary<string, object?> customProperties) {
-        var newProperties = new Dictionary<string, object?>(CustomProperties);
-
-        foreach (var kvp in customProperties)
-            if (kvp.Value is null)
-                newProperties.Remove(kvp.Key);
-            else
-                newProperties[kvp.Key] = kvp.Value;
-
-        return new StreamMetadata {
-            MaxAge           = MaxAge,
-            TruncateBefore   = TruncateBefore,
-            CacheControl     = CacheControl,
-            MaxCount         = MaxCount,
-            Acl              = Acl,
-            CustomProperties = newProperties
-        };
-    }
+    public bool HasMaxAge         => MaxAge.HasValue && MaxAge > TimeSpan.Zero;
+    public bool HasTruncateBefore => TruncateBefore is not null;
+    public bool HasCacheControl   => CacheControl.HasValue && CacheControl.Value > TimeSpan.Zero;
+    public bool HasMaxCount       => MaxCount is > 0;
+    public bool HasCustomMetadata => CustomMetadata is not null && CustomMetadata.RootElement.ValueKind != JsonValueKind.Undefined;
+    public bool HasAcl            => Acl is not null && Acl != StreamAcl.None;
 }
 
 /// <summary>
@@ -184,36 +59,26 @@ public readonly record struct StreamAcl() {
     /// <summary>
     /// Roles and users permitted to read the stream
     /// </summary>
-    [JsonPropertyName("$r")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string[] ReadRoles { get; init; } = [];
 
     /// <summary>
     /// Roles and users permitted to write to the stream
     /// </summary>
-    [JsonPropertyName("$w")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string[] WriteRoles { get; init; } = [];
 
     /// <summary>
     /// Roles and users permitted to delete the stream
     /// </summary>
-    [JsonPropertyName("$d")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string[] DeleteRoles { get; init; } = [];
 
     /// <summary>
     /// Roles and users permitted to read stream metadata
     /// </summary>
-    [JsonPropertyName("$mr")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string[] MetaReadRoles { get; init; } = [];
 
     /// <summary>
     /// Roles and users permitted to write stream metadata
     /// </summary>
-    [JsonPropertyName("$mw")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public string[] MetaWriteRoles { get; init; } = [];
 
     public bool Equals(StreamAcl other) =>
@@ -241,38 +106,250 @@ public readonly record struct StreamAcl() {
       + $"MetaWrite: [{string.Join(",", MetaWriteRoles)}]";
 }
 
-/// <summary>
-/// Converts TimeSpan to/from seconds for JSON serialization
-/// </summary>
-public class TimeSpanSecondsConverter : JsonConverter<TimeSpan?> {
-    public override TimeSpan? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
-        reader.TokenType == JsonTokenType.Number
-            ? TimeSpan.FromSeconds(reader.GetInt64())
-            : null;
+class StreamMetadataJsonConverter : JsonConverter<StreamMetadata> {
+    const string MaxAgeKey         = "$maxAge";
+    const string MaxCountKey       = "$maxCount";
+    const string TruncateBeforeKey = "$tb";
+    const string CacheControlKey   = "$cacheControl";
+    const string AclKey            = "$acl";
 
-    public override void Write(Utf8JsonWriter writer, TimeSpan? value, JsonSerializerOptions options) {
-        if (value.HasValue)
-            writer.WriteNumberValue((long)value.Value.TotalSeconds);
-        else
-            writer.WriteNullValue();
+    public static readonly StreamMetadataJsonConverter Instance = new();
+
+    public override StreamMetadata Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+        int?            maxCount       = null;
+        TimeSpan?       maxAge         = null;
+        TimeSpan?       cacheControl = null;
+        StreamRevision? truncateBefore = null;
+        StreamAcl?      acl            = null;
+
+        using var stream               = new MemoryStream();
+        using var customMetadataWriter = new Utf8JsonWriter(stream);
+
+        if (reader.TokenType != JsonTokenType.StartObject)
+            throw new InvalidOperationException();
+
+        customMetadataWriter.WriteStartObject();
+
+        while (reader.Read()) {
+            if (reader.TokenType == JsonTokenType.EndObject) break;
+            if (reader.TokenType != JsonTokenType.PropertyName) throw new InvalidOperationException();
+
+            switch (reader.GetString()) {
+                case MaxCountKey:
+                    if (!reader.Read()) throw new InvalidOperationException();
+                    maxCount = reader.GetInt32();
+                    break;
+
+                case MaxAgeKey:
+                    if (!reader.Read()) throw new InvalidOperationException();
+                    var int64 = reader.GetInt64();
+                    maxAge = TimeSpan.FromSeconds(int64);
+                    break;
+
+                case CacheControlKey:
+                    if (!reader.Read()) throw new InvalidOperationException();
+                    cacheControl = TimeSpan.FromSeconds(reader.GetInt64());
+                    break;
+
+                case TruncateBeforeKey:
+                    if (!reader.Read()) throw new InvalidOperationException();
+                    var value = reader.GetInt64();
+                    truncateBefore = value == long.MaxValue
+                        ? StreamRevision.Max
+                        : StreamRevision.From(value);
+
+                    break;
+
+                case AclKey:
+                    if (!reader.Read()) throw new InvalidOperationException();
+                    acl = StreamAclJsonConverter.Instance.Read(ref reader, typeof(StreamAcl), options);
+                    break;
+
+                default:
+                    customMetadataWriter.WritePropertyName(reader.GetString()!);
+                    reader.Read();
+                    switch (reader.TokenType) {
+                        case JsonTokenType.Comment:
+                            customMetadataWriter.WriteCommentValue(reader.GetComment());
+                            break;
+
+                        case JsonTokenType.String:
+                            customMetadataWriter.WriteStringValue(reader.GetString());
+                            break;
+
+                        case JsonTokenType.Number:
+                            customMetadataWriter.WriteNumberValue(reader.GetDouble());
+                            break;
+
+                        case JsonTokenType.True:
+                        case JsonTokenType.False:
+                            customMetadataWriter.WriteBooleanValue(reader.GetBoolean());
+                            break;
+
+                        case JsonTokenType.Null:
+                            reader.Read();
+                            customMetadataWriter.WriteNullValue();
+                            break;
+
+                        default:
+                            throw new JsonException(
+                                $"Unexpected token type {reader.TokenType} for property '{reader.GetString()}' in stream metadata.");
+                    }
+
+                    break;
+            }
+        }
+
+        customMetadataWriter.WriteEndObject();
+        customMetadataWriter.Flush();
+
+        stream.Position = 0;
+
+        return new StreamMetadata {
+            MaxCount       = maxCount,
+            MaxAge         = maxAge,
+            TruncateBefore = truncateBefore,
+            CacheControl   = cacheControl,
+            Acl            = acl,
+            CustomMetadata = JsonDocument.Parse(stream)
+        };
+    }
+
+    public override void Write(Utf8JsonWriter writer, StreamMetadata value, JsonSerializerOptions options) {
+        writer.WriteStartObject();
+
+        if (value.MaxCount.HasValue)
+            writer.WriteNumber(MaxCountKey, value.MaxCount.Value);
+
+        if (value.MaxAge.HasValue)
+            writer.WriteNumber(MaxAgeKey, (long)value.MaxAge.Value.TotalSeconds);
+
+        if (value.TruncateBefore != null && value.TruncateBefore != StreamRevision.Unset)
+            writer.WriteNumber(TruncateBeforeKey, value.TruncateBefore);
+
+        if (value.CacheControl.HasValue)
+            writer.WriteNumber(CacheControlKey, (long)value.CacheControl.Value.TotalSeconds);
+
+        if (value.Acl is not null) {
+            writer.WritePropertyName(AclKey);
+            StreamAclJsonConverter.Instance.Write(writer, value.Acl.Value, options);
+        }
+
+        if (value.CustomMetadata is not null)
+            foreach (var property in value.CustomMetadata.RootElement.EnumerateObject())
+                property.WriteTo(writer);
+
+        writer.WriteEndObject();
     }
 }
 
-/// <summary>
-/// Converts StreamRevision to/from long for JSON serialization
-/// </summary>
-public class StreamRevisionConverter : JsonConverter<StreamRevision?> {
-    public override StreamRevision? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
-        if (reader.TokenType != JsonTokenType.Number) return null;
+class StreamAclJsonConverter : JsonConverter<StreamAcl> {
+    const string AclRead      = "$r";
+    const string AclWrite     = "$w";
+    const string AclDelete    = "$d";
+    const string AclMetaRead  = "$mr";
+    const string AclMetaWrite = "$mw";
 
-        var value = reader.GetInt64();
-        return value == long.MaxValue ? StreamRevision.Max : StreamRevision.From(value);
+    public static readonly StreamAclJsonConverter Instance = new();
+
+    public override StreamAcl Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
+        string[]? read      = null;
+        string[]? write     = null;
+        string[]? delete    = null;
+        string[]? metaRead  = null;
+        string[]? metaWrite = null;
+
+        if (reader.TokenType != JsonTokenType.StartObject) throw new InvalidOperationException();
+
+        while (reader.Read()) {
+            if (reader.TokenType == JsonTokenType.EndObject)
+                break;
+
+            if (reader.TokenType != JsonTokenType.PropertyName)
+                throw new InvalidOperationException();
+
+            switch (reader.GetString()) {
+                case AclRead:
+                    read = ReadRoles(ref reader);
+                    break;
+
+                case AclWrite:
+                    write = ReadRoles(ref reader);
+                    break;
+
+                case AclDelete:
+                    delete = ReadRoles(ref reader);
+                    break;
+
+                case AclMetaRead:
+                    metaRead = ReadRoles(ref reader);
+                    break;
+
+                case AclMetaWrite:
+                    metaWrite = ReadRoles(ref reader);
+                    break;
+            }
+        }
+
+        return new StreamAcl {
+            ReadRoles      = read ?? [],
+            WriteRoles     = write ?? [],
+            DeleteRoles    = delete ?? [],
+            MetaReadRoles  = metaRead ?? [],
+            MetaWriteRoles = metaWrite ?? []
+        };
     }
 
-    public override void Write(Utf8JsonWriter writer, StreamRevision? value, JsonSerializerOptions options) {
-        if (value is not null)
-            writer.WriteNumberValue(value.Value);
-        else
-            writer.WriteNullValue();
+    static string[]? ReadRoles(ref Utf8JsonReader reader) {
+        if (!reader.Read())
+            throw new InvalidOperationException();
+
+        if (reader.TokenType == JsonTokenType.Null)
+            return null;
+
+        if (reader.TokenType == JsonTokenType.String)
+            return [reader.GetString()!];
+
+        if (reader.TokenType != JsonTokenType.StartArray)
+            throw new InvalidOperationException();
+
+        var roles = new List<string>();
+
+        while (reader.Read()) {
+            if (reader.TokenType == JsonTokenType.EndArray)
+                return roles.Count == 0 ? [] : roles.ToArray();
+
+            if (reader.TokenType != JsonTokenType.String)
+                throw new InvalidOperationException();
+
+            roles.Add(reader.GetString()!);
+        }
+
+        return roles.ToArray();
+    }
+
+    public override void Write(Utf8JsonWriter writer, StreamAcl value, JsonSerializerOptions options) {
+        writer.WriteStartObject();
+
+        WriteRoles(writer, AclRead, value.ReadRoles);
+        WriteRoles(writer, AclWrite, value.WriteRoles);
+        WriteRoles(writer, AclDelete, value.DeleteRoles);
+        WriteRoles(writer, AclMetaRead, value.MetaReadRoles);
+        WriteRoles(writer, AclMetaWrite, value.MetaWriteRoles);
+
+        writer.WriteEndObject();
+    }
+
+    static void WriteRoles(Utf8JsonWriter writer, string name, string[]? roles) {
+        if (roles is null)
+            return;
+
+        writer.WritePropertyName(name);
+        writer.WriteStartArray();
+
+        foreach (var role in roles)
+            writer.WriteStringValue(role);
+
+        writer.WriteEndArray();
     }
 }

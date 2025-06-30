@@ -12,7 +12,7 @@ using Contracts = KurrentDB.Protocol.Streams.V2;
 
 namespace Kurrent.Client.Model;
 
-static class StreamsMapper {
+static class StreamsV2Mapper {
 	public static async IAsyncEnumerable<Contracts.AppendRecord> Map(this IEnumerable<Message> source, string stream, ISchemaSerializerProvider serializerProvider, [EnumeratorCancellation] CancellationToken ct) {
 		foreach (var message in source)
 			yield return await message

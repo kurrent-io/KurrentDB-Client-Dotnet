@@ -106,21 +106,16 @@ public class SubscriptionTests : KurrentClientTestFixture {
         var recordsReceived = new List<Record>();
 
         await foreach (var msg in subscription.Messages) {
-            if (msg.IsRecord) {
-                recordsReceived.Add(msg.AsRecord);
-                Logger.LogDebug("Received: {Message}", msg.AsRecord.ToDebugString());
+            if (!msg.IsRecord) continue;
 
-                break;
-            }
+            recordsReceived.Add(msg.AsRecord);
+            Logger.LogDebug("Received: {Message}", msg.AsRecord.ToDebugString());
+
+            break;
         }
 
         recordsReceived.Count.ShouldBe(1);
 
-        try {
-            await subscription.DisposeAsync();
-        }
-        catch (Exception ex) {
-            Logger.LogError(ex, "Failed to dispose gracefully");
-        }
+        await Should.NotThrowAsync(async () => await subscription.DisposeAsync());
     }
 }

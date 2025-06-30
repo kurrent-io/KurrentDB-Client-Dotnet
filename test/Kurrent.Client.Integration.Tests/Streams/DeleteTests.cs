@@ -14,7 +14,7 @@ public class DeleteTests : KurrentClientTestFixture {
 
     [Test]
     [DeletesStreamTestCases]
-    public async Task deletes_stream(ExpectedStreamState expectedState, string testCase, CancellationToken ct) {
+    public async Task deletes_stream_when_expected_state_matches(ExpectedStreamState expectedState, string testCase, CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
         await AutomaticClient.Streams
@@ -24,7 +24,7 @@ public class DeleteTests : KurrentClientTestFixture {
     }
 
     [Test]
-    public async Task deletes_stream_with_expected_revision(CancellationToken ct) {
+    public async Task deletes_stream_when_expected_revision_matches(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
         await AutomaticClient.Streams
@@ -34,24 +34,24 @@ public class DeleteTests : KurrentClientTestFixture {
     }
 
     [Test]
-    public async Task returns_revision_conflict_error_when_revision_is_not_matched(CancellationToken ct) {
+    public async Task fails_with_revision_conflict_error_when_revision_is_not_matched(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
         await AutomaticClient.Streams
             .Delete(simulation.Game.Stream, simulation.Revision + 1, ct)
-            .ShouldFailAsync(deleteError =>
-                deleteError.Value.ShouldBeOfType<ErrorDetails.StreamRevisionConflict>());
+            .ShouldFailAsync(error =>
+                error.Value.ShouldBeOfType<ErrorDetails.StreamRevisionConflict>());
     }
 
     [Test]
-    public async Task returns_stream_not_found_error_when_deleting_non_existing_stream(CancellationToken ct) {
+    public async Task fails_with_stream_not_found_error_when_deleting_non_existing_stream(CancellationToken ct) {
         var game = TrySimulateGame(GamesAvailable.TicTacToe);
 
         // TODO: This is failing because we have a real error in the legacy client or the db
         //       Should return not found or already deleted errors but returns revision conflict error
         await AutomaticClient.Streams
             .Delete(game.Stream, ExpectedStreamState.StreamExists, ct)
-            .ShouldFailAsync(deleteError =>
-                deleteError.Value.ShouldBeOfType<ErrorDetails.StreamNotFound>());
+            .ShouldFailAsync(error =>
+                error.Value.ShouldBeOfType<ErrorDetails.StreamNotFound>());
     }
 }

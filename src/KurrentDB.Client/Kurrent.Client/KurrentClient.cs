@@ -1,3 +1,4 @@
+using EventStore.Client.Users;
 using Kurrent.Client.Features;
 using Kurrent.Client.Legacy;
 using KurrentDB.Client;
