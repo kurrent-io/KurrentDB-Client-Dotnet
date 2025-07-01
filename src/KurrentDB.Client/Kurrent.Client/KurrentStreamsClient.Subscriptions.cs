@@ -3,7 +3,6 @@
 using System.Threading.Channels;
 using EventStore.Client.Streams;
 using Grpc.Core;
-using Kurrent.Client.Legacy;
 using Kurrent.Client.Model;
 using KurrentDB.Client;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
@@ -12,13 +11,13 @@ using ErrorDetails = Kurrent.Client.Model.ErrorDetails;
 namespace Kurrent.Client;
 
 public partial class KurrentStreamsClient {
-    public ValueTask<Result<Subscription, SubscriptionError>> Subscribe(SubscriptionOptions options) =>
-        SubscribeCore(StreamsV1Mapper.CreateSubscriptionRequest(options), options.BufferSize, options.SubscriptionTimeout, options.StoppingToken);
+    public ValueTask<Result<Subscription, ReadError>> Subscribe(AllSubscriptionOptions options) =>
+        SubscribeCore(StreamsV1Mapper.CreateSubscriptionRequest(options), options.BufferSize, options.Timeout, options.CancellationToken);
 
-    public ValueTask<Result<Subscription, SubscriptionError>> Subscribe(StreamSubscriptionOptions options) =>
-        SubscribeCore(StreamsV1Mapper.CreateStreamSubscriptionRequest(options), options.BufferSize, options.SubscriptionTimeout, options.StoppingToken);
+    public ValueTask<Result<Subscription, ReadError>> Subscribe(StreamSubscriptionOptions options) =>
+        SubscribeCore(StreamsV1Mapper.CreateStreamSubscriptionRequest(options), options.BufferSize, options.Timeout, options.CancellationToken);
 
-    async ValueTask<Result<Subscription, SubscriptionError>> SubscribeCore(ReadReq request, int bufferSize, TimeSpan subscriptionTimeout, CancellationToken cancellationToken) {
+    async ValueTask<Result<Subscription, ReadError>> SubscribeCore(ReadReq request, int bufferSize, TimeSpan subscriptionTimeout, CancellationToken cancellationToken) {
         // Create a linked cancellation token source for background task control
         var cancellator = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
@@ -32,7 +31,7 @@ public partial class KurrentStreamsClient {
             await session.ResponseStream.MoveNext(stoppingToken).ConfigureAwait(false);
         }
         catch (AccessDeniedException) {
-            return Result.Failure<Subscription, SubscriptionError>(new ErrorDetails.AccessDenied());
+            return Result.Failure<Subscription, ReadError>(new ErrorDetails.AccessDenied());
         }
 
         // why would this even happen? seems like an unreachable state...
@@ -42,9 +41,12 @@ public partial class KurrentStreamsClient {
 
         var subscriptionId = session.ResponseStream.Current.Confirmation.SubscriptionId;
 
-        var channel = StartMessageRelay(session, bufferSize, subscriptionTimeout,  cancellator);
+        // Create factory function instead of starting immediately
+        var channelFactory = new Func<Channel<ReadMessage>>(() => StartMessageRelay(session, bufferSize, subscriptionTimeout, cancellator));
 
-        return new Subscription(subscriptionId, channel);
+        // var channel = StartMessageRelay(session, bufferSize, subscriptionTimeout,  cancellator);
+
+        return new Subscription(subscriptionId, channelFactory);
     }
 
     /// <summary>
@@ -55,9 +57,9 @@ public partial class KurrentStreamsClient {
     /// <param name="subscriptionTimeout">The maximum time to wait for a subscription message before timing out.</param>
     /// <param name="cancellator">A cancellation token source used to signal termination of the message relay process.</param>
     /// <returns>A bounded channel that streams subscription messages.</returns>
-    Channel<SubscriptionMessage> StartMessageRelay(AsyncServerStreamingCall<ReadResp> session, int bufferSize, TimeSpan subscriptionTimeout, CancellationTokenSource cancellator) {
+    Channel<ReadMessage> StartMessageRelay(AsyncServerStreamingCall<ReadResp> session, int bufferSize, TimeSpan subscriptionTimeout, CancellationTokenSource cancellator) {
         // create a bounded channel for backpressure control
-        var channel = Channel.CreateBounded<SubscriptionMessage>(
+        var channel = Channel.CreateBounded<ReadMessage>(
             new BoundedChannelOptions(bufferSize) {
                 FullMode     = BoundedChannelFullMode.Wait,
                 SingleReader = true,
@@ -73,7 +75,7 @@ public partial class KurrentStreamsClient {
                 try {
                     var messages = session.ResponseStream.ReadAllAsync(stoppingToken)
                         .Where(x => x.ContentCase is Event or Checkpoint or CaughtUp or FellBehind)
-                        .SelectAwait<ReadResp, SubscriptionMessage>(async x => x.ContentCase switch {
+                        .SelectAwait<ReadResp, ReadMessage>(async x => x.ContentCase switch {
                             Event      => await LegacyConverter.ConvertToRecord(x.Event, stoppingToken).ConfigureAwait(false),
                             Checkpoint => x.Checkpoint.MapToHeartbeat(),
                             CaughtUp   => x.CaughtUp.MapToHeartbeat(),
@@ -98,7 +100,7 @@ public partial class KurrentStreamsClient {
                     // completion manually or on dispose.
                     channel.Writer.TryComplete();
                 }  catch (OperationCanceledException ex) when (ex.CancellationToken != stoppingToken) {
-                    channel.Writer.TryComplete(new TimeoutException($"Subscription timed out after {subscriptionTimeout}. The application may not be reading messages fast enough."));
+                    channel.Writer.TryComplete(new TimeoutException($"Timed out after {subscriptionTimeout}. The application may not be reading messages fast enough."));
                 } catch (OperationCanceledException) {
                     channel.Writer.TryComplete();
                 } catch (Exception ex) {
@@ -112,6 +114,286 @@ public partial class KurrentStreamsClient {
 
         return channel;
     }
+
+    // public IAsyncEnumerable<SubscribeMessage> UnifiedSubscribe(
+    //     LogPosition startPosition, ReadFilter filter, HeartbeatOptions heartbeatOptions,
+    //     CancellationToken cancellationToken = default
+    // ) {
+    //     var session = filter.IsStreamNameFilter
+    //         ? SubscribeToStream(
+    //             filter.Expression, startPosition, filter,
+    //             cancellationToken
+    //         )
+    //         : SubscribeToAll(
+    //             startPosition, filter, heartbeatOptions,
+    //             cancellationToken
+    //         );
+    //
+    //     return session;
+    // }
+    //
+    // public async IAsyncEnumerable<SubscribeMessage> SubscribeToAll(
+    //     LogPosition startPosition, ReadFilter filter, HeartbeatOptions heartbeatOptions,
+    //     [EnumeratorCancellation] CancellationToken cancellationToken = default
+    // ) {
+    //     var start       = startPosition.ConvertToLegacyFromAll();
+    //     var eventFilter = filter.ConvertToEventFilter(heartbeatOptions.RecordsThreshold);
+    //
+    //     // wth?!?... is SubscriptionFilterOptions.CheckpointInterval != IEventFilter.MaxSearchWindow ?!?!?!
+    //     var filterOptions = new SubscriptionFilterOptions(eventFilter, (uint)heartbeatOptions.RecordsThreshold);
+    //
+    //     await using var session = LegacyClient.SubscribeToAll(
+    //         start,
+    //         filterOptions: filterOptions,
+    //         cancellationToken: cancellationToken
+    //     );
+    //
+    //     await foreach (var msg in session.Messages.WithCancellation(cancellationToken).ConfigureAwait(false))
+    //         switch (msg) {
+    //             case StreamMessage.Event { ResolvedEvent: var re }:
+    //                 var record = await LegacyConverter
+    //                     .ConvertToRecord(re, cancellationToken)
+    //                     .ConfigureAwait(false);
+    //
+    //                 yield return record;
+    //
+    //                 break;
+    //
+    //             case StreamMessage.AllStreamCheckpointReached checkpoint: {
+    //                 var heartbeat = Heartbeat.CreateCheckpoint(
+    //                     checkpoint.Position.ConvertToLogPosition(),
+    //                     checkpoint.Timestamp
+    //                 );
+    //
+    //                 yield return heartbeat;
+    //
+    //                 break;
+    //             }
+    //
+    //             case StreamMessage.CaughtUp caughtUp: {
+    //                 var heartbeat = Heartbeat.CreateCaughtUp(
+    //                     caughtUp.Position.ConvertToLogPosition(),
+    //                     caughtUp.Timestamp
+    //                 );
+    //
+    //                 yield return heartbeat;
+    //
+    //                 break;
+    //             }
+    //             // new protocol, new model and this? this is just noise
+    //             // case StreamMessage.FellBehind fellBehind:
+    //             // case StreamMessage.LastAllStreamPosition lastAllStreamPosition:
+    //             // case StreamMessage.SubscriptionConfirmation subscriptionConfirmation:
+    //             // break;
+    //         }
+    // }
+
+    // public async IAsyncEnumerable<SubscribeMessage> SubscribeToStream(
+    //     string stream, LogPosition startPosition, ReadFilter filter,
+    //     [EnumeratorCancellation] CancellationToken cancellationToken = default
+    // ) {
+    //     var revision = startPosition switch {
+    //         _ when startPosition == LogPosition.Unset    => StreamRevision.Min,
+    //         _ when startPosition == LogPosition.Earliest => StreamRevision.Min,
+    //         _ when startPosition == LogPosition.Latest   => StreamRevision.Max,
+    //         _                                            => await GetStreamRevision(startPosition, cancellationToken).ConfigureAwait(false)
+    //     };
+    //
+    //     var session = SubscribeToStream(
+    //         stream, revision, filter,
+    //         cancellationToken
+    //     );
+    //
+    //     await foreach (var record in session.ConfigureAwait(false))
+    //         yield return record;
+    // }
+
+    // public async IAsyncEnumerable<SubscriptionMessage> SubscribeToStream(StreamName stream, StreamSubscriptionOptions subscriptionOptions) {
+    //     subscriptionOptions.EnsureValid();
+    //
+    //     var legacyOptions = (
+    //         Start  : subscriptionOptions.Start.ConvertToLegacyFromStream(),
+    //         Filter    : subscriptionOptions.Filter.ConvertToEventFilter(subscriptionOptions.Heartbeat.RecordsThreshold)
+    //     );
+    //
+    //     var session = LegacyClient.SubscribeToStream(
+    //         stream,
+    //         legacyOptions.Start,
+    //         cancellationToken: subscriptionOptions.CancellationToken
+    //     );
+    //
+    //     // session.SubscriptionId
+    //     //
+    //     //
+    //     // try {
+    //     //     if (await session..ReadState == ReadState.StreamNotFound)
+    //     //         return new ReadError(new StreamNotFound(x => x.With("stream", stream)));
+    //     // }
+    //     // catch (AccessDeniedException) {
+    //     //     return new ReadError(new AccessDenied(x => x.With("stream", stream)));
+    //     // }
+    //     // catch (Exception ex) when (ex is not KurrentClientException) {
+    //     //     throw KurrentClientException.CreateUnknown(nameof(ReadStream), ex);
+    //     // }
+    //
+    //     // var messages =  LegacyClient.ReadAllAsync(
+    //     //     legacyOptions.Direction,
+    //     //     legacyOptions.Position,
+    //     //     legacyOptions.Filter,
+    //     //     legacyOptions.MaxCount,
+    //     //     cancellationToken: options.CancellationToken
+    //     // ).Messages;
+    //
+    //     await foreach (var msg in session.Messages.WithCancellation(subscriptionOptions.CancellationToken).ConfigureAwait(false))
+    //         switch (msg) {
+    //             case StreamMessage.SubscriptionConfirmation subscriptionConfirmation:
+    //                 var temp = subscriptionConfirmation.SubscriptionId;
+    //
+    //                 break;
+    //
+    //             case StreamMessage.Event { ResolvedEvent: var re }:
+    //                 if (!subscriptionOptions.Filter.IsRecordFilter || !subscriptionOptions.Filter.IsMatch(re.OriginalEvent.EventType))
+    //                     continue;
+    //
+    //                 var record = await LegacyConverter
+    //                     .ConvertToRecord(re, subscriptionOptions.CancellationToken)
+    //                     .ConfigureAwait(false);
+    //
+    //                 yield return record;
+    //
+    //                 break;
+    //
+    //             case StreamMessage.AllStreamCheckpointReached checkpoint: {
+    //                 var heartbeat = Heartbeat.CreateCheckpoint(
+    //                     checkpoint.Position.ConvertToLogPosition(),
+    //                     checkpoint.Timestamp
+    //                 );
+    //
+    //                 yield return heartbeat;
+    //
+    //                 break;
+    //             }
+    //
+    //             case StreamMessage.CaughtUp caughtUp: {
+    //                 var heartbeat = Heartbeat.CreateCaughtUp(
+    //                     caughtUp.Position.ConvertToLogPosition(),
+    //                     caughtUp.Timestamp
+    //                 );
+    //
+    //                 yield return heartbeat;
+    //
+    //                 break;
+    //             }
+    //
+    //             case StreamMessage.FellBehind fellBehind: {
+    //                 var heartbeat = Heartbeat.CreateFellBehind(
+    //                     fellBehind.Position.ConvertToLogPosition(),
+    //                     fellBehind.Timestamp
+    //                 );
+    //
+    //                 yield return heartbeat;
+    //
+    //                 break;
+    //             }
+    //
+    //             case StreamMessage.NotFound:
+    //                 throw new StreamNotFoundException(stream);
+    //             // new protocol, new model and this? thi is just noise
+    //             // case StreamMessage.FellBehind fellBehind:
+    //             // case StreamMessage.LastAllStreamPosition lastAllStreamPosition:
+    //             // case StreamMessage.SubscriptionConfirmation subscriptionConfirmation:
+    //             // break;
+    //         }
+    // }
+
+    // public async IAsyncEnumerable<SubscriptionMessage> SubscribeToStream(
+    //     string stream, StreamRevision startRevision, ReadFilter filter,
+    //     [EnumeratorCancellation] CancellationToken cancellationToken = default
+    // ) {
+    //     await using var session = LegacyClient.SubscribeToStream(
+    //         stream,
+    //         startRevision.ConvertToLegacyFromStream(),
+    //         cancellationToken: cancellationToken
+    //     );
+    //
+    //     await foreach (var msg in session.Messages.WithCancellation(cancellationToken).ConfigureAwait(false))
+    //         switch (msg) {
+    //             case StreamMessage.Event { ResolvedEvent: var re }:
+    //                 var record = await LegacyConverter
+    //                     .ConvertToRecord(re, cancellationToken)
+    //                     .ConfigureAwait(false);
+    //
+    //                 yield return record;
+    //
+    //                 // FILTER ALERT!
+    //                 // for now we could apply the filter locally until we refactor the server operation.
+    //                 // if (filter.IsEmptyFilter)
+    //                 // yield return record;
+    //                 // else {
+    //                 // switch (filter.Scope) {
+    //                 // case ReadFilterScope.Stream:
+    //                 // if (filter.IsMatch(record.Stream))
+    //                 // yield return record;
+    //                 // break;
+    //                 //
+    //                 // case ReadFilterScope.SchemaName:
+    //                 // if (filter.IsMatch(record.Schema.SchemaName))
+    //                 // yield return record;
+    //                 // break;
+    //                 //
+    //                 // // case ReadFilterScope.Properties:
+    //                 // // if (filter.IsMatch(record.Metadata))
+    //                 // // yield return record;
+    //                 // // break;
+    //                 //
+    //                 // // case ReadFilterScope.Record:
+    //                 // // if (filter.IsMatch(record.Schema.SchemaName))
+    //                 // // yield return record;
+    //                 // // break;
+    //                 //
+    //                 // // default:
+    //                 // // // if no scope is specified, we assume the filter applies to both stream and record
+    //                 // // if (filter.IsStreamNameFilter && filter.IsMatch(record.Stream) ||
+    //                 // //     filter.IsRecordFilter && filter.IsMatch(record.Data.Span))
+    //                 // // yield return record;
+    //                 // // break;
+    //                 //
+    //                 // }
+    //                 // }
+    //                 break;
+    //
+    //             // its the same message as in SubscribeToAll, still need to test it...
+    //             case StreamMessage.AllStreamCheckpointReached checkpoint: {
+    //                 var heartbeat = Heartbeat.CreateCheckpoint(
+    //                     checkpoint.Position.ConvertToLogPosition(),
+    //                     checkpoint.Timestamp
+    //                 );
+    //
+    //                 yield return heartbeat;
+    //
+    //                 break;
+    //             }
+    //
+    //             case StreamMessage.CaughtUp caughtUp: {
+    //                 var heartbeat = Heartbeat.CreateCaughtUp(
+    //                     caughtUp.Position.ConvertToLogPosition(),
+    //                     caughtUp.Timestamp
+    //                 );
+    //
+    //                 yield return heartbeat;
+    //
+    //                 break;
+    //             }
+    //
+    //             case StreamMessage.NotFound:
+    //                 throw new StreamNotFoundException(stream);
+    //             // new protocol, new model and this? thi is just noise
+    //             // case StreamMessage.FellBehind fellBehind:
+    //             // case StreamMessage.LastAllStreamPosition lastAllStreamPosition:
+    //             // case StreamMessage.SubscriptionConfirmation subscriptionConfirmation:
+    //             // break;
+    //         }
+    // }
 }
 
 #region . subscription processor - experimental .

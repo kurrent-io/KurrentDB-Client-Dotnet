@@ -1,10 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Kurrent.Variant;
 
 namespace Kurrent.Client.Model;
 
+#region . append .
 [PublicAPI]
 [method: SetsRequiredMembers]
 public record AppendStreamSuccess(string Stream, LogPosition Position, StreamRevision StreamRevision) {
@@ -87,6 +87,10 @@ public class AppendStreamRequestBuilder {
     }
 }
 
+#endregion
+
+#region . read & subscriptions .
+
 [PublicAPI]
 [method: SetsRequiredMembers]
 public readonly record struct HeartbeatOptions(bool Enable, int RecordsThreshold) {
@@ -98,18 +102,16 @@ public readonly record struct HeartbeatOptions(bool Enable, int RecordsThreshold
 }
 
 [PublicAPI]
-public record ReadAllOptions {
+public record ReadAllOptions : ReadOptionsBase {
+    public LogPosition Start { get; init; } = LogPosition.Latest;
 
-    public static readonly ReadAllOptions Default = new ReadAllOptions();
+    public override void EnsureValid() {
+        base.EnsureValid();
 
-    public LogPosition       Start             { get; init; } = LogPosition.Latest;
-    public ReadFilter        Filter            { get; init; } = ReadFilter.None;
-    public HeartbeatOptions  Heartbeat         { get; init; } = HeartbeatOptions.Default;
-    public long              Limit             { get; init; } = long.MaxValue;
-    public ReadDirection     Direction         { get; init; } = ReadDirection.Forwards;
-    public CancellationToken CancellationToken { get; init; } = CancellationToken.None;
+        ArgumentOutOfRangeException.ThrowIfLessThan(Start, LogPosition.Earliest);
+    }
 
-    public static ReadAllOptions FirstRecord(CancellationToken cancellationToken = default) =>
+    internal static ReadAllOptions FirstRecord(CancellationToken cancellationToken = default) =>
         new() {
             Start             = LogPosition.Earliest,
             Direction         = ReadDirection.Forwards,
@@ -118,7 +120,7 @@ public record ReadAllOptions {
             CancellationToken = cancellationToken
         };
 
-    public static ReadAllOptions LastRecord(CancellationToken cancellationToken = default) =>
+    internal static ReadAllOptions LastRecord(CancellationToken cancellationToken = default) =>
         new() {
             Start             = LogPosition.Latest,
             Direction         = ReadDirection.Backwards,
@@ -126,52 +128,50 @@ public record ReadAllOptions {
             Heartbeat         = HeartbeatOptions.Disabled,
             CancellationToken = cancellationToken
         };
-
-    public void EnsureValid() {
-        ArgumentOutOfRangeException.ThrowIfLessThan(Start, LogPosition.Earliest);
-        ArgumentOutOfRangeException.ThrowIfLessThan(Limit, 1);
-    }
 }
 
 [PublicAPI]
-public readonly partial record struct ReadAllError : IVariantResultError<
-    ErrorDetails.AccessDenied>;
-
-[PublicAPI]
-public record ReadStreamOptions {
-    public static readonly ReadStreamOptions Default = new ReadStreamOptions();
-
-    /// <summary>
-    /// The stream from which the read operation starts.
-    /// </summary>
+public record ReadStreamOptions : ReadOptionsBase {
     public StreamName Stream { get; init; } = StreamName.None;
 
-    public StreamRevision    Start             { get; init; } = StreamRevision.Min;
-    public long              Limit             { get; init; } = long.MaxValue;
-    public ReadDirection     Direction         { get; init; } = ReadDirection.Forwards;
-    public CancellationToken CancellationToken { get; init; } = CancellationToken.None;
+    public StreamRevision Start { get; init; } = StreamRevision.Max;
 
-    public static ReadStreamOptions FirstRecord(StreamName stream, CancellationToken cancellationToken = default) =>
-        new() {
-            Stream            = stream,
-            Start             = StreamRevision.Min,
-            Limit             = 1,
-            Direction         = ReadDirection.Forwards,
-            CancellationToken = cancellationToken
-        };
+    public override void EnsureValid() {
+        base.EnsureValid();
 
-    public static ReadStreamOptions LastRecord(StreamName stream, CancellationToken cancellationToken = default) =>
-        new() {
-            Stream            = stream,
-            Start             = StreamRevision.Max,
-            Limit             = 1,
-            Direction         = ReadDirection.Backwards,
-            CancellationToken = cancellationToken
-        };
-
-    public void EnsureValid() {
         ArgumentException.ThrowIfNullOrEmpty(Stream);
         ArgumentOutOfRangeException.ThrowIfLessThan(Start, StreamRevision.Min);
+    }
+
+}
+
+[PublicAPI]
+public abstract record ReadOptionsBase {
+    public ReadFilter Filter { get; init; } = ReadFilter.None;
+
+    public HeartbeatOptions Heartbeat { get; init; } = HeartbeatOptions.Default;
+
+    public TimeSpan Timeout { get; init; } = TimeSpan.FromSeconds(30);
+
+    public int BufferSize { get; init; } = 1000;
+
+    public ReadDirection Direction { get; init; } = ReadDirection.Forwards;
+
+    public long Limit { get; init; } = long.MaxValue;
+
+    public CancellationToken CancellationToken { get; init; } = CancellationToken.None;
+
+    public virtual void EnsureValid() {
+        if (Heartbeat.Enable) {
+            ArgumentOutOfRangeException.ThrowIfLessThan(Heartbeat.RecordsThreshold, 1);
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(Heartbeat.RecordsThreshold, 10000);
+        }
+
+        ArgumentOutOfRangeException.ThrowIfLessThan(Timeout, TimeSpan.FromSeconds(1));
+
+        ArgumentOutOfRangeException.ThrowIfLessThan(BufferSize, 1);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(BufferSize, 10000);
+
         ArgumentOutOfRangeException.ThrowIfLessThan(Limit, 1);
     }
 }
@@ -186,194 +186,207 @@ public readonly partial record struct ReadError : IVariantResultError<
 public readonly partial record struct ReadMessage : IVariant<Record, Heartbeat>;
 
 [PublicAPI]
-public readonly record struct Messages(IAsyncEnumerable<ReadMessage> Source) : IAsyncEnumerable<ReadMessage> {
-    public IAsyncEnumerator<ReadMessage> GetAsyncEnumerator(CancellationToken cancellationToken = new CancellationToken()) =>
-        Source.GetAsyncEnumerator(cancellationToken);
+public record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
+    internal Messages(Func<Channel<ReadMessage>> channelFactory) =>
+        _lazyChannel = new Lazy<Channel<ReadMessage>>(channelFactory);
+
+    Lazy<Channel<ReadMessage>> _lazyChannel;
+
+    int _disposed;
+    int _enumeratorCreated;
+
+    Channel<ReadMessage> Channel => _lazyChannel.Value;
+
+    /// <summary>
+    /// The number of messages currently queued for processing
+    /// </summary>
+    public int QueuedMessages => _lazyChannel.IsValueCreated ? Channel.Reader.Count : 0;
+
+    /// <summary>
+    /// Flushes the buffer and waits until all messages are processed
+    /// </summary>
+    /// <param name="timeout">An optional timeout duration to wait. Defaults to 30 seconds if not specified.</param>
+    public async ValueTask<bool> Flush(TimeSpan? timeout = null) {
+        if (Interlocked.CompareExchange(ref _disposed, 0, 0) == 1)
+            return true;
+
+        if (!_lazyChannel.IsValueCreated)
+            return true;
+
+        Channel.Writer.TryComplete();
+
+        var completedTask = await Task
+            .WhenAny(Channel.Reader.Completion, Task.Delay(timeout ?? TimeSpan.FromSeconds(30)))
+            .ConfigureAwait(false);
+
+        return completedTask == Channel.Reader.Completion;
+    }
+
+    public async IAsyncEnumerator<ReadMessage> GetAsyncEnumerator(CancellationToken cancellationToken = default) {
+        if (Interlocked.CompareExchange(ref _disposed, 0, 0) == 1)
+            throw new ObjectDisposedException(nameof(Subscription));
+
+        if (Interlocked.CompareExchange(ref _enumeratorCreated, 1, 0) == 1)
+            throw new InvalidOperationException("Only one enumerator can be active at a time");
+
+        // return Channel.Reader.ReadAllAsync(CancellationToken.None).GetAsyncEnumerator(CancellationToken.None);
+
+        var reader = Channel.Reader;
+
+        while (true) {
+            bool dataAvailable;
+            try {
+                dataAvailable = await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) {
+                yield break;
+            }
+            catch (ObjectDisposedException) {
+                yield break;
+            }
+
+            if (!dataAvailable)
+                break;
+
+            while (reader.TryRead(out var item))
+                yield return item;
+        }
+    }
+
+    public async ValueTask DisposeAsync() {
+        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
+            return;
+
+        if (_lazyChannel.IsValueCreated) {
+            Channel.Writer.TryComplete();
+
+            if (Channel.Reader.Completion.IsFaulted)
+                await Channel.Reader.Completion;
+        }
+    }
 }
 
 [PublicAPI]
-public readonly partial record struct StreamSubscriptionError : IVariantResultError<
-    ErrorDetails.StreamNotFound,
-    ErrorDetails.StreamDeleted,
-    ErrorDetails.AccessDenied>;
+public record AllSubscriptionOptions : ReadAllOptions {
+    new ReadDirection Direction { get; init; }
+    new long          Limit     { get; init; }
+}
 
 [PublicAPI]
-public readonly partial record struct SubscriptionError : IVariantResultError<
-    ErrorDetails.AccessDenied>;
+public record StreamSubscriptionOptions : ReadStreamOptions {
+    new ReadDirection Direction { get; init; }
+    new long          Limit     { get; init; }
+}
 
 [PublicAPI]
-public readonly partial record struct SubscriptionMessage : IVariant<Record, Heartbeat>;
-
-[PublicAPI]
-public readonly record struct Subscription : IAsyncDisposable {
-    internal Subscription(string subscriptionId, Channel<SubscriptionMessage> channel) {
+public record Subscription : Messages {
+    internal Subscription(string subscriptionId, Func<Channel<ReadMessage>> channelFactory) : base(channelFactory) =>
         SubscriptionId = subscriptionId;
-        Channel        = channel;
-        Messages       = channel.Reader.ReadAllAsync();
-    }
-
-    Channel<SubscriptionMessage> Channel { get; }
 
     /// <summary>
     /// Gets the unique identifier associated with the subscription.
     /// </summary>
     public string SubscriptionId { get; }
-
-    /// <summary>
-    /// The stream of subscription messages, which can include records or heartbeat notifications,
-    /// depending on the subscription type and the state of the subscribed stream.
-    /// </summary>
-    public IAsyncEnumerable<SubscriptionMessage> Messages       { get; }
-
-    public int QueuedMessages => Channel.Reader.Count;
-
-    public async ValueTask Stop() {
-        Channel.Writer.TryComplete();
-        await Channel.Reader.Completion.ConfigureAwait(false);
-    }
-
-    public ValueTask DisposeAsync() {
-        Channel.Writer.TryComplete();
-        return ValueTask.CompletedTask;
-    }
 }
 
-[PublicAPI]
-public record StreamSubscriptionOptions {
-    /// <summary>
-    /// Represents the name of the stream associated with a subscription or append operation.
-    /// This property is used to identify the specific stream from which records are read.
-    /// </summary>
-    public StreamName Stream { get; init; } = StreamName.None;
-
-    /// <summary>
-    /// Denotes the starting revision for a stream subscription.
-    /// This property determines from which revision the stream will begin to be read
-    /// when a subscription is initiated. By default, it is set to the maximum
-    /// stream revision, indicating the subscription will start at the most recent revision.
-    /// </summary>
-    public StreamRevision Start { get; init; } = StreamRevision.Max;
-
-    /// <summary>
-    /// Specifies the filtering criteria for a subscription operation.
-    /// This determines which records will be included
-    /// based on the specified filter settings.
-    /// By default, no filter is applied.
-    /// </summary>
-    public ReadFilter Filter { get; init; } = ReadFilter.None;
-
-    /// <summary>
-    /// Configures heartbeat settings to monitor the connection's health and responsiveness.
-    /// The heartbeat settings are used to ensure that the server and client maintain an active connection
-    /// and to detect any potential issues or delays in data delivery.
-    /// Default: Enabled, with a record threshold of 1000.
-    /// </summary>
-    public HeartbeatOptions Heartbeat { get; init; } = HeartbeatOptions.Default;
-
-    /// <summary>
-    /// Maximum time to wait for message delivery before terminating the subscription.
-    /// This timeout only applies when the application is not reading messages fast enough,
-    /// causing the internal buffer to fill up. Normal waiting for new messages is not affected.
-    /// Default: 30 seconds
-    /// </summary>
-    public TimeSpan SubscriptionTimeout { get; init; } = TimeSpan.FromSeconds(30);
-
-    /// <summary>
-    /// Number of messages to buffer internally for the subscription.
-    /// Higher values improve throughput but increase memory usage.
-    /// Default: 1000
-    /// </summary>
-    public int BufferSize { get; init; } = 1000;
-
-    /// <summary>
-    /// Represents a <c>CancellationToken</c> used to propagate notification that operations in the subscription
-    /// should be cancelled. This allows cooperative cancellation of pending asynchronous tasks.
-    /// Default: <c>CancellationToken.None</c>.
-    /// </summary>
-    public CancellationToken StoppingToken { get; init; } = CancellationToken.None;
-
-    public void EnsureValid() {
-        ArgumentException.ThrowIfNullOrEmpty(Stream);
-
-        ArgumentOutOfRangeException.ThrowIfLessThan(Start, StreamRevision.Min);
-
-        ArgumentOutOfRangeException.ThrowIfLessThan(Heartbeat.RecordsThreshold, 1);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(Heartbeat.RecordsThreshold, 10000);
-
-        ArgumentOutOfRangeException.ThrowIfLessThan(SubscriptionTimeout, TimeSpan.FromSeconds(1));
-
-        ArgumentOutOfRangeException.ThrowIfLessThan(BufferSize, 1);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(BufferSize, 10000);
-    }
-}
-
-
-[PublicAPI]
-public record SubscriptionOptions {
-    /// <summary>
-    /// Specifies the starting position in the log stream for the subscription.
-    /// This determines where the subscription begins reading records from the log.
-    /// Possible values include predefined positions such as <c>LogPosition.Earliest</c>
-    /// to start from the beginning or <c>LogPosition.Latest</c> for the most recent records.
-    /// Default: <c>LogPosition.Latest</c>.
-    /// </summary>
-    public LogPosition Start { get; init; } = LogPosition.Latest;
-
-    /// <summary>
-    /// Specifies the filtering criteria for a subscription operation.
-    /// This determines which records will be included
-    /// based on the specified filter settings.
-    /// By default, no filter is applied.
-    /// </summary>
-    public ReadFilter Filter { get; init; } = ReadFilter.None;
-
-    /// <summary>
-    /// Configures heartbeat settings to monitor the connection's health and responsiveness.
-    /// The heartbeat settings are used to ensure that the server and client maintain an active connection
-    /// and to detect any potential issues or delays in data delivery.
-    /// Default: Enabled, with a record threshold of 1000.
-    /// </summary>
-    public HeartbeatOptions Heartbeat { get; init; } = HeartbeatOptions.Default;
-
-    /// <summary>
-    /// Maximum time to wait for message delivery before terminating the subscription.
-    /// This timeout only applies when the application is not reading messages fast enough,
-    /// causing the internal buffer to fill up. Normal waiting for new messages is not affected.
-    /// Default: 30 seconds
-    /// </summary>
-    public TimeSpan SubscriptionTimeout { get; init; } = TimeSpan.FromSeconds(30);
-
-    /// <summary>
-    /// Number of messages to buffer internally for the subscription.
-    /// Higher values improve throughput but increase memory usage.
-    /// Default: 1000
-    /// </summary>
-    public int BufferSize { get; init; } = 1000;
-
-    /// <summary>
-    /// Represents a <c>CancellationToken</c> used to propagate notification that operations in the subscription
-    /// should be cancelled. This allows cooperative cancellation of pending asynchronous tasks.
-    /// Default: <c>CancellationToken.None</c>.
-    /// </summary>
-    public CancellationToken StoppingToken { get; init; } = CancellationToken.None;
-
-    public void EnsureValid() {
-        ArgumentOutOfRangeException.ThrowIfLessThan(Start, LogPosition.Earliest);
-
-        ArgumentOutOfRangeException.ThrowIfLessThan(Heartbeat.RecordsThreshold, 1);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(Heartbeat.RecordsThreshold, 10000);
-
-        ArgumentOutOfRangeException.ThrowIfLessThan(SubscriptionTimeout, TimeSpan.FromSeconds(1));
-
-        ArgumentOutOfRangeException.ThrowIfLessThan(BufferSize, 1);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(BufferSize, 10000);
-    }
-}
+//
+// [PublicAPI]
+// public sealed record Subscription : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
+//     internal Subscription(string subscriptionId, Func<Channel<ReadMessage>> channelFactory) {
+//         SubscriptionId = subscriptionId;
+//         _lazyChannel   = new Lazy<Channel<ReadMessage>>(channelFactory);
+//     }
+//
+//     Lazy<Channel<ReadMessage>> _lazyChannel;
+//
+//     int _disposed;
+//     int _enumeratorCreated;
+//
+//     Channel<ReadMessage> Channel => _lazyChannel.Value;
+//
+//     /// <summary>
+//     /// Gets the unique identifier associated with the subscription.
+//     /// </summary>
+//     public string SubscriptionId { get; }
+//
+//     /// <summary>
+//     /// The stream of subscription messages, which can include records or heartbeat notifications,
+//     /// depending on the subscription type and the state of the subscribed stream.
+//     /// </summary>
+//     public IAsyncEnumerable<ReadMessage> Messages => this;
+//
+//     /// <summary>
+//     /// The number of messages currently queued for processing
+//     /// </summary>
+//     public int QueuedMessages => _lazyChannel.IsValueCreated ? Channel.Reader.Count : 0;
+//
+//     /// <summary>
+//     /// Flushes the buffer and waits until all messages are processed
+//     /// </summary>
+//     /// <param name="timeout">An optional timeout duration to wait. Defaults to 30 seconds if not specified.</param>
+//     public async ValueTask<bool> Flush(TimeSpan? timeout = null) {
+//         if (Interlocked.CompareExchange(ref _disposed, 0, 0) == 1)
+//             return true;
+//
+//         if (!_lazyChannel.IsValueCreated)
+//             return true;
+//
+//         Channel.Writer.TryComplete();
+//
+//         var completedTask = await Task
+//             .WhenAny(Channel.Reader.Completion, Task.Delay(timeout ?? TimeSpan.FromSeconds(30)))
+//             .ConfigureAwait(false);
+//
+//         return completedTask == Channel.Reader.Completion;
+//     }
+//
+//     public async IAsyncEnumerator<ReadMessage> GetAsyncEnumerator(CancellationToken cancellationToken = default) {
+//         if (Interlocked.CompareExchange(ref _disposed, 0, 0) == 1)
+//             throw new ObjectDisposedException(nameof(Subscription));
+//
+//         if (Interlocked.CompareExchange(ref _enumeratorCreated, 1, 0) == 1)
+//             throw new InvalidOperationException("Only one enumerator can be active at a time");
+//
+//         // return Channel.Reader.ReadAllAsync(CancellationToken.None).GetAsyncEnumerator(CancellationToken.None);
+//
+//         var reader = Channel.Reader;
+//
+//         while (true) {
+//             bool dataAvailable;
+//             try {
+//                 dataAvailable = await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false);
+//             }
+//             catch (OperationCanceledException) {
+//                 yield break;
+//             }
+//             catch (ObjectDisposedException) {
+//                 yield break;
+//             }
+//
+//             if (!dataAvailable)
+//                 break;
+//
+//             while (reader.TryRead(out var item))
+//                 yield return item;
+//         }
+//     }
+//
+//     public ValueTask DisposeAsync() {
+//         if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
+//             return ValueTask.CompletedTask;
+//
+//         if (_lazyChannel.IsValueCreated)
+//             Channel.Writer.TryComplete();
+//
+//         return ValueTask.CompletedTask;
+//     }
+// }
 
 
-/// <summary>
-/// Represents the result of a delete operation on a stream in KurrentDB.
-/// </summary>
+#endregion
+
+#region . management .
+
 [PublicAPI]
 public readonly partial record struct DeleteStreamError : IVariantResultError<
     ErrorDetails.StreamNotFound,
@@ -381,9 +394,6 @@ public readonly partial record struct DeleteStreamError : IVariantResultError<
     ErrorDetails.AccessDenied,
     ErrorDetails.StreamRevisionConflict>;
 
-/// <summary>
-/// Represents the result of a tombstone operation on a stream in KurrentDB.
-/// </summary>
 [PublicAPI]
 public readonly partial record struct TombstoneError : IVariantResultError<
     ErrorDetails.StreamNotFound,
@@ -409,3 +419,10 @@ public readonly partial record struct TruncateStreamError : IVariantResultError<
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied,
     ErrorDetails.StreamRevisionConflict>;
+
+
+[PublicAPI]
+public readonly partial record struct StreamExistsError : IVariantResultError<
+    ErrorDetails.AccessDenied>;
+
+#endregion

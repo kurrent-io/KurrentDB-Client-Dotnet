@@ -1,11 +1,11 @@
 #pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
-using Kurrent.Client.Model;
+// ReSharper disable CheckNamespace
 
 using Contracts = EventStore.Client.Streams;
 
-namespace Kurrent.Client.Legacy;
+namespace Kurrent.Client.Model;
 
 static class StreamsV1Mapper {
     static readonly Contracts.ReadReq.Types.Options.Types.ControlOption       DefaultControlOption       = new() { Compatibility = 1 };
@@ -15,7 +15,7 @@ static class StreamsV1Mapper {
 
     #region . requests .
 
-    public static Contracts.ReadReq CreateSubscriptionRequest(SubscriptionOptions options) {
+    public static Contracts.ReadReq CreateSubscriptionRequest(AllSubscriptionOptions options) {
         return NewSubscriptionRequest()
             .With(x => x.Options.All = ConvertToAllOptions(options.Start))
             .With(x => x.Options.Filter = ConvertToFilterOptions(options.Filter, options.Heartbeat));
@@ -24,10 +24,6 @@ static class StreamsV1Mapper {
     public static Contracts.ReadReq CreateStreamSubscriptionRequest(StreamSubscriptionOptions options) {
         return NewSubscriptionRequest()
             .With(x => x.Options.Stream = ConvertToStreamOptions(options.Stream, options.Start));
-
-        // return NewSubscriptionRequest()
-        //     .With(x => x.Options.Stream = ConvertToStreamOptions(options.Stream, options.Start))
-        //     .With(x => x.Options.Filter = ConvertToFilterOptions(options.Filter, options.Heartbeat)); // not sure if it works and we will do it locally.
     }
 
     static Contracts.ReadReq NewSubscriptionRequest() =>

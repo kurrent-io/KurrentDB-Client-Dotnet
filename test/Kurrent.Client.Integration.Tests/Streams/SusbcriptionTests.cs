@@ -12,10 +12,10 @@ public class SubscriptionTests : KurrentClientTestFixture {
 
         var streams = simulations.Select(x => x.Game.Stream.Value).ToArray();
 
-        var options = new SubscriptionOptions {
-            Start         = LogPosition.Earliest,
-            Filter        = ReadFilter.FromPrefixes(ReadFilterScope.Stream, streams),
-            StoppingToken = ct
+        var options = new AllSubscriptionOptions {
+            Start             = LogPosition.Earliest,
+            Filter            = ReadFilter.FromPrefixes(ReadFilterScope.Stream, streams),
+            CancellationToken = ct
         };
 
         await using var subscription = await AutomaticClient.Streams
@@ -27,7 +27,7 @@ public class SubscriptionTests : KurrentClientTestFixture {
 
         Heartbeat caughtUp = default;
 
-        await foreach (var msg in subscription.Messages) {
+        await foreach (var msg in subscription) {
             if (msg.IsRecord) {
                 recordsReceived.Add(msg.AsRecord);
                 continue;
@@ -39,7 +39,6 @@ public class SubscriptionTests : KurrentClientTestFixture {
                 caughtUp = msg.AsHeartbeat;
                 break;
             }
-
         }
 
         caughtUp.Position.ShouldBeGreaterThan(0);
@@ -52,9 +51,9 @@ public class SubscriptionTests : KurrentClientTestFixture {
         var simulation = await SeedGame(ct);
 
         var options = new StreamSubscriptionOptions {
-            Stream        = simulation.Game.Stream,
-            Start         = StreamRevision.Min,
-            StoppingToken = ct
+            Stream            = simulation.Game.Stream,
+            Start             = StreamRevision.Min,
+            CancellationToken = ct
         };
 
         await using var subscription = await AutomaticClient.Streams
@@ -66,7 +65,7 @@ public class SubscriptionTests : KurrentClientTestFixture {
 
         Heartbeat caughtUp = default;
 
-        await foreach (var msg in subscription.Messages) {
+        await foreach (var msg in subscription) {
             if (msg.IsRecord) {
                 recordsReceived.Add(msg.AsRecord);
                 Logger.LogDebug("Received: {Message}", msg.AsRecord.ToDebugString());
@@ -80,7 +79,6 @@ public class SubscriptionTests : KurrentClientTestFixture {
                 caughtUp = msg.AsHeartbeat;
                 break;
             }
-
         }
 
         caughtUp.StreamRevision.ShouldBeEquivalentTo(simulation.Revision);
@@ -93,9 +91,9 @@ public class SubscriptionTests : KurrentClientTestFixture {
         var simulation = await SeedGame(ct);
 
         var options = new StreamSubscriptionOptions {
-            Stream        = simulation.Game.Stream,
-            Start         = StreamRevision.Min,
-            StoppingToken = ct
+            Stream            = simulation.Game.Stream,
+            Start             = StreamRevision.Min,
+            CancellationToken = ct
         };
 
         var subscription = await AutomaticClient.Streams
@@ -105,7 +103,7 @@ public class SubscriptionTests : KurrentClientTestFixture {
 
         var recordsReceived = new List<Record>();
 
-        await foreach (var msg in subscription.Messages) {
+        await foreach (var msg in subscription) {
             if (!msg.IsRecord) continue;
 
             recordsReceived.Add(msg.AsRecord);

@@ -8,7 +8,7 @@ public class TruncateTests : KurrentClientTestFixture {
         var simulation = await SeedGame(ct);
 
         await AutomaticClient.Streams
-            .Truncate(simulation.Game.Stream, simulation.Revision, ct)
+            .Truncate(simulation.Game.Stream, simulation.Revision, ExpectedStreamState.Any, ct)
             .ShouldNotThrowOrFailAsync();
     }
 
@@ -17,7 +17,7 @@ public class TruncateTests : KurrentClientTestFixture {
         var simulation = await SeedGame(ct);
 
         await AutomaticClient.Streams
-            .Truncate(simulation.Game.Stream, simulation.Revision + 1, ct)
+            .Truncate(simulation.Game.Stream, simulation.Revision - 1, simulation.Revision + 1, ct)
             .ShouldFailAsync(deleteError =>
                 deleteError.Value.ShouldBeOfType<ErrorDetails.StreamRevisionConflict>());
     }

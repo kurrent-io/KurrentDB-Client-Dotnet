@@ -46,39 +46,67 @@ public static class KurrentStreamsClientExtensions {
 
     #region . Read .
 
-    public static ValueTask<Result<Messages, ReadError>> ReadStream(this KurrentStreamsClient client, Func<ReadStreamOptions, ReadStreamOptions>? configure = null) {
-        var options = ReadStreamOptions.Default;
-
+    public static ValueTask<Result<Messages, ReadError>> ReadAll(this KurrentStreamsClient client, Func<ReadAllOptions, ReadAllOptions>? configure = null) {
+        var options = new ReadAllOptions();
         options = configure?.Invoke(options) ?? options;
+        return client.ReadAll(options);
+    }
 
+    public static ValueTask<Result<Messages, ReadError>> ReadStream(this KurrentStreamsClient client, Func<ReadStreamOptions, ReadStreamOptions>? configure = null) {
+        var options = new ReadStreamOptions();
+        options = configure?.Invoke(options) ?? options;
         return client.ReadStream(options);
     }
 
     public static ValueTask<Result<Messages, ReadError>> ReadStream(this KurrentStreamsClient client, StreamName stream, StreamRevision start, CancellationToken cancellationToken) =>
         client.ReadStream(options => options with { Stream = stream, Start = start, CancellationToken = cancellationToken });
 
-    static async ValueTask<Result<Record, ReadError>> ReadStreamEdge(this KurrentStreamsClient client, ReadStreamOptions options) {
+    public static ValueTask<Result<Messages, ReadError>> ReadStream(this KurrentStreamsClient client, StreamName stream, CancellationToken cancellationToken) =>
+        client.ReadStream(options => options with { Stream = stream, CancellationToken = cancellationToken });
+
+    public static ValueTask<Result<Messages, ReadError>> ReadStreamBackwards(this KurrentStreamsClient client, StreamName stream, CancellationToken cancellationToken) =>
+        client.ReadStream(options => options with { Stream = stream, Direction = ReadDirection.Backwards, CancellationToken = cancellationToken });
+
+    public static ValueTask<Result<Record, ReadError>> ReadFirstStreamRecord(this KurrentStreamsClient client, StreamName stream, CancellationToken cancellationToken = default) =>
+        ReadStreamEdge(client,stream, ReadDirection.Forwards, cancellationToken);
+
+    public static ValueTask<Result<Record, ReadError>> ReadLastStreamRecord(this KurrentStreamsClient client, StreamName stream, CancellationToken cancellationToken = default) =>
+        ReadStreamEdge(client,stream, ReadDirection.Backwards, cancellationToken);
+
+    static async ValueTask<Result<Record, ReadError>> ReadStreamEdge(this KurrentStreamsClient client, StreamName stream, ReadDirection direction, CancellationToken cancellationToken) {
         try {
             var result = await client
-                .ReadStream(options)
+                .ReadStream(new() {
+                    Stream            = stream,
+                    Direction         = direction,
+                    Start             = direction == ReadDirection.Forwards ? StreamRevision.Min : StreamRevision.Max,
+                    Limit             = 1,
+                    CancellationToken = cancellationToken
+                })
                 .MapAsync(
                     static (msgs, ct) => msgs.Select(msg => msg.Match(record => record, heartbeat => Record.None)).FirstOrDefaultAsync(ct),
-                    state: options.CancellationToken)
+                    state: cancellationToken)
                 .ConfigureAwait(false);
 
             return result;
         }
         catch (Exception ex) when (ex is not KurrentClientException)  {
             throw KurrentClientException.CreateUnknown(
-                options.Direction == ReadDirection.Forwards ? nameof(ReadFirstStreamRecord) : nameof(ReadLastStreamRecord), ex);
+                direction == ReadDirection.Forwards ? nameof(ReadFirstStreamRecord) : nameof(ReadLastStreamRecord), ex);
         }
     }
 
-    public static ValueTask<Result<Record, ReadError>> ReadFirstStreamRecord(this KurrentStreamsClient client, StreamName stream, CancellationToken cancellationToken = default) =>
-        ReadStreamEdge(client, ReadStreamOptions.FirstRecord(stream, cancellationToken));
-
-    public static ValueTask<Result<Record, ReadError>> ReadLastStreamRecord(this KurrentStreamsClient client, StreamName stream, CancellationToken cancellationToken = default) =>
-        ReadStreamEdge(client, ReadStreamOptions.LastRecord(stream, cancellationToken));
-
     #endregion
+
+    public static ValueTask<Result<Subscription, ReadError>> Subscribe(this KurrentStreamsClient client, Func<AllSubscriptionOptions, AllSubscriptionOptions>? configure = null) {
+        var options = new AllSubscriptionOptions();
+        options = configure?.Invoke(options) ?? options;
+        return client.Subscribe(options);
+    }
+
+    public static ValueTask<Result<Subscription, ReadError>> Subscribe(this KurrentStreamsClient client, Func<StreamSubscriptionOptions, StreamSubscriptionOptions>? configure = null) {
+        var options = new StreamSubscriptionOptions();
+        options = configure?.Invoke(options) ?? options;
+        return client.Subscribe(options);
+    }
 }
