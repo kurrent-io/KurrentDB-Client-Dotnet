@@ -2,19 +2,20 @@
 
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
+using Kurrent.Client.Model;
 using KurrentDB.Client;
 
 namespace Kurrent.Client;
 
 public partial class KurrentPersistentSubscriptionsClient {
-	static readonly IDictionary<string, UpdateReq.Types.ConsumerStrategy> NamedConsumerStrategyToUpdateProto
-		= new Dictionary<string, UpdateReq.Types.ConsumerStrategy> {
+	static readonly Dictionary<string, UpdateReq.Types.ConsumerStrategy> NamedConsumerStrategyToUpdateProto =
+		new Dictionary<string, UpdateReq.Types.ConsumerStrategy> {
 			[SystemConsumerStrategies.DispatchToSingle] = UpdateReq.Types.ConsumerStrategy.DispatchToSingle,
 			[SystemConsumerStrategies.RoundRobin]       = UpdateReq.Types.ConsumerStrategy.RoundRobin,
 			[SystemConsumerStrategies.Pinned]           = UpdateReq.Types.ConsumerStrategy.Pinned,
 		};
 
-	static UpdateReq.Types.StreamOptions StreamOptionsForUpdateProto(string streamName, StreamPosition position) {
+	static UpdateReq.Types.StreamOptions StreamOptionsForUpdateProto(string streamName, LogPosition position) {
 		if (position == StreamPosition.Start) {
 			return new UpdateReq.Types.StreamOptions {
 				StreamIdentifier = streamName,
@@ -31,18 +32,18 @@ public partial class KurrentPersistentSubscriptionsClient {
 
 		return new UpdateReq.Types.StreamOptions {
 			StreamIdentifier = streamName,
-			Revision         = position.ToUInt64()
+			Revision         = position
 		};
 	}
 
-	static UpdateReq.Types.AllOptions AllOptionsForUpdateProto(Position position) {
-		if (position == Position.Start) {
+	static UpdateReq.Types.AllOptions AllOptionsForUpdateProto(LogPosition position) {
+		if (position == LogPosition.Earliest) {
 			return new UpdateReq.Types.AllOptions {
 				Start = new Empty()
 			};
 		}
 
-		if (position == Position.End) {
+		if (position == LogPosition.Latest) {
 			return new UpdateReq.Types.AllOptions {
 				End = new Empty()
 			};
@@ -50,26 +51,11 @@ public partial class KurrentPersistentSubscriptionsClient {
 
 		return new UpdateReq.Types.AllOptions {
 			Position = new UpdateReq.Types.Position {
-				CommitPosition  = position.CommitPosition,
-				PreparePosition = position.PreparePosition
+				CommitPosition  = position,
+				PreparePosition = position
 			}
 		};
 	}
-
-	/// <summary>
-	/// Updates a persistent subscription.
-	/// </summary>
-	/// <exception cref="ArgumentNullException"></exception>
-	[Obsolete("UpdateAsync is no longer supported. Use UpdateToStreamAsync instead.", false)]
-	public Task UpdateAsync(
-		string streamName, string groupName, PersistentSubscriptionSettings settings,
-		TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-		CancellationToken cancellationToken = default
-	) =>
-		UpdateToStreamAsync(
-			streamName, groupName, settings,
-			deadline, userCredentials, cancellationToken
-		);
 
 	/// <summary>
 	/// Updates a persistent subscription.
@@ -96,16 +82,6 @@ public partial class KurrentPersistentSubscriptionsClient {
 			throw new ArgumentNullException(nameof(settings.ConsumerStrategyName));
 		}
 
-		if (streamName != SystemStreams.AllStream && settings.StartFrom is not null &&
-		    settings.StartFrom is not StreamPosition) {
-			throw new ArgumentException($"{nameof(settings.StartFrom)} must be of type '{nameof(StreamPosition)}' when subscribing to a stream");
-		}
-
-		if (streamName == SystemStreams.AllStream && settings.StartFrom is not null &&
-		    settings.StartFrom is not Position) {
-			throw new ArgumentException($"{nameof(settings.StartFrom)} must be of type '{nameof(Position)}' when subscribing to {SystemStreams.AllStream}");
-		}
-
 		var channelInfo = await LegacyClient.GetChannelInfo(cancellationToken).ConfigureAwait(false);
 
 		if (streamName == SystemStreams.AllStream &&
@@ -119,13 +95,10 @@ public partial class KurrentPersistentSubscriptionsClient {
 					Options = new UpdateReq.Types.Options {
 						GroupName = groupName,
 						Stream = streamName != SystemStreams.AllStream
-							? StreamOptionsForUpdateProto(
-								streamName,
-								(StreamPosition)(settings.StartFrom ?? StreamPosition.End)
-							)
+							? StreamOptionsForUpdateProto(streamName, settings.StartFrom)
 							: null,
 						All = streamName == SystemStreams.AllStream
-							? AllOptionsForUpdateProto((Position)(settings.StartFrom ?? Position.End))
+							? AllOptionsForUpdateProto(settings.StartFrom)
 							: null,
 #pragma warning disable 612
 						StreamIdentifier =
@@ -136,7 +109,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 						Settings = new UpdateReq.Types.Settings {
 #pragma warning disable 612
 							Revision = streamName != SystemStreams.AllStream
-								? ((StreamPosition)(settings.StartFrom ?? StreamPosition.End)).ToUInt64()
+								? settings.StartFrom
 								: default, /*for backwards compatibility*/
 #pragma warning restore 612
 							CheckpointAfterMs  = (int)settings.CheckPointAfter.TotalMilliseconds,
@@ -149,8 +122,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 							MaxRetryCount      = settings.MaxRetryCount,
 							MaxSubscriberCount = settings.MaxSubscriberCount,
 							MinCheckpointCount = settings.CheckPointLowerBound,
-							NamedConsumerStrategy =
-								NamedConsumerStrategyToUpdateProto[settings.ConsumerStrategyName],
+							NamedConsumerStrategy = NamedConsumerStrategyToUpdateProto[settings.ConsumerStrategyName],
 							ReadBatchSize = settings.ReadBatchSize
 						}
 					}

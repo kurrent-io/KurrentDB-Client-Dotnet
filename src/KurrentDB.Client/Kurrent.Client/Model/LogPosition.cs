@@ -1,3 +1,5 @@
+// ReSharper disable ConvertIfStatementToReturnStatement
+
 namespace Kurrent.Client.Model;
 
 /// <summary>
@@ -43,8 +45,45 @@ public readonly record struct LogPosition : IComparable<LogPosition>, IComparabl
 		position switch {
 			-1000 => Unset,
 			>= 0  => new LogPosition(position),
-			_     => throw new InvalidLogPosition(new(position))
+			_     => throw new InvalidLogPosition(new LogPosition(position))
 		};
+
+	/// <summary>
+	/// Creates a <see cref="LogPosition"/> instance from a provided position string.
+	/// </summary>
+	/// <param name="position">
+	/// The position string in the format "C:&lt;commit&gt;/P:&lt;prepare&gt;".
+	/// </param>
+	/// <returns>
+	/// A new instance of <see cref="LogPosition"/> corresponding to the provided position string.
+	/// </returns>
+	/// <exception cref="InvalidLogPosition">
+	/// Thrown when the provided string is not in the correct format or contains invalid values.
+	/// </exception>
+	public static LogPosition From(string position) {
+		var span       = position.AsSpan().Trim();
+		var slashIndex = span.IndexOf('/');
+
+		if (slashIndex < 0)
+			throw new InvalidLogPosition(position);
+
+		var commitSpan  = span[..slashIndex];
+		var prepareSpan = span[(slashIndex + 1)..];
+
+		if (!TryParsePosition("C", commitSpan, out var commitPosition) || !TryParsePosition("P", prepareSpan, out var preparePosition))
+			throw new InvalidLogPosition(position);
+
+		return new LogPosition((long)commitPosition);
+
+		static bool TryParsePosition(string expectedPrefix, ReadOnlySpan<char> value, out ulong result) {
+			result = 0;
+			var colonIndex = value.IndexOf(':');
+			if (colonIndex < 0) return false;
+			if (!value[..colonIndex].Equals(expectedPrefix, StringComparison.Ordinal)) return false;
+
+			return ulong.TryParse(value[(colonIndex + 1)..], out result);
+		}
+	}
 
 	public static implicit operator long(LogPosition _)  => _.Value;
 	public static implicit operator ulong(LogPosition _) => (ulong)_.Value;
@@ -73,5 +112,21 @@ public readonly record struct LogPosition : IComparable<LogPosition>, IComparabl
     #endregion
 }
 
-public class InvalidLogPosition(LogPosition value)
-    : ArgumentException($"Log position is invalid: {value.ToString()}");
+/// <summary>
+/// Exception thrown when a log position is invalid.
+/// </summary>
+public class InvalidLogPosition : ArgumentException {
+    /// <summary>
+    /// Initializes a new instance with the specified <paramref name="value"/>.
+    /// </summary>
+    /// <param name="value">The invalid log position.</param>
+    public InvalidLogPosition(LogPosition value)
+        : base($"Log position is invalid: {value.ToString()}") { }
+
+    /// <summary>
+    /// Initializes a new instance with the specified <paramref name="value"/>.
+    /// </summary>
+    /// <param name="value">The invalid log position as a string.</param>
+    public InvalidLogPosition(string value)
+        : base($"Log position is invalid: {value}") { }
+}

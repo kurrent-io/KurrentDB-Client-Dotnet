@@ -4,7 +4,6 @@ using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 using Kurrent.Client.Model;
 using KurrentDB.Client;
-using PersistentSubscriptionSettings = Kurrent.Client.Model.PersistentSubscriptionSettings;
 
 namespace Kurrent.Client;
 
@@ -121,31 +120,10 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// </summary>
 	/// <exception cref="ArgumentNullException"></exception>
 	public async Task CreateToStreamAsync(
-		string streamName, string groupName, PersistentSubscriptionSettings settings,
-		TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-		CancellationToken cancellationToken = default
+		string streamName, string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
 	) =>
 		await CreateInternalAsync(
-				streamName, groupName, null,
-				settings, deadline, userCredentials,
-				cancellationToken
-			)
-			.ConfigureAwait(false);
-
-	/// <summary>
-	/// Creates a persistent subscription.
-	/// </summary>
-	/// <exception cref="ArgumentNullException"></exception>
-	[Obsolete("CreateAsync is no longer supported. Use CreateToStreamAsync instead.", false)]
-	public async Task CreateAsync(
-		string streamName, string groupName, PersistentSubscriptionSettings settings,
-		TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-		CancellationToken cancellationToken = default
-	) =>
-		await CreateInternalAsync(
-				streamName, groupName, null,
-				settings, deadline, userCredentials,
-				cancellationToken
+				streamName, groupName, null, settings, cancellationToken
 			)
 			.ConfigureAwait(false);
 
@@ -153,36 +131,18 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// Creates a filtered persistent subscription to $all.
 	/// </summary>
 	public async Task CreateToAllAsync(
-		string groupName, IEventFilter eventFilter,
-		PersistentSubscriptionSettings settings, TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-		CancellationToken cancellationToken = default
+		string groupName, IEventFilter eventFilter, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
 	) =>
-		await CreateInternalAsync(
-				SystemStreams.AllStream, groupName, eventFilter,
-				settings, deadline,
-				userCredentials, cancellationToken
-			)
-			.ConfigureAwait(false);
+		await CreateInternalAsync(SystemStreams.AllStream, groupName, eventFilter, settings, cancellationToken).ConfigureAwait(false);
 
 	/// <summary>
 	/// Creates a persistent subscription to $all.
 	/// </summary>
-	public async Task CreateToAllAsync(
-		string groupName, PersistentSubscriptionSettings settings,
-		TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-		CancellationToken cancellationToken = default
-	) =>
-		await CreateInternalAsync(
-				SystemStreams.AllStream, groupName, null,
-				settings, deadline, userCredentials,
-				cancellationToken
-			)
-			.ConfigureAwait(false);
+	public async Task CreateToAllAsync(string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default) =>
+		await CreateInternalAsync(SystemStreams.AllStream, groupName, null, settings, cancellationToken).ConfigureAwait(false);
 
 	async Task CreateInternalAsync(
-		string streamName, string groupName, IEventFilter? eventFilter,
-		PersistentSubscriptionSettings settings, TimeSpan? deadline, UserCredentials? userCredentials,
-		CancellationToken cancellationToken
+		string streamName, string groupName, IEventFilter? eventFilter, PersistentSubscriptionSettings settings, CancellationToken cancellationToken
 	) {
 		if (streamName is null) {
 			throw new ArgumentNullException(nameof(streamName));
