@@ -1,4 +1,3 @@
-using EventStore.Client.Users;
 using Kurrent.Client.Features;
 using Kurrent.Client.Legacy;
 using KurrentDB.Client;
@@ -14,17 +13,19 @@ public class KurrentClient : IAsyncDisposable {
 
         LegacyCallInvoker = new KurrentDBLegacyCallInvoker(new LegacyClusterClient(Options.ConvertToLegacySettings()));
 
-        Streams  = new KurrentStreamsClient(LegacyCallInvoker, options);
-        Registry = new KurrentRegistryClient(LegacyCallInvoker);
-        Features = new KurrentFeaturesClient(LegacyCallInvoker);
+        Streams        = new KurrentStreamsClient(LegacyCallInvoker, options);
+        Registry       = new KurrentRegistryClient(LegacyCallInvoker);
+        Features       = new KurrentFeaturesClient(LegacyCallInvoker);
+        UserManagement = new KurrentUserManagementClient(LegacyCallInvoker, options);
     }
 
     KurrentClientOptions       Options           { get; }
 	KurrentDBLegacyCallInvoker LegacyCallInvoker { get; }
 
-	public KurrentStreamsClient  Streams  { get; }
-	public KurrentRegistryClient Registry { get; }
-	public KurrentFeaturesClient Features { get; }
+	public KurrentStreamsClient        Streams        { get; }
+	public KurrentRegistryClient       Registry       { get; }
+	public KurrentFeaturesClient       Features       { get; }
+	public KurrentUserManagementClient UserManagement { get; }
 
 	internal async Task<ServerFeatures> ForceRefresh(CancellationToken cancellationToken = default) {
 		await LegacyCallInvoker.ForceRefresh(cancellationToken).ConfigureAwait(false);

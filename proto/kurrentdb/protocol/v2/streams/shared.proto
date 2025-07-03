@@ -79,6 +79,24 @@ message ErrorDetails {
     // The maximum allowed size of the transaction.
     uint32 max_size = 1;
   }
+
+  // When the user is not found.
+  message UserNotFound {
+    option (error_info) = {
+      code : "USER_NOT_FOUND",
+      severity : RECOVERABLE,
+      message : "The specified user was not found."
+    };
+  }
+
+  // When the user is not authenticated.
+  message NotAuthenticated {
+    option (error_info) = {
+      code : "NOT_AUTHENTICATED",
+      severity : RECOVERABLE,
+      message : "The user is not authenticated."
+    };
+  }
 }
 
 
