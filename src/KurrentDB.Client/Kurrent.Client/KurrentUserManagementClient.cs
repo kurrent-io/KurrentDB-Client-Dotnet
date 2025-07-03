@@ -20,6 +20,10 @@ public class KurrentUserManagementClient {
 	public async ValueTask<Result<Success, ChangePasswordError>> ChangePassword(
 		string loginName, string currentPassword, string newPassword, CancellationToken cancellationToken = default
 	) {
+		ArgumentException.ThrowIfNullOrEmpty(loginName);
+		ArgumentException.ThrowIfNullOrEmpty(currentPassword);
+		ArgumentException.ThrowIfNullOrEmpty(newPassword);
+
 		try {
 			await ServiceClient.ChangePasswordAsync(
 				new ChangePasswordReq {

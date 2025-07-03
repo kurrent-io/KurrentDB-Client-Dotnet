@@ -1,6 +1,6 @@
 using Kurrent.Client.Model;
-using Kurrent.Client.SchemaRegistry;
 using ErrorDetails = Kurrent.Client.SchemaRegistry.ErrorDetails;
+using Success = Kurrent.Client.SchemaRegistry.Success;
 
 namespace Kurrent.Client.Tests.Registry;
 

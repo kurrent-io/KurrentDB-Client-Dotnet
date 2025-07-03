@@ -44,6 +44,21 @@ public class UserManagementTests : KurrentClientTestFixture {
 	}
 
 	[Test]
+	public async Task disable_user() {
+		var user = await CreateTestUser();
+
+		await AutomaticClient.UserManagement
+			.DisableUser(user.LoginName)
+			.ShouldNotThrowAsync()
+			.OnSuccessAsync(success => success.ShouldBe(Success.Instance));
+
+		await AutomaticClient.UserManagement
+			.GetUser(user.LoginName)
+			.ShouldNotThrowAsync()
+			.OnSuccessAsync(details => details.Disabled.ShouldBeTrue());
+	}
+
+	[Test]
 	public async Task list_users() {
 		var users = await CreateTestUsers();
 
@@ -96,25 +111,10 @@ public class UserManagementTests : KurrentClientTestFixture {
 
 	[Test]
 	[InvalidCredentialsTestCases]
-	public async Task throws_access_denied_when_credentials_are_insufficient(TestUser user, Type type) =>
+	public async Task create_user_throws_access_denied_when_credentials_are_insufficient(TestUser user, Type type) =>
 		await AutomaticClient.UserManagement
 			.CreateUser(user.LoginName, user.FullName, user.Groups, user.Password)
 			.ShouldFailAsync(error => error.Value.ShouldBeOfType(type));
-
-	[Test]
-	public async Task disable_user() {
-		var user = await CreateTestUser();
-
-		await AutomaticClient.UserManagement
-			.DisableUser(user.LoginName)
-			.ShouldNotThrowAsync()
-			.OnSuccessAsync(success => success.ShouldBe(Success.Instance));
-
-		await AutomaticClient.UserManagement
-			.GetUser(user.LoginName)
-			.ShouldNotThrowAsync()
-			.OnSuccessAsync(details => details.Disabled.ShouldBeTrue());
-	}
 
 	[Test]
 	public async Task delete_user_throws_user_not_found_when_user_does_not_exist() {
