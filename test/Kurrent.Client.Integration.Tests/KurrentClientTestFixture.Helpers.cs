@@ -2,16 +2,13 @@
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Bogus;
 using Kurrent.Client.Model;
 using Kurrent.Client.Testing.Sample;
-using KurrentDB.Client;
 using RockPaperScissors;
 using Serilog;
 using TicTacToe;
 using GameDraw = TicTacToe.GameDraw;
 using GameWon = TicTacToe.GameWon;
-using UserDetails = Kurrent.Client.Model.UserDetails;
 
 namespace Kurrent.Client.Tests;
 
@@ -258,51 +255,4 @@ public partial class KurrentClientTestFixture {
     }
 
 	public static TestUserFaker Users => TestUserFaker.Instance;
-}
-
-public class TestUser {
-	public UserDetails      Details     { get; set; } = default!;
-	public UserCredentials? Credentials { get; set; } = default!;
-
-	public string   LoginName { get; set; } = null!;
-	public string   FullName  { get; set; } = null!;
-	public string[] Groups    { get; set; } = null!;
-	public string   Password  { get; set; } = null!;
-
-	public override string ToString() => $"{LoginName} Credentials({Credentials?.Username ?? "null"})";
-}
-
-public sealed class TestUserFaker : Faker<TestUser> {
-	internal static TestUserFaker Instance => new();
-
-	TestUserFaker() {
-		RuleFor(x => x.LoginName, f => f.Person.UserName);
-		RuleFor(x => x.FullName, f => f.Person.FullName);
-		RuleFor(x => x.Groups, f => f.Lorem.Words());
-		RuleFor(x => x.Password, f => f.Internet.Password());
-		RuleFor(x => x.Credentials, (_, user) => new(user.LoginName, user.Password));
-		RuleFor(x => x.Details, (_, user) => new UserDetails {
-				LoginName = user.LoginName,
-				FullName  = user.FullName,
-				Groups    = user.Groups
-			}
-		);
-	}
-
-	public TestUser WithValidCredentials() => Generate();
-
-	public TestUser WithNoCredentials() =>
-		Instance
-			.FinishWith((_, x) => x.Credentials = null)
-			.Generate();
-
-	public TestUser WithInvalidCredentials(bool wrongLoginName = true, bool wrongPassword = true) =>
-		Instance
-			.FinishWith(
-				(f, x) => x.Credentials = new(
-					wrongLoginName ? "wrong-username" : x.LoginName,
-					wrongPassword ? "wrong-password" : x.Password
-				)
-			)
-			.Generate();
 }
