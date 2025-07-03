@@ -8,10 +8,12 @@ public interface ISchemaExporter {
 	string Export(Type messageType, SchemaDataFormat dataFormat);
 }
 
-public sealed class SchemaExporter(SystemTextJsonSchemaGeneratorSettings? settings = null) : ISchemaExporter {
+sealed class NJsonSchemaExporter(SystemTextJsonSchemaGeneratorSettings? settings = null) : ISchemaExporter {
 	readonly SystemTextJsonSchemaGeneratorSettings _settings = settings ?? new() {
 		SerializerOptions = JsonSchemaSerializerOptions.DefaultJsonSerializerOptions
 	};
+
+	public static ISchemaExporter Instance => new NJsonSchemaExporter();
 
 	public string Export(Type messageType, SchemaDataFormat dataFormat) {
 		if (dataFormat != SchemaDataFormat.Json)

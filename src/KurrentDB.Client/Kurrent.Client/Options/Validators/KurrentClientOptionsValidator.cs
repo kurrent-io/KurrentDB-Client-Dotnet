@@ -2,9 +2,7 @@ using FluentValidation;
 
 namespace Kurrent.Client;
 
-class KurrentClientOptionsValidator : AbstractValidator<KurrentClientOptions> {
-    public static readonly KurrentClientOptionsValidator Instance = new();
-
+public class KurrentClientOptionsValidator : FluentOptionsValidator<KurrentClientOptionsValidator, KurrentClientOptions> {
     public KurrentClientOptionsValidator() {
         // Connection name validation
         RuleFor(options => options.ConnectionName)
@@ -63,8 +61,8 @@ class KurrentClientOptionsValidator : AbstractValidator<KurrentClientOptions> {
         RuleFor(options => options.Resilience)
             .SetValidator(KurrentClientResilienceOptionsValidator.Instance);
 
-        RuleFor(options => options.Schema)
-            .SetValidator(KurrentClientSchemaOptionsValidator.Instance);
+        // RuleFor(options => options.Schema)
+        //     .SetValidator(KurrentClientSchemaOptionsValidator.Instance);
 
         RuleFor(options => options.Security)
             .SetValidator(KurrentClientSecurityOptionsValidator.Instance);

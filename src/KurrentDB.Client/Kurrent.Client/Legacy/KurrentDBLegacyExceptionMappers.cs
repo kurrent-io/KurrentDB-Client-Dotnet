@@ -27,7 +27,7 @@ static class KurrentDBLegacyExceptionMappers {
 
     public static ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict(this Exception ex) =>
         ex is WrongExpectedVersionException lex
-            ? new(x => x.With("stream", lex.StreamName).With("expected-revision", lex.ActualVersion))
+            ? new(x => x.With("stream", lex.StreamName).With("expected_revision", lex.ExpectedVersion).With("actual_revision", lex.ActualVersion))
             : throw new InvalidCastException($"Expected {nameof(WrongExpectedVersionException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.StreamRevisionConflict)}.", ex);
 
     public static StreamState MapToLegacyExpectedState(this ExpectedStreamState expectedState) {

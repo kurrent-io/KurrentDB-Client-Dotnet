@@ -15,8 +15,7 @@ public class KurrentClientOptionsTests {
         var validationResult = options.ValidateConfig();
 
         // Ensure validation passes
-        validationResult.IsValid.ShouldBeTrue("Default options should be valid");
-        validationResult.Errors.ShouldBeEmpty("Default options should have no validation errors");
+        validationResult.IsSuccess.ShouldBeTrue("Default options should be valid");
     }
 
     [Test]
@@ -38,7 +37,7 @@ public class KurrentClientOptionsTests {
     public void creates_options_from_connection_string() {
         // Create from a connection string
         var connectionString = "kurrentdb://admin:changeit@localhost:2113?tls=false";
-        var options          = KurrentClientOptions.Create(connectionString);
+        var options          = KurrentClientOptions.Parse(connectionString);
 
         // Verify the parsed options
         options.HasOriginalConnectionString.ShouldBeTrue();
@@ -59,7 +58,7 @@ public class KurrentClientOptionsTests {
     public void creates_options_from_discovery_connection_string() {
         // Create from a discovery connection string
         var connectionString = "kurrentdb+discover://admin:changeit@node1:2113,node2:2113?tls=true";
-        var options          = KurrentClientOptions.Create(connectionString);
+        var options          = KurrentClientOptions.Parse(connectionString);
 
         // Verify the parsed options
         options.ConnectionScheme.ShouldBe(KurrentConnectionScheme.Discover);
@@ -75,7 +74,7 @@ public class KurrentClientOptionsTests {
     public void generates_connection_string_that_matches_original() {
         // Create from a connection string
         var originalString = "kurrentdb://admin:changeit@localhost:2113?tls=false";
-        var options        = KurrentClientOptions.Create(originalString);
+        var options        = KurrentClientOptions.Parse(originalString);
 
         // Generate the string back
         var generatedString = options.GenerateConnectionString();
@@ -91,7 +90,7 @@ public class KurrentClientOptionsTests {
     public void handles_special_characters_in_credentials() {
         // Create with special characters in username/password
         var connectionString = "kurrentdb://user%40domain:p%40ssw%3Ard@localhost:2113";
-        var options          = KurrentClientOptions.Create(connectionString);
+        var options          = KurrentClientOptions.Parse(connectionString);
 
         // Verify correct handling of special characters
         var credentials = options.Security.Authentication.AsCredentials;
@@ -214,7 +213,7 @@ public class KurrentClientOptionsTests {
 
         var result = options.ValidateConfig();
 
-        result.IsValid.ShouldBe(false, "Direct connection with multiple hosts must not be valid.");
+        result.IsSuccess.ShouldBe(false, "Direct connection with multiple hosts must not be valid.");
         //
         // Assert.Fail(" Direct connection with multiple hosts should not be allowed, but it was created successfully.");
     }
@@ -310,7 +309,7 @@ public class KurrentClientOptionsTests {
     public void parses_connection_string_with_empty_query_parameters() {
         // Connection string with parameter without value
         var connectionString = "kurrentdb://localhost:2113?tlsVerifyCert=";
-        var options          = KurrentClientOptions.Create(connectionString);
+        var options          = KurrentClientOptions.Parse(connectionString);
 
         // Should default to true when empty
         options.Security.Transport.VerifyServerCertificate.ShouldBeTrue();

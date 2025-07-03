@@ -16,7 +16,7 @@ namespace Kurrent.Client;
 /// </para>
 /// </remarks>
 [PublicAPI]
-public record KurrentClientGossipOptions : KurrentClientOptionsBase {
+public record KurrentClientGossipOptions : OptionsBase<KurrentClientGossipOptions, KurrentClientGossipOptionsValidator> {
     /// <summary>
     /// The maximum number of times to attempt node discovery.
     /// </summary>

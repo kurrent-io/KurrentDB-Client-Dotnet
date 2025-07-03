@@ -23,7 +23,7 @@ namespace Kurrent.Client;
 /// </para>
 /// </remarks>
 [PublicAPI]
-public record KurrentClientResilienceOptions : KurrentClientOptionsBase {
+public record KurrentClientResilienceOptions : OptionsBase<KurrentClientResilienceOptions, KurrentClientResilienceOptionsValidator> {
     /// <summary>
     /// The amount of time to wait after which a keepalive ping is sent on the transport.
     /// </summary>

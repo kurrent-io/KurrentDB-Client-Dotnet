@@ -134,19 +134,26 @@ public record ReadAllOptions : ReadOptionsBase {
 public record ReadStreamOptions : ReadOptionsBase {
     public StreamName Stream { get; init; } = StreamName.None;
 
-    public StreamRevision Start { get; init; } = StreamRevision.Max;
+    public StreamRevision Start { get; init; } = StreamRevision.Min;
 
     public override void EnsureValid() {
         base.EnsureValid();
 
         ArgumentException.ThrowIfNullOrEmpty(Stream);
         ArgumentOutOfRangeException.ThrowIfLessThan(Start, StreamRevision.Min);
-    }
 
+        if (Direction == ReadDirection.Forwards && Start == StreamRevision.Max) {
+            throw new ArgumentException(
+                "Start revision cannot be Max when reading forwards. Use ReadDirection.Backwards or specify a valid revision.",
+                nameof(Start));
+        }
+    }
 }
 
 [PublicAPI]
 public abstract record ReadOptionsBase {
+    public bool SkipDecoding { get; init; }
+
     public ReadFilter Filter { get; init; } = ReadFilter.None;
 
     public HeartbeatOptions Heartbeat { get; init; } = HeartbeatOptions.Default;
@@ -222,35 +229,35 @@ public record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
         return completedTask == Channel.Reader.Completion;
     }
 
-    public async IAsyncEnumerator<ReadMessage> GetAsyncEnumerator(CancellationToken cancellationToken = default) {
+    public IAsyncEnumerator<ReadMessage> GetAsyncEnumerator(CancellationToken cancellationToken = default) {
         if (Interlocked.CompareExchange(ref _disposed, 0, 0) == 1)
             throw new ObjectDisposedException(nameof(Subscription));
 
         if (Interlocked.CompareExchange(ref _enumeratorCreated, 1, 0) == 1)
             throw new InvalidOperationException("Only one enumerator can be active at a time");
 
-        // return Channel.Reader.ReadAllAsync(CancellationToken.None).GetAsyncEnumerator(CancellationToken.None);
+        return Channel.Reader.ReadAllAsync(CancellationToken.None).GetAsyncEnumerator(CancellationToken.None);
 
-        var reader = Channel.Reader;
-
-        while (true) {
-            bool dataAvailable;
-            try {
-                dataAvailable = await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) {
-                yield break;
-            }
-            catch (ObjectDisposedException) {
-                yield break;
-            }
-
-            if (!dataAvailable)
-                break;
-
-            while (reader.TryRead(out var item))
-                yield return item;
-        }
+        // var reader = Channel.Reader;
+        //
+        // while (true) {
+        //     bool dataAvailable;
+        //     try {
+        //         dataAvailable = await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false);
+        //     }
+        //     catch (OperationCanceledException) {
+        //         yield break;
+        //     }
+        //     catch (ObjectDisposedException) {
+        //         yield break;
+        //     }
+        //
+        //     if (!dataAvailable)
+        //         break;
+        //
+        //     while (reader.TryRead(out var item))
+        //         yield return item;
+        // }
     }
 
     public async ValueTask DisposeAsync() {
@@ -274,8 +281,8 @@ public record AllSubscriptionOptions : ReadAllOptions {
 
 [PublicAPI]
 public record StreamSubscriptionOptions : ReadStreamOptions {
-    new ReadDirection Direction { get; init; }
-    new long          Limit     { get; init; }
+    private new ReadDirection Direction { get; init; }
+    private new long          Limit     { get; init; }
 }
 
 [PublicAPI]
@@ -404,6 +411,7 @@ public readonly partial record struct TombstoneError : IVariantResultError<
 [PublicAPI]
 public readonly partial record struct GetStreamInfoError : IVariantResultError<
     ErrorDetails.StreamNotFound,
+    ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied>;
 
 [PublicAPI]

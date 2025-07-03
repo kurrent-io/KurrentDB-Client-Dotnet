@@ -1,6 +1,5 @@
 using Kurrent.Client.Model;
 using Kurrent.Client.SchemaRegistry;
-using KurrentDB.Client;
 
 namespace Kurrent.Client.Tests.Streams;
 
@@ -11,10 +10,9 @@ public class ReadTests : KurrentClientTestFixture {
 
         var now = TimeProvider.GetUtcNow();
 
-        var messages = await AutomaticClient.Streams
+        await using var messages = await AutomaticClient.Streams
             .ReadStream(simulation.Game.Stream, ct)
-            .ShouldNotThrowOrFailAsync()
-            .ConfigureAwait(false);
+            .ShouldNotThrowOrFailAsync();
 
         var records = await messages
             .Where(msg => msg.IsRecord)

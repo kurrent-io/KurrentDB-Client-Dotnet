@@ -16,13 +16,13 @@ public record StreamRevision : IComparable<StreamRevision>, IComparable {
 	public static readonly StreamRevision Min = new((long)0);
 
 	/// <summary>
-	/// The end of a stream. Use this when reading a stream backwards, or subscribing live to a stream.
+	/// The end of a stream. Use this when reading a stream backwards or subscribing live to a stream.
 	/// </summary>
 	public static readonly StreamRevision Max = new(long.MaxValue);
 
 	StreamRevision(long value) => Value = value;
 
-	public long Value { get; }
+	public long Value { get; private init; }
 
 	public static StreamRevision From(long value) =>
 		value switch {
@@ -31,16 +31,16 @@ public record StreamRevision : IComparable<StreamRevision>, IComparable {
 			_     => throw new InvalidStreamRevision(value)
 		};
 
-	public static implicit operator long(StreamRevision _)   => _.Value;
-	public static implicit operator StreamRevision(long _)   => From(_);
-    public static implicit operator ExpectedStreamState(StreamRevision _) => new(_.Value);
+	public static implicit operator long(StreamRevision _)                => _.Value;
+	public static implicit operator StreamRevision(long _)                => From(_);
+	public static implicit operator ExpectedStreamState(StreamRevision _) => new(_.Value);
 
 	public override string ToString() => Value.ToString();
 
 	/// <summary>
 	/// Creates a debug view.
 	/// </summary>
-	public string ToDebugString() {
+	string ToDebugString() {
 		var valueText = Value switch {
 			-1000         => "Unset",
 			0             => "Min",

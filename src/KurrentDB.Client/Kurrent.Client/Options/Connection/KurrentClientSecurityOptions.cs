@@ -19,7 +19,7 @@ namespace Kurrent.Client;
 /// </para>
 /// </remarks>
 [PublicAPI]
-public record KurrentClientSecurityOptions : KurrentClientOptionsBase {
+public record KurrentClientSecurityOptions : OptionsBase<KurrentClientSecurityOptions, KurrentClientSecurityOptionsValidator> {
     /// <summary>
     /// Transport layer security settings.
     /// </summary>

@@ -75,20 +75,50 @@ public static class KurrentStreamsClientExtensions {
 
     static async ValueTask<Result<Record, ReadError>> ReadStreamEdge(this KurrentStreamsClient client, StreamName stream, ReadDirection direction, CancellationToken cancellationToken) {
         try {
-            var result = await client
-                .ReadStream(new() {
-                    Stream            = stream,
-                    Direction         = direction,
-                    Start             = direction == ReadDirection.Forwards ? StreamRevision.Min : StreamRevision.Max,
-                    Limit             = 1,
-                    CancellationToken = cancellationToken
-                })
-                .MapAsync(
-                    static (msgs, ct) => msgs.Select(msg => msg.Match(record => record, heartbeat => Record.None)).FirstOrDefaultAsync(ct),
-                    state: cancellationToken)
+            var options = new ReadStreamOptions {
+                Stream            = stream,
+                Direction         = direction,
+                Start             = direction == ReadDirection.Forwards ? StreamRevision.Min : StreamRevision.Max,
+                Limit             = 1,
+                Heartbeat         = HeartbeatOptions.Disabled,
+                CancellationToken = cancellationToken
+            };
+
+            return await client
+                .ReadStream(options)
+                .MatchAsync(
+                    async messages => {
+                        var rec = await messages.Select(x => x.AsRecord).FirstOrDefaultAsync(cancellationToken);
+                        return rec ?? Result.Failure<Record, ReadError>(new ErrorDetails.StreamNotFound(x => x.With("stream", stream)));
+                    },
+                    Result.FailureTask<Record, ReadError>
+                )
+                // .MatchAsync(
+                //     async messages => {
+                //         var rec = await messages.Select(x => x.AsRecord).FirstOrDefaultAsync(cancellationToken);
+                //         return rec ?? Result.Failure<Record, ReadError>(new ErrorDetails.StreamNotFound(x => x.With("stream", stream)));
+                //     },
+                //      Result.FailureTask<Record, ReadError>
+                // )
+                //.MapAsync(async messages => await messages.Select(x => x.AsRecord).FirstOrDefaultAsync(cancellationToken) ?? Record.None)
                 .ConfigureAwait(false);
 
-            return result;
+            // var result = await client
+            //     .ReadStream(options)
+            //     .MatchAsync(
+            //         async messages => {
+            //             var rec = await messages.Select(x => x.AsRecord).FirstOrDefaultAsync(cancellationToken);
+            //             return rec ?? Result.Failure<Record, ReadError>(new ErrorDetails.StreamNotFound(x => x.With("stream", stream)));
+            //         },
+            //         async err => Result.Failure<Record, ReadError>(err))
+            //     //.MapAsync(async messages => await messages.Select(x => x.AsRecord).FirstOrDefaultAsync(cancellationToken) ?? Record.None)
+            //     .ConfigureAwait(false);
+            //
+            // return result.IsSuccess
+            //     ? result.Value == Record.None
+            //         ? Result.Failure<Record, ReadError>(new ErrorDetails.StreamNotFound())
+            //         : result
+            //     : result;
         }
         catch (Exception ex) when (ex is not KurrentClientException)  {
             throw KurrentClientException.CreateUnknown(

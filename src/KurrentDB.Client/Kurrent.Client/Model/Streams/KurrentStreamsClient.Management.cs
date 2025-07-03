@@ -10,47 +10,54 @@ using StreamMetadata = Kurrent.Client.Model.StreamMetadata;
 namespace Kurrent.Client;
 
 public partial class KurrentStreamsClient {
-    public async ValueTask<Result<LogPosition, DeleteStreamError>> Delete(StreamName stream, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) {
-        var request = StreamsV1Mapper.CreateDeleteRequest(stream, expectedState);
+    public async ValueTask<Result<LogPosition, DeleteStreamError>> Delete(StreamName stream, StreamRevision revision, CancellationToken cancellationToken = default) {
+        var request = StreamsClientV1Mapper.Requests.CreateDeleteRequest(stream, revision);
 
         try {
-            var resp = await LegacyStreamsClient
+            var resp = await ServiceClientV1
                 .DeleteAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return resp?.Position?.MapToLogPosition() ?? LogPosition.Unset;
         }
         catch (WrongExpectedVersionException ex) {
-            var info = await GetStreamInfo(stream, cancellationToken).ConfigureAwait(false);
+            // if the actual version is -1, it means the stream was not found
+            // this was a tribal knowledge discovery in the original codebase
+            // that for whatever reason I 100% think it is a bug in the server
             return Result.Failure<LogPosition, DeleteStreamError>(
-                info is { IsFailure: true, Error.IsStreamNotFound: true }
-                    ? info.Error.AsStreamNotFound
+                ex.ActualVersion == -1
+                    ? new StreamNotFound(x => x.With("stream", stream))
                     : ex.AsStreamRevisionConflict());
         }
         catch (Exception ex) {
             return Result.Failure<LogPosition, DeleteStreamError>(ex switch {
-                StreamNotFoundException => ex.AsStreamNotFoundError(),
-                AccessDeniedException   => ex.AsAccessDeniedError(stream),
-                _                       => throw KurrentClientException.CreateUnknown(nameof(Delete), ex)
+                StreamNotFoundException       => ex.AsStreamNotFoundError(),
+                AccessDeniedException         => ex.AsAccessDeniedError(stream),
+                _                             => throw KurrentClientException.CreateUnknown(nameof(Delete), ex)
             });
         }
     }
 
-    public async ValueTask<Result<LogPosition, TombstoneError>> Tombstone(StreamName stream, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) {
-        var request = StreamsV1Mapper.CreateTombstoneRequest(stream, expectedState);
+    public ValueTask<Result<LogPosition, DeleteStreamError>> Delete(StreamName stream, CancellationToken cancellationToken = default) =>
+        Delete(stream, StreamRevision.Unset, cancellationToken);
+
+    public async ValueTask<Result<LogPosition, TombstoneError>> Tombstone(StreamName stream, StreamRevision revision, CancellationToken cancellationToken = default) {
+        var request = StreamsClientV1Mapper.Requests.CreateTombstoneRequest(stream, revision);
 
         try {
-            var resp = await LegacyStreamsClient
+            var resp = await ServiceClientV1
                 .TombstoneAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return resp?.Position?.MapToLogPosition() ?? LogPosition.Unset;
         }
         catch (WrongExpectedVersionException ex) {
-            var info = await GetStreamInfo(stream, cancellationToken).ConfigureAwait(false);
+            // if the actual version is -1, it means the stream was not found
+            // this was a tribal knowledge discovery in the original codebase
+            // that for whatever reason I 100% think it is a bug in the server
             return Result.Failure<LogPosition, TombstoneError>(
-                info is { IsFailure: true, Error.IsStreamNotFound: true }
-                    ? info.Error.AsStreamNotFound
+                ex.ActualVersion == -1
+                    ? new StreamNotFound(x => x.With("stream", stream))
                     : ex.AsStreamRevisionConflict());
         }
         catch (Exception ex) {
@@ -62,19 +69,16 @@ public partial class KurrentStreamsClient {
         }
     }
 
+    public ValueTask<Result<LogPosition, TombstoneError>> Tombstone(StreamName stream, CancellationToken cancellationToken = default) =>
+        Tombstone(stream, StreamRevision.Unset, cancellationToken);
+
     public ValueTask<Result<bool, TruncateStreamError>> Truncate(StreamName stream, StreamRevision truncateRevision, ExpectedStreamState expectedState, CancellationToken cancellationToken) {
         ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(truncateRevision, StreamRevision.Unset);
 
         var metaddata = new StreamMetadata { TruncateBefore = truncateRevision };
-        return SetStreamMetadata(stream, metaddata, expectedState, cancellationToken)
-            .MapAsync(_ => true)
-            .MapErrorAsync(err => err.Match<TruncateStreamError>(
-                    notFound => notFound,
-                    deleted => deleted,
-                    denied => denied,
-                    conflict => conflict
-                )
-            );
+        return SetStreamMetadata(stream, metaddata, expectedState, cancellationToken).MatchAsync(
+            rev => Result.Success<bool, TruncateStreamError>(true),
+            err => (TruncateStreamError)err.Value);
     }
 
     public ValueTask<Result<bool, TruncateStreamError>> Truncate(StreamName stream, StreamRevision truncateRevision, CancellationToken cancellationToken) =>
@@ -95,7 +99,7 @@ public partial class KurrentStreamsClient {
         var metastreamReadResult = await this.ReadLastStreamRecord(metaStream, cancellationToken)
             .MatchAsync(
                 rec => new StreamInfo {
-                    Metadata         = (StreamMetadata)rec.Value,
+                    Metadata         = rec == Record.None ? StreamMetadata.None : (StreamMetadata)rec.Value!,
                     MetadataRevision = rec.StreamRevision
                 },
                 err => err.IsAccessDenied
@@ -118,41 +122,22 @@ public partial class KurrentStreamsClient {
                 },
                 err => err.IsStreamDeleted
                     ? metastreamReadResult.Value with { IsDeleted = true }
-                    : Result.Failure<StreamInfo, GetStreamInfoError>(err.Value switch {
-                        StreamNotFound x => x,
-                        AccessDenied x   => x
-                    })
+                    : Result.Failure<StreamInfo, GetStreamInfoError>((GetStreamInfoError)err.Value)
             )
             .ConfigureAwait(false);
     }
 
-    public async ValueTask<Result<StreamMetadata, GetStreamInfoError>> GetStreamMetadata(StreamName stream, CancellationToken cancellationToken = default) {
+    public ValueTask<Result<StreamMetadata, GetStreamInfoError>> GetStreamMetadata(StreamName stream, CancellationToken cancellationToken = default) {
         var metaStream = SystemStreams.MetastreamOf(stream);
-
-        var result = await this.ReadLastStreamRecord(metaStream, cancellationToken)
-            .MatchAsync(
-                rec => rec == Record.None ? StreamMetadata.None : (StreamMetadata)rec.Value,
-                err => Result.Failure<StreamMetadata, GetStreamInfoError>(err.Value switch {
-                    StreamNotFound notFound          => notFound,
-                    ErrorDetails.AccessDenied denied => denied
-                })
-            )
-            .ConfigureAwait(false);
-
-        return result;
+        return this.ReadLastStreamRecord(metaStream, cancellationToken).MatchAsync(
+            rec => rec == Record.None ? StreamMetadata.None : (StreamMetadata)rec.Value!,
+            err => Result.Failure<StreamMetadata, GetStreamInfoError>((GetStreamInfoError)err.Value));
     }
 
 	public ValueTask<Result<StreamRevision, SetStreamMetadataError>> SetStreamMetadata(StreamName stream, StreamMetadata metadata, ExpectedStreamState expectedState, CancellationToken cancellationToken = default) {
         var metaStream = SystemStreams.MetastreamOf(stream);
-
-        return this.Append(metaStream, expectedState, Message.New.WithValue(metadata).Build(), cancellationToken)
-            .MatchAsync(
-                ok => ok.StreamRevision,
-                ko => Result.Failure<StreamRevision, SetStreamMetadataError>(ko.Value switch {
-                    StreamNotFound err         => err,
-                    StreamDeleted err          => err,
-                    AccessDenied err           => err,
-                    StreamRevisionConflict err => err
-                }));
+        return this.Append(metaStream, expectedState, Message.Create(metadata), cancellationToken).MatchAsync(
+            ok => Result.Success<StreamRevision, SetStreamMetadataError>(ok.StreamRevision),
+            ko => (SetStreamMetadataError)ko.Value);
     }
 }

@@ -63,6 +63,8 @@ record KurrentDBConnectionString {
     /// <param name="connectionString">The connection string to parse</param>
     /// <returns>A KurrentDBConnectionString containing the parsed components</returns>
     public static KurrentDBConnectionString Parse(string connectionString) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
+
         var currentIndex = 0;
 
         var schemeIndex = connectionString.IndexOf(SchemeSeparator, currentIndex, StringComparison.Ordinal);

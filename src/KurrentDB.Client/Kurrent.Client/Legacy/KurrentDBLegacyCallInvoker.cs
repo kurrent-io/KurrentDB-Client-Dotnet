@@ -10,7 +10,7 @@ namespace Kurrent.Client.Legacy;
 /// </summary>
 /// <remarks>
 /// This implementation ensures that ServerCapabilities are always up-to-date and accessible
-/// in a thread-safe manner. It transparently handles obtaining the correct channel invoker
+/// in a thread-safe manner. It transparently handles getting the correct channel invoker
 /// from the LegacyClusterClient for each gRPC call.
 /// </remarks>
 sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
@@ -69,8 +69,8 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
 	    if (_disposed)
 		    throw new ObjectDisposedException(nameof(KurrentDBLegacyCallInvoker));
 
-	    // Use Task.Run to avoid deadlocks in synchronous contexts
-	    // This is necessary because the legacy client may block on network operations
+	    // using Task.Run to avoid deadlocks in synchronous contexts,
+	    // this is necessary because the legacy client may block on network operations,
 	    // and we want to ensure we don't block the calling thread.
 	    return Task.Run(
 	        () => GetInvokerAsync().ConfigureAwait(false).GetAwaiter().GetResult(),

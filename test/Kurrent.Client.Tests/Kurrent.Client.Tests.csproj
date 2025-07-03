@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\KurrentDB.Client\KurrentDB.Client.csproj" />
+    <ProjectReference Include="..\..\src\Variant\Variant.csproj" />
     <ProjectReference Include="..\Kurrent.Client.Testing\Kurrent.Client.Testing.csproj" />
   </ItemGroup>
 </Project>

@@ -79,8 +79,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Kurrent.Client\Infra\" />
     <Folder Include="Kurrent.Client\Model\PersistentSubscriptions\" />
+    <Folder Include="Kurrent.Client\Services\" />
   </ItemGroup>
 
   <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">

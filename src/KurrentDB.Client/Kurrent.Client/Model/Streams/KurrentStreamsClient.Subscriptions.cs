@@ -12,18 +12,18 @@ namespace Kurrent.Client;
 
 public partial class KurrentStreamsClient {
     public ValueTask<Result<Subscription, ReadError>> Subscribe(AllSubscriptionOptions options) =>
-        SubscribeCore(StreamsV1Mapper.CreateSubscriptionRequest(options), options.BufferSize, options.Timeout, options.CancellationToken);
+        SubscribeCore(StreamsClientV1Mapper.Requests.CreateSubscriptionRequest(options), options.BufferSize, options.Timeout, options.SkipDecoding, options.CancellationToken);
 
     public ValueTask<Result<Subscription, ReadError>> Subscribe(StreamSubscriptionOptions options) =>
-        SubscribeCore(StreamsV1Mapper.CreateStreamSubscriptionRequest(options), options.BufferSize, options.Timeout, options.CancellationToken);
+        SubscribeCore(StreamsClientV1Mapper.Requests.CreateStreamSubscriptionRequest(options), options.BufferSize, options.Timeout, options.SkipDecoding, options.CancellationToken);
 
-    async ValueTask<Result<Subscription, ReadError>> SubscribeCore(ReadReq request, int bufferSize, TimeSpan subscriptionTimeout, CancellationToken cancellationToken) {
+    async ValueTask<Result<Subscription, ReadError>> SubscribeCore(ReadReq request, int bufferSize, TimeSpan subscriptionTimeout, bool skipDecoding, CancellationToken cancellationToken) {
         // Create a linked cancellation token source for background task control
         var cancellator = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         var stoppingToken = cancellator.Token;
 
-        var session = LegacyStreamsClient.Read(request, cancellationToken: stoppingToken);
+        var session = ServiceClientV1.Read(request, cancellationToken: stoppingToken);
 
         // Check for access denied. the legacy exception mapper throws this exception...
         // we could skip it for this operation... requires refactoring the interceptor
@@ -41,8 +41,8 @@ public partial class KurrentStreamsClient {
 
         var subscriptionId = session.ResponseStream.Current.Confirmation.SubscriptionId;
 
-        // Create factory function instead of starting immediately
-        var channelFactory = new Func<Channel<ReadMessage>>(() => StartMessageRelay(session, bufferSize, subscriptionTimeout, cancellator));
+        // Create a factory function instead of starting immediately
+        var channelFactory = new Func<Channel<ReadMessage>>(() => StartMessageRelay(session, bufferSize, subscriptionTimeout, skipDecoding, cancellator));
 
         // var channel = StartMessageRelay(session, bufferSize, subscriptionTimeout,  cancellator);
 
@@ -55,9 +55,10 @@ public partial class KurrentStreamsClient {
     /// <param name="session">An asynchronous server streaming call providing subscription responses.</param>
     /// <param name="bufferSize">The maximum number of messages the channel can buffer before applying backpressure.</param>
     /// <param name="subscriptionTimeout">The maximum time to wait for a subscription message before timing out.</param>
+    /// <param name="skipDecoding"></param>
     /// <param name="cancellator">A cancellation token source used to signal termination of the message relay process.</param>
     /// <returns>A bounded channel that streams subscription messages.</returns>
-    Channel<ReadMessage> StartMessageRelay(AsyncServerStreamingCall<ReadResp> session, int bufferSize, TimeSpan subscriptionTimeout, CancellationTokenSource cancellator) {
+    Channel<ReadMessage> StartMessageRelay(AsyncServerStreamingCall<ReadResp> session, int bufferSize, TimeSpan subscriptionTimeout, bool skipDecoding, CancellationTokenSource cancellator) {
         // create a bounded channel for backpressure control
         var channel = Channel.CreateBounded<ReadMessage>(
             new BoundedChannelOptions(bufferSize) {
@@ -76,7 +77,7 @@ public partial class KurrentStreamsClient {
                     var messages = session.ResponseStream.ReadAllAsync(stoppingToken)
                         .Where(x => x.ContentCase is Event or Checkpoint or CaughtUp or FellBehind)
                         .SelectAwait<ReadResp, ReadMessage>(async x => x.ContentCase switch {
-                            Event      => await LegacyConverter.ConvertToRecord(x.Event, stoppingToken).ConfigureAwait(false),
+                            Event      => await x.Event.MapToRecord(SerializerProvider, MetadataDecoder, skipDecoding, stoppingToken).ConfigureAwait(false),
                             Checkpoint => x.Checkpoint.MapToHeartbeat(),
                             CaughtUp   => x.CaughtUp.MapToHeartbeat(),
                             FellBehind => x.FellBehind.MapToHeartbeat()
@@ -88,8 +89,8 @@ public partial class KurrentStreamsClient {
                             continue; // no timeout needed
 
                         // the channel is full, we must add timeout protection
-                        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-                        timeout.CancelAfter(subscriptionTimeout);
+                        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken)
+                            .With(x => x.CancelAfter(subscriptionTimeout));
 
                         await channel.Writer
                             .WriteAsync(message, timeout.Token)

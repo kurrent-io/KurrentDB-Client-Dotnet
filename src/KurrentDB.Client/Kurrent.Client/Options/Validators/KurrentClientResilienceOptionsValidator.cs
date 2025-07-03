@@ -3,8 +3,7 @@ using Humanizer;
 
 namespace Kurrent.Client;
 
-class KurrentClientResilienceOptionsValidator : AbstractValidator<KurrentClientResilienceOptions> {
-    public static readonly KurrentClientResilienceOptionsValidator Instance = new();
+public class KurrentClientResilienceOptionsValidator : FluentOptionsValidator<KurrentClientResilienceOptionsValidator, KurrentClientResilienceOptions> {
 
     public KurrentClientResilienceOptionsValidator() {
         // KeepAliveInterval validation

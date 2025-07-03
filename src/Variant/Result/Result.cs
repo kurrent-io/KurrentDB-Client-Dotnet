@@ -117,9 +117,11 @@ public static partial class Result {
     /// </summary>
     public static Result<TValue, TError> Failure<TValue, TError>(TError error) => new(error);
 
-    public static ValueTask<Result<TValue, TError>> SuccessValueTask<TValue, TError>(TValue value) =>
+    public static ValueTask<Result<TValue, TError>> SuccessTask<TValue, TError>(TValue value) =>
         ValueTask.FromResult(Success<TValue, TError>(value));
 
+    public static ValueTask<Result<TValue, TError>> FailureTask<TValue, TError>(TError error) =>
+        ValueTask.FromResult(Failure<TValue, TError>(error));
 }
 
 public enum ResultCase {

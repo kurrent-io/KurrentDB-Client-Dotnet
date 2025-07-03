@@ -9,7 +9,15 @@ namespace Kurrent.Client;
 static class SystemTypes {
 	public static readonly Type MissingType = Type.Missing.GetType();
 
-    /// <summary>
+	public static bool IsBytes(this object value) =>
+		value.GetType().IsBytes();
+
+	public static bool IsBytes(this Type type) =>
+		type == typeof(byte[]) ||
+		type == typeof(ReadOnlyMemory<byte>) ||
+		type == typeof(Memory<byte>);
+
+	/// <summary>
     /// Checks if the specified type is the placeholder type representing a missing type.
     /// </summary>
     /// <param name="source">

@@ -22,17 +22,15 @@ namespace Kurrent.Client;
 /// </para>
 /// </remarks>
 [PublicAPI]
-public record KurrentClientOptions : KurrentClientOptionsBase {
-    public static KurrentClientOptionsBuilder Create() =>
-        KurrentClientOptionsBuilder.Create();
+public record KurrentClientOptions : OptionsBase<KurrentClientOptions, KurrentClientOptionsValidator> {
+    public static KurrentClientOptionsBuilder Build => new();
 
-    public static KurrentClientOptionsBuilder FromConnectionString(string connectionString) =>
-        KurrentClientOptionsBuilder.FromConnectionString(connectionString);
+    public static KurrentClientOptions Parse(string connectionString) =>
+        KurrentDBConnectionString.Parse(connectionString).ToClientOptions();
+
+    public KurrentClientOptionsBuilder GetBuilder() => new(this);
 
     public static readonly string DefaultConnectionString = "kurrentdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false";
-
-    // public bool ThrowExceptionOnResultError { get; init; }
-
 
     /// <summary>
     /// When options were created from a connection string, this property holds
@@ -147,14 +145,14 @@ public record KurrentClientOptions : KurrentClientOptionsBase {
     /// Controls how the client handles event schemas and versioning.
     /// </para>
     /// </remarks>
-    public KurrentClientSchemaOptions Schema { get; init; } = KurrentClientSchemaOptions.FullValidation;
+    internal KurrentClientSchemaOptions Schema { get; init; } = KurrentClientSchemaOptions.FullValidation;
 
     /// <summary>
     /// Provides a mechanism for mapping message types to their corresponding schemas.
     /// </summary>
     /// <remarks>
     /// The mapper is used to associate specific message types with their schemas in the schema registry.
-    /// This ensures that the correct schema is utilized when producing or consuming messages.
+    /// This ensures that the correct schema is used when producing or consuming messages.
     /// </remarks>
     public MessageTypeMapper Mapper { get; init; } = new();
 
@@ -195,9 +193,6 @@ public record KurrentClientOptions : KurrentClientOptionsBase {
     public ILoggerFactory LoggerFactory { get; init; } = NullLoggerFactory.Instance;
 
     public override string ToString() => this.GenerateConnectionString();
-
-    public static KurrentClientOptions Create(string connectionString) =>
-        KurrentDBConnectionString.Parse(connectionString).ToClientOptions();
 }
 
 static class KurrentDBConnectionStringExtensions {

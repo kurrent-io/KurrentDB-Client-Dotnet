@@ -263,6 +263,14 @@ public partial class KurrentStreamsClient {
         }
     }
 
+    public async IAsyncEnumerable<Record> ReadAllAsync(ReadAllOptions options) {
+        await using var messages = await ReadAll(options).ThrowOnFailureAsync();
+        await foreach (var msg in messages) {
+            if (!msg.IsRecord) continue;
+            yield return msg.AsRecord;
+        }
+    }
+
     public async IAsyncEnumerable<Record> ReadStreamAsync(ReadStreamOptions options) {
         await using var messages = await ReadStream(options).ThrowOnFailureAsync();
         await foreach (var msg in messages) {
@@ -272,33 +280,37 @@ public partial class KurrentStreamsClient {
     }
 
     public ValueTask<Result<Messages, ReadError>> ReadStream(StreamName stream, CancellationToken cancellationToken = default) =>
-        ReadStream(new ReadStreamOptions {  Stream = stream, CancellationToken = cancellationToken});
+        ReadStream(new ReadStreamOptions { Stream = stream, CancellationToken = cancellationToken });
 
     public ValueTask<Result<Messages, ReadError>> ReadAll(ReadAllOptions options) =>
-        ReadCore(StreamsV1Mapper.CreateReadRequest(options), options.BufferSize, options.Timeout, options.CancellationToken);
+        ReadCore(StreamsClientV1Mapper.Requests.CreateReadRequest(options), options.BufferSize, options.Timeout, options.SkipDecoding, options.CancellationToken);
 
     public ValueTask<Result<Messages, ReadError>> ReadStream(ReadStreamOptions options) =>
-        ReadCore(StreamsV1Mapper.CreateReadRequest(options), options.BufferSize, options.Timeout, options.CancellationToken);
+        ReadCore(StreamsClientV1Mapper.Requests.CreateReadRequest(options), options.BufferSize, options.Timeout, options.SkipDecoding, options.CancellationToken);
 
-    async ValueTask<Result<Messages, ReadError>> ReadCore(ReadReq request, int bufferSize, TimeSpan timeout, CancellationToken cancellationToken) {
-        // Create a linked cancellation token source for background task control
-        var cancellator = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-
+    async ValueTask<Result<Messages, ReadError>> ReadCore(ReadReq request, int bufferSize, TimeSpan timeout, bool skipDecoding, CancellationToken cancellationToken) {
+        var cancellator   = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var stoppingToken = cancellator.Token;
 
-        var session = LegacyStreamsClient.Read(request, cancellationToken: stoppingToken);
+        var session = ServiceClientV1.Read(request, cancellationToken: stoppingToken);
 
         // Check for access denied. the legacy exception mapper throws this exception...
         // we could skip it for this operation... requires refactoring the interceptor
+        // we also need to check for stream not found. this is absurd...
         try {
             await session.ResponseStream.MoveNext(stoppingToken).ConfigureAwait(false);
+
+            if (session.ResponseStream.Current.ContentCase is ReadResp.ContentOneofCase.StreamNotFound)
+                return Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt
+                    .With("stream", request.Options.Stream.StreamIdentifier.StreamName.ToStringUtf8())));
         }
         catch (AccessDeniedException) {
-            return Result.Failure<Messages, ReadError>(new AccessDenied());
+            return Result.Failure<Messages, ReadError>(new AccessDenied(mt => mt
+                .With("stream", request.Options.Stream.StreamIdentifier.StreamName.ToStringUtf8())));
         }
 
         // Creates a factory function instead of starting immediately
-        var channelFactory = new Func<Channel<ReadMessage>>(() => StartReadMessageRelay(session, bufferSize, timeout, cancellator));
+        var channelFactory = new Func<Channel<ReadMessage>>(() => StartReadMessageRelay(session, bufferSize, timeout, skipDecoding, cancellator));
 
         return new Messages(channelFactory);
     }
@@ -308,10 +320,11 @@ public partial class KurrentStreamsClient {
     /// </summary>
     /// <param name="session">An asynchronous server streaming call providing subscription responses.</param>
     /// <param name="bufferSize">The maximum number of messages the channel can buffer before applying backpressure.</param>
-    /// <param name="subscriptionTimeout">The maximum time to wait for a subscription message before timing out.</param>
+    /// <param name="consumeTimeout">The maximum time to wait for a subscription message before timing out.</param>
+    /// <param name="skipDecoding"></param>
     /// <param name="cancellator">A cancellation token source used to signal termination of the message relay process.</param>
     /// <returns>A bounded channel that streams subscription messages.</returns>
-    Channel<ReadMessage> StartReadMessageRelay(AsyncServerStreamingCall<ReadResp> session, int bufferSize, TimeSpan subscriptionTimeout, CancellationTokenSource cancellator) {
+    Channel<ReadMessage> StartReadMessageRelay(AsyncServerStreamingCall<ReadResp> session, int bufferSize, TimeSpan consumeTimeout, bool skipDecoding, CancellationTokenSource cancellator) {
         // create a bounded channel for backpressure control
         var channel = Channel.CreateBounded<ReadMessage>(
             new BoundedChannelOptions(bufferSize) {
@@ -327,34 +340,37 @@ public partial class KurrentStreamsClient {
         _ = Task.Run(
             async () => {
                 try {
-                    var messages = session.ResponseStream.ReadAllAsync(stoppingToken)
-                        .Where(x => x.ContentCase is Event or Checkpoint or CaughtUp or FellBehind)
-                        .SelectAwait<ReadResp, ReadMessage>(async x => x.ContentCase switch {
-                            Event      => await LegacyConverter.ConvertToRecord(x.Event, stoppingToken).ConfigureAwait(false),
-                            Checkpoint => x.Checkpoint.MapToHeartbeat(),
-                            CaughtUp   => x.CaughtUp.MapToHeartbeat(),
-                            FellBehind => x.FellBehind.MapToHeartbeat()
-                        });
+                    // must continue from the freaking cursor because I had to try to read
+                    // the first entry to check if the stream existed or if access was granted
+                    do {
+                        var resp = session.ResponseStream.Current;
 
-                    await foreach (var message in messages.ConfigureAwait(false)) {
+                        if (resp.ContentCase is not (Event or Checkpoint or CaughtUp or FellBehind)) continue;
+
+                        ReadMessage message = resp.ContentCase switch {
+                            Event      => await resp.Event.MapToRecord(SerializerProvider, MetadataDecoder, skipDecoding, stoppingToken).ConfigureAwait(false),
+                            Checkpoint => resp.Checkpoint.MapToHeartbeat(),
+                            CaughtUp   => resp.CaughtUp.MapToHeartbeat(),
+                            FellBehind => resp.FellBehind.MapToHeartbeat(),
+                            _          => throw new InvalidOperationException($"Unreachable error while reading stream. {resp.ContentCase}")
+                        };
+
                         // try to write immediately without blocking
                         if (channel.Writer.TryWrite(message))
                             continue; // no timeout needed
 
                         // the channel is full, we must add timeout protection
-                        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-                        timeout.CancelAfter(subscriptionTimeout);
+                        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken)
+                            .With(x => x.CancelAfter(consumeTimeout));
 
                         await channel.Writer
                             .WriteAsync(message, timeout.Token)
                             .ConfigureAwait(false);
-                    }
+                    } while (await session.ResponseStream.MoveNext(stoppingToken).ConfigureAwait(false));
 
-                    // it might already have been marked for
-                    // completion manually or on dispose.
                     channel.Writer.TryComplete();
                 }  catch (OperationCanceledException ex) when (ex.CancellationToken != stoppingToken) {
-                    channel.Writer.TryComplete(new TimeoutException($"Timed out after {subscriptionTimeout}. The application may not be reading messages fast enough."));
+                    channel.Writer.TryComplete(new TimeoutException($"Timed out after {consumeTimeout}. The application may not be reading messages fast enough."));
                 } catch (OperationCanceledException) {
                     channel.Writer.TryComplete();
                 } catch (Exception ex) {
@@ -369,7 +385,7 @@ public partial class KurrentStreamsClient {
         return channel;
     }
 
-    internal async ValueTask<StreamRevision> GetStreamRevision(LogPosition position, CancellationToken cancellationToken = default) {
+    internal async ValueTask<StreamRevision> GetStreamRevision(StreamName stream, LogPosition position, CancellationToken cancellationToken = default) {
         if (position == LogPosition.Latest)
             return StreamRevision.Max;
 
@@ -378,8 +394,11 @@ public partial class KurrentStreamsClient {
 
         var options = new ReadAllOptions {
             Start             = position,
+            Direction         = ReadDirection.Forwards,
             Limit             = 1,
             Heartbeat         = HeartbeatOptions.Disabled,
+            BufferSize        = 1,
+            Filter            = ReadFilter.None,
             CancellationToken = cancellationToken
         };
 
@@ -391,6 +410,12 @@ public partial class KurrentStreamsClient {
             .Select(msg => msg.AsRecord)
             .FirstOrDefaultAsync(cancellationToken);
 
-        return rec.StreamRevision;
+        if (rec is not null)
+            return rec.StreamRevision;
+
+        var firstRecord = await this.ReadFirstStreamRecord(stream, cancellationToken)
+            .ThrowOnFailureAsync();
+
+        return firstRecord.StreamRevision;
     }
 }

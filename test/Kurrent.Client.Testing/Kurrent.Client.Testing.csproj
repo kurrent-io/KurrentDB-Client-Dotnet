@@ -49,8 +49,4 @@
   <ItemGroup>
     <None Remove="Kurrent.Surge.Testing.csproj.DotSettings" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Sample\Telemetry\" />
-  </ItemGroup>
 </Project>

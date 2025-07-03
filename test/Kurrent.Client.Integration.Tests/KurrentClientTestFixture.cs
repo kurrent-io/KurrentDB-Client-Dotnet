@@ -102,10 +102,10 @@ public partial class KurrentClientTestFixture : TestFixture {
     /// A new instance of <see cref="KurrentClient"/> configured with the specified options.
     /// </returns>
     public static KurrentClient CreateClient(Action<KurrentClientOptionsBuilder>? configure = null) {
-        var options = KurrentClientOptions
-            .FromConnectionString(AuthenticatedConnectionString)
+        var options = KurrentClientOptions.Build
+            .WithConnectionString(AuthenticatedConnectionString)
             .WithLoggerFactory(new SerilogLoggerFactory(Log.Logger))
-            .WithSchema(KurrentClientSchemaOptions.Disabled)
+            // .WithSchema(KurrentClientSchemaOptions.Disabled)
             .WithResilience(KurrentClientResilienceOptions.NoResilience)
             .WithMessages(options => options.Map<StreamMetadata>("$metadata"));
 

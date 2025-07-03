@@ -48,7 +48,17 @@ public class TombstoneTests : KurrentClientTestFixture {
         var game = TrySimulateGame(GamesAvailable.TicTacToe);
 
         await AutomaticClient.Streams
-            .Tombstone(game.Stream, ExpectedStreamState.StreamExists, ct)
+            .Tombstone(game.Stream, ExpectedStreamState.NoStream, ct)
+            .ShouldFailAsync(error =>
+                error.Value.ShouldBeOfType<ErrorDetails.StreamNotFound>());
+    }
+
+    [Test]
+    public async Task returns_stream_not_found_error_when_tombstoning_non_existing_stream_with_any(CancellationToken ct) {
+        var game = TrySimulateGame(GamesAvailable.TicTacToe);
+
+        await AutomaticClient.Streams
+            .Tombstone(game.Stream, ExpectedStreamState.Any, ct)
             .ShouldFailAsync(error =>
                 error.Value.ShouldBeOfType<ErrorDetails.StreamNotFound>());
     }

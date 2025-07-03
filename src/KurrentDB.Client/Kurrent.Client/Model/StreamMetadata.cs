@@ -7,6 +7,7 @@ namespace Kurrent.Client.Model;
 /// Represents metadata associated with a stream in KurrentDB.
 /// </summary>
 [JsonConverter(typeof(StreamMetadataJsonConverter))]
+[PublicAPI]
 public record StreamMetadata {
     public static readonly StreamMetadata None = new();
 
@@ -32,7 +33,7 @@ public record StreamMetadata {
     public int? MaxCount { get; init; }
 
     /// <summary>
-    /// The optional <see cref="JsonDocument"/> of user provided metadata.
+    /// The optional <see cref="JsonDocument"/> of user-provided metadata.
     /// </summary>
     public JsonDocument? CustomMetadata { get; init; }
 

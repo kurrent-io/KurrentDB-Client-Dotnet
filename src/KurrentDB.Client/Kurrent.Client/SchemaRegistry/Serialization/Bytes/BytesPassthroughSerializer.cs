@@ -29,9 +29,8 @@ public class BytesPassthroughSerializer : ISchemaSerializer {
 			Memory<byte> bytes         => bytes
 		};
 
-		return new ValueTask<ReadOnlyMemory<byte>>(result);
+		return new(result);
 	}
 
-	public ValueTask<object?> Deserialize(ReadOnlyMemory<byte> data, SchemaSerializationContext context) =>
-		new ValueTask<object?>(data);
+	public ValueTask<object?> Deserialize(ReadOnlyMemory<byte> data, SchemaSerializationContext context) => new(data);
 }
