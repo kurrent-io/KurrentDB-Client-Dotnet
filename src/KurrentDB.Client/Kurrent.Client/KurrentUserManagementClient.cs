@@ -48,6 +48,11 @@ public class KurrentUserManagementClient {
 		string loginName, string fullName, string[] groups, string password,
 		CancellationToken cancellationToken = default
 	) {
+		ArgumentException.ThrowIfNullOrEmpty(loginName);
+		ArgumentException.ThrowIfNullOrEmpty(fullName);
+		ArgumentException.ThrowIfNullOrEmpty(password);
+		ArgumentNullException.ThrowIfNull(groups);
+
 		try {
 			await ServiceClient
 				.CreateAsync(
