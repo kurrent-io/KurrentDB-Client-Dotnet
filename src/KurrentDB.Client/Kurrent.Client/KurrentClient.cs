@@ -13,19 +13,21 @@ public class KurrentClient : IAsyncDisposable {
 
         LegacyCallInvoker = new KurrentDBLegacyCallInvoker(new LegacyClusterClient(Options.ConvertToLegacySettings()));
 
-        Streams        = new KurrentStreamsClient(LegacyCallInvoker, options);
-        Registry       = new KurrentRegistryClient(LegacyCallInvoker);
-        Features       = new KurrentFeaturesClient(LegacyCallInvoker);
-        UserManagement = new KurrentUserManagementClient(LegacyCallInvoker, options);
+        Streams                = new KurrentStreamsClient(LegacyCallInvoker, options);
+        Registry               = new KurrentRegistryClient(LegacyCallInvoker);
+        Features               = new KurrentFeaturesClient(LegacyCallInvoker);
+        UserManagement         = new KurrentUserManagementClient(LegacyCallInvoker, options);
+        PersistentSubscription = new KurrentPersistentSubscriptionsClient(LegacyCallInvoker, options);
     }
 
     KurrentClientOptions       Options           { get; }
 	KurrentDBLegacyCallInvoker LegacyCallInvoker { get; }
 
-	public KurrentStreamsClient        Streams        { get; }
-	public KurrentRegistryClient       Registry       { get; }
-	public KurrentFeaturesClient       Features       { get; }
-	public KurrentUserManagementClient UserManagement { get; }
+	public KurrentStreamsClient                 Streams                { get; }
+	public KurrentRegistryClient                Registry               { get; }
+	public KurrentFeaturesClient                Features               { get; }
+	public KurrentUserManagementClient          UserManagement         { get; }
+	public KurrentPersistentSubscriptionsClient PersistentSubscription { get; }
 
 	internal async Task<ServerFeatures> ForceRefresh(CancellationToken cancellationToken = default) {
 		await LegacyCallInvoker.ForceRefresh(cancellationToken).ConfigureAwait(false);

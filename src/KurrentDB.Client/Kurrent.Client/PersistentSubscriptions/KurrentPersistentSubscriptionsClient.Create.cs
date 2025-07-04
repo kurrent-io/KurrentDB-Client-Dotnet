@@ -168,10 +168,9 @@ partial class KurrentPersistentSubscriptionsClient {
 			throw new ArgumentException("The specified consumer strategy is not supported, specify one of the SystemConsumerStrategies");
 		}
 
-		if (streamName == SystemStreams.AllStream &&
-		    !LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
-			throw new InvalidOperationException("The server does not support persistent subscriptions to $all.");
-		}
+		// if (streamName == SystemStreams.AllStream && !LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
+		// 	throw new InvalidOperationException("The server does not support persistent subscriptions to $all.");
+		// }
 
 		using var call = ServiceClient.CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {

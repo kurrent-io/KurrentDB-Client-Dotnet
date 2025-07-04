@@ -82,6 +82,18 @@
     <Folder Include="Kurrent.Client\Infra\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Kurrent.Client\PersistentSusbcriptionsBackup\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Kurrent.Client\PersistentSusbcriptionsBackup\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Kurrent.Client\PersistentSusbcriptionsBackup\**" />
+  </ItemGroup>
+
   <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">
     <ItemGroup>
       <ReferencedAssemblies Include="bin\$(Configuration)\**\*.dll" />

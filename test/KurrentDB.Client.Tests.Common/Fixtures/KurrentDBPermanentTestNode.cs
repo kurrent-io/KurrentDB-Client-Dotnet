@@ -64,22 +64,22 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 			// .With(x => x.ConnectivitySettings.DiscoveryInterval = FromSeconds(1));
 
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
-			["KURRENTDB_MEM_DB"]                           = "true",
-			["KURRENTDB_CERTIFICATE_FILE"]                 = "/etc/kurrentdb/certs/node/node.crt",
-			["KURRENTDB_CERTIFICATE_PRIVATE_KEY_FILE"]     = "/etc/kurrentdb/certs/node/node.key",
-			["KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH"]   = "/etc/kurrentdb/certs/ca",
-			["KURRENTDB_USER_CERTIFICATES__ENABLED"]       = "true",
-			["KURRENTDB_STREAM_EXISTENCE_FILTER_SIZE"]     = "10000",
-			["KURRENTDB_STREAM_INFO_CACHE_CAPACITY"]       = "10000",
-			["KURRENTDB_ENABLE_ATOM_PUB_OVER_HTTP"]        = "true",
-			["KURRENTDB_LOG_LEVEL"]                        = "Default", // required to use serilog settings
-			["KURRENTDB_DISABLE_LOG_FILE"]                 = "true",
-			["KURRENTDB_START_STANDARD_PROJECTIONS"]       = "true",
-			["KURRENTDB_RUN_PROJECTIONS"]                  = "All",
-			["KURRENTDB_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = "2113",
-			["KURRENTDB_ADVERTISE_NODE_PORT_TO_CLIENT_AS"] = "2113",
-			["KURRENTDB_NODE_PORT"]                        = "2113",
-			["KURRENTDB_MAX_APPEND_SIZE"]                  = "4194304"  // Sets the limit to 4MB
+			["KURRENTDB_MEM_DB"]                              = "true",
+			["KURRENTDB_CERTIFICATE_FILE"]                    = "/etc/kurrentdb/certs/node/node.crt",
+			["KURRENTDB_CERTIFICATE_PRIVATE_KEY_FILE"]        = "/etc/kurrentdb/certs/node/node.key",
+			["KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/kurrentdb/certs/ca",
+			["KURRENTDB__PLUGINS__USERCERTIFICATES__ENABLED"] = "true",
+			["KURRENTDB_STREAM_EXISTENCE_FILTER_SIZE"]        = "10000",
+			["KURRENTDB_STREAM_INFO_CACHE_CAPACITY"]          = "10000",
+			["KURRENTDB_ENABLE_ATOM_PUB_OVER_HTTP"]           = "true",
+			["KURRENTDB_LOG_LEVEL"]                           = "Default", // required to use serilog settings
+			["KURRENTDB_DISABLE_LOG_FILE"]                    = "true",
+			["KURRENTDB_START_STANDARD_PROJECTIONS"]          = "true",
+			["KURRENTDB_RUN_PROJECTIONS"]                     = "All",
+			["KURRENTDB_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"]    = "2113",
+			["KURRENTDB_ADVERTISE_NODE_PORT_TO_CLIENT_AS"]    = "2113",
+			["KURRENTDB_NODE_PORT"]                           = "2113",
+			["KURRENTDB_MAX_APPEND_SIZE"]                     = "4194304" // Sets the limit to 4MB
 		};
 
 		if (GlobalEnvironment.DockerImage.Contains("commercial")) {

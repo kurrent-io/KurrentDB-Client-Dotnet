@@ -116,11 +116,11 @@ public partial class KurrentPersistentSubscriptionsClient {
 			streamName,
 			groupName,
 			async ct => {
-				if (streamName == SystemStreams.AllStream && !LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
-					throw new NotSupportedException(
-						"The server does not support persistent subscriptions to $all."
-					);
-				}
+				// if (streamName == SystemStreams.AllStream && !LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
+				// 	throw new NotSupportedException(
+				// 		"The server does not support persistent subscriptions to $all."
+				// 	);
+				// }
 
 				return ServiceClient;
 			},
@@ -156,7 +156,6 @@ public partial class KurrentPersistentSubscriptionsClient {
 	/// </summary>
 	/// <param name="groupName">The name of the persistent subscription group.</param>
 	/// <param name="bufferSize">The size of the buffer.</param>
-	/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
 	/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 	/// <returns></returns>
 	public PersistentSubscriptionResult SubscribeToAll(string groupName, int bufferSize = 10, CancellationToken cancellationToken = default) =>
@@ -247,7 +246,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 
 					_call = client.Read(_callOptions);
 
-					await _call.RequestStream.WriteAsync(_request, cancellationToken).ConfigureAwait(false);
+					await _call.RequestStream.WriteAsync(_request).ConfigureAwait(false);
 
 					await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
 						PersistentSubscriptionMessage subscriptionMessage = response.ContentCase switch {

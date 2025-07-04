@@ -22,18 +22,11 @@ public static class GlobalEnvironment {
 			configuration.EnsureValue("ES_USE_CLUSTER", "false");
 			configuration.EnsureValue("ES_USE_EXTERNAL_SERVER", "false");
 
-			// configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.kurrent.io/kurrent-preview/kurrentdb"); // preview
-			// configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.kurrent.io/kurrent-latest/kurrentdb");  // latest
+			// configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.kurrent.io/kurrent-preview/kurrentdb");
+			// configuration.EnsureValue("ES_DOCKER_TAG", "25.0.1-experimental-arm64-8.0-jammy");
 
-			configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.kurrent.io/kurrent-preview/kurrentdb"); // arm64 experimental
-
-
-
-			// configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.kurrent.io/kurrent-lts/kurrentdb");  // latest lts
-
-			// configuration.EnsureValue("ES_DOCKER_TAG", "ci");
-			configuration.EnsureValue("ES_DOCKER_TAG", "25.0.1-experimental-arm64-8.0-jammy");
-			configuration.EnsureValue("ES_DOCKER_TAG", "latest");
+			configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.cloudsmith.io/eventstore/kurrent-staging/kurrentdb");
+			configuration.EnsureValue("ES_DOCKER_TAG", "ci");
 
 			configuration.EnsureValue("ES_DOCKER_IMAGE", $"{configuration["ES_DOCKER_REGISTRY"]}:{configuration["ES_DOCKER_TAG"]}");
 
