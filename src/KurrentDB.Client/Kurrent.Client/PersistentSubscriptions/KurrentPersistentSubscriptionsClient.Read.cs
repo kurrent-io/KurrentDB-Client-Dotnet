@@ -1,7 +1,6 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable ConvertIfStatementToReturnStatement
 
-using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
@@ -9,7 +8,6 @@ using Grpc.Core;
 using Kurrent.Client.Legacy;
 using Kurrent.Client.Model;
 using KurrentDB.Client;
-using KurrentDB.Client.Diagnostics;
 using static System.Threading.Channels.Channel;
 using static EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase;
 
@@ -101,7 +99,9 @@ public partial class KurrentPersistentSubscriptionsClient {
 	/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 	/// <returns></returns>
 	public PersistentSubscriptionResult SubscribeToAll(string groupName, int bufferSize = 10, CancellationToken cancellationToken = default) =>
-		SubscribeToStream(SystemStreams.AllStream, groupName, bufferSize, cancellationToken);
+		SubscribeToStream(SystemStreams.AllStream, groupName, bufferSize,
+			cancellationToken
+		);
 
 	public class PersistentSubscriptionResult : IAsyncEnumerable<Record>, IAsyncDisposable, IDisposable {
 		const int MaxEventIdLength = 2000;
@@ -148,8 +148,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 
 							yield return message;
 						}
-					}
-					finally {
+					} finally {
 						Cancellator.Cancel();
 					}
 				}
@@ -250,16 +249,14 @@ public partial class KurrentPersistentSubscriptionsClient {
 		/// </summary>
 		/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
 		/// <param name="records">The <see cref="Record"></see>s to acknowledge. There should not be more than 2000 to ack at a time.</param>
-		public Task Ack(params Record[] records) =>
-			Ack(Array.ConvertAll(records, record => record.Id));
+		public Task Ack(params Record[] records) => Ack(Array.ConvertAll(records, record => record.Id));
 
 		/// <summary>
 		/// Acknowledge that a message has completed processing (this will tell the server it has been processed).
 		/// </summary>
 		/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
 		/// <param name="records">The <see cref="Record"></see>s to acknowledge. There should not be more than 2000 to ack at a time.</param>
-		public Task Ack(IEnumerable<Record> records) =>
-			Ack(records.Select(record => record.Id));
+		public Task Ack(IEnumerable<Record> records) => Ack(records.Select(record => record.Id));
 
 		/// <summary>
 		/// Acknowledge that a message has failed processing (this will tell the server it has not been processed).
@@ -268,8 +265,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 		/// <param name="reason">A reason given.</param>
 		/// <param name="eventIds">The <see cref="Guid"/> of the <see cref="Record" />s to nak. There should not be more than 2000 to nak at a time.</param>
 		/// <exception cref="ArgumentException">The number of eventIds exceeded the limit of 2000.</exception>
-		public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Guid[] eventIds) =>
-			NackInternal(eventIds, action, reason);
+		public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Guid[] eventIds) => NackInternal(eventIds, action, reason);
 
 		/// <summary>
 		/// Acknowledge that a message has failed processing (this will tell the server it has not been processed).
