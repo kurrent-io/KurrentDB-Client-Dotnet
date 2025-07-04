@@ -84,7 +84,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged
 	/// </summary>
-	public async Task<PersistentSubscription> SubscribeToAllAsync(
+	public async Task<PersistentSubscription> SubscribeToAll(
 		string groupName,
 		Func<PersistentSubscription, Record, int?, CancellationToken, Task> eventAppeared,
 		Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
