@@ -11,8 +11,8 @@ public partial class KurrentProjectionManagementClient {
 	/// </summary>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public IAsyncEnumerable<ProjectionDetails> ListOneTimeAsync(CancellationToken cancellationToken = default) =>
-		ListInternalAsync(
+	public IAsyncEnumerable<ProjectionDetails> ListOneTime(CancellationToken cancellationToken = default) =>
+		ListInternal(
 			new StatisticsReq.Types.Options {
 				OneTime = new Empty(),
 			},
@@ -24,8 +24,8 @@ public partial class KurrentProjectionManagementClient {
 	/// </summary>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public IAsyncEnumerable<ProjectionDetails> ListContinuousAsync(CancellationToken cancellationToken = default) =>
-		ListInternalAsync(
+	public IAsyncEnumerable<ProjectionDetails> ListContinuous(CancellationToken cancellationToken = default) =>
+		ListInternal(
 			new StatisticsReq.Types.Options {
 				Continuous = new Empty()
 			},
@@ -38,8 +38,8 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="name"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public Task<ProjectionDetails?> GetStatusAsync(string name, CancellationToken cancellationToken = default) =>
-		ListInternalAsync(
+	public Task<ProjectionDetails?> GetStatus(string name, CancellationToken cancellationToken = default) =>
+		ListInternal(
 				new StatisticsReq.Types.Options {
 					Name = name
 				},
@@ -52,15 +52,15 @@ public partial class KurrentProjectionManagementClient {
 	/// </summary>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public IAsyncEnumerable<ProjectionDetails> ListAllAsync(CancellationToken cancellationToken = default) =>
-		ListInternalAsync(
+	public IAsyncEnumerable<ProjectionDetails> ListAll(CancellationToken cancellationToken = default) =>
+		ListInternal(
 			new StatisticsReq.Types.Options {
 				All = new Empty()
 			},
 			cancellationToken
 		);
 
-	async IAsyncEnumerable<ProjectionDetails> ListInternalAsync(
+	async IAsyncEnumerable<ProjectionDetails> ListInternal(
 		StatisticsReq.Types.Options options,
 		[EnumeratorCancellation] CancellationToken cancellationToken
 	) {

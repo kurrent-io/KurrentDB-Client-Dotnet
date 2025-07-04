@@ -58,12 +58,11 @@ public sealed partial class KurrentPersistentSubscriptionsClient {
 
 	internal KurrentClientOptions                                  Options            { get; }
 	internal KurrentRegistryClient                                 Registry           { get; }
+	internal KurrentDBLegacyCallInvoker                            LegacyCallInvoker  { get; }
+	internal KurrentDBClientSettings                               LegacySettings     { get; }
+	internal KurrentDBLegacyConverter                              LegacyConverter    { get; }
 	internal ISchemaSerializerProvider                             SerializerProvider { get; }
 	internal PersistentSubscriptions.PersistentSubscriptionsClient ServiceClient      { get; }
-
-	internal KurrentDBLegacyCallInvoker             LegacyCallInvoker { get; }
-	internal KurrentDBClientSettings                LegacySettings    { get; }
-	internal KurrentDBLegacyConverter               LegacyConverter   { get; }
 
 	readonly Lazy<HttpFallback> HttpFallback;
 	readonly ILogger            Logger;

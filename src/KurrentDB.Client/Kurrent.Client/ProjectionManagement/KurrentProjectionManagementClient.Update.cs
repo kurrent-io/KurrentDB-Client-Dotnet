@@ -4,7 +4,7 @@ using EventStore.Client.Projections;
 namespace Kurrent.Client;
 
 public partial class KurrentProjectionManagementClient {
-	public async ValueTask<Result<bool, Exception>> UpdateAsync(
+	public async ValueTask<Result<bool, Exception>> Update(
 		string name, string query, bool? emitEnabled = null, CancellationToken cancellationToken = default
 	) {
 		var options = new UpdateReq.Types.Options {

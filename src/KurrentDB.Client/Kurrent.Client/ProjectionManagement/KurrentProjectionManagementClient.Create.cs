@@ -10,7 +10,7 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="query"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public async ValueTask CreateOneTimeAsync(string query, CancellationToken cancellationToken = default) {
+	public async ValueTask CreateOneTime(string query, CancellationToken cancellationToken = default) {
 		using var call = ServiceClient.CreateAsync(
 			new CreateReq {
 				Options = new CreateReq.Types.Options {
@@ -32,7 +32,7 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="trackEmittedStreams"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public async ValueTask CreateContinuousAsync(string name, string query, bool trackEmittedStreams = false, CancellationToken cancellationToken = default) {
+	public async ValueTask CreateContinuous(string name, string query, bool trackEmittedStreams = false, CancellationToken cancellationToken = default) {
 		using var call = ServiceClient.CreateAsync(
 			new CreateReq {
 				Options = new CreateReq.Types.Options {
@@ -56,7 +56,7 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="query"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public async ValueTask CreateTransientAsync(string name, string query, CancellationToken cancellationToken = default) {
+	public async ValueTask CreateTransient(string name, string query, CancellationToken cancellationToken = default) {
 		using var call = ServiceClient.CreateAsync(
 			new CreateReq {
 				Options = new CreateReq.Types.Options {

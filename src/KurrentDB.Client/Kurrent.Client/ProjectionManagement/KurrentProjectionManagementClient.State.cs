@@ -18,8 +18,8 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="partition"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public async Task<JsonDocument> GetResultAsync(string name, string? partition = null, CancellationToken cancellationToken = default) {
-		var value = await GetResultInternalAsync(name, partition, cancellationToken).ConfigureAwait(false);
+	public async Task<JsonDocument> GetResult(string name, string? partition = null, CancellationToken cancellationToken = default) {
+		var value = await GetResultInternal(name, partition, cancellationToken).ConfigureAwait(false);
 
 		await using var stream = new MemoryStream();
 		await using var writer = new Utf8JsonWriter(stream);
@@ -43,12 +43,13 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="cancellationToken"></param>
 	/// <typeparam name="T"></typeparam>
 	/// <returns></returns>
-	public async Task<T> GetResultAsync<T>(
-		string name, string? partition = null,
+	public async Task<T> GetResult<T>(
+		string name,
+		string? partition = null,
 		JsonSerializerOptions? serializerOptions = null,
 		CancellationToken cancellationToken = default
 	) {
-		var value = await GetResultInternalAsync(name, partition, cancellationToken)
+		var value = await GetResultInternal(name, partition, cancellationToken)
 			.ConfigureAwait(false);
 
 		await using var stream = new MemoryStream();
@@ -62,7 +63,7 @@ public partial class KurrentProjectionManagementClient {
 		return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
 	}
 
-	async ValueTask<Value> GetResultInternalAsync(
+	async ValueTask<Value> GetResultInternal(
 		string name, string? partition, CancellationToken cancellationToken
 	) {
 		using var call = ServiceClient.ResultAsync(
@@ -86,10 +87,10 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="partition"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public async Task<JsonDocument> GetStateAsync(
+	public async Task<JsonDocument> GetState(
 		string name, string? partition = null, CancellationToken cancellationToken = default
 	) {
-		var value = await GetStateInternalAsync(name, partition, cancellationToken).ConfigureAwait(false);
+		var value = await GetStateInternal(name, partition, cancellationToken).ConfigureAwait(false);
 
 		await using var stream = new MemoryStream();
 		await using var writer = new Utf8JsonWriter(stream);
@@ -113,10 +114,10 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="cancellationToken"></param>
 	/// <typeparam name="T"></typeparam>
 	/// <returns></returns>
-	public async Task<T> GetStateAsync<T>(
+	public async Task<T> GetState<T>(
 		string name, string? partition = null, JsonSerializerOptions? serializerOptions = null, CancellationToken cancellationToken = default
 	) {
-		var value = await GetStateInternalAsync(name, partition, cancellationToken).ConfigureAwait(false);
+		var value = await GetStateInternal(name, partition, cancellationToken).ConfigureAwait(false);
 
 		await using var stream = new MemoryStream();
 		await using var writer = new Utf8JsonWriter(stream);
@@ -129,7 +130,7 @@ public partial class KurrentProjectionManagementClient {
 		return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
 	}
 
-	async ValueTask<Value> GetStateInternalAsync(
+	async ValueTask<Value> GetStateInternal(
 		string name, string? partition, CancellationToken cancellationToken
 	) {
 		using var call = ServiceClient.StateAsync(
