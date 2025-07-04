@@ -1,6 +1,7 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable ConvertIfStatementToReturnStatement
 
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
@@ -8,6 +9,8 @@ using Grpc.Core;
 using Kurrent.Client.Legacy;
 using Kurrent.Client.Model;
 using KurrentDB.Client;
+using KurrentDB.Client.Diagnostics;
+using static System.Threading.Channels.Channel;
 using static EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase;
 
 namespace Kurrent.Client;
@@ -32,7 +35,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 				SubscribeToStream(streamName, groupName, bufferSize, cancellationToken),
 				eventAppeared,
 				subscriptionDropped ?? delegate { },
-				Log,
+				Logger,
 				cancellationToken
 			)
 			.ConfigureAwait(false);
@@ -103,14 +106,14 @@ public partial class KurrentPersistentSubscriptionsClient {
 	public class PersistentSubscriptionResult : IAsyncEnumerable<Record>, IAsyncDisposable, IDisposable {
 		const int MaxEventIdLength = 2000;
 
-		readonly ReadReq                                _request;
-		readonly Channel<PersistentSubscriptionMessage> _channel;
-		readonly CancellationTokenSource                _cts;
-		readonly CallOptions                            _callOptions;
-		readonly KurrentDBLegacyConverter               LegacyConverter;
+		int MessagesEnumerated;
 
-		AsyncDuplexStreamingCall<ReadReq, ReadResp>? _call;
-		int                                          _messagesEnumerated;
+		readonly Channel<PersistentSubscriptionMessage> Channel;
+		readonly CancellationTokenSource                Cancellator;
+		readonly KurrentDBLegacyConverter               LegacyConverter;
+		readonly ReadReq                                Request;
+
+		AsyncDuplexStreamingCall<ReadReq, ReadResp>? ReadCall;
 
 		/// <summary>
 		/// The server-generated unique identifier for the subscription.
@@ -132,14 +135,14 @@ public partial class KurrentPersistentSubscriptionsClient {
 		/// </summary>
 		public IAsyncEnumerable<PersistentSubscriptionMessage> Messages {
 			get {
-				if (Interlocked.Exchange(ref _messagesEnumerated, 1) == 1)
+				if (Interlocked.Exchange(ref MessagesEnumerated, 1) == 1)
 					throw new InvalidOperationException("Messages may only be enumerated once.");
 
 				return GetMessages();
 
 				async IAsyncEnumerable<PersistentSubscriptionMessage> GetMessages() {
 					try {
-						await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)) {
+						await foreach (var message in Channel.Reader.ReadAllAsync(Cancellator.Token)) {
 							if (message is PersistentSubscriptionMessage.SubscriptionConfirmation(var subscriptionId))
 								SubscriptionId = subscriptionId;
 
@@ -147,7 +150,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 						}
 					}
 					finally {
-						_cts.Cancel();
+						Cancellator.Cancel();
 					}
 				}
 			}
@@ -166,13 +169,11 @@ public partial class KurrentPersistentSubscriptionsClient {
 			GroupName       = groupName;
 			LegacyConverter = legacyConverter;
 
-			_request = request;
+			Request = request;
 
-			_callOptions = KurrentDBCallOptions.CreateStreaming(settings, cancellationToken: cancellationToken);
+			Channel = CreateBounded<PersistentSubscriptionMessage>(ReadBoundedChannelOptions);
 
-			_channel = Channel.CreateBounded<PersistentSubscriptionMessage>(ReadBoundedChannelOptions);
-
-			_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+			Cancellator = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
 			_ = PumpMessages();
 
@@ -180,13 +181,13 @@ public partial class KurrentPersistentSubscriptionsClient {
 
 			async Task PumpMessages() {
 				try {
-					var client = await getClient(_cts.Token).ConfigureAwait(false);
+					var client = await getClient(Cancellator.Token).ConfigureAwait(false);
 
-					_call = client.Read(_callOptions);
+					ReadCall = client.Read(cancellationToken: cancellationToken);
 
-					await _call.RequestStream.WriteAsync(_request).ConfigureAwait(false);
+					await ReadCall.RequestStream.WriteAsync(Request).ConfigureAwait(false);
 
-					await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
+					await foreach (var response in ReadCall.ResponseStream.ReadAllAsync(Cancellator.Token).ConfigureAwait(false)) {
 						PersistentSubscriptionMessage subscriptionMessage = response.ContentCase switch {
 							SubscriptionConfirmation => new PersistentSubscriptionMessage.SubscriptionConfirmation(
 								response.SubscriptionConfirmation.SubscriptionId
@@ -201,6 +202,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 							_ => PersistentSubscriptionMessage.Unknown.Instance
 						};
 
+						// TODO WC: tracing
 						// if (subscriptionMessage is PersistentSubscriptionMessage.Event evnt)
 						// 	KurrentDBClientDiagnostics.ActivitySource.TraceSubscriptionEvent(
 						// 		SubscriptionId,
@@ -210,21 +212,21 @@ public partial class KurrentPersistentSubscriptionsClient {
 						// 		userCredentials
 						// 	);
 
-						await _channel.Writer.WriteAsync(subscriptionMessage, _cts.Token).ConfigureAwait(false);
+						await Channel.Writer.WriteAsync(subscriptionMessage, Cancellator.Token).ConfigureAwait(false);
 					}
 
-					_channel.Writer.TryComplete();
+					Channel.Writer.TryComplete();
 				} catch (Exception ex) {
 					if (ex is PersistentSubscriptionNotFoundException) {
-						await _channel.Writer
+						await Channel.Writer
 							.WriteAsync(PersistentSubscriptionMessage.NotFound.Instance, cancellationToken)
 							.ConfigureAwait(false);
 
-						_channel.Writer.TryComplete();
+						Channel.Writer.TryComplete();
 						return;
 					}
 
-					_channel.Writer.TryComplete(ex);
+					Channel.Writer.TryComplete(ex);
 				}
 			}
 		}
@@ -296,9 +298,9 @@ public partial class KurrentPersistentSubscriptionsClient {
 				);
 			}
 
-			return _call is null
+			return ReadCall is null
 				? throw new InvalidOperationException()
-				: _call.RequestStream.WriteAsync(
+				: ReadCall.RequestStream.WriteAsync(
 					new ReadReq {
 						Ack = new ReadReq.Types.Ack {
 							Ids = {
@@ -317,9 +319,9 @@ public partial class KurrentPersistentSubscriptionsClient {
 				);
 			}
 
-			return _call is null
+			return ReadCall is null
 				? throw new InvalidOperationException()
-				: _call.RequestStream.WriteAsync(
+				: ReadCall.RequestStream.WriteAsync(
 					new ReadReq {
 						Nack = new ReadReq.Types.Nack {
 							Ids = {
@@ -353,8 +355,8 @@ public partial class KurrentPersistentSubscriptionsClient {
 
 		/// <inheritdoc />
 		public async ValueTask DisposeAsync() {
-			await CastAndDispose(_cts).ConfigureAwait(false);
-			await CastAndDispose(_call).ConfigureAwait(false);
+			await CastAndDispose(Cancellator).ConfigureAwait(false);
+			await CastAndDispose(ReadCall).ConfigureAwait(false);
 
 			return;
 
@@ -376,8 +378,8 @@ public partial class KurrentPersistentSubscriptionsClient {
 
 		/// <inheritdoc />
 		public void Dispose() {
-			_cts.Dispose();
-			_call?.Dispose();
+			Cancellator.Dispose();
+			ReadCall?.Dispose();
 		}
 
 		/// <inheritdoc />

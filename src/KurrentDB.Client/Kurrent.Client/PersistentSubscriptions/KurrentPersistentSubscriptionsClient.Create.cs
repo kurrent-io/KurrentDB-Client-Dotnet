@@ -197,11 +197,10 @@ partial class KurrentPersistentSubscriptionsClient {
 			_ => throw new InvalidOperationException()
 		};
 
-		if (filter.MaxSearchWindow.HasValue) {
+		if (filter.MaxSearchWindow.HasValue)
 			options.Max = filter.MaxSearchWindow.Value;
-		} else {
+		else
 			options.Count = new Empty();
-		}
 
 		return options;
 	}

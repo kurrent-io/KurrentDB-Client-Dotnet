@@ -47,7 +47,7 @@ public sealed partial class KurrentPersistentSubscriptionsClient {
 		LegacyConverter   = new KurrentDBLegacyConverter(SerializerProvider, options.MetadataDecoder, SchemaRegistryPolicy.NoRequirements);
 
 		HttpFallback = new Lazy<HttpFallback>(() => new HttpFallback(LegacySettings));
-		Log          = LegacySettings.LoggerFactory.CreateLogger<KurrentDBPersistentSubscriptionsClient>();
+		Logger          = LegacySettings.LoggerFactory.CreateLogger<KurrentDBPersistentSubscriptionsClient>();
 	}
 
 	static readonly BoundedChannelOptions ReadBoundedChannelOptions = new(capacity: 1) {
@@ -66,7 +66,7 @@ public sealed partial class KurrentPersistentSubscriptionsClient {
 	internal KurrentDBLegacyConverter               LegacyConverter   { get; }
 
 	readonly Lazy<HttpFallback> HttpFallback;
-	readonly ILogger            Log;
+	readonly ILogger            Logger;
 
 	static Dictionary<string, Func<RpcException, Exception>> ExceptionMap =>
 		new() {
