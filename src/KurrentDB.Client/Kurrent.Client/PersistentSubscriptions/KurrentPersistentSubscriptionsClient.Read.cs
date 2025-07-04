@@ -1,4 +1,5 @@
 // ReSharper disable InconsistentNaming
+// ReSharper disable ConvertIfStatementToReturnStatement
 
 using System.Threading.Channels;
 using EventStore.Client;
@@ -74,7 +75,6 @@ public partial class KurrentPersistentSubscriptionsClient {
 	/// <param name="streamName">The name of the stream to read events from.</param>
 	/// <param name="groupName">The name of the persistent subscription group.</param>
 	/// <param name="bufferSize">The size of the buffer.</param>
-	/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
 	/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 	/// <returns></returns>
 	public PersistentSubscriptionResult SubscribeToStream(
@@ -116,11 +116,12 @@ public partial class KurrentPersistentSubscriptionsClient {
 			streamName,
 			groupName,
 			async ct => {
-				// if (streamName == SystemStreams.AllStream && !LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
-				// 	throw new NotSupportedException(
-				// 		"The server does not support persistent subscriptions to $all."
-				// 	);
-				// }
+				if (streamName is not SystemStreams.AllStream) return ServiceClient;
+
+				await LegacyCallInvoker.ForceRefresh(ct);
+
+				if (!LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll)
+					throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
 
 				return ServiceClient;
 			},
@@ -138,7 +139,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 		string groupName,
 		Func<PersistentSubscription, Record, int?, CancellationToken, Task> eventAppeared,
 		Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-		UserCredentials? userCredentials = null, int bufferSize = 10,
+		int bufferSize = 10,
 		CancellationToken cancellationToken = default
 	) =>
 		await SubscribeToStreamAsync(

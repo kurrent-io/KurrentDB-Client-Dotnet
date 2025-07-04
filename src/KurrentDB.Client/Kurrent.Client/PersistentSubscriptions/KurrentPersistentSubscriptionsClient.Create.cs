@@ -2,13 +2,14 @@
 
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
+using Kurrent.Client.Legacy;
 using Kurrent.Client.Model;
 using KurrentDB.Client;
 
 namespace Kurrent.Client;
 
 partial class KurrentPersistentSubscriptionsClient {
-	static readonly IDictionary<string, CreateReq.Types.ConsumerStrategy> NamedConsumerStrategyToCreateProto
+	static readonly Dictionary<string, CreateReq.Types.ConsumerStrategy> NamedConsumerStrategyToCreateProto
 		= new Dictionary<string, CreateReq.Types.ConsumerStrategy> {
 			[SystemConsumerStrategies.DispatchToSingle] = CreateReq.Types.ConsumerStrategy.DispatchToSingle,
 			[SystemConsumerStrategies.RoundRobin]       = CreateReq.Types.ConsumerStrategy.RoundRobin,
@@ -131,9 +132,9 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// Creates a filtered persistent subscription to $all.
 	/// </summary>
 	public async Task CreateToAllAsync(
-		string groupName, IEventFilter eventFilter, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
+		string groupName, ReadFilter filter, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
 	) =>
-		await CreateInternalAsync(SystemStreams.AllStream, groupName, eventFilter, settings, cancellationToken).ConfigureAwait(false);
+		await CreateInternalAsync(SystemStreams.AllStream, groupName, filter, settings, cancellationToken).ConfigureAwait(false);
 
 	/// <summary>
 	/// Creates a persistent subscription to $all.
@@ -142,35 +143,27 @@ partial class KurrentPersistentSubscriptionsClient {
 		await CreateInternalAsync(SystemStreams.AllStream, groupName, null, settings, cancellationToken).ConfigureAwait(false);
 
 	async Task CreateInternalAsync(
-		string streamName, string groupName, IEventFilter? eventFilter, PersistentSubscriptionSettings settings, CancellationToken cancellationToken
+		string streamName, string groupName, ReadFilter? filter, PersistentSubscriptionSettings settings, CancellationToken cancellationToken
 	) {
-		if (streamName is null) {
-			throw new ArgumentNullException(nameof(streamName));
-		}
+		ArgumentNullException.ThrowIfNull(streamName);
+		ArgumentNullException.ThrowIfNull(groupName);
+		ArgumentNullException.ThrowIfNull(settings);
 
-		if (groupName is null) {
-			throw new ArgumentNullException(nameof(groupName));
-		}
-
-		if (settings is null) {
-			throw new ArgumentNullException(nameof(settings));
-		}
-
-		if (settings.ConsumerStrategyName is null) {
+		if (settings.ConsumerStrategyName is null)
 			throw new ArgumentNullException(nameof(settings.ConsumerStrategyName));
-		}
 
-		if (eventFilter != null && streamName != SystemStreams.AllStream) {
+		if (filter is not null && streamName is not SystemStreams.AllStream)
 			throw new ArgumentException($"Filters are only supported when subscribing to {SystemStreams.AllStream}");
-		}
 
-		if (!NamedConsumerStrategyToCreateProto.ContainsKey(settings.ConsumerStrategyName)) {
+		if (!NamedConsumerStrategyToCreateProto.TryGetValue(settings.ConsumerStrategyName, out var value))
 			throw new ArgumentException("The specified consumer strategy is not supported, specify one of the SystemConsumerStrategies");
-		}
 
-		// if (streamName == SystemStreams.AllStream && !LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
-		// 	throw new InvalidOperationException("The server does not support persistent subscriptions to $all.");
-		// }
+		if (streamName is SystemStreams.AllStream) {
+			await LegacyCallInvoker.ForceRefresh(cancellationToken);
+
+			if (!LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll)
+				throw new InvalidOperationException("The server does not support persistent subscriptions to $all");
+		}
 
 		using var call = ServiceClient.CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
@@ -178,7 +171,7 @@ partial class KurrentPersistentSubscriptionsClient {
 						? StreamOptionsForCreateProto(streamName, settings.StartFrom)
 						: null,
 					All = streamName == SystemStreams.AllStream
-						? AllOptionsForCreateProto(settings.StartFrom, eventFilter)
+						? AllOptionsForCreateProto(settings.StartFrom, filter?.ConvertToEventFilter())
 						: null,
 #pragma warning disable 612
 					StreamIdentifier =
@@ -205,7 +198,7 @@ partial class KurrentPersistentSubscriptionsClient {
 						MinCheckpointCount = settings.CheckPointLowerBound,
 #pragma warning disable 612
 						/*for backwards compatibility*/
-						NamedConsumerStrategy = NamedConsumerStrategyToCreateProto[settings.ConsumerStrategyName],
+						NamedConsumerStrategy = value,
 #pragma warning restore 612
 						ReadBatchSize = settings.ReadBatchSize
 					}

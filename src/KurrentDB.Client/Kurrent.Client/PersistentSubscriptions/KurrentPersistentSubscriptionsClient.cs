@@ -43,7 +43,7 @@ public sealed partial class KurrentPersistentSubscriptionsClient {
 		);
 
 		LegacySettings    = options.ConvertToLegacySettings();
-		LegacyCallInvoker = new KurrentDBLegacyCallInvoker(new LegacyClusterClient(LegacySettings));
+		LegacyCallInvoker = new KurrentDBLegacyCallInvoker(new LegacyClusterClient(LegacySettings, ExceptionMap, dontLoadServerCapabilities: false));
 		ServiceClient     = new PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker);
 		LegacyClient      = new KurrentDBPersistentSubscriptionsClient(LegacySettings);
 		HttpFallback      = new Lazy<HttpFallback>(() => new HttpFallback(LegacySettings));
@@ -85,4 +85,23 @@ public sealed partial class KurrentPersistentSubscriptionsClient {
 		);
 
 	static string UrlEncode(string value) => UrlEncoder.Default.Encode(value);
+
+	static Dictionary<string, Func<RpcException, Exception>> ExceptionMap =>
+		new() {
+			[Constants.Exceptions.PersistentSubscriptionDoesNotExist] = ex => new
+				PersistentSubscriptionNotFoundException(
+					ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
+					ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.GroupName)?.Value ?? "", ex
+				),
+			[Constants.Exceptions.MaximumSubscribersReached] = ex => new
+				MaximumSubscribersReachedException(
+					ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
+					ex.Trailers.First(x => x.Key == Constants.Exceptions.GroupName).Value, ex
+				),
+			[Constants.Exceptions.PersistentSubscriptionDropped] = ex => new
+				PersistentSubscriptionDroppedByServerException(
+					ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
+					ex.Trailers.First(x => x.Key == Constants.Exceptions.GroupName).Value, ex
+				)
+		};
 }
