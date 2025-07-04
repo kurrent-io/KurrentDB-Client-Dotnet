@@ -15,83 +15,20 @@ public partial class KurrentPersistentSubscriptionsClient {
 			[SystemConsumerStrategies.Pinned]           = UpdateReq.Types.ConsumerStrategy.Pinned,
 		};
 
-	static UpdateReq.Types.StreamOptions StreamOptionsForUpdateProto(string streamName, LogPosition position) {
-		if (position == StreamPosition.Start) {
-			return new UpdateReq.Types.StreamOptions {
-				StreamIdentifier = streamName,
-				Start            = new Empty()
-			};
-		}
-
-		if (position == StreamPosition.End) {
-			return new UpdateReq.Types.StreamOptions {
-				StreamIdentifier = streamName,
-				End              = new Empty()
-			};
-		}
-
-		return new UpdateReq.Types.StreamOptions {
-			StreamIdentifier = streamName,
-			Revision         = position
-		};
-	}
-
-	static UpdateReq.Types.AllOptions AllOptionsForUpdateProto(LogPosition position) {
-		if (position == LogPosition.Earliest) {
-			return new UpdateReq.Types.AllOptions {
-				Start = new Empty()
-			};
-		}
-
-		if (position == LogPosition.Latest) {
-			return new UpdateReq.Types.AllOptions {
-				End = new Empty()
-			};
-		}
-
-		return new UpdateReq.Types.AllOptions {
-			Position = new UpdateReq.Types.Position {
-				CommitPosition  = position,
-				PreparePosition = position
-			}
-		};
-	}
-
 	/// <summary>
 	/// Updates a persistent subscription.
 	/// </summary>
 	/// <exception cref="ArgumentNullException"></exception>
-	public async Task UpdateToStreamAsync(
-		string streamName, string groupName, PersistentSubscriptionSettings settings,
-		TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-		CancellationToken cancellationToken = default
-	) {
-		if (streamName is null) {
-			throw new ArgumentNullException(nameof(streamName));
-		}
+	public async ValueTask UpdateToStream(string streamName, string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default) {
+		ArgumentNullException.ThrowIfNull(streamName);
+		ArgumentNullException.ThrowIfNull(groupName);
+		ArgumentNullException.ThrowIfNull(settings);
+		ArgumentNullException.ThrowIfNull(settings.ConsumerStrategyName, nameof(settings.ConsumerStrategyName));
 
-		if (groupName is null) {
-			throw new ArgumentNullException(nameof(groupName));
-		}
+		await EnsureCompatibility(streamName, cancellationToken);
 
-		if (settings is null) {
-			throw new ArgumentNullException(nameof(settings));
-		}
-
-		if (settings.ConsumerStrategyName is null) {
-			throw new ArgumentNullException(nameof(settings.ConsumerStrategyName));
-		}
-
-		var channelInfo = await LegacyClient.GetChannelInfo(cancellationToken).ConfigureAwait(false);
-
-		if (streamName == SystemStreams.AllStream &&
-		    !channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsToAll) {
-			throw new InvalidOperationException("The server does not support persistent subscriptions to $all.");
-		}
-
-		using var call = new PersistentSubscriptions.PersistentSubscriptionsClient(channelInfo.CallInvoker)
-			.UpdateAsync(
-				new UpdateReq {
+		using var call = ServiceClient
+			.UpdateAsync(new UpdateReq {
 					Options = new UpdateReq.Types.Options {
 						GroupName = groupName,
 						Stream = streamName != SystemStreams.AllStream
@@ -127,10 +64,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 						}
 					}
 				},
-				KurrentDBCallOptions.CreateNonStreaming(
-					LegacySettings, deadline, userCredentials,
-					cancellationToken
-				)
+				cancellationToken: cancellationToken
 			);
 
 		await call.ResponseAsync.ConfigureAwait(false);
@@ -139,15 +73,48 @@ public partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Updates a persistent subscription to $all.
 	/// </summary>
-	public async Task UpdateToAllAsync(
-		string groupName, PersistentSubscriptionSettings settings,
-		TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-		CancellationToken cancellationToken = default
-	) =>
-		await UpdateToStreamAsync(
-				SystemStreams.AllStream, groupName, settings,
-				deadline, userCredentials,
-				cancellationToken
-			)
-			.ConfigureAwait(false);
+	public async ValueTask UpdateToAll(string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default) =>
+		await UpdateToStream(SystemStreams.AllStream, groupName, settings, cancellationToken).ConfigureAwait(false);
+
+	static UpdateReq.Types.StreamOptions StreamOptionsForUpdateProto(string streamName, LogPosition position) {
+		if (position == LogPosition.Earliest) {
+			return new UpdateReq.Types.StreamOptions {
+				StreamIdentifier = streamName,
+				Start            = new Empty()
+			};
+		}
+
+		if (position == LogPosition.Latest) {
+			return new UpdateReq.Types.StreamOptions {
+				StreamIdentifier = streamName,
+				End              = new Empty()
+			};
+		}
+
+		return new UpdateReq.Types.StreamOptions {
+			StreamIdentifier = streamName,
+			Revision         = position
+		};
+	}
+
+	static UpdateReq.Types.AllOptions AllOptionsForUpdateProto(LogPosition position) {
+		if (position == LogPosition.Earliest) {
+			return new UpdateReq.Types.AllOptions {
+				Start = new Empty()
+			};
+		}
+
+		if (position == LogPosition.Latest) {
+			return new UpdateReq.Types.AllOptions {
+				End = new Empty()
+			};
+		}
+
+		return new UpdateReq.Types.AllOptions {
+			Position = new UpdateReq.Types.Position {
+				CommitPosition  = position,
+				PreparePosition = position
+			}
+		};
+	}
 }

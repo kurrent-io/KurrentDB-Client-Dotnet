@@ -14,44 +14,12 @@ namespace Kurrent.Client;
 
 public partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
-	/// Subscribes to a persistent subscription.
-	/// </summary>
-	/// <exception cref="ArgumentNullException"></exception>
-	/// <exception cref="ArgumentException"></exception>
-	/// <exception cref="ArgumentOutOfRangeException"></exception>
-	[Obsolete("SubscribeAsync is no longer supported. Use SubscribeToStream with manual acks instead.", false)]
-	public async Task<PersistentSubscription> SubscribeAsync(
-		string streamName,
-		string groupName,
-		Func<PersistentSubscription, Record, int?, CancellationToken, Task> eventAppeared,
-		Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
-		int bufferSize = 10,
-		bool autoAck = true,
-		CancellationToken cancellationToken = default
-	) {
-		if (autoAck) {
-			throw new InvalidOperationException(
-				$"AutoAck is no longer supported. Please use {nameof(SubscribeToStream)} with manual acks instead."
-			);
-		}
-
-		return await PersistentSubscription
-			.Confirm(
-				SubscribeToStream(streamName, groupName, bufferSize, cancellationToken),
-				eventAppeared,
-				subscriptionDropped ?? delegate { },
-				cancellationToken
-			)
-			.ConfigureAwait(false);
-	}
-
-	/// <summary>
 	/// Subscribes to a persistent subscription. Messages must be manually acknowledged
 	/// </summary>
 	/// <exception cref="ArgumentNullException"></exception>
 	/// <exception cref="ArgumentException"></exception>
 	/// <exception cref="ArgumentOutOfRangeException"></exception>
-	public async Task<PersistentSubscription> SubscribeToStreamAsync(
+	public async Task<PersistentSubscription> SubscribeToStream(
 		string streamName,
 		string groupName,
 		Func<PersistentSubscription, Record, int?, CancellationToken, Task> eventAppeared,
@@ -64,6 +32,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 				SubscribeToStream(streamName, groupName, bufferSize, cancellationToken),
 				eventAppeared,
 				subscriptionDropped ?? delegate { },
+				Log,
 				cancellationToken
 			)
 			.ConfigureAwait(false);
@@ -80,25 +49,11 @@ public partial class KurrentPersistentSubscriptionsClient {
 	public PersistentSubscriptionResult SubscribeToStream(
 		string streamName, string groupName, int bufferSize = 10, CancellationToken cancellationToken = default
 	) {
-		if (streamName == null) {
-			throw new ArgumentNullException(nameof(streamName));
-		}
-
-		if (groupName == null) {
-			throw new ArgumentNullException(nameof(groupName));
-		}
-
-		if (streamName == string.Empty) {
-			throw new ArgumentException($"{nameof(streamName)} may not be empty.", nameof(streamName));
-		}
-
-		if (groupName == string.Empty) {
-			throw new ArgumentException($"{nameof(groupName)} may not be empty.", nameof(groupName));
-		}
-
-		if (bufferSize <= 0) {
-			throw new ArgumentOutOfRangeException(nameof(bufferSize));
-		}
+		ArgumentNullException.ThrowIfNull(streamName);
+		ArgumentNullException.ThrowIfNull(groupName);
+		ArgumentException.ThrowIfNullOrEmpty(streamName, nameof(streamName));
+		ArgumentException.ThrowIfNullOrEmpty(groupName, nameof(groupName));
+		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bufferSize);
 
 		var readOptions = new ReadReq.Types.Options {
 			BufferSize = bufferSize,
@@ -106,30 +61,21 @@ public partial class KurrentPersistentSubscriptionsClient {
 			UuidOption = new ReadReq.Types.Options.Types.UUIDOption { Structured = new Empty() }
 		};
 
-		if (streamName == SystemStreams.AllStream) {
+		if (streamName is SystemStreams.AllStream)
 			readOptions.All = new Empty();
-		} else {
+		else
 			readOptions.StreamIdentifier = streamName;
+
+		var request = new ReadReq { Options = readOptions };
+
+		return new PersistentSubscriptionResult(streamName, groupName, GetClient, request, LegacySettings, LegacyConverter, cancellationToken);
+
+		async Task<PersistentSubscriptions.PersistentSubscriptionsClient> GetClient(CancellationToken ct) {
+			if (streamName is not SystemStreams.AllStream) return ServiceClient;
+
+			await EnsureCompatibility(streamName, ct);
+			return ServiceClient;
 		}
-
-		return new PersistentSubscriptionResult(
-			streamName,
-			groupName,
-			async ct => {
-				if (streamName is not SystemStreams.AllStream) return ServiceClient;
-
-				await LegacyCallInvoker.ForceRefresh(ct);
-
-				if (!LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll)
-					throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
-
-				return ServiceClient;
-			},
-			new() { Options = readOptions },
-			LegacySettings,
-			LegacyConverter,
-			cancellationToken
-		);
 	}
 
 	/// <summary>
@@ -142,15 +88,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 		int bufferSize = 10,
 		CancellationToken cancellationToken = default
 	) =>
-		await SubscribeToStreamAsync(
-				SystemStreams.AllStream,
-				groupName,
-				eventAppeared,
-				subscriptionDropped,
-				bufferSize,
-				cancellationToken
-			)
-			.ConfigureAwait(false);
+		await SubscribeToStream(SystemStreams.AllStream, groupName, eventAppeared, subscriptionDropped, bufferSize, cancellationToken).ConfigureAwait(false);
 
 	/// <summary>
 	/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged.
@@ -162,7 +100,6 @@ public partial class KurrentPersistentSubscriptionsClient {
 	public PersistentSubscriptionResult SubscribeToAll(string groupName, int bufferSize = 10, CancellationToken cancellationToken = default) =>
 		SubscribeToStream(SystemStreams.AllStream, groupName, bufferSize, cancellationToken);
 
-	/// <inheritdoc />
 	public class PersistentSubscriptionResult : IAsyncEnumerable<Record>, IAsyncDisposable, IDisposable {
 		const int MaxEventIdLength = 2000;
 
@@ -421,7 +358,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 
 			return;
 
-			static async Task CastAndDispose(IDisposable? resource) {
+			static async ValueTask CastAndDispose(IDisposable? resource) {
 				switch (resource) {
 					case null:
 						return;

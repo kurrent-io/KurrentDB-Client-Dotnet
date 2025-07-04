@@ -1,3 +1,5 @@
+// ReSharper disable InvertIf
+
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 using KurrentDB.Client;
@@ -8,7 +10,7 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Lists persistent subscriptions to $all.
 	/// </summary>
-	public async Task<IEnumerable<PersistentSubscriptionInfo>> ListToAllAsync(CancellationToken cancellationToken = default) {
+	public async ValueTask<IEnumerable<PersistentSubscriptionInfo>> ListToAll(CancellationToken cancellationToken = default) {
 		if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsList) {
 			var req = new ListReq {
 				Options = new ListReq.Types.Options {
@@ -18,7 +20,7 @@ partial class KurrentPersistentSubscriptionsClient {
 				}
 			};
 
-			return await ListGrpcAsync(req, cancellationToken).ConfigureAwait(false);
+			return await ListGrpc(req, cancellationToken).ConfigureAwait(false);
 		}
 
 		throw new NotSupportedException("The server does not support listing the persistent subscriptions.");
@@ -27,7 +29,7 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Lists persistent subscriptions to the specified stream.
 	/// </summary>
-	public async Task<IEnumerable<PersistentSubscriptionInfo>> ListToStreamAsync(string streamName, CancellationToken cancellationToken = default) {
+	public async ValueTask<IEnumerable<PersistentSubscriptionInfo>> ListToStream(string streamName, CancellationToken cancellationToken = default) {
 		if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsList) {
 			var req = new ListReq {
 				Options = new ListReq.Types.Options {
@@ -37,7 +39,7 @@ partial class KurrentPersistentSubscriptionsClient {
 				}
 			};
 
-			return await ListGrpcAsync(req, cancellationToken).ConfigureAwait(false);
+			return await ListGrpc(req, cancellationToken).ConfigureAwait(false);
 		}
 
 		return await ListHttpAsync().ConfigureAwait(false);
@@ -58,7 +60,7 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Lists all persistent subscriptions.
 	/// </summary>
-	public async Task<IEnumerable<PersistentSubscriptionInfo>> ListAllAsync(CancellationToken cancellationToken = default) {
+	public async Task<IEnumerable<PersistentSubscriptionInfo>> ListAll(CancellationToken cancellationToken = default) {
 		if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsList) {
 			var req = new ListReq {
 				Options = new ListReq.Types.Options {
@@ -66,7 +68,7 @@ partial class KurrentPersistentSubscriptionsClient {
 				}
 			};
 
-			return await ListGrpcAsync(req, cancellationToken).ConfigureAwait(false);
+			return await ListGrpc(req, cancellationToken).ConfigureAwait(false);
 		}
 
 		var result = await HttpGet<IList<PersistentSubscriptionDto>>(
@@ -79,10 +81,9 @@ partial class KurrentPersistentSubscriptionsClient {
 		return result.Select(PersistentSubscriptionInfo.From);
 	}
 
-	async Task<IEnumerable<PersistentSubscriptionInfo>> ListGrpcAsync(ListReq req, CancellationToken cancellationToken) {
+	async Task<IEnumerable<PersistentSubscriptionInfo>> ListGrpc(ListReq req, CancellationToken cancellationToken) {
 		using var call = ServiceClient.ListAsync(req, cancellationToken: cancellationToken);
 		var response = await call.ResponseAsync.ConfigureAwait(false);
 		return response.Subscriptions.Select(PersistentSubscriptionInfo.From);
 	}
-
 }

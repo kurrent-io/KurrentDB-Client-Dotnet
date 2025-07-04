@@ -11,8 +11,8 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 
 		var group = NewGroupName();
 
-		var streams   = simulations.Select(x => x.Game.Stream.Value).ToArray();
-		var recordIds = simulations.SelectMany(x => x.Game.GameEvents).Select(x => x.RecordId).ToList();
+		var streams     = simulations.Select(x => x.Game.Stream.Value).ToArray();
+		var expectedIds = simulations.SelectMany(x => x.Game.GameEvents).Select(x => x.RecordId).ToList();
 
 		var gameEventsCount = simulations.Sum(x => x.Game.GameEvents.Count);
 
@@ -21,7 +21,7 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		var recordsReceived = new List<Record>();
 
 		// Act
-		await AutomaticClient.PersistentSubscription.CreateToAllAsync(group, filter, settings, ct);
+		await AutomaticClient.PersistentSubscription.CreateToAll(group, filter, settings, ct);
 
 		await using var subscription = AutomaticClient.PersistentSubscription.SubscribeToAll(group, cancellationToken: ct);
 
@@ -43,7 +43,7 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		}
 
 		// Assert
-		recordsReceived.Select(x => x.Id).ShouldBe(recordIds);
+		recordsReceived.Select(x => x.Id).ShouldBe(expectedIds);
 	}
 
 	[Test]
@@ -60,7 +60,7 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		var expectedIds = simulation.Game.GameEvents.Select(x => x.RecordId).ToList();
 
 		// Act
-		await AutomaticClient.PersistentSubscription.CreateToStreamAsync(stream, group, settings, ct);
+		await AutomaticClient.PersistentSubscription.CreateToStream(stream, group, settings, ct);
 
 		await using var subscription = AutomaticClient.PersistentSubscription.SubscribeToStream(stream, group, cancellationToken: ct);
 

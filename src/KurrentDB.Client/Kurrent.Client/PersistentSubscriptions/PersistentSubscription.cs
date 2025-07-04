@@ -25,7 +25,7 @@ public class PersistentSubscription : IDisposable {
 	internal static async Task<PersistentSubscription> Confirm(
 		KurrentPersistentSubscriptionsClient.PersistentSubscriptionResult persistentSubscriptionResult,
 		Func<PersistentSubscription, Record, int?, CancellationToken, Task> eventAppeared,
-		Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped,
+		Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped, ILogger log,
 		CancellationToken cancellationToken = default) {
 		var enumerator = persistentSubscriptionResult
 			.Messages
@@ -35,7 +35,7 @@ public class PersistentSubscription : IDisposable {
 
 		return (result, enumerator.Current) switch {
 			(true, PersistentSubscriptionMessage.SubscriptionConfirmation (var subscriptionId)) =>
-				new PersistentSubscription(persistentSubscriptionResult, enumerator, subscriptionId, eventAppeared, subscriptionDropped, cancellationToken),
+				new PersistentSubscription(persistentSubscriptionResult, enumerator, subscriptionId, eventAppeared, subscriptionDropped, log, cancellationToken),
 			(true, PersistentSubscriptionMessage.NotFound) =>
 				throw new PersistentSubscriptionNotFoundException(persistentSubscriptionResult.StreamName,
 					persistentSubscriptionResult.GroupName),
@@ -48,7 +48,7 @@ public class PersistentSubscription : IDisposable {
 		KurrentPersistentSubscriptionsClient.PersistentSubscriptionResult persistentSubscriptionResult,
 		IAsyncEnumerator<PersistentSubscriptionMessage> enumerator, string subscriptionId,
 		Func<PersistentSubscription, Record, int?, CancellationToken, Task> eventAppeared,
-		Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped,
+		Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped, ILogger log,
 		CancellationToken cancellationToken) {
 		_persistentSubscriptionResult = persistentSubscriptionResult;
 		_enumerator                   = enumerator;
@@ -56,6 +56,7 @@ public class PersistentSubscription : IDisposable {
 		_eventAppeared                = eventAppeared;
 		_subscriptionDropped          = subscriptionDropped;
 		_cts                          = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+		_log                          = log;
 
 		Task.Run(Subscribe, _cts.Token);
 	}
@@ -138,15 +139,10 @@ public class PersistentSubscription : IDisposable {
 					resolvedEvent.StreamRevision, resolvedEvent.Position);
 
 				try {
-					await _eventAppeared(
-						this,
-						resolvedEvent,
-						retryCount,
-						_cts.Token).ConfigureAwait(false);
+					await _eventAppeared(this, resolvedEvent, retryCount, _cts.Token).ConfigureAwait(false);
 				} catch (Exception ex) when (ex is ObjectDisposedException or OperationCanceledException) {
-					if (_subscriptionDroppedInvoked != 0) {
+					if (_subscriptionDroppedInvoked is not 0)
 						return;
-					}
 
 					_log.LogWarning(ex,
 						"Persistent Subscription {subscriptionId} was dropped because cancellation was requested by another caller.",

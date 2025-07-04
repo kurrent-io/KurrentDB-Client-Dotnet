@@ -7,12 +7,8 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Restarts the persistent subscriptions subsystem.
 	/// </summary>
-	public async Task RestartSubsystemAsync(
-		TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-		CancellationToken cancellationToken = default
-	) {
-		var channelInfo = await LegacyClient.GetChannelInfo(cancellationToken);
-		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsRestartSubsystem) {
+	public async Task RestartSubsystemAsync(CancellationToken cancellationToken = default) {
+		if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsRestartSubsystem) {
 			await ServiceClient
 				.RestartSubsystemAsync(new Empty(), cancellationToken: cancellationToken)
 				.ConfigureAwait(false);

@@ -1,3 +1,5 @@
+// ReSharper disable InconsistentNaming
+
 using Kurrent.Client.Model;
 
 namespace Kurrent.Client;
@@ -19,7 +21,7 @@ public abstract record PersistentSubscriptionMessage {
 	public record NotFound : PersistentSubscriptionMessage {
 		internal static readonly NotFound Instance = new();
 	}
-		
+
 	/// <summary>
 	/// A <see cref="PersistentSubscriptionMessage"/> indicating that the subscription is ready to send additional messages.
 	/// </summary>

@@ -16,114 +16,14 @@ partial class KurrentPersistentSubscriptionsClient {
 			[SystemConsumerStrategies.Pinned]           = CreateReq.Types.ConsumerStrategy.Pinned
 		};
 
-	static CreateReq.Types.StreamOptions StreamOptionsForCreateProto(string streamName, LogPosition position) {
-		if (position == LogPosition.Earliest) {
-			return new CreateReq.Types.StreamOptions {
-				StreamIdentifier = streamName,
-				Start            = new Empty()
-			};
-		}
-
-		if (position == LogPosition.Latest) {
-			return new CreateReq.Types.StreamOptions {
-				StreamIdentifier = streamName,
-				End              = new Empty()
-			};
-		}
-
-		return new CreateReq.Types.StreamOptions {
-			StreamIdentifier = streamName,
-			Revision         = (ulong)position.Value
-		};
-	}
-
-	static CreateReq.Types.AllOptions AllOptionsForCreateProto(LogPosition position, IEventFilter? filter) {
-		var                        allFilter = GetFilterOptions(filter);
-		CreateReq.Types.AllOptions allOptions;
-		if (position == LogPosition.Earliest) {
-			allOptions = new CreateReq.Types.AllOptions {
-				Start = new Empty(),
-			};
-		} else if (position == LogPosition.Latest) {
-			allOptions = new CreateReq.Types.AllOptions {
-				End = new Empty()
-			};
-		} else {
-			allOptions = new CreateReq.Types.AllOptions {
-				Position = new CreateReq.Types.Position {
-					CommitPosition  = (ulong)position.Value,
-					PreparePosition = (ulong)position.Value
-				}
-			};
-		}
-
-		if (allFilter is null) {
-			allOptions.NoFilter = new Empty();
-		} else {
-			allOptions.Filter = allFilter;
-		}
-
-		return allOptions;
-	}
-
-	static CreateReq.Types.AllOptions.Types.FilterOptions? GetFilterOptions(IEventFilter? filter) {
-		if (filter == null) {
-			return null;
-		}
-
-		var options = filter switch {
-			StreamFilter _ => new CreateReq.Types.AllOptions.Types.FilterOptions {
-				StreamIdentifier = (filter.Prefixes, filter.Regex) switch {
-					(PrefixFilterExpression[] _, RegularFilterExpression _)
-						when (filter.Prefixes?.Length ?? 0) == 0 &&
-						     filter.Regex != RegularFilterExpression.None =>
-						new CreateReq.Types.AllOptions.Types.FilterOptions.Types.Expression
-							{ Regex = filter.Regex },
-					(PrefixFilterExpression[] _, RegularFilterExpression _)
-						when (filter.Prefixes?.Length ?? 0) != 0 &&
-						     filter.Regex == RegularFilterExpression.None =>
-						new CreateReq.Types.AllOptions.Types.FilterOptions.Types.Expression {
-							Prefix = { Array.ConvertAll(filter.Prefixes!, e => e.ToString()) }
-						},
-					_ => throw new InvalidOperationException()
-				}
-			},
-			EventTypeFilter _ => new CreateReq.Types.AllOptions.Types.FilterOptions {
-				EventType = (filter.Prefixes, filter.Regex) switch {
-					(PrefixFilterExpression[] _, RegularFilterExpression _)
-						when (filter.Prefixes?.Length ?? 0) == 0 &&
-						     filter.Regex != RegularFilterExpression.None =>
-						new CreateReq.Types.AllOptions.Types.FilterOptions.Types.Expression
-							{ Regex = filter.Regex },
-					(PrefixFilterExpression[] _, RegularFilterExpression _)
-						when (filter.Prefixes?.Length ?? 0) != 0 &&
-						     filter.Regex == RegularFilterExpression.None =>
-						new CreateReq.Types.AllOptions.Types.FilterOptions.Types.Expression {
-							Prefix = { Array.ConvertAll(filter.Prefixes!, e => e.ToString()) }
-						},
-					_ => throw new InvalidOperationException()
-				}
-			},
-			_ => throw new InvalidOperationException()
-		};
-
-		if (filter.MaxSearchWindow.HasValue) {
-			options.Max = filter.MaxSearchWindow.Value;
-		} else {
-			options.Count = new Empty();
-		}
-
-		return options;
-	}
-
 	/// <summary>
 	/// Creates a persistent subscription.
 	/// </summary>
 	/// <exception cref="ArgumentNullException"></exception>
-	public async Task CreateToStreamAsync(
+	public async Task CreateToStream(
 		string streamName, string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
 	) =>
-		await CreateInternalAsync(
+		await CreateInternal(
 				streamName, groupName, null, settings, cancellationToken
 			)
 			.ConfigureAwait(false);
@@ -131,18 +31,18 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Creates a filtered persistent subscription to $all.
 	/// </summary>
-	public async Task CreateToAllAsync(
+	public async Task CreateToAll(
 		string groupName, ReadFilter filter, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
 	) =>
-		await CreateInternalAsync(SystemStreams.AllStream, groupName, filter, settings, cancellationToken).ConfigureAwait(false);
+		await CreateInternal(SystemStreams.AllStream, groupName, filter, settings, cancellationToken).ConfigureAwait(false);
 
 	/// <summary>
 	/// Creates a persistent subscription to $all.
 	/// </summary>
-	public async Task CreateToAllAsync(string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default) =>
-		await CreateInternalAsync(SystemStreams.AllStream, groupName, null, settings, cancellationToken).ConfigureAwait(false);
+	public async Task CreateToAll(string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default) =>
+		await CreateInternal(SystemStreams.AllStream, groupName, null, settings, cancellationToken).ConfigureAwait(false);
 
-	async Task CreateInternalAsync(
+	async Task CreateInternal(
 		string streamName, string groupName, ReadFilter? filter, PersistentSubscriptionSettings settings, CancellationToken cancellationToken
 	) {
 		ArgumentNullException.ThrowIfNull(streamName);
@@ -158,12 +58,7 @@ partial class KurrentPersistentSubscriptionsClient {
 		if (!NamedConsumerStrategyToCreateProto.TryGetValue(settings.ConsumerStrategyName, out var value))
 			throw new ArgumentException("The specified consumer strategy is not supported, specify one of the SystemConsumerStrategies");
 
-		if (streamName is SystemStreams.AllStream) {
-			await LegacyCallInvoker.ForceRefresh(cancellationToken);
-
-			if (!LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll)
-				throw new InvalidOperationException("The server does not support persistent subscriptions to $all");
-		}
+		await EnsureCompatibility(streamName, cancellationToken);
 
 		using var call = ServiceClient.CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
@@ -208,5 +103,106 @@ partial class KurrentPersistentSubscriptionsClient {
 		);
 
 		await call.ResponseAsync.ConfigureAwait(false);
+	}
+
+	static CreateReq.Types.StreamOptions StreamOptionsForCreateProto(string streamName, LogPosition position) {
+		if (position == LogPosition.Earliest) {
+			return new CreateReq.Types.StreamOptions {
+				StreamIdentifier = streamName,
+				Start            = new Empty()
+			};
+		}
+
+		if (position == LogPosition.Latest) {
+			return new CreateReq.Types.StreamOptions {
+				StreamIdentifier = streamName,
+				End              = new Empty()
+			};
+		}
+
+		return new CreateReq.Types.StreamOptions {
+			StreamIdentifier = streamName,
+			Revision         = (ulong)position.Value
+		};
+	}
+
+	static CreateReq.Types.AllOptions AllOptionsForCreateProto(LogPosition position, IEventFilter? filter) {
+		var allFilter = GetFilterOptions(filter);
+
+		CreateReq.Types.AllOptions allOptions;
+
+		if (position == LogPosition.Earliest) {
+			allOptions = new CreateReq.Types.AllOptions {
+				Start = new Empty(),
+			};
+		} else if (position == LogPosition.Latest) {
+			allOptions = new CreateReq.Types.AllOptions {
+				End = new Empty()
+			};
+		} else {
+			allOptions = new CreateReq.Types.AllOptions {
+				Position = new CreateReq.Types.Position {
+					CommitPosition  = (ulong)position.Value,
+					PreparePosition = (ulong)position.Value
+				}
+			};
+		}
+
+		if (allFilter is null) {
+			allOptions.NoFilter = new Empty();
+		} else {
+			allOptions.Filter = allFilter;
+		}
+
+		return allOptions;
+	}
+
+	static CreateReq.Types.AllOptions.Types.FilterOptions? GetFilterOptions(IEventFilter? filter) {
+		if (filter is null)
+			return null;
+
+		var options = filter switch {
+			StreamFilter _ => new CreateReq.Types.AllOptions.Types.FilterOptions {
+				StreamIdentifier = (filter.Prefixes, filter.Regex) switch {
+					(PrefixFilterExpression[] _, RegularFilterExpression _)
+						when (filter.Prefixes?.Length ?? 0) == 0 &&
+						     filter.Regex != RegularFilterExpression.None =>
+						new CreateReq.Types.AllOptions.Types.FilterOptions.Types.Expression
+							{ Regex = filter.Regex },
+					(PrefixFilterExpression[] _, RegularFilterExpression _)
+						when (filter.Prefixes?.Length ?? 0) != 0 &&
+						     filter.Regex == RegularFilterExpression.None =>
+						new CreateReq.Types.AllOptions.Types.FilterOptions.Types.Expression {
+							Prefix = { Array.ConvertAll(filter.Prefixes!, e => e.ToString()) }
+						},
+					_ => throw new InvalidOperationException()
+				}
+			},
+			EventTypeFilter _ => new CreateReq.Types.AllOptions.Types.FilterOptions {
+				EventType = (filter.Prefixes, filter.Regex) switch {
+					(PrefixFilterExpression[] _, RegularFilterExpression _)
+						when (filter.Prefixes?.Length ?? 0) == 0 &&
+						     filter.Regex != RegularFilterExpression.None =>
+						new CreateReq.Types.AllOptions.Types.FilterOptions.Types.Expression
+							{ Regex = filter.Regex },
+					(PrefixFilterExpression[] _, RegularFilterExpression _)
+						when (filter.Prefixes?.Length ?? 0) != 0 &&
+						     filter.Regex == RegularFilterExpression.None =>
+						new CreateReq.Types.AllOptions.Types.FilterOptions.Types.Expression {
+							Prefix = { Array.ConvertAll(filter.Prefixes!, e => e.ToString()) }
+						},
+					_ => throw new InvalidOperationException()
+				}
+			},
+			_ => throw new InvalidOperationException()
+		};
+
+		if (filter.MaxSearchWindow.HasValue) {
+			options.Max = filter.MaxSearchWindow.Value;
+		} else {
+			options.Count = new Empty();
+		}
+
+		return options;
 	}
 }

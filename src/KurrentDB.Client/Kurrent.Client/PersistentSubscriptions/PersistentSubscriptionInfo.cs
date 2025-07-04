@@ -12,7 +12,7 @@ namespace Kurrent.Client;
 /// <param name="GroupName">The group name given on creation.</param>
 /// <param name="Status">The current status of the subscription.</param>
 /// <param name="Connections">Active connections to the subscription.</param>
-/// <param name="Settings">The settings used to create the persistant subscription.</param>
+/// <param name="Settings">The settings used to create the persistent subscription.</param>
 /// <param name="Stats">Live statistics for the persistent subscription.</param>
 public record PersistentSubscriptionInfo(
 	string EventSource,
