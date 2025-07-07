@@ -31,4 +31,19 @@
     <ProjectReference Include="..\..\src\Variant\Variant.csproj" />
     <ProjectReference Include="..\Kurrent.Client.Testing\Kurrent.Client.Testing.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Experimental\**" />
+    <Compile Remove="Infra\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Experimental\**" />
+    <EmbeddedResource Remove="Infra\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Experimental\**" />
+    <None Remove="Infra\**" />
+  </ItemGroup>
 </Project>

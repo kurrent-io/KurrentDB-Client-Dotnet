@@ -1,9 +1,5 @@
 // ReSharper disable InconsistentNaming
 
-using Ductus.FluentDocker.Builders;
-using Ductus.FluentDocker.Extensions;
-using Ductus.FluentDocker.Services.Extensions;
-using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
 using static System.TimeSpan;
 
@@ -33,9 +29,9 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 
 	public ILogger Log => Logger;
 
-	public ITestService            Service { get; }
-	public KurrentDBFixtureOptions Options { get; }
-	public Faker                   Faker   { get; } = new();
+	public KurrentDBPermanentTestNode Service { get; }
+	public KurrentDBFixtureOptions    Options { get; }
+	public Faker                      Faker   { get; } = new();
 
 	public Version EventStoreVersion               { get; private set; } = null!;
 	public bool    EventStoreHasLastStreamPosition { get; private set; }
@@ -76,7 +72,7 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 
 		try {
 			await Service.Start();
-			EventStoreVersion               = GetKurrentVersion();
+			EventStoreVersion               = KurrentDBPermanentTestNode.Version;
 			EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
 
 			if (!WarmUpCompleted.CurrentValue) {
@@ -115,35 +111,6 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 			var client = (Activator.CreateInstance(typeof(T), DBClientSettings) as T)!;
 			await action(client);
 			return client;
-		}
-
-		static Version GetKurrentVersion() {
-			const string versionPrefix = "KurrentDB version";
-
-			using var cancellator = new CancellationTokenSource(FromSeconds(30));
-			using var eventstore = new Builder()
-				.UseContainer()
-				.UseImage(GlobalEnvironment.DockerImage)
-				.Command("--version")
-				.Build()
-				.Start();
-
-			using var log = eventstore.Logs(true, cancellator.Token);
-			foreach (var line in log.ReadToEnd()) {
-				Logger.Information("KurrentDB: {Line}", line);
-				if (line.StartsWith(versionPrefix) &&
-				    Version.TryParse(
-					    new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()),
-					    out var version
-				    ))
-					return version;
-			}
-
-			throw new InvalidOperationException("Could not determine server version.");
-
-			IEnumerable<char> ReadVersion(string s) {
-				foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) yield return c;
-			}
 		}
 	}
 

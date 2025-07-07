@@ -26,13 +26,13 @@ public class EnumExtensionsTests {
     [Test]
     public void handles_different_enum_types_correctly() {
         TestEnum.First.Description().ShouldBe("First Value");
-        KurrentConnectionScheme.Direct.Description().ShouldBe("kurrent");
+        KurrentConnectionScheme.Direct.Description().ShouldBe("kurrentdb");
     }
 
     [Test]
     public void returns_correct_descriptions_for_connection_scheme_type() {
-        KurrentConnectionScheme.Direct.Description().ShouldBe("kurrent");
-        KurrentConnectionScheme.Discover.Description().ShouldBe("kurrent+discover");
+        KurrentConnectionScheme.Direct.Description().ShouldBe("kurrentdb");
+        KurrentConnectionScheme.Discover.Description().ShouldBe("kurrentdb+discover");
     }
 
     // Test enums for verification

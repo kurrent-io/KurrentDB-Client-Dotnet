@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
 using Kurrent.Variant;
+using static System.Threading.Interlocked;
 
 namespace Kurrent.Client.Model;
 
@@ -189,8 +190,16 @@ public readonly partial record struct ReadError : IVariantResultError<
     ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied>;
 
+
 [PublicAPI]
-public readonly partial record struct ReadMessage : IVariant<Record, Heartbeat>;
+public readonly partial record struct InspectRecordError : IVariantResultError<
+    ErrorDetails.LogPositionNotFound,
+    ErrorDetails.AccessDenied>;
+
+[PublicAPI]
+public readonly partial record struct ReadMessage : IVariant<Record, Heartbeat> {
+    public static readonly ReadMessage None;
+}
 
 [PublicAPI]
 public record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
@@ -209,67 +218,49 @@ public record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
     /// </summary>
     public int QueuedMessages => _lazyChannel.IsValueCreated ? Channel.Reader.Count : 0;
 
-    /// <summary>
-    /// Flushes the buffer and waits until all messages are processed
-    /// </summary>
-    /// <param name="timeout">An optional timeout duration to wait. Defaults to 30 seconds if not specified.</param>
-    public async ValueTask<bool> Flush(TimeSpan? timeout = null) {
-        if (Interlocked.CompareExchange(ref _disposed, 0, 0) == 1)
-            return true;
+    public async IAsyncEnumerator<ReadMessage> GetAsyncEnumerator(CancellationToken cancellationToken = default) {
+        ObjectDisposedException.ThrowIf(CompareExchange(ref _disposed, 0, 0) == 1, nameof(Subscription));
 
-        if (!_lazyChannel.IsValueCreated)
-            return true;
-
-        Channel.Writer.TryComplete();
-
-        var completedTask = await Task
-            .WhenAny(Channel.Reader.Completion, Task.Delay(timeout ?? TimeSpan.FromSeconds(30)))
-            .ConfigureAwait(false);
-
-        return completedTask == Channel.Reader.Completion;
-    }
-
-    public IAsyncEnumerator<ReadMessage> GetAsyncEnumerator(CancellationToken cancellationToken = default) {
-        if (Interlocked.CompareExchange(ref _disposed, 0, 0) == 1)
-            throw new ObjectDisposedException(nameof(Subscription));
-
-        if (Interlocked.CompareExchange(ref _enumeratorCreated, 1, 0) == 1)
+        if (CompareExchange(ref _enumeratorCreated, 1, 0) == 1)
             throw new InvalidOperationException("Only one enumerator can be active at a time");
 
-        return Channel.Reader.ReadAllAsync(CancellationToken.None).GetAsyncEnumerator(CancellationToken.None);
+        // return Channel.Reader
+        //     .ReadAllAsync(cancellationToken)
+        //     // .TakeWhile(_ => !cancellationToken.IsCancellationRequested)
+        //     .GetAsyncEnumerator(CancellationToken.None);
 
-        // var reader = Channel.Reader;
-        //
-        // while (true) {
-        //     bool dataAvailable;
-        //     try {
-        //         dataAvailable = await reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false);
-        //     }
-        //     catch (OperationCanceledException) {
-        //         yield break;
-        //     }
-        //     catch (ObjectDisposedException) {
-        //         yield break;
-        //     }
-        //
-        //     if (!dataAvailable)
-        //         break;
-        //
-        //     while (reader.TryRead(out var item))
-        //         yield return item;
-        // }
+        var reader = Channel.Reader;
+
+        while (true) {
+            ReadMessage message;
+            try {
+                message = await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) {
+                yield break;
+            }
+            // catch (ObjectDisposedException) {
+            //     yield break;
+            // }
+            catch (ChannelClosedException) {
+                yield break;
+            }
+
+            if (message == ReadMessage.None)
+                break;
+
+            yield return message;
+        }
     }
 
     public async ValueTask DisposeAsync() {
-        if (Interlocked.CompareExchange(ref _disposed, 1, 0) != 0)
+        if (!_lazyChannel.IsValueCreated || CompareExchange(ref _disposed, 1, 0) != 0)
             return;
 
-        if (_lazyChannel.IsValueCreated) {
-            Channel.Writer.TryComplete();
+        Channel.Writer.TryComplete();
 
-            if (Channel.Reader.Completion.IsFaulted)
-                await Channel.Reader.Completion;
-        }
+        if (Channel.Reader.Completion.IsFaulted)
+            await Channel.Reader.Completion;
     }
 }
 
@@ -410,8 +401,6 @@ public readonly partial record struct TombstoneError : IVariantResultError<
 
 [PublicAPI]
 public readonly partial record struct GetStreamInfoError : IVariantResultError<
-    ErrorDetails.StreamNotFound,
-    ErrorDetails.StreamDeleted,
     ErrorDetails.AccessDenied>;
 
 [PublicAPI]

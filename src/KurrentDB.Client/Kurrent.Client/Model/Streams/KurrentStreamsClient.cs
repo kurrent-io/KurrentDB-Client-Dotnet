@@ -17,6 +17,7 @@ namespace Kurrent.Client;
 public partial class KurrentStreamsClient {
     internal KurrentStreamsClient(KurrentClient source, CallInvoker callInvoker) {
         source.TypeMapper.Map<StreamMetadata>("$metadata");
+        source.TypeMapper.Map<string>("$>");
 
         SerializerProvider = source.SerializerProvider;
         MetadataDecoder    = source.MetadataDecoder;

@@ -84,23 +84,14 @@ public static class KurrentStreamsClientExtensions {
                 CancellationToken = cancellationToken
             };
 
-            return await client
-                .ReadStream(options)
+            return await client.ReadStream(options)
                 .MatchAsync(
                     async messages => {
                         var rec = await messages.Select(x => x.AsRecord).FirstOrDefaultAsync(cancellationToken);
                         return rec ?? Result.Failure<Record, ReadError>(new ErrorDetails.StreamNotFound(x => x.With("stream", stream)));
                     },
-                    Result.FailureTask<Record, ReadError>
+                    async err => await Result.FailureTask<Record, ReadError>(err)
                 )
-                // .MatchAsync(
-                //     async messages => {
-                //         var rec = await messages.Select(x => x.AsRecord).FirstOrDefaultAsync(cancellationToken);
-                //         return rec ?? Result.Failure<Record, ReadError>(new ErrorDetails.StreamNotFound(x => x.With("stream", stream)));
-                //     },
-                //      Result.FailureTask<Record, ReadError>
-                // )
-                //.MapAsync(async messages => await messages.Select(x => x.AsRecord).FirstOrDefaultAsync(cancellationToken) ?? Record.None)
                 .ConfigureAwait(false);
 
             // var result = await client

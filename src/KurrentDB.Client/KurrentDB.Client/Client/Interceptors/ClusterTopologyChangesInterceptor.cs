@@ -23,10 +23,6 @@ partial class ClusterTopologyChangesInterceptor : Interceptor {
 					LogLeaderChanged(Logger, newLeaderEndpoint.Host, newLeaderEndpoint.Port);
 					clusterClient.TriggerReconnect(newLeaderEndpoint);
 					break;
-				// case RpcException { StatusCode: StatusCode.Unavailable } rex:
-				// 	LogUnavailable(Logger, rex);
-				// 	clusterClient.TriggerReconnect();
-				// 	break;
 			}
 		};
 

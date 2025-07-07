@@ -14,7 +14,7 @@ public record Message {
 	/// <summary>
 	/// The assigned record id.
 	/// </summary>
-	public Guid RecordId { get; internal init; } = Guids.CreateVersion7();
+	public Guid RecordId { get; internal init; } = Guid.NewGuid();
 
 	/// <summary>
 	/// The message payload.
@@ -42,29 +42,14 @@ public record Message {
 	/// The format of the data represented by <paramref name="value"/>. Defaults to <see cref="SchemaDataFormat.Json"/>.
 	/// Cannot be <see cref="SchemaDataFormat.Unspecified"/>.
 	/// </param>
-	public static Message Create(object value, SchemaDataFormat dataFormat = SchemaDataFormat.Json) {
-		if (value is null)
-			throw new ArgumentNullException(nameof(value), "Message value cannot be null");
-
-		if (dataFormat == SchemaDataFormat.Unspecified)
-			throw new ArgumentNullException(nameof(dataFormat), "Data format cannot be unspecified");
-
-		if (value.IsBytes() && dataFormat != SchemaDataFormat.Bytes)
-			throw new ArgumentException($"Data format must be {SchemaDataFormat.Bytes}");
-
-		return new() {
-			Value      = value,
-			DataFormat = value.IsBytes()
-				? SchemaDataFormat.Bytes
-				: SchemaDataFormat.Json
-		};
-	}
+	public static Message Create(object value, SchemaDataFormat dataFormat = SchemaDataFormat.Json) =>
+		New.WithValue(value).WithDataFormat(dataFormat).Build();
 }
 
 [PublicAPI]
 public class MessageBuilder {
 	Message _message = new() {
-		RecordId   = Guids.CreateVersion7(),
+		RecordId   = Guid.NewGuid(),
 		Value      = null!,
 		DataFormat = SchemaDataFormat.Json,
 		Metadata   = new Metadata().With(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Json)

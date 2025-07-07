@@ -29,7 +29,7 @@ message ErrorDetails {
     option (error_info) = {
       code : "STREAM_DELETED",
       severity : RECOVERABLE,
-      message : "The stream has been deleted and cannot be used."
+      message : "The stream has been soft deleted. It will not be visible in the stream list, until it is restored by appending to it again."
     };
 
     // The name of the stream that was deleted.
@@ -37,9 +37,21 @@ message ErrorDetails {
 
     // The time when the stream was deleted.
     google.protobuf.Timestamp deleted_at = 2;
-    // If the stream was hard deleted, you cannot reuse the stream name,
-    // it will raise an exception if you try to append to it again.
-    bool tombstoned = 3;
+  }
+
+  // When the stream has been tombstoned.
+  message StreamTombstoned {
+    option (error_info) = {
+      code : "STREAM_TOMBSTONED",
+      severity : RECOVERABLE,
+      message : "The stream has been tombstoned and cannot be used anymore."
+    };
+
+    // The name of the stream that was tombstoned.
+    optional string stream = 1;
+
+    // The time when the stream was tombstoned.
+    google.protobuf.Timestamp tombstoned_at = 2;
   }
 
   // When the stream is not found.
@@ -79,151 +91,12 @@ message ErrorDetails {
     // The maximum allowed size of the transaction.
     uint32 max_size = 1;
   }
+
+  message LogPositionNotFound {
+    option (error_info) = {
+      code : "LOG_POSITION_NOT_FOUND",
+      severity : RECOVERABLE,
+      message : "The specified log position was not found."
+    };
+  }
 }
-
-
-//// ErrorDetails provides detailed information about specific error conditions.
-//message Error {
-//  // The error message describing the error condition.
-//  optional string message = 1;
-//
-//  // The timestamp when the error occurred.
-//  google.protobuf.Timestamp timestamp = 2;
-//
-//  // Specific error details
-//  oneof error {
-//    // Failed because the actual stream revision didn't match the expected revision.
-//    ErrorDetails.RevisionConflict stream_revision_conflict = 3;
-//    // Failed because the client lacks sufficient permissions.
-//    ErrorDetails.AccessDenied access_denied = 4;
-//    // Failed because the target stream has been deleted.
-//    ErrorDetails.StreamDeleted stream_deleted = 5;
-//    // Failed because the stream was not found.
-//    ErrorDetails.StreamNotFound stream_not_found = 6;
-//    // Failed because the transaction exceeded the maximum size allowed
-//    ErrorDetails.TransactionMaxSizeExceeded transaction_max_size_exceeded = 7;
-//  }
-//}
-
-
-//
-//// Operational errors that can be recovered from
-//// but may require retries or other actions.
-//message RecoverableErrorDetails {
-//  // Suggested delay before retry
-//  google.protobuf.Duration retry_after = 1;
-//
-//  oneof error {
-//    AccessDenied access_denied = 10;
-//    StreamDeleted stream_deleted = 11;
-//    StreamNotFound stream_not_found = 12;
-//    RevisionConflict revision_conflict = 13;
-//  }
-//
-//  // When the user does not have sufficient permissions to perform the
-//  // operation.
-//  message AccessDenied {
-//    option (error_info) = {
-//      code : "ACCESS_DENIED",
-//      severity : RECOVERABLE
-//    };
-//
-//    // The reason for access denial.
-//    string reason = 1;
-//  }
-//
-//  // When the stream has been deleted.
-//  message StreamDeleted {
-//    // The name of the stream that was deleted.
-//    string stream = 1;
-//    // The time when the stream was deleted.
-//    google.protobuf.Timestamp deleted_at = 2;
-//    // If the stream was hard deleted, you cannot reuse the stream name,
-//    // it will raise an exception if you try to append to it again.
-//    bool tombstoned = 3;
-//  }
-//
-//  // When the stream is not found.
-//  message StreamNotFound {
-//    // The name of the stream that was not found.
-//    string stream = 1;
-//  }
-//
-//  // When the expected revision of the stream does not match the actual
-//  // revision.
-//  message RevisionConflict {
-//    // The actual revision of the stream.
-//    int64 stream_revision = 1;
-//  }
-//}
-//
-//// Fatal errors that should terminate the session/connection
-//message FatalErrorDetails {
-//  oneof error {
-//    TransactionMaxSizeExceeded transaction_max_size_exceeded = 1;
-//  }
-//
-//  // When the transaction exceeds the maximum size allowed
-//  // (its bigger than the configured chunk size).
-//  message TransactionMaxSizeExceeded {
-//    // The maximum allowed size of the transaction.
-//    uint32 max_size = 1;
-//  }
-//}
-//
-//// ErrorDetails provides detailed information about specific error conditions.
-//message Error {
-//  // The error message describing the error condition.
-//  optional string message = 1;
-//
-//  // The timestamp when the error occurred.
-//  google.protobuf.Timestamp timestamp = 3;
-//
-//  // Specific error details
-//  oneof error_severity {
-//    RecoverableErrorDetails recoverable = 9;
-//    FatalErrorDetails fatal = 10;
-//  }
-//}
-
-//
-//// ErrorDetails provides detailed information about specific error conditions.
-//message ErrorDetails {
-//  // When the user does not have sufficient permissions to perform the
-//  // operation.
-//  message AccessDenied {
-//    // The reason for access denial.
-//    string reason = 1;
-//  }
-//
-//  // When the stream has been deleted.
-//  message StreamDeleted {
-//    // The name of the stream that was deleted.
-//    string stream = 1;
-//    // The time when the stream was deleted.
-//    google.protobuf.Timestamp deleted_at = 2;
-//    // If the stream was hard deleted, you cannot reuse the stream name,
-//    // it will raise an exception if you try to append to it again.
-//    bool tombstoned = 3;
-//  }
-//
-//  // When the stream is not found.
-//  message StreamNotFound {
-//    // The name of the stream that was not found.
-//    string stream = 1;
-//  }
-//
-//  // When the expected revision of the stream does not match the actual
-//  // revision.
-//  message RevisionConflict {
-//    // The actual revision of the stream.
-//    int64 stream_revision = 1;
-//  }
-//
-//  // When the transaction exceeds the maximum size allowed
-//  // (its bigger than the configured chunk size).
-//  message TransactionMaxSizeExceeded {
-//    // The maximum allowed size of the transaction.
-//    uint32 max_size = 1;
-//  }
-//}

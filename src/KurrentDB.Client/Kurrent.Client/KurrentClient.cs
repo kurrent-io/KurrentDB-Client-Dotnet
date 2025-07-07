@@ -15,7 +15,7 @@ public class KurrentClient : IAsyncDisposable, IKurrentClient {
 	public static KurrentClientOptionsBuilder New => new KurrentClientOptionsBuilder();
 
     public KurrentClient(KurrentClientOptions options) {
-        options.EnsureConfigIsValid();
+        options.EnsureOptionsAreValid();
 
         TypeMapper = options.Mapper;
 

@@ -57,6 +57,25 @@ static class StreamsClientV1Mapper {
             };
         }
 
+        /// <summary>
+        ///  Creates a request to read a single record from the log at the specified position, resolving links if necessary.
+        /// </summary>
+        public static Contracts.ReadReq CreateInspectRecordRequest(LogPosition position) {
+            return new Contracts.ReadReq {
+                Options = new() {
+                    UuidOption    = DefaultUuidOptions,
+                    ControlOption = DefaultControlOption,
+                    Count         = 1,
+                    ResolveLinks  = true,
+                    ReadDirection = Contracts.ReadReq.Types.Options.Types.ReadDirection.Forwards,
+                    All = new() { Position = new() {
+                        CommitPosition  = position,
+                        PreparePosition = position
+                    } }
+                }
+            };
+        }
+
         public static Contracts.ReadReq CreateReadRequest(ReadStreamOptions options) {
             return new Contracts.ReadReq {
                 Options = new() {
@@ -73,17 +92,21 @@ static class StreamsClientV1Mapper {
             };
         }
 
+        // NoStream     = -1
+        // Any          = -2
+        // StreamExists = -4
+
         public static Contracts.DeleteReq CreateDeleteRequest(StreamName stream, StreamRevision revision) {
             var req = new Contracts.DeleteReq { Options = new() { StreamIdentifier = stream.Value } };
             return revision == StreamRevision.Unset
-                ? req.With(x => x.Options.Any = DefaultEmpty)
+                ? req.With(x => x.Options.StreamExists = DefaultEmpty)
                 : req.With(x => x.Options.Revision = (ulong)revision.Value);
         }
 
         public static Contracts.TombstoneReq CreateTombstoneRequest(StreamName stream, StreamRevision revision) {
             var req = new Contracts.TombstoneReq { Options = new() { StreamIdentifier = stream.Value } };
             return revision == StreamRevision.Unset
-                ? req.With(x => x.Options.Any = DefaultEmpty)
+                ? req.With(x => x.Options.StreamExists = DefaultEmpty)
                 : req.With(x => x.Options.Revision = (ulong)revision.Value);
         }
 
@@ -180,30 +203,95 @@ static class StreamsClientV1Mapper {
             _    => LogPosition.From((long)position.CommitPosition)
         };
 
+ //    public static async ValueTask<Record> MapToRecord(
+	// 	this Contracts.ReadResp.Types.ReadEvent.Types.RecordedEvent recordedEvent,
+	// 	ISchemaSerializerProvider serializerProvider,
+	// 	IMetadataDecoder metadataDecoder,
+	// 	SchemaRegistryPolicy registryPolicy,
+ //        bool skipDecoding = false,
+	// 	CancellationToken ct = default
+	// ) {
+	// 	// first parse all info
+	// 	var stream           = StreamName.From(recordedEvent.StreamIdentifier!);
+	// 	var recordId         = Uuid.FromDto(recordedEvent.Id).ToGuid();
+	// 	var revision         = StreamRevision.From((long)recordedEvent.StreamRevision);
+	// 	var position         = LogPosition.From((long)recordedEvent.CommitPosition);
+	// 	var schemaName       = SchemaName.From(recordedEvent.Metadata[Constants.Metadata.Type]);
+	// 	var schemaDataFormat = recordedEvent.Metadata[Constants.Metadata.ContentType].GetSchemaDataFormat(); // it will always be json or octet-stream
+	// 	var data             = recordedEvent.Data.Memory;
+	// 	var rawMetadata      = recordedEvent.CustomMetadata.Memory;
+	// 	var timestamp        = Convert.ToInt64(recordedEvent.Metadata[Constants.Metadata.Created]).FromTicksSinceEpoch();
+	// 	var metadata         = metadataDecoder.Decode(rawMetadata, new(stream, schemaName, schemaDataFormat));
+ //
+ //        // create a decoder
+ //        IRecordDecoder decoder = new RecordDecoder(serializerProvider, registryPolicy);
+ //
+	// 	// and we are done
+ //        var record = new Record(decoder) {
+ //            Id             = recordId,
+ //            Stream         = stream,
+ //            StreamRevision = revision,
+ //            Position       = position,
+ //            Timestamp      = timestamp,
+ //            Metadata       = metadata,
+ //            Data           = data
+ //        };
+ //
+ //        // now decode the record if required
+ //        if (!skipDecoding)
+ //            await record.TryDecode(ct);
+ //
+ //        return record;
+	// }
+
+    // {
+    //     "$v": "3:-1:1:4",
+    //     "$c": 12961,
+    //     "$p": 12961,
+    //     "$o": "TicTacToe-bad03a1c87c6",
+    //     "$causedBy": "0197d630-9297-7000-9806-85795845c414"
+    // }
+
     public static async ValueTask<Record> MapToRecord(
-		this Contracts.ReadResp.Types.ReadEvent.Types.RecordedEvent recordedEvent,
-		ISchemaSerializerProvider serializerProvider,
-		IMetadataDecoder metadataDecoder,
-		SchemaRegistryPolicy registryPolicy,
+        this Contracts.ReadResp.Types.ReadEvent readEvent,
+        ISchemaSerializerProvider serializerProvider,
+        IMetadataDecoder metadataDecoder,
+        SchemaRegistryPolicy registryPolicy,
         bool skipDecoding = false,
-		CancellationToken ct = default
-	) {
-		// first parse all info
-		var stream           = StreamName.From(recordedEvent.StreamIdentifier!);
-		var recordId         = Uuid.FromDto(recordedEvent.Id).ToGuid();
-		var revision         = StreamRevision.From((long)recordedEvent.StreamRevision);
-		var position         = LogPosition.From((long)recordedEvent.CommitPosition);
-		var schemaName       = SchemaName.From(recordedEvent.Metadata[Constants.Metadata.Type]);
-		var schemaDataFormat = recordedEvent.Metadata[Constants.Metadata.ContentType].GetSchemaDataFormat(); // it will always be json or octet-stream
-		var data             = recordedEvent.Data.Memory;
-		var rawMetadata      = recordedEvent.CustomMetadata.Memory;
-		var timestamp        = Convert.ToInt64(recordedEvent.Metadata[Constants.Metadata.Created]).FromTicksSinceEpoch();
-		var metadata         = metadataDecoder.Decode(rawMetadata, new(stream, schemaName, schemaDataFormat));
+        CancellationToken ct = default
+    ) {
+        var recordedEvent = readEvent.Event;
+
+        // first parse all info
+        var stream           = StreamName.From(recordedEvent.StreamIdentifier!);
+        var recordId         = Uuid.FromDto(recordedEvent.Id).ToGuid();
+        var revision         = StreamRevision.From((long)recordedEvent.StreamRevision);
+        var position         = LogPosition.From((long)recordedEvent.CommitPosition);
+        var schemaName       = SchemaName.From(recordedEvent.Metadata[Constants.Metadata.Type]);
+        var schemaDataFormat = recordedEvent.Metadata[Constants.Metadata.ContentType].GetSchemaDataFormat(); // it will always be json or octet-stream
+        var data             = recordedEvent.Data.Memory;
+        var rawMetadata      = recordedEvent.CustomMetadata.Memory;
+        var timestamp        = Convert.ToInt64(recordedEvent.Metadata[Constants.Metadata.Created]).FromTicksSinceEpoch();
+
+        var metadata = metadataDecoder.Decode(rawMetadata, new(stream, schemaName, schemaDataFormat));
+
+        var link = readEvent.Link is { } linkEvent
+            ? new Link {
+                Name     = linkEvent.Metadata[Constants.Metadata.Type],
+                Position = (long)linkEvent.CommitPosition,
+                Revision = (long)linkEvent.StreamRevision,
+                Stream   = StreamName.From(linkEvent.StreamIdentifier!),
+            }
+            : Link.None;
+
+        var indexRevision = readEvent.HasCommitPosition
+            ? StreamRevision.From((long)readEvent.CommitPosition)
+            : link.Revision == StreamRevision.Unset ? revision : link.Revision;
 
         // create a decoder
         IRecordDecoder decoder = new RecordDecoder(serializerProvider, registryPolicy);
 
-		// and we are done
+        // and we are done
         var record = new Record(decoder) {
             Id             = recordId,
             Stream         = stream,
@@ -211,7 +299,9 @@ static class StreamsClientV1Mapper {
             Position       = position,
             Timestamp      = timestamp,
             Metadata       = metadata,
-            Data           = data
+            Data           = data,
+            Link           = link,
+            IndexRevision  = indexRevision
         };
 
         // now decode the record if required
@@ -219,24 +309,7 @@ static class StreamsClientV1Mapper {
             await record.TryDecode(ct);
 
         return record;
-	}
-
-	public static ValueTask<Record> MapToRecord(
-		this Contracts.ReadResp.Types.ReadEvent readEvent,
-		ISchemaSerializerProvider serializerProvider,
-		IMetadataDecoder metadataDecoder,
-		SchemaRegistryPolicy registryPolicy,
-        bool skipDecoding = false,
-		CancellationToken ct = default
-	) => MapToRecord(readEvent.Event, serializerProvider, metadataDecoder, registryPolicy, skipDecoding, ct);
-
-    public static ValueTask<Record> MapToRecord(
-        this Contracts.ReadResp.Types.ReadEvent.Types.RecordedEvent recordedEvent,
-        ISchemaSerializerProvider serializerProvider,
-        IMetadataDecoder metadataDecoder,
-        bool skipDecoding = false,
-        CancellationToken ct = default
-    ) => MapToRecord(recordedEvent, serializerProvider, metadataDecoder, SchemaRegistryPolicy.NoRequirements, skipDecoding, ct);
+    }
 
     public static ValueTask<Record> MapToRecord(
         this Contracts.ReadResp.Types.ReadEvent readEvent,
@@ -244,5 +317,5 @@ static class StreamsClientV1Mapper {
         IMetadataDecoder metadataDecoder,
         bool skipDecoding = false,
         CancellationToken ct = default
-    ) => MapToRecord(readEvent.Event, serializerProvider, metadataDecoder, skipDecoding, ct);
+    ) => MapToRecord(readEvent, serializerProvider, metadataDecoder, SchemaRegistryPolicy.NoRequirements, skipDecoding, ct);
 }

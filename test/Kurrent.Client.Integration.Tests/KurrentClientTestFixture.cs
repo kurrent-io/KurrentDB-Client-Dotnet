@@ -102,16 +102,19 @@ public partial class KurrentClientTestFixture : TestFixture {
     /// A new instance of <see cref="KurrentClient"/> configured with the specified options.
     /// </returns>
     public static KurrentClient CreateClient(Action<KurrentClientOptionsBuilder>? configure = null) {
-        var options = KurrentClientOptions.Build
+        var builder = KurrentClientOptions.Build
             .WithConnectionString(AuthenticatedConnectionString)
             .WithLoggerFactory(new SerilogLoggerFactory(Log.Logger))
             // .WithSchema(KurrentClientSchemaOptions.Disabled)
             .WithResilience(KurrentClientResilienceOptions.NoResilience)
             .WithMessages(options => options.Map<StreamMetadata>("$metadata"));
 
-        configure?.Invoke(options);
+        if (configure is not null)
+            builder.With(configure);
 
-        return options.CreateClient();
+        var options = builder.Build();
+
+        return KurrentClient.Create(options);
     }
 }
 

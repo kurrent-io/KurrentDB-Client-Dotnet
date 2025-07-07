@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
+using System.Text.Unicode;
 using Kurrent.Client.SchemaRegistry;
 using Kurrent.Client.SchemaRegistry.Serialization;
 
@@ -18,7 +20,7 @@ public record Record(IRecordDecoder? Decoder  = null) {
 	public Guid Id { get; init; } = Guid.Empty;
 
 	/// <summary>
-	/// The position of the record in the stream.
+	/// The position of the record in the global transaction log.
 	/// </summary>
 	public LogPosition Position { get; init; } = LogPosition.Unset;
 
@@ -31,6 +33,16 @@ public record Record(IRecordDecoder? Decoder  = null) {
 	/// Represents the revision of a stream at a specific point in time.
 	/// </summary>
 	public StreamRevision StreamRevision { get; init; } = StreamRevision.Unset;
+
+	/// <summary>
+	/// The revision of the index associated with the record.
+	/// </summary>
+	public StreamRevision IndexRevision { get; init; } = StreamRevision.Unset;
+
+	/// <summary>
+	/// Represents the index link associated with the record.
+	/// </summary>
+	public Link Link { get; init; } = Link.None;
 
 	/// <summary>
 	/// When the record was created in the database.
@@ -92,18 +104,34 @@ public record Record(IRecordDecoder? Decoder  = null) {
 		$"Value={Value ?? "Not Decoded"}, ValueType={ValueType}";
 }
 
-// public delegate ValueTask<Result<object, Exception>> DecodeRecordData(Record record, CancellationToken cancellationToken = default);
+public readonly record struct Link() {
+	public static readonly Link None = new();
+
+	public SchemaName     Name     { get; init; } = SchemaName.None;
+	public LogPosition    Position { get; init; } = LogPosition.Unset;
+	public StreamRevision Revision { get; init; } = StreamRevision.Unset;
+	public StreamName     Stream   { get; init; } = StreamName.None;
+}
 
 public interface IRecordDecoder {
 	ValueTask<bool> Decode(Record record, CancellationToken ct);
 }
 
+
+
 sealed class RecordDecoder(ISchemaSerializerProvider serializerProvider, SchemaRegistryPolicy? registryPolicy = null) : IRecordDecoder {
+	static readonly SchemaName LinkSchemaName = "$>";
+
 	SchemaRegistryPolicy RegistryPolicy { get; } = registryPolicy ?? SchemaRegistryPolicy.NoRequirements;
 
 	public async ValueTask<bool> Decode(Record record, CancellationToken ct) {
 		if (record.IsDecoded)
 			return true;
+
+		if (record.Schema.SchemaName == LinkSchemaName) {
+			record.Value = Encoding.UTF8.GetString(record.Data.Span);
+			return true;
+		}
 
 		var context = new SchemaSerializationContext {
 			Stream               = record.Stream,

@@ -10,9 +10,7 @@ public class KurrentClientOptionsTests {
         // Create with default constructor
         var options = new KurrentClientOptions();
 
-        options.EnsureConfigIsValid();
-
-        var validationResult = options.ValidateConfig();
+        var validationResult = options.ValidateOptions();
 
         // Ensure validation passes
         validationResult.IsSuccess.ShouldBeTrue("Default options should be valid");
@@ -211,7 +209,7 @@ public class KurrentClientOptionsTests {
             ]
         };
 
-        var result = options.ValidateConfig();
+        var result = options.ValidateOptions();
 
         result.IsSuccess.ShouldBe(false, "Direct connection with multiple hosts must not be valid.");
         //

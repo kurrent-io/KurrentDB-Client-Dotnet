@@ -49,12 +49,14 @@ public sealed class KurrentClientOptionsBuilder : OptionsBuilder<KurrentClientOp
     /// </summary>
     /// <returns>A configured KurrentClientOptions instance.</returns>
     protected override KurrentClientOptions OnBuild(KurrentClientOptions options) {
-        options.EnsureConfigIsValid();
+        options.EnsureOptionsAreValid();
+        return options;
 
-        return options with {
-            Endpoints = options.Endpoints.ToArray(),
-            Interceptors = options.Interceptors.ToArray()
-        };
+        // // might not need to do this anymore, double check.
+        // return options with {
+        //     Endpoints = options.Endpoints.ToArray(),
+        //     Interceptors = options.Interceptors.ToArray()
+        // };
     }
 
     /// <summary>

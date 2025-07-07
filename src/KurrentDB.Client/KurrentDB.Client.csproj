@@ -83,6 +83,21 @@
     <Folder Include="Kurrent.Client\Services\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Kurrent\Grpc\Balancer\**" />
+    <Compile Remove="Kurrent.Client\Experimental\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Kurrent\Grpc\Balancer\**" />
+    <EmbeddedResource Remove="Kurrent.Client\Experimental\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Kurrent\Grpc\Balancer\**" />
+    <None Remove="Kurrent.Client\Experimental\**" />
+  </ItemGroup>
+
   <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">
     <ItemGroup>
       <ReferencedAssemblies Include="bin\$(Configuration)\**\*.dll" />

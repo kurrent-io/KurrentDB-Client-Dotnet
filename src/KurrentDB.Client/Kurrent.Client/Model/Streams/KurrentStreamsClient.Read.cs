@@ -7,6 +7,7 @@ using Kurrent.Client.Model;
 using KurrentDB.Client;
 using static Kurrent.Client.Model.ErrorDetails;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
+using static Kurrent.Client.Model.StreamsClientV1Mapper;
 
 namespace Kurrent.Client;
 
@@ -283,10 +284,10 @@ public partial class KurrentStreamsClient {
         ReadStream(new ReadStreamOptions { Stream = stream, CancellationToken = cancellationToken });
 
     public ValueTask<Result<Messages, ReadError>> ReadAll(ReadAllOptions options) =>
-        ReadCore(StreamsClientV1Mapper.Requests.CreateReadRequest(options), options.BufferSize, options.Timeout, options.SkipDecoding, options.CancellationToken);
+        ReadCore(Requests.CreateReadRequest(options), options.BufferSize, options.Timeout, options.SkipDecoding, options.CancellationToken);
 
     public ValueTask<Result<Messages, ReadError>> ReadStream(ReadStreamOptions options) =>
-        ReadCore(StreamsClientV1Mapper.Requests.CreateReadRequest(options), options.BufferSize, options.Timeout, options.SkipDecoding, options.CancellationToken);
+        ReadCore(Requests.CreateReadRequest(options), options.BufferSize, options.Timeout, options.SkipDecoding, options.CancellationToken);
 
     async ValueTask<Result<Messages, ReadError>> ReadCore(ReadReq request, int bufferSize, TimeSpan timeout, bool skipDecoding, CancellationToken cancellationToken) {
         var cancellator   = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -306,6 +307,11 @@ public partial class KurrentStreamsClient {
         }
         catch (AccessDeniedException) {
             return Result.Failure<Messages, ReadError>(new AccessDenied(mt => mt
+                .With("stream", request.Options.Stream.StreamIdentifier.StreamName.ToStringUtf8())));
+        }
+        catch (StreamDeletedException) {
+            // TODO: THIS HAPPENS WHEN WE TOMBSTONE A STREAM - WE NEED A STREAM TOMBSTONED ERROR INSTEAD OF DELETED
+            return Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt
                 .With("stream", request.Options.Stream.StreamIdentifier.StreamName.ToStringUtf8())));
         }
 
@@ -340,7 +346,7 @@ public partial class KurrentStreamsClient {
         _ = Task.Run(
             async () => {
                 try {
-                    // must continue from the freaking cursor because I had to try to read
+                    // must continue from the freaking cursor because we had to try to read
                     // the first entry to check if the stream existed or if access was granted
                     do {
                         var resp = session.ResponseStream.Current;
@@ -385,37 +391,28 @@ public partial class KurrentStreamsClient {
         return channel;
     }
 
-    internal async ValueTask<StreamRevision> GetStreamRevision(StreamName stream, LogPosition position, CancellationToken cancellationToken = default) {
-        if (position == LogPosition.Latest)
-            return StreamRevision.Max;
+    public async ValueTask<Result<Record, InspectRecordError>> InspectRecord(LogPosition position, CancellationToken cancellationToken = default) {
+        ArgumentOutOfRangeException.ThrowIfEqual(position, LogPosition.Unset, nameof(position));
 
-        if (position == LogPosition.Unset || position == LogPosition.Earliest)
-            return StreamRevision.Min;
-
-        var options = new ReadAllOptions {
-            Start             = position,
-            Direction         = ReadDirection.Forwards,
-            Limit             = 1,
-            Heartbeat         = HeartbeatOptions.Disabled,
-            BufferSize        = 1,
-            Filter            = ReadFilter.None,
-            CancellationToken = cancellationToken
-        };
-
-        await using var messages = await ReadAll(options)
-            .ThrowOnFailureAsync()
+        var readResult = await ReadCore(
+                request: Requests.CreateInspectRecordRequest(position),
+                bufferSize: 1,
+                timeout: Timeout.InfiniteTimeSpan,
+                skipDecoding: true,
+                cancellationToken: cancellationToken)
             .ConfigureAwait(false);
 
-        var rec = await messages
+        if (readResult.IsFailure)
+            return Result.Failure<Record, InspectRecordError>(readResult.Error.AsAccessDenied);
+
+        await using var messages = readResult.Value;
+
+        var record = await messages
             .Select(msg => msg.AsRecord)
-            .FirstOrDefaultAsync(cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
 
-        if (rec is not null)
-            return rec.StreamRevision;
-
-        var firstRecord = await this.ReadFirstStreamRecord(stream, cancellationToken)
-            .ThrowOnFailureAsync();
-
-        return firstRecord.StreamRevision;
+        return record ?? Result.Failure<Record, InspectRecordError>(
+            new LogPositionNotFound(mt => mt.With("position", position)));
     }
 }

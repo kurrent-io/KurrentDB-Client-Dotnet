@@ -16,11 +16,6 @@
 - **v2.1.0** (2024-07-23): Added in-depth details about the dual API architecture (`Kurrent.Client` vs. `KurrentDB.Client`), the role of source generators, and the testing strategy. Refined all sections with more specific examples and patterns.
 - **v2.0.0** (2024-07-23): Initial generation of project instructions.
 
-### **Claude Integration Guide**
-This project uses Claude Code AI assistant exclusively. Reference these Claude-specific resources:
-- **Core Instructions**: `CLAUDE.md` - Primary coding standards and architectural guidance
-- **Memory Patterns**: `docs/memory-usage-guide.md` - Effective technical communication strategies
-- **Reflection Tool**: `.claude/commands/reflection.md` - Advanced AI assistant system analysis
 
 ### **Critical 2025 Architectural Updates**
 - **Source Generators**: `KurrentOperationErrorGenerator` and `VariantGenerator` are now core to error handling

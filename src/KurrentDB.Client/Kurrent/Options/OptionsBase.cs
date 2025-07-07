@@ -1,19 +1,29 @@
+using System.Reflection;
 using Kurrent.Validation;
 
 namespace Kurrent;
 
-public interface IOptionsValidator<in TOptions> : IValidator<TOptions> where TOptions : class, IOptions;
+[PublicAPI]
+public abstract record OptionsBase<TOptions, TValidator> : IOptions where TValidator : class, IOptionsValidator<TValidator, TOptions>, new() where TOptions : class, IOptions {
+	static Lazy<TValidator> LazyValidator => new(() => typeof(TValidator)
+        .GetField("Instance", BindingFlags.Public | BindingFlags.Static)?
+        .GetValue(null) as TValidator ?? new TValidator());
 
-public interface IOptions {
-    Result<ValidationSuccess, ValidationError> ValidateConfig();
+    static TValidator Validator => LazyValidator.Value;
 
-    void EnsureConfigIsValid();
+    public Result<ValidationSuccess, ValidationError> ValidateOptions() =>
+        Validator.ValidateOptions((dynamic)this);
+
+    public void EnsureOptionsAreValid() =>
+        ValidateOptions().ThrowOnFailure();
 }
 
-public abstract record OptionsBase<TOptions, TValidator> : IOptions where TValidator : IOptionsValidator<TOptions>, new() where TOptions : class, IOptions {
-    static readonly TValidator Validator = new TValidator();
+public interface IOptionsValidator<TValidator, in TOptions> : IValidator<TOptions>
+    where TOptions : class, IOptions
+    where TValidator : IOptionsValidator<TValidator, TOptions>, new() {
+    public string ErrorCode { get; }
+}
 
-    public Result<ValidationSuccess, ValidationError> ValidateConfig() => Validator.ValidateOptions((dynamic)this);
-
-    public void EnsureConfigIsValid() => ValidateConfig().ThrowOnFailure();
+public interface IOptions {
+    Result<ValidationSuccess, ValidationError> ValidateOptions();
 }
