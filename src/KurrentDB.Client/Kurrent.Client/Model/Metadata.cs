@@ -189,28 +189,36 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="value">When this method returns, contains the value if found and successfully converted; otherwise, default(T).</param>
 	/// <returns>true if the key was found and the value could be converted to type T; otherwise, false.</returns>
 	public bool TryGet<T>(string key, out T? value) {
-		// Check if key exists
+		// check if the key exists
 		if (!_dictionary.TryGetValue(key, out var obj)) {
 			value = default;
 			return false;
 		}
 
 		switch (obj) {
-			// Direct type match (most common case)
+			// direct type match (most common case)
 			case T typedValue:
 				value = typedValue;
 				return true;
 
-			// Handle null case
+			// handle null case
 			case null:
 				value = default;
-				return typeof(T).IsClass || Nullable.GetUnderlyingType(typeof(T)) != null;
+				return typeof(T).IsClass || Nullable.GetUnderlyingType(typeof(T)) is not null;
 
-			// If the object is a string, try to convert it to type T
+			// If the object is a string, try to convert it to type T, unless T is string itself
 			case string stringValue: {
+				// if T is string, we can directly assign
+				if (typeof(T) == typeof(string)) {
+					value = (T)(object)stringValue;
+					return true;
+				}
+
+				stringValue = stringValue.Trim();
+
 				var targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
 
-				// Handle basic types with TypeConverter
+				// handle basic types with TypeConverter
 				var converter = System.ComponentModel.TypeDescriptor.GetConverter(targetType);
 				if (converter.CanConvertFrom(typeof(string)))
 					try {
@@ -222,7 +230,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 						return false;
 					}
 
-                // Handle enum types
+                // handle enum types
                 if (targetType.IsEnum) {
                     try {
                         if(Enum.TryParse(targetType, stringValue, ignoreCase: true, out var enumValue)) {
@@ -243,7 +251,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 			}
 		}
 
-		// If we got here, we couldn't convert
+		// if we got here, we couldn't convert
 		value = default;
 		return false;
 	}
@@ -692,6 +700,8 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 				decimal dec                   => dec.ToString(CultureInfo.InvariantCulture),
 				double dbl                    => dbl.ToString(CultureInfo.InvariantCulture),
 				float flt                     => flt.ToString(CultureInfo.InvariantCulture),
+				byte b						  => b.ToString(CultureInfo.InvariantCulture),
+				char c                        => c.ToString(),
 				byte[] bytes                  => Convert.ToBase64String(bytes),
 				ReadOnlyMemory<byte> memory   => Convert.ToBase64String(memory.ToArray()),
 				string str                    => str,
@@ -699,9 +709,6 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 				_                             => value.ToString()
 			};
 	}
-
-
-
 
     #endregion
 

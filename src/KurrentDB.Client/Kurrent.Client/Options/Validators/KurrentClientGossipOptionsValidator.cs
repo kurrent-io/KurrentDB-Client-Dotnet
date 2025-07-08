@@ -2,9 +2,7 @@ using FluentValidation;
 
 namespace Kurrent.Client;
 
-class KurrentClientGossipOptionsValidator : AbstractValidator<KurrentClientGossipOptions> {
-    public static readonly KurrentClientGossipOptionsValidator Instance = new();
-
+public class KurrentClientGossipOptionsValidator : FluentOptionsValidator<KurrentClientGossipOptionsValidator, KurrentClientGossipOptions> {
     public KurrentClientGossipOptionsValidator() {
         // MaxDiscoverAttempts validation
         RuleFor(options => options.MaxDiscoverAttempts)

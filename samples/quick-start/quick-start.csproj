@@ -4,5 +4,6 @@
     </PropertyGroup>
     <ItemGroup>
       <ProjectReference Include="..\..\src\KurrentDB.Client\KurrentDB.Client.csproj" />
+      <ProjectReference Include="..\..\src\Variant\Variant.csproj" />
     </ItemGroup>
 </Project>

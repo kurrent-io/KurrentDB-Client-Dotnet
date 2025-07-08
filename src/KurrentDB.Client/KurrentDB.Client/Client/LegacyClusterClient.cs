@@ -31,20 +31,6 @@ class LegacyClusterClient {
 		// TODO SS: this should become node read preference.
 		var requiresLeader = settings.ConnectivitySettings.NodePreference == NodePreference.Leader ? bool.TrueString : bool.FalseString;
 
-		Interceptor[] interceptors = [
-			..settings.Interceptors,
-			HeadersInterceptor.InjectHeaders(
-				Constants.Headers.RequiresLeader, requiresLeader,
-				operationsToExclude: "MultiStreamAppendSession"),
-            HeadersInterceptor.InjectHeaders(new() {
-                [Constants.Headers.ClientName]     = clientName,
-                [Constants.Headers.ClientVersion]  = clientVersion,
-                [Constants.Headers.ConnectionName] = settings.ConnectionName!,
-			}),
-			new TypedExceptionInterceptor(exceptionMap),
-			new ClusterTopologyChangesInterceptor(this, settings.LoggerFactory.CreateLogger<ClusterTopologyChangesInterceptor>()),
-		];
-
 		IChannelSelector channelSelector = settings.ConnectivitySettings.IsSingleNode
 			? new SingleNodeChannelSelector(settings, _channelCache)
 			: new GossipChannelSelector(settings, _channelCache, new GrpcGossipClient(settings));
@@ -60,7 +46,7 @@ class LegacyClusterClient {
 					ReconnectionRequired.NewLeader (var endpoint) => channelSelector.SelectEndpointChannel(endpoint)
 				};
 
-				var invoker = channel.CreateCallInvoker().Intercept(interceptors);
+				var invoker = channel.CreateCallInvoker().Intercept(ConfigureInterceptors());
 
 				if(dontLoadServerCapabilities)
 					return new(channel, new ServerCapabilities(), invoker);
@@ -85,9 +71,36 @@ class LegacyClusterClient {
 		);
 
 		ResolverScheme = settings.ConnectivitySettings.IsSingleNode ? "kurrentdb" : "kurrentdb+discover";
+
+		return;
+
+		Interceptor[] ConfigureInterceptors() {
+			var requiresLeaderInterceptor = HeadersInterceptor.InjectHeaders(
+				Constants.Headers.RequiresLeader, requiresLeader,
+				operationsToExclude: "MultiStreamAppendSession"
+			);
+
+			var headersInterceptor = HeadersInterceptor.InjectHeaders(new() {
+				[Constants.Headers.ClientName]     = clientName,
+				[Constants.Headers.ClientVersion]  = clientVersion,
+				[Constants.Headers.ConnectionName] = settings.ConnectionName!,
+			});
+
+			var topologyChangesInterceptor = new ClusterTopologyChangesInterceptor(
+				this, settings.LoggerFactory.CreateLogger<ClusterTopologyChangesInterceptor>()
+			);
+
+			return exceptionMap.Count == 0
+				? [..settings.Interceptors, requiresLeaderInterceptor, headersInterceptor, topologyChangesInterceptor,]
+				: [..settings.Interceptors, requiresLeaderInterceptor, headersInterceptor, new TypedExceptionInterceptor(exceptionMap), topologyChangesInterceptor];
+		}
 	}
 
-	public LegacyClusterClient(KurrentDBClientSettings settings) : this(settings, KurrentDBClient.ExceptionMap, true) { }
+	public static LegacyClusterClient CreateWithoutExceptionMapping(KurrentDBClientSettings settings) =>
+		new LegacyClusterClient(settings, [], true);
+
+	public static LegacyClusterClient CreateWithExceptionMapping(KurrentDBClientSettings settings) =>
+		new LegacyClusterClient(settings, KurrentDBClient.ExceptionMap, true);
 
 	public string ResolverScheme { get; }
 

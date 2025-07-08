@@ -20,6 +20,12 @@ public static partial class ErrorDetails {
     public readonly partial record struct StreamDeleted;
 
     /// <summary>
+    /// Represents an error indicating that the specified stream has been tombstoned, meaning it is no longer available for appending.
+    /// </summary>
+    [KurrentOperationError(typeof(Types.StreamTombstoned))]
+    public readonly partial record struct StreamTombstoned;
+
+    /// <summary>
     /// Represents an error indicating that access to the requested resource has been denied.
     /// </summary>
     [KurrentOperationError(typeof(Types.AccessDenied))]
@@ -36,6 +42,12 @@ public static partial class ErrorDetails {
     /// </summary>
     [KurrentOperationError(typeof(Types.StreamRevisionConflict))]
     public readonly partial record struct StreamRevisionConflict;
+
+    /// <summary>
+    /// Represents an error indicating that the specified log position could not be found in the transaction log.
+    /// </summary>
+    [KurrentOperationError(typeof(Types.LogPositionNotFound))]
+    public readonly partial record struct LogPositionNotFound;
 
     /// <summary>
     /// Represents an error indicating that the specified user could not be found.

@@ -17,6 +17,8 @@ namespace Kurrent.Client.Model;
 [PublicAPI]
 [method: SetsRequiredMembers]
 public readonly record struct Heartbeat(HeartbeatType Type, LogPosition Position, StreamRevision StreamRevision, DateTimeOffset Timestamp) {
+	public static readonly Heartbeat None = new(HeartbeatType.Unspecified, LogPosition.Unset, StreamRevision.Unset, DateTimeOffset.MinValue);
+
 	/// <summary>
 	/// The type of the heartbeat, representing the nature of the event
 	/// (e.g. indicating whether it is a checkpoint or a caught-up event).
@@ -56,7 +58,6 @@ public readonly record struct Heartbeat(HeartbeatType Type, LogPosition Position
 	/// meaning the process is no longer caught up with the expected stream position.
 	/// </summary>
 	public bool IsFellBehind => Type == HeartbeatType.FellBehind;
-
 
 	public bool HasPosition => Position != LogPosition.Unset;
 

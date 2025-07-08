@@ -33,7 +33,7 @@ namespace Kurrent.Client;
 /// </code>
 /// </example>
 [PublicAPI]
-public record KurrentClientSchemaOptions : KurrentClientOptionsBase {
+public record KurrentClientSchemaOptions : OptionsBase<KurrentClientSchemaOptions, KurrentClientSchemaOptionsValidator> {
 	/// <summary>
 	/// Whether schemas should be automatically registered.
 	/// </summary>

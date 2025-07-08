@@ -1,570 +1,743 @@
-using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
 using Bogus;
 
 namespace HomeAutomation;
 
-public enum SensorType {
-    Temperature,
-    Humidity,
-    Light,
-    Motion,
-    Pressure
+public static class HomeTemplates {
+    public static readonly HomeTemplate BigMansion = new(
+        "Big Mansion",
+        [
+            new RoomTemplate(
+                RoomType.Kitchen, "Main Kitchen", [
+                    new DeviceTemplate(
+                        DeviceType.MotionSensor, "Motion Sensor", "Aqara",
+                        "Motion Sensor P1"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Ceiling Lights", "Philips",
+                        "Hue White and Color"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Island Lights", "Philips",
+                        "Hue White and Color"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.SmartPlug, "Coffee Station", "TP-Link",
+                        "Kasa Smart Plug"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.TemperatureSensor, "Temperature Sensor", "Xiaomi",
+                        "Mi Temperature Sensor"
+                    )
+                ]
+            ),
+            new RoomTemplate(
+                RoomType.LivingRoom, "Great Room", [
+                    new DeviceTemplate(
+                        DeviceType.SmartTV, "85-inch TV", "Samsung",
+                        "85-inch QLED"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Chandelier", "Philips",
+                        "Hue White and Color"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Accent Lights", "Philips",
+                        "Hue Lightstrip"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.MotionSensor, "Motion Sensor", "Aqara",
+                        "Motion Sensor P1"
+                    )
+                ]
+            ),
+            new RoomTemplate(
+                RoomType.Bedroom, "Master Suite", [
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Ceiling Light", "Philips",
+                        "Hue White and Color"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Bedside Lamps", "Philips",
+                        "Hue White"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.SmartTV, "Bedroom TV", "Samsung",
+                        "55-inch QLED"
+                    )
+                ]
+            )
+        ],
+        ResidentProfile.Family(2, 3)
+    );
+
+    public static readonly HomeTemplate FamilyHouse = new(
+        "Family House",
+        [
+            new RoomTemplate(
+                RoomType.Kitchen, "Kitchen", [
+                    new DeviceTemplate(
+                        DeviceType.MotionSensor, "Motion Sensor", "Aqara",
+                        "Motion Sensor P1"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Ceiling Light", "Philips",
+                        "Hue White"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Under Cabinet Light", "Philips",
+                        "Hue Lightstrip"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.SmartPlug, "Coffee Maker Plug", "TP-Link",
+                        "Kasa Smart Plug"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.SmartPlug, "Microwave Plug", "TP-Link",
+                        "Kasa Smart Plug"
+                    )
+                ]
+            ),
+            new RoomTemplate(
+                RoomType.LivingRoom, "Living Room", [
+                    new DeviceTemplate(
+                        DeviceType.SmartTV, "Living Room TV", "Samsung",
+                        "55-inch QLED"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Ceiling Light", "Philips",
+                        "Hue White and Color"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Table Lamp", "IKEA",
+                        "Tradfri Bulb"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.MotionSensor, "Motion Sensor", "Aqara",
+                        "Motion Sensor P1"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.TemperatureSensor, "Temperature Sensor", "Xiaomi",
+                        "Mi Temperature Sensor"
+                    )
+                ]
+            ),
+            new RoomTemplate(
+                RoomType.Bedroom, "Master Bedroom", [
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Ceiling Light", "Philips",
+                        "Hue White"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Side Table Lamp 1", "IKEA",
+                        "Tradfri Bulb"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Side Table Lamp 2", "IKEA",
+                        "Tradfri Bulb"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.MotionSensor, "Motion Sensor", "Aqara",
+                        "Motion Sensor P1"
+                    )
+                ]
+            ),
+            new RoomTemplate(
+                RoomType.Bedroom, "Child Bedroom", [
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Ceiling Light", "Philips",
+                        "Hue White"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Desk Lamp", "IKEA",
+                        "Tradfri Bulb"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.MotionSensor, "Motion Sensor", "Aqara",
+                        "Motion Sensor P1"
+                    )
+                ]
+            ),
+            new RoomTemplate(
+                RoomType.Bathroom, "Bathroom", [
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Main Light", "Philips",
+                        "Hue White"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Mirror Light", "Philips",
+                        "Hue White"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.MotionSensor, "Motion Sensor", "Aqara",
+                        "Motion Sensor P1"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.TemperatureSensor, "Temperature Sensor", "Xiaomi",
+                        "Mi Temperature Sensor"
+                    )
+                ]
+            ),
+            new RoomTemplate(
+                RoomType.Garage, "Garage", [
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Garage Light", "Philips",
+                        "Hue White"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.MotionSensor, "Motion Sensor", "Aqara",
+                        "Motion Sensor P1"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.SecurityCamera, "Security Camera", "Ring",
+                        "Indoor Cam"
+                    )
+                ]
+            )
+        ],
+        ResidentProfile.Family()
+    );
+
+    public static readonly HomeTemplate SmallApartment = new(
+        "Small Apartment",
+        [
+            new RoomTemplate(
+                RoomType.Kitchen, "Kitchen", [
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Ceiling Light", "IKEA",
+                        "Tradfri Bulb"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.SmartPlug, "Coffee Maker", "TP-Link",
+                        "Kasa Smart Plug"
+                    )
+                ]
+            ),
+            new RoomTemplate(
+                RoomType.LivingRoom, "Living Room", [
+                    new DeviceTemplate(
+                        DeviceType.SmartTV, "TV", "Samsung",
+                        "43-inch Smart TV"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Floor Lamp", "IKEA",
+                        "Tradfri Bulb"
+                    )
+                ]
+            ),
+            new RoomTemplate(
+                RoomType.Bedroom, "Bedroom", [
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Ceiling Light", "IKEA",
+                        "Tradfri Bulb"
+                    )
+                ]
+            ),
+            new RoomTemplate(
+                RoomType.Bathroom, "Bathroom", [
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Main Light", "IKEA",
+                        "Tradfri Bulb"
+                    )
+                ]
+            )
+        ],
+        ResidentProfile.Single()
+    );
+
+    public static readonly HomeTemplate SmallOffice = new(
+        "Small Office",
+        [
+            new RoomTemplate(
+                RoomType.Office, "Main Office", [
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Ceiling Light", "Philips",
+                        "Hue White"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.MotionSensor, "Motion Sensor", "Aqara",
+                        "Motion Sensor P1"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.TemperatureSensor, "Temperature Sensor", "Xiaomi",
+                        "Mi Temperature Sensor"
+                    )
+                ]
+            ),
+            new RoomTemplate(
+                RoomType.Office, "Meeting Room", [
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Ceiling Light", "Philips",
+                        "Hue White"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.SmartTV, "Conference TV", "Samsung",
+                        "65-inch QLED"
+                    )
+                ]
+            ),
+            new RoomTemplate(
+                RoomType.Kitchen, "Break Room", [
+                    new DeviceTemplate(
+                        DeviceType.Lighting, "Ceiling Light", "IKEA",
+                        "Tradfri Bulb"
+                    ),
+                    new DeviceTemplate(
+                        DeviceType.SmartPlug, "Coffee Machine", "TP-Link",
+                        "Kasa Smart Plug"
+                    )
+                ]
+            )
+        ],
+        ResidentProfile.Office()
+    );
 }
 
-public enum MeasurementUnit {
-    Celsius,
-    Percent,
-    Lux,
-    Boolean,
-    Hectopascal
-}
+// V2 Smart Home Simulator with Builder Pattern
+public class SmartHomeSimulator {
+    readonly TimeSpan        _compressionRatio;
+    readonly Home            _home;
+    readonly Random          _random = Random.Shared;
+    readonly ResidentProfile _residentProfile;
 
-public enum ReadingQuality {
-    Excellent,
-    Good,
-    Fair,
-    Poor,
-    Critical
-}
-
-public enum DeviceType {
-    TemperatureSensor,
-    HumiditySensor,
-    LightSensor,
-    MotionDetector,
-    PressureSensor
-}
-
-public enum HomeLocation {
-    LivingRoom,
-    Kitchen,
-    Bedroom,
-    Bathroom,
-    Garage,
-    Garden
-}
-
-public static class IdGenerator {
-    public static string NewDeviceId(SensorType sensorType) {
-        var prefix = sensorType switch {
-            SensorType.Temperature => "TEMP",
-            SensorType.Humidity    => "HUM",
-            SensorType.Light       => "LIGHT",
-            SensorType.Motion      => "MOTION",
-            SensorType.Pressure    => "PRESS"
-        };
-
-        return $"{prefix}_{Guid.NewGuid():N}"[..16].ToUpperInvariant();
+    internal SmartHomeSimulator(Home home, TimeSpan compressionRatio, ResidentProfile residentProfile) {
+        _home             = home;
+        _compressionRatio = compressionRatio;
+        _residentProfile  = residentProfile;
     }
 
-    public static string NewLocationId(HomeLocation location) => $"LOC_{location:G}_{Guid.NewGuid():N}"[..20].ToUpperInvariant();
+    public Home            Home             => _home;
+    public TimeSpan        CompressionRatio => _compressionRatio;
+    public ResidentProfile ResidentProfile  => _residentProfile;
 
-    public static string NewLocationId() => $"LOC_{Guid.NewGuid():N}"[..16].ToUpperInvariant();
-}
+    public static SmartHomeSimulatorBuilder Create() => new();
 
-public static class LocationHelper {
-    static readonly Dictionary<string, HomeLocation> LocationMappings = new();
-
-    public static string GetLocationName(HomeLocation location) =>
-        location switch {
-            HomeLocation.LivingRoom => "Living Room",
-            HomeLocation.Kitchen    => "Kitchen",
-            HomeLocation.Bedroom    => "Bedroom",
-            HomeLocation.Bathroom   => "Bathroom",
-            HomeLocation.Garage     => "Garage",
-            HomeLocation.Garden     => "Garden",
-            _                       => location.ToString()
-        };
-
-    public static string RegisterLocation(HomeLocation location) {
-        var locationId = IdGenerator.NewLocationId(location);
-        LocationMappings[locationId] = location;
-        return locationId;
-    }
-
-    public static HomeLocation? GetLocation(string locationId) => LocationMappings.TryGetValue(locationId, out var location) ? location : null;
-}
-
-public record SensorReading {
-    public required string                      DeviceId     { get; init; }
-    public required SensorType                  SensorType   { get; init; }
-    public required string                      LocationId   { get; init; }
-    public required DateTime                    Timestamp    { get; init; }
-    public required double                      Value        { get; init; }
-    public required MeasurementUnit             Unit         { get; init; }
-    public          double?                     BatteryLevel { get; init; }
-    public required ReadingQuality              Quality      { get; init; }
-    public          Dictionary<string, object>? Metadata     { get; init; }
-}
-
-public record SensorDevice(
-    string DeviceId,
-    DeviceType DeviceType,
-    string LocationId,
-    DateTime LastSeen,
-    double BatteryLevel,
-    bool IsOnline,
-    TimeSpan ReportingInterval
-) {
-    public SensorDevice UpdateBattery(double newLevel) => this with { BatteryLevel = newLevel, LastSeen = DateTime.UtcNow };
-    public SensorDevice SetOffline()                   => this with { IsOnline = false, BatteryLevel = 0, LastSeen = DateTime.UtcNow };
-    public SensorDevice SetOnline()                    => this with { IsOnline = true, BatteryLevel = 100, LastSeen = DateTime.UtcNow };
-    public SensorDevice UpdateLastSeen()               => this with { LastSeen = DateTime.UtcNow };
-}
-
-public readonly record struct ProcessResult(bool IsSuccess, string Message, string? ErrorCode = null) {
-    public static ProcessResult Success(string message = "Success")               => new(true, message);
-    public static ProcessResult Failure(string message, string? errorCode = null) => new(false, message, errorCode);
-    public static ProcessResult InvalidInput(string message)                      => new(false, message, "INVALID_INPUT");
-    public static ProcessResult Timeout(string message)                           => new(false, message, "TIMEOUT");
-    public static ProcessResult ConnectionFailure(string message)                 => new(false, message, "CONNECTION_FAILURE");
-    public static ProcessResult UnexpectedError(string message)                   => new(false, message, "UNEXPECTED_ERROR");
-}
-
-public readonly record struct SensorTypeConfig(
-    SensorType Type,
-    MeasurementUnit Unit,
-    double MinValue,
-    double MaxValue,
-    bool HasDailyPattern,
-    double BaseValue,
-    double PatternAmplitude,
-    double NoiseLevel
-);
-
-public static class SensorTypes {
-    public static readonly SensorTypeConfig Humidity = new(
-        SensorType.Humidity,
-        MeasurementUnit.Percent,
-        20,
-        90,
-        true,
-        50,
-        15,
-        2.0
-    );
-
-    public static readonly SensorTypeConfig Light = new(
-        SensorType.Light,
-        MeasurementUnit.Lux,
-        0,
-        1000,
-        true,
-        300,
-        400,
-        20
-    );
-
-    public static readonly SensorTypeConfig Motion = new(
-        SensorType.Motion,
-        MeasurementUnit.Boolean,
-        0,
-        1,
-        false,
-        0,
-        0,
-        0
-    );
-
-    public static readonly SensorTypeConfig Pressure = new(
-        SensorType.Pressure,
-        MeasurementUnit.Hectopascal,
-        980,
-        1050,
-        false,
-        1013,
-        10,
-        1.0
-    );
-
-    public static readonly SensorTypeConfig Temperature = new(
-        SensorType.Temperature,
-        MeasurementUnit.Celsius,
-        -10,
-        40,
-        true,
-        22,
-        8,
-        0.5
-    );
-
-    public static readonly SensorTypeConfig[] AllTypes = [
-        Temperature, Humidity, Light, Motion, Pressure
-    ];
-
-    public static SensorTypeConfig GetConfig(SensorType sensorType) =>
-        sensorType switch {
-            SensorType.Temperature => Temperature,
-            SensorType.Humidity    => Humidity,
-            SensorType.Light       => Light,
-            SensorType.Motion      => Motion,
-            SensorType.Pressure    => Pressure,
-            _                      => throw new ArgumentException($"Unknown sensor type: {sensorType}", nameof(sensorType))
-        };
-}
-
-public class SimulationException(string message) : Exception(message);
-
-public class HomeAutomationSimulator {
-    readonly List<SensorDevice>                     _devices          = [];
-    readonly ConcurrentDictionary<string, DateTime> _lastReadingTimes = new();
-    readonly Dictionary<string, HomeLocation>       _locationMappings = new();
-
-    Faker<SensorReading> _readingFaker = null!;
-
-    public HomeAutomationSimulator() {
-        InitializeFakers();
-    }
-
-    public TimeSpan DefaultReportInterval { get; init; } = TimeSpan.FromSeconds(5);
-
-    public int                         DeviceCount       => _devices.Count;
-    public int                         OnlineDeviceCount => _devices.Count(d => d.IsOnline);
-    public IReadOnlyList<SensorDevice> Devices           => _devices.AsReadOnly();
-
-    public void InitializeDevices(int deviceCount = 50) {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(deviceCount);
-
-        _devices.Clear();
-        _lastReadingTimes.Clear();
-        _locationMappings.Clear();
-
-        var locations = Enum.GetValues<HomeLocation>();
-
-        for (var i = 0; i < deviceCount; i++) {
-            var sensorTypeConfig = SensorTypes.AllTypes[Random.Shared.Next(SensorTypes.AllTypes.Length)];
-            var homeLocation     = locations[Random.Shared.Next(locations.Length)];
-            var locationId       = RegisterLocation(homeLocation);
-
-            var deviceType = HomeAutomationSimulator.GetDeviceType(sensorTypeConfig.Type);
-
-            var device = new SensorDevice(
-                IdGenerator.NewDeviceId(sensorTypeConfig.Type),
-                deviceType,
-                locationId,
-                DateTime.UtcNow.AddMinutes(-Random.Shared.Next(0, 60)),
-                Random.Shared.NextDouble() * 80 + 20,
-                Random.Shared.NextSingle() > 0.05f,
-                TimeSpan.FromSeconds(Random.Shared.Next(30, 600))
-            );
-
-            _devices.Add(device);
-            _lastReadingTimes[device.DeviceId] = DateTime.UtcNow.AddMinutes(-Random.Shared.Next(0, 60));
-        }
-    }
-
-    public async IAsyncEnumerable<SensorReading> GenerateReadingsAsync(
-        TimeSpan? interval = null,
+    public async IAsyncEnumerable<DeviceTelemetry> GenerateTelemetryAsync(
+        int? days = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     ) {
-        var reportInterval = interval ?? DefaultReportInterval;
+        var dayCount        = 0;
+        var simulationStart = DateTime.UtcNow;
 
-        if (_devices.Count == 0) throw new InvalidOperationException("No devices initialized. Call InitializeDevices() first.");
+        while (!cancellationToken.IsCancellationRequested && (days == null || dayCount < days)) {
+            var dayEvents = GenerateDailyEvents(simulationStart.AddDays(dayCount));
 
-        while (!cancellationToken.IsCancellationRequested) {
-            var currentTime       = DateTime.UtcNow;
-            var readingsGenerated = false;
+            foreach (var telemetry in dayEvents) {
+                yield return telemetry;
 
-            for (var i = 0; i < _devices.Count; i++) {
-                var device = _devices[i];
-                if (!device.IsOnline) continue;
-
-                if (ShouldGenerateReading(device, currentTime)) {
-                    var reading = GenerateReading(device, currentTime);
-                    _lastReadingTimes[device.DeviceId] = currentTime;
-
-                    var updatedDevice = HomeAutomationSimulator.UpdateDeviceState(device);
-                    _devices[i]       = updatedDevice;
-                    readingsGenerated = true;
-
-                    yield return reading;
-                }
+                // Calculate compressed delay
+                var realTimeDelay = TimeSpan.FromMilliseconds(_compressionRatio.TotalMilliseconds / 1440); // 1440 minutes per day
+                if (realTimeDelay > TimeSpan.Zero) await Task.Delay(realTimeDelay, cancellationToken);
             }
 
-            if (readingsGenerated)
-                await Task.Delay(reportInterval, cancellationToken);
-            else
-                await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken);
+            dayCount++;
         }
     }
 
-    public List<SensorReading> GenerateBatch(int count, DateTime? startTime = null) {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+    public IEnumerable<DeviceTelemetry> GenerateBatch(TimeSpan duration) {
+        var events    = new List<DeviceTelemetry>();
+        var totalDays = (int)Math.Ceiling(duration.TotalDays);
+        var startTime = DateTime.UtcNow;
 
-        if (_devices.Count == 0) throw new InvalidOperationException("No devices initialized. Call InitializeDevices() first.");
+        for (var day = 0; day < totalDays; day++) events.AddRange(GenerateDailyEvents(startTime.AddDays(day)));
 
-        var readings    = new List<SensorReading>(count);
-        var currentTime = startTime ?? DateTime.UtcNow;
-
-        for (var i = 0; i < count; i++) {
-            var device  = _devices[Random.Shared.Next(_devices.Count)];
-            var reading = GenerateReading(device, currentTime.AddSeconds(i * 10));
-            readings.Add(reading);
-        }
-
-        return readings;
+        return events.OrderBy(e => e.Timestamp);
     }
 
-    public IEnumerable<SensorReading> GenerateTimeSeries(
-        string deviceId,
-        TimeSpan duration,
-        TimeSpan interval,
-        DateTime? startTime = null
-    ) {
-        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(duration.Ticks);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(interval.Ticks);
+    IEnumerable<DeviceTelemetry> GenerateDailyEvents(DateTime date) {
+        var events = new List<DeviceTelemetry>();
 
-        var device = _devices.Find(d => d.DeviceId == deviceId)
-                  ?? throw new ArgumentException($"Device '{deviceId}' not found", nameof(deviceId));
-
-        var current = startTime ?? DateTime.UtcNow.Subtract(duration);
-        var end     = current.Add(duration);
-
-        while (current < end) {
-            yield return GenerateReading(device, current);
-
-            current = current.Add(interval);
-        }
-    }
-
-    public ProcessResult SimulateDeviceFailure(string deviceId) {
-        try {
-            var deviceIndex = FindDeviceIndex(deviceId);
-            _devices[deviceIndex] = _devices[deviceIndex].SetOffline();
-            return ProcessResult.Success($"Device '{deviceId}' marked as offline");
-        }
-        catch (ArgumentException ex) {
-            return ProcessResult.InvalidInput(ex.Message);
-        }
-    }
-
-    public ProcessResult RestoreDevice(string deviceId) {
-        try {
-            var deviceIndex = FindDeviceIndex(deviceId);
-            _devices[deviceIndex] = _devices[deviceIndex].SetOnline();
-            return ProcessResult.Success($"Device '{deviceId}' restored to online");
-        }
-        catch (ArgumentException ex) {
-            return ProcessResult.InvalidInput(ex.Message);
-        }
-    }
-
-    public void Reset() {
-        _devices.Clear();
-        _lastReadingTimes.Clear();
-    }
-
-    void InitializeFakers() {
-        _readingFaker = new Faker<SensorReading>()
-            .RuleFor(r => r.DeviceId, f => f.Random.AlphaNumeric(12))
-            .RuleFor(r => r.SensorType, f => f.PickRandom<SensorType>())
-            .RuleFor(r => r.LocationId, f => f.Random.AlphaNumeric(16))
-            .RuleFor(r => r.Timestamp, f => f.Date.Recent())
-            .RuleFor(r => r.Value, f => f.Random.Double(0, 100))
-            .RuleFor(r => r.Unit, f => f.PickRandom<MeasurementUnit>())
-            .RuleFor(r => r.BatteryLevel, f => f.Random.Double(0, 100))
-            .RuleFor(r => r.Quality, f => f.Random.WeightedRandom([ReadingQuality.Good, ReadingQuality.Fair, ReadingQuality.Poor], [0.85f, 0.12f, 0.03f]))
-            .RuleFor(r => r.Metadata, f => new Dictionary<string, object>());
-    }
-
-    string RegisterLocation(HomeLocation homeLocation) {
-        var locationId = IdGenerator.NewLocationId(homeLocation);
-        _locationMappings[locationId] = homeLocation;
-        return locationId;
-    }
-
-	static DeviceType GetDeviceType(SensorType sensorType) =>
-        sensorType switch {
-            SensorType.Temperature => DeviceType.TemperatureSensor,
-            SensorType.Humidity    => DeviceType.HumiditySensor,
-            SensorType.Light       => DeviceType.LightSensor,
-            SensorType.Motion      => DeviceType.MotionDetector,
-            SensorType.Pressure    => DeviceType.PressureSensor,
-            _                      => throw new ArgumentException($"Unknown sensor type: {sensorType}", nameof(sensorType))
-        };
-
-    SensorReading GenerateReading(SensorDevice device, DateTime timestamp) {
-        var sensorType   = HomeAutomationSimulator.GetSensorType(device.DeviceType);
-        var sensorConfig = SensorTypes.GetConfig(sensorType);
-        var value        = GenerateRealisticValue(sensorConfig, timestamp);
-        var metadata     = HomeAutomationSimulator.GenerateMetadata(device, sensorConfig);
-
-        return _readingFaker.Generate() with {
-            DeviceId = device.DeviceId,
-            SensorType = sensorType,
-            LocationId = device.LocationId,
-            Timestamp = timestamp,
-            Value = value,
-            Unit = sensorConfig.Unit,
-            BatteryLevel = device.BatteryLevel,
-            Metadata = metadata
-        };
-    }
-
-    double GenerateRealisticValue(SensorTypeConfig config, DateTime timestamp) {
-        var value = config.BaseValue;
-
-        if (config.HasDailyPattern) value += HomeAutomationSimulator.CalculateDailyPattern(config, timestamp);
-
-        value += (Random.Shared.NextDouble() - 0.5) * config.NoiseLevel * 2;
-
-        if (config.Type == SensorType.Motion) {
-            var activityProbability = HomeAutomationSimulator.CalculateActivityProbability(timestamp.Hour);
-            return Random.Shared.NextSingle() < activityProbability ? 1 : 0;
-        }
-
-        return Math.Clamp(value, config.MinValue, config.MaxValue);
-    }
-
-	static double CalculateDailyPattern(SensorTypeConfig config, DateTime timestamp) {
-        var hourOfDay = timestamp.Hour + timestamp.Minute / 60.0;
-
-        return config.Type switch {
-            SensorType.Temperature                            => config.PatternAmplitude * Math.Sin((hourOfDay - 6) * Math.PI / 12),
-            SensorType.Light when hourOfDay is >= 6 and <= 20 => config.PatternAmplitude * Math.Sin((hourOfDay - 6) * Math.PI / 14),
-            SensorType.Light                                  => Random.Shared.NextDouble() * 50,
-            SensorType.Humidity                               => -config.PatternAmplitude * 0.3 * Math.Sin((hourOfDay - 6) * Math.PI / 12),
-            _                                                 => 0
-        };
-    }
-
-	static double CalculateActivityProbability(int hour) => hour is >= 7 and <= 22 ? 0.1 : 0.02;
-
-	static Dictionary<string, object> GenerateMetadata(SensorDevice device, SensorTypeConfig config) {
-        var metadata = new Dictionary<string, object>();
-
-        switch (config.Type) {
-            case SensorType.Motion:
-                metadata["detectionConfidence"] = Random.Shared.NextSingle();
+        // Generate events based on resident profile
+        switch (_residentProfile.Type) {
+            case "Family":
+                events.AddRange(GenerateFamilyDayEvents(date));
                 break;
 
-            case SensorType.Temperature:
-                metadata["calibrationOffset"] = Random.Shared.NextSingle() * 0.5 - 0.25;
+            case "Single":
+                events.AddRange(GenerateSingleDayEvents(date));
                 break;
 
-            case SensorType.Light:
-                metadata["sensorType"] = Random.Shared.NextSingle() > 0.5 ? "photodiode" : "photoresistor";
+            case "Office":
+                events.AddRange(GenerateOfficeDayEvents(date));
+                break;
+
+            default:
+                events.AddRange(GenerateBasicDayEvents(date));
                 break;
         }
 
-        metadata["firmwareVersion"] = $"v{Random.Shared.Next(1, 5)}.{Random.Shared.Next(0, 10)}.{Random.Shared.Next(0, 10)}";
-        metadata["signalStrength"]  = Random.Shared.Next(-80, -30);
-
-        return metadata;
+        return events.OrderBy(e => e.Timestamp);
     }
 
-    bool ShouldGenerateReading(SensorDevice device, DateTime currentTime) {
-        if (!_lastReadingTimes.TryGetValue(device.DeviceId, out var lastReading)) return true;
+    IEnumerable<DeviceTelemetry> GenerateFamilyDayEvents(DateTime date) {
+        var events = new List<DeviceTelemetry>();
 
-        return currentTime - lastReading >= device.ReportingInterval;
+        // Morning routine (6:30 - 8:00)
+        events.AddRange(GenerateTimeSlotEvents(date.AddHours(6.5), TimeSpan.FromHours(1.5), 0.7));
+
+        // Day time activity (8:00 - 17:00) - lower activity
+        events.AddRange(GenerateTimeSlotEvents(date.AddHours(8), TimeSpan.FromHours(9), 0.2));
+
+        // Evening routine (17:00 - 22:00) - high activity
+        events.AddRange(GenerateTimeSlotEvents(date.AddHours(17), TimeSpan.FromHours(5), 0.8));
+
+        // Night time (22:00 - 6:30) - minimal activity
+        events.AddRange(GenerateTimeSlotEvents(date.AddHours(22), TimeSpan.FromHours(8.5), 0.1));
+
+        return events;
     }
 
-	static SensorDevice UpdateDeviceState(SensorDevice device) {
-        var newBatteryLevel = Math.Max(0, device.BatteryLevel - Random.Shared.NextDouble() * 0.01);
+    IEnumerable<DeviceTelemetry> GenerateSingleDayEvents(DateTime date) {
+        var events = new List<DeviceTelemetry>();
 
-        if (newBatteryLevel < 5 && Random.Shared.NextSingle() < 0.1) return device.SetOffline();
+        // Later morning routine (8:00 - 9:00)
+        events.AddRange(GenerateTimeSlotEvents(date.AddHours(8), TimeSpan.FromHours(1), 0.6));
 
-        return device.UpdateBattery(newBatteryLevel).UpdateLastSeen();
+        // Work from home activity (9:00 - 17:00)
+        events.AddRange(GenerateTimeSlotEvents(date.AddHours(9), TimeSpan.FromHours(8), 0.3));
+
+        // Evening activity (17:00 - 23:00)
+        events.AddRange(GenerateTimeSlotEvents(date.AddHours(17), TimeSpan.FromHours(6), 0.6));
+
+        // Night time (23:00 - 8:00)
+        events.AddRange(GenerateTimeSlotEvents(date.AddHours(23), TimeSpan.FromHours(9), 0.05));
+
+        return events;
     }
 
-    int FindDeviceIndex(string deviceId) {
-        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+    IEnumerable<DeviceTelemetry> GenerateOfficeDayEvents(DateTime date) {
+        // Skip weekends for office
+        if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday) return [];
 
-        var index = _devices.FindIndex(d => d.DeviceId == deviceId);
-        return index >= 0 ? index : throw new ArgumentException($"Device '{deviceId}' not found", nameof(deviceId));
+        var events = new List<DeviceTelemetry>();
+
+        // Office hours (8:00 - 18:00)
+        events.AddRange(GenerateTimeSlotEvents(date.AddHours(8), TimeSpan.FromHours(10), 0.5));
+
+        return events;
     }
 
-	static SensorType GetSensorType(DeviceType deviceType) =>
-        deviceType switch {
-            DeviceType.TemperatureSensor => SensorType.Temperature,
-            DeviceType.HumiditySensor    => SensorType.Humidity,
-            DeviceType.LightSensor       => SensorType.Light,
-            DeviceType.MotionDetector    => SensorType.Motion,
-            DeviceType.PressureSensor    => SensorType.Pressure,
-            _                            => throw new ArgumentException($"Unknown device type: {deviceType}", nameof(deviceType))
-        };
+    IEnumerable<DeviceTelemetry> GenerateBasicDayEvents(DateTime date) => GenerateTimeSlotEvents(date, TimeSpan.FromDays(1), 0.3);
 
-    public record SimulationConfiguration {
-        public int                             DefaultDeviceCount    { get; init; } = 50;
-        public TimeSpan                        DefaultReportInterval { get; init; } = TimeSpan.FromSeconds(5);
-        public double                          DeviceFailureRate     { get; init; } = 0.05;
-        public IReadOnlyList<SensorTypeConfig> EnabledSensorTypes    { get; init; } = SensorTypes.AllTypes;
+    IEnumerable<DeviceTelemetry> GenerateTimeSlotEvents(DateTime startTime, TimeSpan duration, double activityLevel) {
+        var devices    = _home.GetAllDevices().ToArray(); // Convert to array for performance
+        var eventCount = (int)(devices.Length * activityLevel * (duration.TotalHours / 24));
+        var events     = new List<DeviceTelemetry>(eventCount); // Pre-allocate capacity
 
-        public IReadOnlyList<string> AvailableLocations { get; init; } = [
-            "Living Room", "Kitchen", "Bedroom", "Bathroom", "Garage", "Garden"
-        ];
+        for (var i = 0; i < eventCount; i++) {
+            var device    = devices[_random.Next(devices.Length)];
+            var eventTime = startTime.Add(TimeSpan.FromTicks((long)(_random.NextDouble() * duration.Ticks)));
+            var zoneId    = _home.GetDeviceZone(device.Id) ?? "UNKNOWN";
+            var zone      = _home.GetZone(zoneId);
+            var zoneType  = zone?.Type ?? ZoneType.LivingRoom;
+
+            DeviceTelemetry telemetry = device switch {
+                LightingDevice light => new StateChangeTelemetry(
+                    light.Id, light.DeviceType, light.Brand,
+                    light.Model,
+                    zoneId, zoneType, eventTime,
+                    "IsOn", light.IsOn, !light.IsOn
+                ),
+
+                MotionSensorDevice motion => new EventTelemetry(
+                    motion.Id, motion.DeviceType, motion.Brand,
+                    motion.Model,
+                    zoneId, zoneType, eventTime,
+                    "MotionDetected", new Dictionary<string, object> { ["detected"] = true }
+                ),
+
+                TemperatureSensorDevice temp => new SensorReadingTelemetry(
+                    temp.Id, temp.DeviceType, temp.Brand,
+                    temp.Model,
+                    zoneId, zoneType, eventTime,
+                    _random.NextDouble() * 10 + 20, "°C"
+                ), // 20-30°C
+
+                SmartTVDevice tv => new StateChangeTelemetry(
+                    tv.Id, tv.DeviceType, tv.Brand,
+                    tv.Model,
+                    zoneId, zoneType, eventTime,
+                    "IsOn", tv.IsOn, !tv.IsOn
+                ),
+
+                SmartPlugDevice plug => new UsageTelemetry(
+                    plug.Id, plug.DeviceType, plug.Brand,
+                    plug.Model,
+                    zoneId, zoneType, eventTime,
+                    _random.NextDouble() * 2, TimeSpan.FromHours(1)
+                ),
+
+                _ => new EventTelemetry(
+                    device.Id, device.DeviceType, device.Brand,
+                    device.Model,
+                    zoneId, zoneType, eventTime,
+                    "DeviceUpdate"
+                )
+            };
+
+            events.Add(telemetry);
+        }
+
+        return events;
     }
 }
 
-public static class SensorReadingExtensions {
-    public static string ToJson(this SensorReading reading, bool indented = true) {
-        var options = new JsonSerializerOptions {
-            WriteIndented        = indented,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
+// Builder Pattern Implementation
+public class SmartHomeSimulatorBuilder {
+    readonly Dictionary<RoomType, List<DeviceTemplate>> _roomOverrides    = new();
+    TimeSpan                                            _compressionRatio = TimeSpan.FromMinutes(1); // 1 day per minute default
+    HomeAddress?                                        _customAddress;
+    ResidentProfile?                                    _customResidents;
+    HomeTemplate                                        _homeTemplate = HomeTemplates.FamilyHouse;
 
-        return JsonSerializer.Serialize(reading, options);
+    public SmartHomeSimulatorBuilder WithFamilyHouse() {
+        _homeTemplate = HomeTemplates.FamilyHouse;
+        return this;
     }
 
-    public static string ToMqttPayload(this SensorReading reading) {
-        var payload = new {
-            deviceId  = reading.DeviceId,
-            timestamp = reading.Timestamp.ToString("O"),
-            measurements = new[] {
-                new {
-                    type    = reading.SensorType.ToString().ToLowerInvariant(),
-                    value   = reading.Value,
-                    unit    = GetUnitSymbol(reading.Unit),
-                    quality = reading.Quality.ToString().ToLowerInvariant()
-                }
-            },
-            battery  = reading.BatteryLevel,
-            location = reading.LocationId,
-            metadata = reading.Metadata
-        };
+    public SmartHomeSimulatorBuilder WithSmallApartment() {
+        _homeTemplate = HomeTemplates.SmallApartment;
+        return this;
+    }
 
-        return JsonSerializer.Serialize(
-            payload, new JsonSerializerOptions {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    public SmartHomeSimulatorBuilder WithSmallOffice() {
+        _homeTemplate = HomeTemplates.SmallOffice;
+        return this;
+    }
+
+    public SmartHomeSimulatorBuilder WithBigMansion() {
+        _homeTemplate = HomeTemplates.BigMansion;
+        return this;
+    }
+
+    public SmartHomeSimulatorBuilder WithHomeTemplate(HomeTemplate template) {
+        _homeTemplate = template;
+        return this;
+    }
+
+    public SmartHomeSimulatorBuilder WithAddress(string street, string city, string state, string zipCode = "00000") {
+        _customAddress = new HomeAddress(
+            street, city, state,
+            zipCode, 0, 0
+        );
+
+        return this;
+    }
+
+    public SmartHomeSimulatorBuilder WithCompressionRatio(TimeSpan ratio) {
+        _compressionRatio = ratio;
+        return this;
+    }
+
+    public SmartHomeSimulatorBuilder WithResidents(ResidentProfile profile) {
+        _customResidents = profile;
+        return this;
+    }
+
+    public SmartHomeSimulatorBuilder WithCustomRoom(RoomType roomType, Action<RoomBuilder> configure) {
+        var roomBuilder = new RoomBuilder();
+        configure(roomBuilder);
+        _roomOverrides[roomType] = roomBuilder.GetDeviceTemplates();
+        return this;
+    }
+
+    public SmartHomeSimulatorBuilder OverrideRoom(RoomType roomType, Action<RoomBuilder> configure) {
+        var existingTemplate = _homeTemplate.RoomTemplates.FirstOrDefault(r => r.Type == roomType);
+        var roomBuilder      = new RoomBuilder(existingTemplate?.DefaultDevices ?? []);
+        configure(roomBuilder);
+        _roomOverrides[roomType] = roomBuilder.GetDeviceTemplates();
+        return this;
+    }
+
+    public SmartHomeSimulator Build() {
+        var address   = _customAddress ?? GenerateRandomAddress();
+        var home      = BuildHome(address);
+        var residents = _customResidents ?? _homeTemplate.ResidentProfile;
+
+        return new SmartHomeSimulator(home, _compressionRatio, residents);
+    }
+
+    Home BuildHome(HomeAddress address) {
+        var homeId = HomeId.New();
+        var rooms  = new List<Room>();
+
+        foreach (var roomTemplate in _homeTemplate.RoomTemplates) {
+            var roomId = RoomId.New();
+            var deviceTemplates = _roomOverrides.TryGetValue(roomTemplate.Type, out var overrides)
+                ? overrides
+                : roomTemplate.DefaultDevices.ToList();
+
+            var devices = deviceTemplates.Select(dt => CreateDevice(dt)).ToArray();
+            rooms.Add(
+                new Room(
+                    roomId, roomTemplate.Type, roomTemplate.Name,
+                    devices
+                )
+            );
+        }
+
+        // Convert rooms to zones and devices - using arrays for performance
+        var zoneList    = new List<HomeZone>(rooms.Count);
+        var deviceList  = new List<SmartDevice>(rooms.Count * 5); // Estimate 5 devices per room
+        var mappingList = new List<DeviceZoneMapping>(rooms.Count * 5);
+
+        foreach (var room in rooms) {
+            var zoneId = Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+            var zone = new HomeZone(
+                zoneId, room.Name, (ZoneType)(int)room.Type,
+                "Ground Floor"
+            );
+
+            zoneList.Add(zone);
+
+            foreach (var device in room.Devices) {
+                deviceList.Add(device);
+                mappingList.Add(new DeviceZoneMapping(device.Id.ToString(), zoneId));
             }
+        }
+
+        return new Home(
+            homeId, address, zoneList.ToArray(),
+            deviceList.ToArray(), mappingList.ToArray()
         );
     }
 
-    public static string ToTelemetryMessage(this SensorReading reading) {
-        var telemetry = new {
-            MessageId = Guid.NewGuid(),
-            reading.DeviceId,
-            EventType = "SensorReading",
-            reading.Timestamp,
-            Data = new {
-                SensorType = reading.SensorType.ToString(),
-                reading.Value,
-                Unit     = GetUnitSymbol(reading.Unit),
-                Location = reading.LocationId,
-                Quality  = reading.Quality.ToString(),
-                reading.BatteryLevel
-            },
-            reading.Metadata
-        };
+    SmartDevice CreateDevice(DeviceTemplate template) {
+        var deviceId = DeviceId.New();
+        var status   = DeviceStatus.Online;
 
-        return JsonSerializer.Serialize(
-            telemetry, new JsonSerializerOptions {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented        = false
-            }
-        );
+        return template.DeviceType switch {
+            DeviceType.Lighting => new LightingDevice(
+                deviceId, template.Name, template.Brand,
+                template.Model, status, false,
+                100
+            ),
+            DeviceType.Switch => new SwitchDevice(
+                deviceId, template.Name, template.Brand,
+                template.Model, status, false,
+                0.0
+            ),
+            DeviceType.SmartPlug => new SmartPlugDevice(
+                deviceId, template.Name, template.Brand,
+                template.Model, status, false,
+                0.0
+            ),
+            DeviceType.MotionSensor => new MotionSensorDevice(
+                deviceId, template.Name, template.Brand,
+                template.Model, status, false,
+                DateTime.UtcNow.AddDays(-1), new BatteryLevel(Random.Shared.Next(70, 100))
+            ),
+            DeviceType.TemperatureSensor => new TemperatureSensorDevice(
+                deviceId, template.Name, template.Brand,
+                template.Model, status, 22.0,
+                new BatteryLevel(Random.Shared.Next(70, 100))
+            ),
+            DeviceType.SmartTV => new SmartTVDevice(
+                deviceId, template.Name, template.Brand,
+                template.Model, status, false
+            ),
+            DeviceType.SecurityCamera => new SecurityCameraDevice(
+                deviceId, template.Name, template.Brand,
+                template.Model, status, false,
+                false
+            ),
+            DeviceType.Doorbell => new DoorbellDevice(
+                deviceId, template.Name, template.Brand,
+                template.Model, status, false,
+                true
+            ),
+            DeviceType.GameConsole => new GameConsoleDevice(
+                deviceId, template.Name, template.Brand,
+                template.Model, status, false
+            ),
+            DeviceType.SoundSystem => new SoundSystemDevice(
+                deviceId, template.Name, template.Brand,
+                template.Model, status, false
+            ),
+            _ => throw new ArgumentException($"Unknown device type: {template.DeviceType}")
+        };
     }
 
-    static string GetUnitSymbol(MeasurementUnit unit) =>
-        unit switch {
-            MeasurementUnit.Celsius     => "°C",
-            MeasurementUnit.Percent     => "%",
-            MeasurementUnit.Lux         => "lux",
-            MeasurementUnit.Boolean     => "boolean",
-            MeasurementUnit.Hectopascal => "hPa",
-            _                           => unit.ToString()
-        };
+    HomeAddress GenerateRandomAddress() {
+        var faker = new Faker();
+        return new HomeAddress(
+            faker.Address.StreetAddress(),
+            faker.Address.City(),
+            faker.Address.StateAbbr(),
+            faker.Address.ZipCode(),
+            faker.Address.Latitude(),
+            faker.Address.Longitude()
+        );
+    }
+}
+
+public class RoomBuilder {
+    readonly List<DeviceTemplate> _devices = new();
+
+    public RoomBuilder(DeviceTemplate[]? existingDevices = null) {
+        if (existingDevices != null) _devices.AddRange(existingDevices);
+    }
+
+    public RoomBuilder AddDevice(DeviceType deviceType, string name, string brand, string model) {
+        _devices.Add(
+            new DeviceTemplate(
+                deviceType, name, brand,
+                model
+            )
+        );
+
+        return this;
+    }
+
+    public RoomBuilder AddLighting(string name, string brand = "Philips", string model = "Hue White") =>
+        AddDevice(
+            DeviceType.Lighting, name, brand,
+            model
+        );
+
+    public RoomBuilder AddMotionSensor(string name = "Motion Sensor", string brand = "Aqara", string model = "Motion Sensor P1") =>
+        AddDevice(
+            DeviceType.MotionSensor, name, brand,
+            model
+        );
+
+    public RoomBuilder AddSmartTV(string name, string brand = "Samsung", string model = "Smart TV") =>
+        AddDevice(
+            DeviceType.SmartTV, name, brand,
+            model
+        );
+
+    public RoomBuilder AddSmartPlug(string name, string brand = "TP-Link", string model = "Kasa Smart Plug") =>
+        AddDevice(
+            DeviceType.SmartPlug, name, brand,
+            model
+        );
+
+    public RoomBuilder RemoveDevice<T>() where T : SmartDevice {
+        var deviceType = typeof(T).Name.Replace("Device", "");
+        if (Enum.TryParse<DeviceType>(deviceType, out var enumValue)) _devices.RemoveAll(d => d.DeviceType == enumValue);
+        return this;
+    }
+
+    public RoomBuilder RemoveDeviceByName(string name) {
+        _devices.RemoveAll(d => d.Name == name);
+        return this;
+    }
+
+    internal List<DeviceTemplate> GetDeviceTemplates() => new(_devices);
+}
+
+// V2 Extension Methods
+public static class SmartHomeExtensions {
+    public static IEnumerable<DeviceTelemetry> FilterByDeviceType(this IEnumerable<DeviceTelemetry> telemetry, DeviceType deviceType) {
+        return telemetry.Where(t => t.DeviceType == deviceType);
+    }
+
+    public static IEnumerable<DeviceTelemetry> FilterByZone(this IEnumerable<DeviceTelemetry> telemetry, ZoneType zoneType) {
+        return telemetry.Where(t => t.ZoneType == zoneType);
+    }
+
+    public static IEnumerable<DeviceTelemetry> FilterByBrand(this IEnumerable<DeviceTelemetry> telemetry, string brand) {
+        return telemetry.Where(t => t.Brand == brand);
+    }
 }

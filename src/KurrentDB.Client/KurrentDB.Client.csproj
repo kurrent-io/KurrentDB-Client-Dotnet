@@ -5,6 +5,7 @@
     <PackageId>KurrentDB.Client</PackageId>
     <IsPackable>true</IsPackable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
     <RootNamespace />
   </PropertyGroup>
 
@@ -79,18 +80,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Kurrent.Client\Infra\" />
+    <Folder Include="Kurrent.Client\Model\PersistentSubscriptions\" />
+    <Folder Include="Kurrent.Client\Services\" />
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Kurrent\Grpc\Balancer\**" />
+    <Compile Remove="Kurrent.Client\Experimental\**" />
     <Compile Remove="Kurrent.Client\PersistentSusbcriptionsBackup\**" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Remove="Kurrent\Grpc\Balancer\**" />
+    <EmbeddedResource Remove="Kurrent.Client\Experimental\**" />
     <EmbeddedResource Remove="Kurrent.Client\PersistentSusbcriptionsBackup\**" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Kurrent\Grpc\Balancer\**" />
+    <None Remove="Kurrent.Client\Experimental\**" />
     <None Remove="Kurrent.Client\PersistentSusbcriptionsBackup\**" />
   </ItemGroup>
 

@@ -10,7 +10,7 @@ namespace Kurrent.Client;
 /// <remarks>
 /// If using .NET 9.0 or later, it utilizes the built-in `Guid.CreateVersion7` method for generating version 7 UUIDs.
 /// </remarks>
-static partial class Guids {
+public static partial class Guids {
 	/// <summary>
 	/// Creates a new version 7 UUID using the current UTC timestamp.
 	/// </summary>
@@ -85,7 +85,7 @@ static partial class Guids {
 	}
 }
 
-static partial class Guids {
+public static partial class Guids {
     public static Guid CreateFromSignificantBits(long mostSignificantBits, long leastSignificantBits) {
         if (!BitConverter.IsLittleEndian)
             throw new NotSupportedException("This method requires little-endian byte order.");

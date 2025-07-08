@@ -1,32 +1,48 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Text;
+using System.Text.Unicode;
 using Kurrent.Client.SchemaRegistry;
+using Kurrent.Client.SchemaRegistry.Serialization;
 
 namespace Kurrent.Client.Model;
 
 [PublicAPI]
 [DebuggerDisplay("{ToDebugString()}")]
-public readonly record struct Record() {
+public record Record(IRecordDecoder? Decoder  = null) {
 	public static readonly Record None = new();
 
-    /// <summary>
+	IRecordDecoder? Decoder { get; } = Decoder;
+
+	/// <summary>
     /// The unique identifier of the record.
     /// </summary>
 	public Guid Id { get; init; } = Guid.Empty;
 
 	/// <summary>
-	/// The position of the record in the stream.
+	/// The position of the record in the global transaction log.
 	/// </summary>
 	public LogPosition Position { get; init; } = LogPosition.Unset;
 
 	/// <summary>
 	/// Represents the stream associated with the record.
 	/// </summary>
-	public string Stream { get; init; } = "";
+	public StreamName Stream { get; init; } = StreamName.None;
 
 	/// <summary>
 	/// Represents the revision of a stream at a specific point in time.
 	/// </summary>
 	public StreamRevision StreamRevision { get; init; } = StreamRevision.Unset;
+
+	/// <summary>
+	/// The revision of the index associated with the record.
+	/// </summary>
+	public StreamRevision IndexRevision { get; init; } = StreamRevision.Unset;
+
+	/// <summary>
+	/// Represents the index link associated with the record.
+	/// </summary>
+	public Link Link { get; init; } = Link.None;
 
 	/// <summary>
 	/// When the record was created in the database.
@@ -41,12 +57,13 @@ public readonly record struct Record() {
 	/// <summary>
 	/// The deserialized message.
 	/// </summary>
-	public object Value { get; init; } = null!;
+	[MaybeNull]
+	public object Value { get; internal set; } = null!;
 
 	/// <summary>
 	/// The type of the deserialized message.
 	/// </summary>
-	public Type ValueType { get; init; } = null!;
+	public Type ValueType => Value is not null ? Value.GetType() : SystemTypes.MissingType;
 
 	/// <summary>
 	/// Binary data representation of the record's value.
@@ -59,17 +76,75 @@ public readonly record struct Record() {
 	/// </summary>
 	public RecordSchemaInfo Schema => Metadata.GetSchemaInfo();
 
-	public bool IsDecoded => Value is not null
-	                      && !Data.IsEmpty
-	                      && ValueType != typeof(byte[])
-	                      && ValueType != typeof(ReadOnlyMemory<byte>)
-	                      && ValueType != typeof(Memory<byte>);
-
-	public override string ToString() => $"{ValueType.Name} {Position}@{Stream}";
+	/// <summary>
+	/// Indicates whether the current <see cref="Record"/> instance has been successfully decoded.
+	/// </summary>
+	public bool IsDecoded => !Data.IsEmpty
+	                       && Value is not null
+	                       && ValueType != typeof(byte[])
+	                       && ValueType != typeof(ReadOnlyMemory<byte>)
+	                       && ValueType != typeof(Memory<byte>);
 
 	/// <summary>
-	/// Creates a debug view.
+	/// Attempts to decode the record's data asynchronously.
 	/// </summary>
-	public string ToDebugString() =>
-		$"Record: Id={Id}, Position={Position}, Stream={Stream}, Value={Value}, ValueType={ValueType.Name}";
+	/// <param name="cancellationToken">Cancellation token</param>
+	/// <returns>True if decoding was performed, false if already decoded or no decoder available</returns>
+	public ValueTask<bool> TryDecode(CancellationToken cancellationToken = default) {
+		if (IsDecoded || Decoder is null)
+			return ValueTask.FromResult(false);
+
+		return Decoder.Decode(this, cancellationToken);
+	}
+
+	public override string ToString() => $"{Schema.SchemaName} {StreamRevision}@{Stream} - {Position}";
+
+	string ToDebugString() =>
+		$"Record: Id={Id}, Position={Position}, Stream={Stream}, StreamRevision={StreamRevision}, " +
+		$"Value={Value ?? "Not Decoded"}, ValueType={ValueType}";
+}
+
+public readonly record struct Link() {
+	public static readonly Link None = new();
+
+	public SchemaName     Name     { get; init; } = SchemaName.None;
+	public LogPosition    Position { get; init; } = LogPosition.Unset;
+	public StreamRevision Revision { get; init; } = StreamRevision.Unset;
+	public StreamName     Stream   { get; init; } = StreamName.None;
+}
+
+public interface IRecordDecoder {
+	ValueTask<bool> Decode(Record record, CancellationToken ct);
+}
+
+
+
+sealed class RecordDecoder(ISchemaSerializerProvider serializerProvider, SchemaRegistryPolicy? registryPolicy = null) : IRecordDecoder {
+	static readonly SchemaName LinkSchemaName = "$>";
+
+	SchemaRegistryPolicy RegistryPolicy { get; } = registryPolicy ?? SchemaRegistryPolicy.NoRequirements;
+
+	public async ValueTask<bool> Decode(Record record, CancellationToken ct) {
+		if (record.IsDecoded)
+			return true;
+
+		if (record.Schema.SchemaName == LinkSchemaName) {
+			record.Value = Encoding.UTF8.GetString(record.Data.Span);
+			return true;
+		}
+
+		var context = new SchemaSerializationContext {
+			Stream               = record.Stream,
+			Metadata             = record.Metadata,
+			SchemaRegistryPolicy = RegistryPolicy,
+			CancellationToken    = ct
+		};
+
+		record.Value = await serializerProvider
+			.GetSerializer(record.Schema.DataFormat)
+			.Deserialize(record.Data, context)
+			.ConfigureAwait(false)!;
+
+		return true;
+	}
 }

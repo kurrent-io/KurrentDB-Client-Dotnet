@@ -1,6 +1,50 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Kurrent.Client.SchemaRegistry;
 
 namespace Kurrent.Client.Model;
+
+/// <summary>
+/// Provides a base implementation for decoding metadata from serialized byte representations.
+/// Serves as an abstraction for specific metadata decoding implementations.
+/// </summary>
+public abstract class MetadataDecoder : IMetadataDecoder {
+    static readonly SchemaName LinkSchemaName = "$>";
+
+    /// <inheritdoc />
+    public Metadata Decode(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context) {
+        if (bytes.IsEmpty)
+            return new Metadata();
+
+        try {
+            if (context.SchemaName == LinkSchemaName)
+                return DeserializeLinkMetadata(bytes);
+
+            var metadata = DecodeCore(bytes, context)
+                .AddSchemaNameIfMissing(context.SchemaName)
+                .AddSchemaDataFormatIfMissing(context.SchemaDataFormat);
+
+            return metadata;
+        }
+        catch (Exception ex) when (ex is not MetadataDecodingException) {
+            throw new MetadataDecodingException("Failed to decode metadata", ex);
+        }
+    }
+
+    static Metadata DeserializeLinkMetadata(ReadOnlyMemory<byte> bytes) {
+        var deserialized = JsonSerializer.Deserialize<Dictionary<string, JsonValue>>(bytes.Span)!;
+        return new Metadata()
+            .With(SystemMetadataKeys.SchemaName, LinkSchemaName)
+            .With(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Json) // change to json
+            .With("$v", deserialized["$v"].ToString())
+            .With("$c", deserialized["$c"].GetValue<long>())
+            .With("$p", deserialized["$p"].GetValue<long>())
+            .With("$o", StreamName.From(deserialized["$o"].ToString()))
+            .With("$causedBy", deserialized["$causedBy"].GetValue<Guid>());
+    }
+
+    protected abstract Metadata DecodeCore(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context);
+}
 
 /// <summary>
 /// Defines a contract for decoding metadata from serialized byte representations.
@@ -32,35 +76,6 @@ public readonly record struct MetadataDecoderContext(
 );
 
 /// <summary>
-/// Provides a base implementation for decoding metadata from serialized byte representations.
-/// Serves as an abstraction for specific metadata decoding implementations.
-/// </summary>
-public abstract class MetadataDecoder : IMetadataDecoder {
-	/// <inheritdoc />
-	public Metadata Decode(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context) {
-		if (bytes.IsEmpty)
-			throw new MetadataDecodingException("Cannot decode empty metadata bytes");
-
-		try {
-			var metadata = DecodeCore(bytes, context);
-
-            if (metadata.ContainsKey(SystemMetadataKeys.SchemaName))
-                return metadata;
-
-            // Handle backwards compatibility with old data by
-            // injecting the legacy schema in the metadata.
-            return metadata
-                .With(SystemMetadataKeys.SchemaName, context.SchemaName)
-                .With(SystemMetadataKeys.SchemaDataFormat, context.SchemaDataFormat);
-        } catch (Exception ex) when (ex is not MetadataDecodingException) {
-			throw new MetadataDecodingException("Failed to decode metadata", ex);
-		}
-	}
-
-	 protected abstract Metadata DecodeCore(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context);
-}
-
-/// <summary>
 /// The default metadata decoder that deserializes metadata from JSON-encoded byte arrays.
 /// This allows for backward compatibility with previous metadata formats.
 /// </summary>
@@ -70,16 +85,14 @@ public sealed class JsonMetadataDecoder : MetadataDecoder {
 
     protected override Metadata DecodeCore(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context) {
         return Serializer.Deserialize<Dictionary<string, string?>>(bytes) is { Count: > 0 } deserialized
-            ? new(deserialized.ToDictionary(x => x.Key, EvolveValue))
+            ? new(deserialized.ToDictionary(x => x.Key, static kvp => EvolveValue(kvp)))
             : new();
 
-        static object? EvolveValue(KeyValuePair<string, string?> kvp) {
-            return kvp switch {
-                { Key: SystemMetadataKeys.SchemaDataFormat, Value: not null } => Enum.Parse<SchemaDataFormat>(kvp.Value, ignoreCase: true),
-                { Key: SystemMetadataKeys.SchemaName,       Value: not null } => SchemaName.From(kvp.Value),
-                _                                                             => kvp.Value
-            };
-        }
+        static object? EvolveValue(KeyValuePair<string, string?> kvp) => kvp switch {
+            { Key: SystemMetadataKeys.SchemaDataFormat, Value: not null } => Enum.Parse<SchemaDataFormat>(kvp.Value, ignoreCase: true),
+            { Key: SystemMetadataKeys.SchemaName,       Value: not null } => SchemaName.From(kvp.Value),
+            _                                                             => kvp.Value
+        };
     }
 }
 

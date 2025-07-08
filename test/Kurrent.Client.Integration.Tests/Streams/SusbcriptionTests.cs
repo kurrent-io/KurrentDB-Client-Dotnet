@@ -68,7 +68,7 @@ public class SubscriptionTests : KurrentClientTestFixture {
         await foreach (var msg in subscription) {
             if (msg.IsRecord) {
                 recordsReceived.Add(msg.AsRecord);
-                Logger.LogDebug("Received: {Message}", msg.AsRecord.ToDebugString());
+                Logger.LogDebug("Received: {Message}", msg.AsRecord.ToString());
 
                 continue;
             }
@@ -107,7 +107,7 @@ public class SubscriptionTests : KurrentClientTestFixture {
             if (!msg.IsRecord) continue;
 
             recordsReceived.Add(msg.AsRecord);
-            Logger.LogDebug("Received: {Message}", msg.AsRecord.ToDebugString());
+            Logger.LogDebug("Received: {Message}", msg.AsRecord.ToString());
 
             break;
         }

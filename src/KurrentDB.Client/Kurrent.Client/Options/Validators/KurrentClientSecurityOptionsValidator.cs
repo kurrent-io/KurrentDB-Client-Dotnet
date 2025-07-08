@@ -2,9 +2,7 @@ using FluentValidation;
 
 namespace Kurrent.Client;
 
-class KurrentClientSecurityOptionsValidator : AbstractValidator<KurrentClientSecurityOptions> {
-    public static readonly KurrentClientSecurityOptionsValidator Instance = new();
-
+public class KurrentClientSecurityOptionsValidator : FluentOptionsValidator<KurrentClientSecurityOptionsValidator, KurrentClientSecurityOptions> {
     public KurrentClientSecurityOptionsValidator() {
         // Transport security validation
         When(options => options.Authentication.IsBasicCredentials, () => {

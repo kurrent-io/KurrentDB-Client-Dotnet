@@ -26,27 +26,115 @@ public readonly record struct StreamName {
     /// <summary>
     /// Creates a <see cref="StreamName"/> from a string value.
     /// </summary>
-    /// <param name="value">The string value to create the stream name from. Cannot be null, empty, or whitespace.</param>
+    /// <param name="stream">The string value to create the stream name from. Cannot be null, empty, or whitespace.</param>
     /// <returns>A new <see cref="StreamName"/> instance.</returns>
-    /// <exception cref="ArgumentException">Thrown if <paramref name="value"/> is null, empty, or consists only of white-space characters.</exception>
-    public static StreamName From(string value) {
-        return string.IsNullOrWhiteSpace(value)
-            ? throw new ArgumentException($"Stream '{value}' is not valid.", nameof(value))
-            : new(value);
+    /// <exception cref="ArgumentException">Thrown if <paramref name="stream"/> is null, empty, or consists only of white-space characters.</exception>
+    public static StreamName From(string stream) {
+        return string.IsNullOrWhiteSpace(stream)
+            ? throw new ArgumentException($"Stream '{stream}' is not valid.", nameof(stream))
+            : new(stream);
     }
+
+    public StreamName Metastream => new($"$${Value}");
+
+    public bool IsMetastream => Value.StartsWith("$$");
+
+    /// <summary>
+    /// Whether the specified stream is a system stream.
+    /// </summary>
+    public bool IsSystemStream => Value.StartsWith("$$");
+
+    /// <summary>
+    /// A stream containing all events in the KurrentDB transaction file.
+    /// </summary>
+    const string AllStream = "$all";
+
+    /// <summary>
+    /// A stream containing links pointing to each stream in the KurrentDB.
+    /// </summary>
+    const string StreamsStream = "$streams";
+
+    /// <summary>
+    /// A stream containing system settings.
+    /// </summary>
+    const string SettingsStream = "$settings";
+
+    /// <summary>
+    /// A stream containing statistics.
+    /// </summary>
+    const string StatsStreamPrefix = "$stats";
+
+    /// <summary>
+    ///
+    /// </summary>
+    public bool IsAllStream => Value == AllStream;
+
+    /// <summary>
+    ///
+    /// </summary>
+    public bool IsStreamsStream => Value == StreamsStream;
+
+    /// <summary>
+    /// Gets a value indicating whether the current stream represents the system settings stream.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The system settings stream is identified by the constant value <c>"$settings"</c>. This property returns
+    /// <see langword="true"/> if the <see cref="Value"/> of the current <see cref="StreamName"/> matches
+    /// this predefined value, indicating that the stream contains system-level settings.
+    /// </para>
+    /// <para>
+    /// The settings stream is typically utilized to store and retrieve configuration values and other
+    /// system-wide metadata that influence the behavior of the database.
+    /// </para>
+    /// <b>Usage notes:</b>
+    /// <list type="bullet">
+    /// <item>
+    /// <description>This property returns <see langword="false"/> for streams that do not match the
+    /// system settings stream identifier.</description>
+    /// </item>
+    /// <item>
+    /// <description>Ensure your code accounts for this value when determining specific handling
+    /// for system-related streams.</description>
+    /// </item>
+    /// </list>
+    /// </remarks>
+    /// <value>
+    /// <see langword="true"/> if the current stream is the system settings stream; otherwise, <see langword="false"/>.
+    /// </value>
+    /// <example>
+    /// The following example demonstrates how to check if a stream is the settings stream:
+    /// <code>
+    /// var streamName = new StreamName("$settings");
+    /// if (streamName.IsSettingsStream)
+    /// {
+    /// Console.WriteLine("This is the settings stream.");
+    /// }
+    /// else
+    /// {
+    /// Console.WriteLine("This is not the settings stream.");
+    /// }
+    /// </code>
+    /// </example>
+    public bool IsSettingsStream => Value == SettingsStream;
+
+    /// <summary>
+    ///
+    /// </summary>
+    public bool IsStatsStream => Value.StartsWith(StatsStreamPrefix);
 
     /// <summary>
     /// Implicitly converts a string to a <see cref="StreamName"/>.
     /// </summary>
-    /// <param name="value">The string to convert. Cannot be null, empty, or whitespace.</param>
+    /// <param name="stream">The string to convert. Cannot be null, empty, or whitespace.</param>
     /// <returns>A new <see cref="StreamName"/> instance.</returns>
-    /// <exception cref="ArgumentException">Thrown if <paramref name="value"/> is null, empty, or consists only of white-space characters.</exception>
-    public static implicit operator StreamName(string value)  => From(value);
+    /// <exception cref="ArgumentException">Thrown if <paramref name="stream"/> is null, empty, or consists only of white-space characters.</exception>
+    public static implicit operator StreamName(string stream)  => From(stream);
 
     /// <summary>
     /// Implicitly converts a <see cref="StreamName"/> to its string representation.
     /// </summary>
-    /// <param name="streamName">The <see cref="StreamName"/> to convert.</param>
+    /// <param name="stream">The <see cref="StreamName"/> to convert.</param>
     /// <returns>The string value of the stream name.</returns>
-    public static implicit operator string(StreamName streamName) => streamName.ToString();
+    public static implicit operator string(StreamName stream) => stream.ToString();
 }

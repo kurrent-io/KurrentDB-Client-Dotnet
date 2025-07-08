@@ -21,6 +21,11 @@ public record StreamInfo {
     public bool IsDeleted { get; init; }
 
     /// <summary>
+    /// Indicates whether the stream has been tombstoned.
+    /// </summary>
+    public bool IsTombstoned { get; init; }
+
+    /// <summary>
     ///  The last stream revision of the stream.
     /// </summary>
     public StreamRevision LastStreamRevision { get; init; } = StreamRevision.Unset;
@@ -29,6 +34,11 @@ public record StreamInfo {
     /// The last position in the stream.
     /// </summary>
     public LogPosition LastStreamPosition { get; init; } = LogPosition.Unset;
+
+    /// <summary>
+    /// The last time the stream was updated.
+    /// </summary>
+    public DateTimeOffset LastStreamUpdate { get; init; } = DateTimeOffset.MinValue;
 
     /// <summary>
     /// Indicates whether the stream has metadata associated with it.
