@@ -5,8 +5,10 @@ using System.Threading.Channels;
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
-using Kurrent.Client.Legacy;
 using Kurrent.Client.Model;
+using Kurrent.Client.Model.PersistentSubscription;
+using Kurrent.Client.SchemaRegistry;
+using Kurrent.Client.SchemaRegistry.Serialization;
 using KurrentDB.Client;
 using static System.Threading.Channels.Channel;
 using static EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase;
@@ -69,7 +71,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 
 		var request = new ReadReq { Options = readOptions };
 
-		return new PersistentSubscriptionResult(streamName, groupName, GetClient, request, LegacySettings, LegacyConverter, cancellationToken);
+		return new PersistentSubscriptionResult(streamName, groupName, GetClient, request, LegacySettings, SerializerProvider, MetadataDecoder, cancellationToken);
 
 		async Task<PersistentSubscriptions.PersistentSubscriptionsClient> GetClient(CancellationToken ct) {
 			if (streamName is not SystemStreams.AllStream) return ServiceClient;
@@ -110,7 +112,8 @@ public partial class KurrentPersistentSubscriptionsClient {
 
 		readonly Channel<PersistentSubscriptionMessage> Channel;
 		readonly CancellationTokenSource                Cancellator;
-		readonly KurrentDBLegacyConverter               LegacyConverter;
+		readonly ISchemaSerializerProvider              SerializerProvider;
+		readonly IMetadataDecoder                       MetadataDecoder;
 		readonly ReadReq                                Request;
 
 		AsyncDuplexStreamingCall<ReadReq, ReadResp>? ReadCall;
@@ -161,12 +164,14 @@ public partial class KurrentPersistentSubscriptionsClient {
 			Func<CancellationToken, Task<PersistentSubscriptions.PersistentSubscriptionsClient>> getClient,
 			ReadReq request,
 			KurrentDBClientSettings settings,
-			KurrentDBLegacyConverter legacyConverter,
+			ISchemaSerializerProvider serializationProvider,
+			IMetadataDecoder metadataDecoder,
 			CancellationToken cancellationToken
 		) {
-			StreamName      = streamName;
-			GroupName       = groupName;
-			LegacyConverter = legacyConverter;
+			StreamName         = streamName;
+			GroupName          = groupName;
+			SerializerProvider = serializationProvider;
+			MetadataDecoder    = metadataDecoder;
 
 			Request = request;
 
@@ -188,11 +193,9 @@ public partial class KurrentPersistentSubscriptionsClient {
 
 					await foreach (var response in ReadCall.ResponseStream.ReadAllAsync(Cancellator.Token).ConfigureAwait(false)) {
 						PersistentSubscriptionMessage subscriptionMessage = response.ContentCase switch {
-							SubscriptionConfirmation => new PersistentSubscriptionMessage.SubscriptionConfirmation(
-								response.SubscriptionConfirmation.SubscriptionId
-							),
+							SubscriptionConfirmation => new PersistentSubscriptionMessage.SubscriptionConfirmation(response.SubscriptionConfirmation.SubscriptionId),
 							Event => new PersistentSubscriptionMessage.Event(
-								await LegacyConverter.ConvertToRecord(ConvertToResolvedEvent(response), cancellationToken),
+								await response.Event.MapToRecord(SerializerProvider, MetadataDecoder, SchemaRegistryPolicy.NoRequirements, skipDecoding: true, cancellationToken),
 								response.Event.CountCase switch {
 									ReadResp.Types.ReadEvent.CountOneofCase.RetryCount => response.Event.RetryCount,
 									_                                                  => null
@@ -276,15 +279,6 @@ public partial class KurrentPersistentSubscriptionsClient {
 		/// <exception cref="ArgumentException">The number of resolvedEvents exceeded the limit of 2000.</exception>
 		public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Record[] records) =>
 			Nack(action, reason, Array.ConvertAll(records, record => record.Id));
-
-		static ResolvedEvent ConvertToResolvedEvent(ReadResp response) =>
-			new(
-				ConvertToEventRecord(response.Event.Event)!, ConvertToEventRecord(response.Event.Link),
-				response.Event.PositionCase switch {
-					ReadResp.Types.ReadEvent.PositionOneofCase.CommitPosition => response.Event.CommitPosition,
-					_                                                         => null
-				}
-			);
 
 		Task AckInternal(params Guid[] eventIds) {
 			if (eventIds.Length > MaxEventIdLength) {

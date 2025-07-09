@@ -80,7 +80,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Kurrent.Client\Model\PersistentSubscriptions\" />
     <Folder Include="Kurrent.Client\Services\" />
   </ItemGroup>
 

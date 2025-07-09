@@ -2,49 +2,26 @@
 
 using System.Text.Encodings.Web;
 using System.Threading.Channels;
-using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
 using Kurrent.Client.Legacy;
-using Kurrent.Client.SchemaRegistry;
+using Kurrent.Client.Model;
 using Kurrent.Client.SchemaRegistry.Serialization;
-using Kurrent.Client.SchemaRegistry.Serialization.Bytes;
-using Kurrent.Client.SchemaRegistry.Serialization.Json;
-using Kurrent.Client.SchemaRegistry.Serialization.Protobuf;
 using KurrentDB.Client;
 using Microsoft.Extensions.Logging;
-using StreamMetadata = Kurrent.Client.Model.StreamMetadata;
+using static EventStore.Client.PersistentSubscriptions.PersistentSubscriptions;
 
 namespace Kurrent.Client;
 
 public sealed partial class KurrentPersistentSubscriptionsClient {
-	internal KurrentPersistentSubscriptionsClient(CallInvoker callInvoker, KurrentClientOptions options) {
-		Options = options;
+	internal KurrentPersistentSubscriptionsClient(KurrentClient source, KurrentClientOptions options) {
+		Registry           = source.Registry;
+		SerializerProvider = source.SerializerProvider;
 
-		options.Mapper.Map<StreamMetadata>("$metadata");
+		LegacySettings     = options.ConvertToLegacySettings();
+		MetadataDecoder    = options.MetadataDecoder;
 
-		Registry = new KurrentRegistryClient(callInvoker);
-
-		var schemaExporter = new SchemaExporter();
-		var schemaManager  = new SchemaManager(Registry, schemaExporter, options.Mapper);
-
-		SerializerProvider = new SchemaSerializerProvider(
-			[
-				new BytesPassthroughSerializer(),
-				new JsonSchemaSerializer(
-					new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap },
-					schemaManager
-				),
-				new ProtobufSchemaSerializer(
-					new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap },
-					schemaManager
-				)
-			]
-		);
-
-		LegacySettings    = options.ConvertToLegacySettings();
-		LegacyCallInvoker = new KurrentDBLegacyCallInvoker(new LegacyClusterClient(LegacySettings, ExceptionMap, dontLoadServerCapabilities: false));
-		ServiceClient     = new PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker);
-		LegacyConverter   = new KurrentDBLegacyConverter(SerializerProvider, options.MetadataDecoder, SchemaRegistryPolicy.NoRequirements);
+		LegacyCallInvoker  = new KurrentDBLegacyCallInvoker(new LegacyClusterClient(LegacySettings, ExceptionMap));
+		ServiceClient      = new PersistentSubscriptionsClient(LegacyCallInvoker);
 
 		HttpFallback = new Lazy<HttpFallback>(() => new HttpFallback(LegacySettings));
 		Logger          = LegacySettings.LoggerFactory.CreateLogger<KurrentDBPersistentSubscriptionsClient>();
@@ -56,13 +33,12 @@ public sealed partial class KurrentPersistentSubscriptionsClient {
 		AllowSynchronousContinuations = true
 	};
 
-	internal KurrentClientOptions                                  Options            { get; }
-	internal KurrentRegistryClient                                 Registry           { get; }
-	internal KurrentDBLegacyCallInvoker                            LegacyCallInvoker  { get; }
-	internal KurrentDBClientSettings                               LegacySettings     { get; }
-	internal KurrentDBLegacyConverter                              LegacyConverter    { get; }
-	internal ISchemaSerializerProvider                             SerializerProvider { get; }
-	internal PersistentSubscriptions.PersistentSubscriptionsClient ServiceClient      { get; }
+	internal KurrentRegistryClient         Registry           { get; }
+	internal KurrentDBLegacyCallInvoker    LegacyCallInvoker  { get; }
+	internal KurrentDBClientSettings       LegacySettings     { get; }
+	internal ISchemaSerializerProvider     SerializerProvider { get; }
+	internal IMetadataDecoder              MetadataDecoder    { get; }
+	internal PersistentSubscriptionsClient ServiceClient      { get; }
 
 	readonly Lazy<HttpFallback> HttpFallback;
 	readonly ILogger            Logger;
@@ -97,14 +73,22 @@ public sealed partial class KurrentPersistentSubscriptionsClient {
 
 	Task<T> HttpGet<T>(string path, Action onNotFound, CancellationToken cancellationToken) =>
 		HttpFallback.Value.HttpGetAsync<T>(
-			path, LegacyCallInvoker.ChannelTarget, deadline: null,
-			userCredentials: null, onNotFound, cancellationToken
+			path,
+			LegacyCallInvoker.ChannelTarget,
+			deadline: null,
+			userCredentials: null,
+			onNotFound,
+			cancellationToken
 		);
 
 	Task HttpPost(string path, string query, Action onNotFound, CancellationToken cancellationToken) =>
 		HttpFallback.Value.HttpPostAsync(
-			path, query, LegacyCallInvoker.ChannelTarget,
-			deadline: null, userCredentials: null, onNotFound,
+			path,
+			query,
+			LegacyCallInvoker.ChannelTarget,
+			deadline: null,
+			userCredentials: null,
+			onNotFound,
 			cancellationToken
 		);
 

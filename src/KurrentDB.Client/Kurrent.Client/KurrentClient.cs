@@ -42,13 +42,14 @@ public class KurrentClient : IAsyncDisposable, IKurrentClient {
         ]);
 
         Streams                = new KurrentStreamsClient(this, LegacyCallInvoker);
+        PersistentSubscription = new KurrentPersistentSubscriptionsClient(this, options);
+        ProjectionManagement   = new KurrentProjectionManagementClient(this, options);
+        UserManagement         = new KurrentUserManagementClient(LegacyCallInvoker, options);
         Registry               = new KurrentRegistryClient(LegacyCallInvoker);
         Features               = new KurrentFeaturesClient(LegacyCallInvoker);
-        UserManagement         = new KurrentUserManagementClient(LegacyCallInvoker, options);
-        PersistentSubscription = new KurrentPersistentSubscriptionsClient(LegacyCallInvoker, options);
     }
 
-    KurrentDBLegacyCallInvoker LegacyCallInvoker { get; }
+    internal KurrentDBLegacyCallInvoker LegacyCallInvoker { get; }
 
     public MessageTypeMapper         TypeMapper         { get; }
     public ISchemaSerializerProvider SerializerProvider { get; }
@@ -60,6 +61,7 @@ public class KurrentClient : IAsyncDisposable, IKurrentClient {
 	public KurrentFeaturesClient                Features               { get; }
 	public KurrentUserManagementClient          UserManagement         { get; }
 	public KurrentPersistentSubscriptionsClient PersistentSubscription { get; }
+	public KurrentProjectionManagementClient    ProjectionManagement   { get; }
 
 	internal async Task<ServerFeatures> ForceRefresh(CancellationToken cancellationToken = default) {
 		await LegacyCallInvoker.ForceRefresh(cancellationToken).ConfigureAwait(false);
