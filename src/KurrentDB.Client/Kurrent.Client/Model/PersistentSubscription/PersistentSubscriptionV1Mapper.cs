@@ -1,54 +1,77 @@
 // ReSharper disable InconsistentNaming
 
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
+#pragma warning disable CS0612 // Type or member is obsolete
 
 using EventStore.Client;
 using Kurrent.Client.SchemaRegistry;
 using Kurrent.Client.SchemaRegistry.Serialization;
 using KurrentDB.Client;
+using static EventStore.Client.PersistentSubscriptions.CreateReq.Types;
+using static EventStore.Client.PersistentSubscriptions.CreateReq.Types.AllOptions.Types;
 using Contracts = EventStore.Client.PersistentSubscriptions;
 
-#pragma warning disable CS0612 // Type or member is obsolete
-
 namespace Kurrent.Client.Model.PersistentSubscription;
+
+public record ConsumerStrategyName(string Value) {
+	public static implicit operator string(ConsumerStrategyName strategyName) => strategyName.Value;
+	public static implicit operator ConsumerStrategyName(string value)        => new(value);
+
+	public bool IsSupported() => Value is SystemConsumerStrategies.DispatchToSingle or SystemConsumerStrategies.RoundRobin or SystemConsumerStrategies.Pinned;
+}
 
 static class PersistentSubscriptionV1Mapper {
 	static readonly Empty DefaultEmpty = new();
 
-	static readonly Dictionary<string, Contracts.CreateReq.Types.ConsumerStrategy> NamedConsumerStrategyToCreateProto
-		= new Dictionary<string, Contracts.CreateReq.Types.ConsumerStrategy> {
-			[SystemConsumerStrategies.DispatchToSingle] = Contracts.CreateReq.Types.ConsumerStrategy.DispatchToSingle,
-			[SystemConsumerStrategies.RoundRobin]       = Contracts.CreateReq.Types.ConsumerStrategy.RoundRobin,
-			[SystemConsumerStrategies.Pinned]           = Contracts.CreateReq.Types.ConsumerStrategy.Pinned
+	static readonly Dictionary<string, ConsumerStrategy> SupportedConsumerStrategies
+		= new Dictionary<string, ConsumerStrategy> {
+			[SystemConsumerStrategies.DispatchToSingle] = ConsumerStrategy.DispatchToSingle,
+			[SystemConsumerStrategies.RoundRobin]       = ConsumerStrategy.RoundRobin,
+			[SystemConsumerStrategies.Pinned]           = ConsumerStrategy.Pinned
 		};
 
 	public static class Requests {
 		public static Contracts.CreateReq CreateSubscriptionRequest(
-			StreamName streamName,
-			string groupName,
-			PersistentSubscriptionSettings settings,
-			HeartbeatOptions heartbeat,
+			StreamName streamName, string groupName, PersistentSubscriptionSettings settings, HeartbeatOptions heartbeat,
 			ReadFilter filter
-		) =>
-			new() {
-				Options = new() {
-					GroupName        = groupName,
-					Settings         = ConvertToSettings(settings),
-					All              = streamName.IsAllStream ? ConvertToAllOptions(settings.StartFrom, filter, heartbeat) : null,
-					Stream           = !streamName.IsAllStream ? ConvertToStreamOptions(streamName.Value, settings.StartFrom) : null,
-					StreamIdentifier = streamName.Value
-				}
+		) {
+			var options = new Options {
+				GroupName = groupName,
+				Settings  = ConvertToSettings(settings, streamName.IsAllStream)
 			};
+
+			ConfigureStreamOptions(options, streamName, settings, filter, heartbeat);
+
+			return new Contracts.CreateReq { Options = options };
+		}
 	}
 
-	static Contracts.CreateReq.Types.Settings ConvertToSettings(PersistentSubscriptionSettings settings) {
-		if (!NamedConsumerStrategyToCreateProto.TryGetValue(settings.ConsumerStrategyName, out var consumerStrategy))
-			throw new ArgumentException("The specified consumer strategy is not supported, specify one of the SystemConsumerStrategies");
+	static void ConfigureStreamOptions(
+		Options options, StreamName streamName, PersistentSubscriptionSettings settings, ReadFilter filter, HeartbeatOptions heartbeat
+	) {
+		if (streamName.IsAllStream) {
+			options.All = ConvertToAllOptions(settings.StartFrom, filter, heartbeat);
+		} else {
+			options.Stream           = ConvertToStreamOptions(streamName, settings.StartFrom);
+			options.StreamIdentifier = streamName.Value; // backward compatibility
+		}
+	}
 
-		return new() {
-			CheckpointAfterMs  = (int)settings.CheckPointAfter.TotalMilliseconds,
+	static ConsumerStrategy GetConsumerStrategy(string strategyName) {
+		var strategy = new ConsumerStrategyName(strategyName);
+
+		if (!strategy.IsSupported())
+			throw new ArgumentException(
+				$"Consumer strategy '{strategyName}' is not supported. Supported strategies are: {string.Join(", ", SupportedConsumerStrategies.Keys)}",
+				nameof(strategyName)
+			);
+
+		return SupportedConsumerStrategies[strategyName];
+	}
+
+	static Settings ConvertToSettings(PersistentSubscriptionSettings settings, bool isAllStream) =>
+		new() {
 			ExtraStatistics    = settings.ExtraStatistics,
-			MessageTimeoutMs   = (int)settings.MessageTimeout.TotalMilliseconds,
 			ResolveLinks       = settings.ResolveLinkTos,
 			HistoryBufferSize  = settings.HistoryBufferSize,
 			LiveBufferSize     = settings.LiveBufferSize,
@@ -57,14 +80,15 @@ static class PersistentSubscriptionV1Mapper {
 			MaxSubscriberCount = settings.MaxSubscriberCount,
 			MinCheckpointCount = settings.CheckPointLowerBound,
 			ReadBatchSize      = settings.ReadBatchSize,
+			CheckpointAfterMs  = (int)settings.CheckPointAfter.TotalMilliseconds,
+			MessageTimeoutMs   = (int)settings.MessageTimeout.TotalMilliseconds,
 
 			// backward compatibility
-			NamedConsumerStrategy = consumerStrategy,
-			Revision              = settings.StartFrom
+			NamedConsumerStrategy = GetConsumerStrategy(settings.ConsumerStrategyName),
+			Revision              = isAllStream ? settings.StartFrom : 0
 		};
-	}
 
-	static Contracts.CreateReq.Types.AllOptions ConvertToAllOptions(LogPosition start, ReadFilter filter, HeartbeatOptions heartbeat) {
+	static AllOptions ConvertToAllOptions(LogPosition start, ReadFilter filter, HeartbeatOptions heartbeat) {
 		var allFilter = ConvertToFilterOptions(filter, heartbeat);
 
 		return start switch {
@@ -74,17 +98,17 @@ static class PersistentSubscriptionV1Mapper {
 		};
 	}
 
-	static Contracts.CreateReq.Types.StreamOptions ConvertToStreamOptions(string streamName, LogPosition start) =>
+	static StreamOptions ConvertToStreamOptions(string streamName, LogPosition start) =>
 		start switch {
-			_ when start == LogPosition.Latest   => new() { End              = DefaultEmpty },
-			_ when start == LogPosition.Earliest => new() { Start            = DefaultEmpty },
+			_ when start == LogPosition.Latest   => new() { StreamIdentifier = streamName, End      = DefaultEmpty, },
+			_ when start == LogPosition.Earliest => new() { StreamIdentifier = streamName, Start    = DefaultEmpty },
 			_                                    => new() { StreamIdentifier = streamName, Revision = (ulong)start.Value }
 		};
 
-	static Contracts.CreateReq.Types.AllOptions.Types.FilterOptions ConvertToFilterOptions(ReadFilter filter, HeartbeatOptions heartbeat) {
-		var options = filter.Scope switch {
-			ReadFilterScope.Stream => new Contracts.CreateReq.Types.AllOptions.Types.FilterOptions { StreamIdentifier = { Regex = filter.Expression } },
-			ReadFilterScope.Record => new Contracts.CreateReq.Types.AllOptions.Types.FilterOptions { EventType        = { Regex = filter.Expression } }
+	static FilterOptions ConvertToFilterOptions(ReadFilter filter, HeartbeatOptions heartbeat) {
+		FilterOptions options = filter.Scope switch {
+			ReadFilterScope.Stream => new() { StreamIdentifier = new() { Regex = filter.Expression } },
+			ReadFilterScope.Record => new() { EventType        = new() { Regex = filter.Expression } },
 		};
 
 		options.Max = (uint)heartbeat.RecordsThreshold;
@@ -94,70 +118,76 @@ static class PersistentSubscriptionV1Mapper {
 		return options;
 	}
 
-    public static async ValueTask<Record> MapToRecord(
-        this Contracts.ReadResp.Types.ReadEvent readEvent,
-        ISchemaSerializerProvider serializerProvider,
-        IMetadataDecoder metadataDecoder,
-        SchemaRegistryPolicy registryPolicy,
-        bool skipDecoding = false,
-        CancellationToken ct = default
-    ) {
-        var recordedEvent = readEvent.Event;
+	public static async ValueTask<Record> MapToRecord(
+		this Contracts.ReadResp.Types.ReadEvent readEvent,
+		ISchemaSerializerProvider serializerProvider,
+		IMetadataDecoder metadataDecoder,
+		SchemaRegistryPolicy registryPolicy,
+		bool skipDecoding = false,
+		CancellationToken ct = default
+	) {
+		var recordedEvent = readEvent.Event;
 
-        // first parse all info
-        var stream           = StreamName.From(recordedEvent.StreamIdentifier!);
-        var recordId         = Uuid.FromDto(recordedEvent.Id).ToGuid();
-        var revision         = StreamRevision.From((long)recordedEvent.StreamRevision);
-        var position         = LogPosition.From((long)recordedEvent.CommitPosition);
-        var schemaName       = SchemaName.From(recordedEvent.Metadata[Constants.Metadata.Type]);
-        var schemaDataFormat = recordedEvent.Metadata[Constants.Metadata.ContentType].GetSchemaDataFormat(); // it will always be json or octet-stream
-        var data             = recordedEvent.Data.Memory;
-        var rawMetadata      = recordedEvent.CustomMetadata.Memory;
-        var timestamp        = Convert.ToInt64(recordedEvent.Metadata[Constants.Metadata.Created]).FromTicksSinceEpoch();
+		// first parse all info
+		var stream           = StreamName.From(recordedEvent.StreamIdentifier!);
+		var recordId         = Uuid.FromDto(recordedEvent.Id).ToGuid();
+		var revision         = StreamRevision.From((long)recordedEvent.StreamRevision);
+		var position         = LogPosition.From((long)recordedEvent.CommitPosition);
+		var schemaName       = SchemaName.From(recordedEvent.Metadata[Constants.Metadata.Type]);
+		var schemaDataFormat = recordedEvent.Metadata[Constants.Metadata.ContentType].GetSchemaDataFormat(); // it will always be json or octet-stream
+		var data             = recordedEvent.Data.Memory;
+		var rawMetadata      = recordedEvent.CustomMetadata.Memory;
+		var timestamp        = Convert.ToInt64(recordedEvent.Metadata[Constants.Metadata.Created]).FromTicksSinceEpoch();
 
-        var metadata = metadataDecoder.Decode(rawMetadata, new(stream, schemaName, schemaDataFormat));
+		var metadata = metadataDecoder.Decode(rawMetadata, new(stream, schemaName, schemaDataFormat));
 
-        var link = readEvent.Link is { } linkEvent
-            ? new Link {
-                Name     = linkEvent.Metadata[Constants.Metadata.Type],
-                Position = (long)linkEvent.CommitPosition,
-                Revision = (long)linkEvent.StreamRevision,
-                Stream   = StreamName.From(linkEvent.StreamIdentifier!),
-            }
-            : Link.None;
+		var link = readEvent.Link is { } linkEvent
+			? new Link {
+				Name     = linkEvent.Metadata[Constants.Metadata.Type],
+				Position = (long)linkEvent.CommitPosition,
+				Revision = (long)linkEvent.StreamRevision,
+				Stream   = StreamName.From(linkEvent.StreamIdentifier!),
+			}
+			: Link.None;
 
-        var indexRevision = readEvent.HasCommitPosition
-            ? StreamRevision.From((long)readEvent.CommitPosition)
-            : link.Revision == StreamRevision.Unset ? revision : link.Revision;
+		var indexRevision = readEvent.HasCommitPosition
+			? StreamRevision.From((long)readEvent.CommitPosition)
+			: link.Revision == StreamRevision.Unset
+				? revision
+				: link.Revision;
 
-        // create a decoder
-        IRecordDecoder decoder = new RecordDecoder(serializerProvider, registryPolicy);
+		// create a decoder
+		IRecordDecoder decoder = new RecordDecoder(serializerProvider, registryPolicy);
 
-        // and we are done
-        var record = new Record(decoder) {
-            Id             = recordId,
-            Stream         = stream,
-            StreamRevision = revision,
-            Position       = position,
-            Timestamp      = timestamp,
-            Metadata       = metadata,
-            Data           = data,
-            Link           = link,
-            IndexRevision  = indexRevision
-        };
+		// and we are done
+		var record = new Record(decoder) {
+			Id             = recordId,
+			Stream         = stream,
+			StreamRevision = revision,
+			Position       = position,
+			Timestamp      = timestamp,
+			Metadata       = metadata,
+			Data           = data,
+			Link           = link,
+			IndexRevision  = indexRevision
+		};
 
-        // now decode the record if required
-        if (!skipDecoding)
-            await record.TryDecode(ct);
+		// now decode the record if required
+		if (!skipDecoding)
+			await record.TryDecode(ct);
 
-        return record;
-    }
+		return record;
+	}
 
-    public static ValueTask<Record> MapToRecord(
-        this Contracts.ReadResp.Types.ReadEvent readEvent,
-        ISchemaSerializerProvider serializerProvider,
-        IMetadataDecoder metadataDecoder,
-        bool skipDecoding = false,
-        CancellationToken ct = default
-    ) => MapToRecord(readEvent, serializerProvider, metadataDecoder, SchemaRegistryPolicy.NoRequirements, skipDecoding, ct);
+	public static ValueTask<Record> MapToRecord(
+		this Contracts.ReadResp.Types.ReadEvent readEvent,
+		ISchemaSerializerProvider serializerProvider,
+		IMetadataDecoder metadataDecoder,
+		bool skipDecoding = false,
+		CancellationToken ct = default
+	) =>
+		MapToRecord(
+			readEvent, serializerProvider, metadataDecoder,
+			SchemaRegistryPolicy.NoRequirements, skipDecoding, ct
+		);
 }
