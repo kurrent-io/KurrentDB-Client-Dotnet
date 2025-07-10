@@ -62,7 +62,7 @@ public sealed partial class KurrentPersistentSubscriptionsClient {
 				)
 		};
 
-	async Task EnsureCompatibility(string streamName, CancellationToken cancellationToken) {
+	async ValueTask EnsureCompatibility(string streamName, CancellationToken cancellationToken) {
 		if (streamName is not SystemStreams.AllStream) return;
 
 		await LegacyCallInvoker.ForceRefresh(cancellationToken);

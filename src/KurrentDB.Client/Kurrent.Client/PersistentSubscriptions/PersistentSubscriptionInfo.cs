@@ -1,4 +1,6 @@
-﻿using Google.Protobuf.Collections;
+﻿// ReSharper disable InvertIf
+
+using Google.Protobuf.Collections;
 using EventStore.Client.PersistentSubscriptions;
 using Kurrent.Client.Model;
 using KurrentDB.Client;
@@ -23,26 +25,23 @@ public record PersistentSubscriptionInfo(
 	PersistentSubscriptionStats Stats
 ) {
 	internal static PersistentSubscriptionInfo From(SubscriptionInfo info) {
-		var startFrom = LogPosition.Unset;
+		var startFrom                     = LogPosition.Unset;
 		var lastCheckpointedEventPosition = LogPosition.Unset;
-		var lastKnownEventPosition= LogPosition.Unset;
+		var lastKnownEventPosition        = LogPosition.Unset;
 
-		if (info.EventSource == SystemStreams.AllStream) {
+		if (info.EventSource is SystemStreams.AllStream) {
 			startFrom                     = LogPosition.From(info.StartFrom);
 			lastCheckpointedEventPosition = LogPosition.From(info.LastCheckpointedEventPosition);
 			lastKnownEventPosition        = LogPosition.From(info.LastKnownEventPosition);
 		} else {
-			if (long.TryParse(info.StartFrom, out var streamPosition)) {
+			if (long.TryParse(info.StartFrom, out var streamPosition))
 				startFrom = LogPosition.From(streamPosition);
-			}
 
-			if (ulong.TryParse(info.LastCheckpointedEventPosition, out var position)) {
+			if (ulong.TryParse(info.LastCheckpointedEventPosition, out var position))
 				lastCheckpointedEventPosition = LogPosition.From((long)position);
-			}
 
-			if (ulong.TryParse(info.LastKnownEventPosition, out position)) {
+			if (ulong.TryParse(info.LastKnownEventPosition, out position))
 				lastKnownEventPosition = LogPosition.From((long)position);
-			}
 		}
 
 		return new PersistentSubscriptionInfo(
@@ -83,7 +82,7 @@ public record PersistentSubscriptionInfo(
 
 	internal static PersistentSubscriptionInfo From(PersistentSubscriptionDto info) {
 		PersistentSubscriptionSettings? settings = null;
-		if (info.Config != null) {
+		if (info.Config is not null) {
 			settings = new PersistentSubscriptionSettings(
 				resolveLinkTos: info.Config.ResolveLinktos,
 				// we only need to support StreamPosition as $all was never implemented in http api.

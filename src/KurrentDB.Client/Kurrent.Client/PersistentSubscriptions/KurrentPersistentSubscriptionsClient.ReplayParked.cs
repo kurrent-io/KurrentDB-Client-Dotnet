@@ -9,7 +9,7 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Retry the parked messages of the persistent subscription
 	/// </summary>
-	public async Task ReplayParkedMessagesToAll(
+	public async ValueTask ReplayParkedMessagesToAll(
 		string groupName, long? stopAt = null, CancellationToken cancellationToken = default
 	) {
 		if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsReplayParked) {
@@ -34,7 +34,7 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Retry the parked messages of the persistent subscription
 	/// </summary>
-	public async Task ReplayParkedMessagesToStream(
+	public async ValueTask ReplayParkedMessagesToStream(
 		string streamName, string groupName, long? stopAt = null, CancellationToken cancellationToken = default
 	) {
 		if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsReplayParked) {
@@ -54,7 +54,7 @@ partial class KurrentPersistentSubscriptionsClient {
 		await ReplayParkedHttp(streamName, groupName, stopAt, cancellationToken).ConfigureAwait(false);
 	}
 
-	async Task ReplayParkedGrpc(
+	async ValueTask ReplayParkedGrpc(
 		ReplayParkedReq request, long? numberOfEvents, CancellationToken cancellationToken
 	) {
 		if (numberOfEvents.HasValue)
@@ -67,7 +67,7 @@ partial class KurrentPersistentSubscriptionsClient {
 			.ConfigureAwait(false);
 	}
 
-	async Task ReplayParkedHttp(string streamName, string groupName, long? numberOfEvents, CancellationToken cancellationToken) {
+	async ValueTask ReplayParkedHttp(string streamName, string groupName, long? numberOfEvents, CancellationToken cancellationToken) {
 		var path  = $"/subscriptions/{UrlEncode(streamName)}/{UrlEncode(groupName)}/replayParked";
 		var query = numberOfEvents.HasValue ? $"stopAt={numberOfEvents.Value}" : "";
 

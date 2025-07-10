@@ -15,11 +15,10 @@ partial class KurrentPersistentSubscriptionsClient {
 			GroupName = groupName
 		};
 
-		if (streamName == SystemStreams.AllStream) {
+		if (streamName is SystemStreams.AllStream)
 			deleteOptions.All = new Empty();
-		} else {
+		else
 			deleteOptions.StreamIdentifier = streamName;
-		}
 
 		var call = ServiceClient.DeleteAsync(new DeleteReq { Options = deleteOptions }, cancellationToken: cancellationToken);
 

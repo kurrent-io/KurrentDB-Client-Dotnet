@@ -15,7 +15,7 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <param name="settings">The settings for the persistent subscription.</param>
 	/// <param name="cancellationToken">A cancellation token used to observe cancellation requests.</param>
 	/// <returns>A task representing the asynchronous operation.</returns>
-	public async Task CreateToStream(string streamName, string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default) =>
+	public async ValueTask CreateToStream(string streamName, string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default) =>
 		await CreateInternal(streamName, groupName, settings, ReadFilter.None, cancellationToken).ConfigureAwait(false);
 
 	/// <summary>
@@ -26,7 +26,7 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <param name="settings">The settings for the persistent subscription.</param>
 	/// <param name="cancellationToken">A cancellation token used to observe cancellation requests.</param>
 	/// <returns>A task representing the asynchronous operation.</returns>
-	public async Task CreateToAll(string groupName, ReadFilter filter, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default) =>
+	public async ValueTask CreateToAll(string groupName, ReadFilter filter, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default) =>
 		await CreateInternal(SystemStreams.AllStream, groupName, settings, filter, cancellationToken).ConfigureAwait(false);
 
 	/// <summary>
@@ -36,10 +36,10 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <param name="settings">The settings for the persistent subscription.</param>
 	/// <param name="cancellationToken">A cancellation token used to observe cancellation requests.</param>
 	/// <returns>A task representing the asynchronous operation.</returns>
-	public async Task CreateToAll(string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default) =>
+	public async ValueTask CreateToAll(string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default) =>
 		await CreateInternal(SystemStreams.AllStream, groupName, settings, ReadFilter.None, cancellationToken).ConfigureAwait(false);
 
-	async Task CreateInternal(
+	async ValueTask CreateInternal(
 		string streamName,
 		string groupName,
 		PersistentSubscriptionSettings settings,
@@ -47,11 +47,8 @@ partial class KurrentPersistentSubscriptionsClient {
 		CancellationToken cancellationToken
 	) {
 		await EnsureCompatibility(streamName, cancellationToken);
-
 		var request = CreateSubscriptionRequest(streamName, groupName, settings, HeartbeatOptions.Default, filter);
-
 		using var call = ServiceClient.CreateAsync(request, cancellationToken: cancellationToken);
-
 		await call.ResponseAsync.ConfigureAwait(false);
 	}
 }

@@ -7,115 +7,181 @@ using EventStore.Client;
 using Kurrent.Client.SchemaRegistry;
 using Kurrent.Client.SchemaRegistry.Serialization;
 using KurrentDB.Client;
-using static EventStore.Client.PersistentSubscriptions.CreateReq.Types;
-using static EventStore.Client.PersistentSubscriptions.CreateReq.Types.AllOptions.Types;
 using Contracts = EventStore.Client.PersistentSubscriptions;
 
 namespace Kurrent.Client.Model.PersistentSubscription;
 
-public record ConsumerStrategyName(string Value) {
-	public static implicit operator string(ConsumerStrategyName strategyName) => strategyName.Value;
-	public static implicit operator ConsumerStrategyName(string value)        => new(value);
-
-	public bool IsSupported() => Value is SystemConsumerStrategies.DispatchToSingle or SystemConsumerStrategies.RoundRobin or SystemConsumerStrategies.Pinned;
-}
-
+/// Utility class for mapping persistent subscription events to application-level records.
 static class PersistentSubscriptionV1Mapper {
 	static readonly Empty DefaultEmpty = new();
 
-	static readonly Dictionary<string, ConsumerStrategy> SupportedConsumerStrategies
-		= new Dictionary<string, ConsumerStrategy> {
-			[SystemConsumerStrategies.DispatchToSingle] = ConsumerStrategy.DispatchToSingle,
-			[SystemConsumerStrategies.RoundRobin]       = ConsumerStrategy.RoundRobin,
-			[SystemConsumerStrategies.Pinned]           = ConsumerStrategy.Pinned
+	static readonly Dictionary<string, Contracts.CreateReq.Types.ConsumerStrategy> CreateConsumerStrategies
+		= new() {
+			[SystemConsumerStrategies.DispatchToSingle] = Contracts.CreateReq.Types.ConsumerStrategy.DispatchToSingle,
+			[SystemConsumerStrategies.RoundRobin]       = Contracts.CreateReq.Types.ConsumerStrategy.RoundRobin,
+			[SystemConsumerStrategies.Pinned]           = Contracts.CreateReq.Types.ConsumerStrategy.Pinned
+		};
+
+	static readonly Dictionary<string, Contracts.UpdateReq.Types.ConsumerStrategy> UpdateConsumerStrategies
+		= new() {
+			[SystemConsumerStrategies.DispatchToSingle] = Contracts.UpdateReq.Types.ConsumerStrategy.DispatchToSingle,
+			[SystemConsumerStrategies.RoundRobin]       = Contracts.UpdateReq.Types.ConsumerStrategy.RoundRobin,
+			[SystemConsumerStrategies.Pinned]           = Contracts.UpdateReq.Types.ConsumerStrategy.Pinned
 		};
 
 	public static class Requests {
 		public static Contracts.CreateReq CreateSubscriptionRequest(
-			StreamName streamName, string groupName, PersistentSubscriptionSettings settings, HeartbeatOptions heartbeat,
-			ReadFilter filter
+			StreamName streamName, string groupName, PersistentSubscriptionSettings settings, HeartbeatOptions heartbeat, ReadFilter filter
 		) {
-			var options = new Options {
+			var options = new Contracts.CreateReq.Types.Options {
 				GroupName = groupName,
-				Settings  = ConvertToSettings(settings, streamName.IsAllStream)
+				Settings  = SettingsConverter.ToCreateSettings(settings)
 			};
 
-			ConfigureStreamOptions(options, streamName, settings, filter, heartbeat);
+			StreamOptionsMapper.MapToCreateOptions(options, streamName, settings.StartFrom, filter, heartbeat);
+			LegacyBackwardCompatibility.ApplyToCreateOptions(options, streamName, settings.StartFrom, settings.ConsumerStrategyName);
 
 			return new Contracts.CreateReq { Options = options };
 		}
-	}
 
-	static void ConfigureStreamOptions(
-		Options options, StreamName streamName, PersistentSubscriptionSettings settings, ReadFilter filter, HeartbeatOptions heartbeat
-	) {
-		if (streamName.IsAllStream) {
-			options.All = ConvertToAllOptions(settings.StartFrom, filter, heartbeat);
-		} else {
-			options.Stream           = ConvertToStreamOptions(streamName, settings.StartFrom);
-			options.StreamIdentifier = streamName.Value; // backward compatibility
+		public static Contracts.UpdateReq UpdateSubscriptionRequest(
+			StreamName streamName, string groupName, PersistentSubscriptionSettings settings
+		) {
+			var options = new Contracts.UpdateReq.Types.Options {
+				GroupName = groupName,
+				Settings  = SettingsConverter.ToUpdateSettings(settings)
+			};
+
+			StreamOptionsMapper.MapToUpdateOptions(options, streamName, settings.StartFrom);
+			LegacyBackwardCompatibility.ApplyToUpdateOptions(options, streamName, settings.StartFrom, settings.ConsumerStrategyName);
+
+			return new Contracts.UpdateReq { Options = options };
 		}
 	}
 
-	static ConsumerStrategy GetConsumerStrategy(string strategyName) {
-		var strategy = new ConsumerStrategyName(strategyName);
+	static class SettingsConverter {
+		internal static Contracts.CreateReq.Types.Settings ToCreateSettings(PersistentSubscriptionSettings settings) =>
+			new() {
+				ExtraStatistics    = settings.ExtraStatistics,
+				ResolveLinks       = settings.ResolveLinkTos,
+				HistoryBufferSize  = settings.HistoryBufferSize,
+				LiveBufferSize     = settings.LiveBufferSize,
+				MaxCheckpointCount = settings.CheckPointUpperBound,
+				MaxRetryCount      = settings.MaxRetryCount,
+				MaxSubscriberCount = settings.MaxSubscriberCount,
+				MinCheckpointCount = settings.CheckPointLowerBound,
+				ReadBatchSize      = settings.ReadBatchSize,
+				CheckpointAfterMs  = (int)settings.CheckPointAfter.TotalMilliseconds,
+				MessageTimeoutMs   = (int)settings.MessageTimeout.TotalMilliseconds
+			};
 
-		if (!strategy.IsSupported())
-			throw new ArgumentException(
-				$"Consumer strategy '{strategyName}' is not supported. Supported strategies are: {string.Join(", ", SupportedConsumerStrategies.Keys)}",
-				nameof(strategyName)
-			);
-
-		return SupportedConsumerStrategies[strategyName];
+		internal static Contracts.UpdateReq.Types.Settings ToUpdateSettings(PersistentSubscriptionSettings settings) =>
+			new() {
+				ExtraStatistics    = settings.ExtraStatistics,
+				ResolveLinks       = settings.ResolveLinkTos,
+				HistoryBufferSize  = settings.HistoryBufferSize,
+				LiveBufferSize     = settings.LiveBufferSize,
+				MaxCheckpointCount = settings.CheckPointUpperBound,
+				MaxRetryCount      = settings.MaxRetryCount,
+				MaxSubscriberCount = settings.MaxSubscriberCount,
+				MinCheckpointCount = settings.CheckPointLowerBound,
+				ReadBatchSize      = settings.ReadBatchSize,
+				CheckpointAfterMs  = (int)settings.CheckPointAfter.TotalMilliseconds,
+				MessageTimeoutMs   = (int)settings.MessageTimeout.TotalMilliseconds,
+			};
 	}
 
-	static Settings ConvertToSettings(PersistentSubscriptionSettings settings, bool isAllStream) =>
-		new() {
-			ExtraStatistics    = settings.ExtraStatistics,
-			ResolveLinks       = settings.ResolveLinkTos,
-			HistoryBufferSize  = settings.HistoryBufferSize,
-			LiveBufferSize     = settings.LiveBufferSize,
-			MaxCheckpointCount = settings.CheckPointUpperBound,
-			MaxRetryCount      = settings.MaxRetryCount,
-			MaxSubscriberCount = settings.MaxSubscriberCount,
-			MinCheckpointCount = settings.CheckPointLowerBound,
-			ReadBatchSize      = settings.ReadBatchSize,
-			CheckpointAfterMs  = (int)settings.CheckPointAfter.TotalMilliseconds,
-			MessageTimeoutMs   = (int)settings.MessageTimeout.TotalMilliseconds,
+	static class StreamOptionsMapper {
+		internal static void MapToCreateOptions(
+			Contracts.CreateReq.Types.Options options,
+			StreamName streamName,
+			LogPosition startFrom,
+			ReadFilter filter,
+			HeartbeatOptions heartbeat
+		) {
+			if (streamName.IsAllStream)
+				options.All = CreateAllOptions(startFrom, filter, heartbeat);
+			else
+				options.Stream = CreateStreamOptions(streamName, startFrom);
+		}
 
-			// backward compatibility
-			NamedConsumerStrategy = GetConsumerStrategy(settings.ConsumerStrategyName),
-			Revision              = isAllStream ? settings.StartFrom : 0
-		};
+		internal static void MapToUpdateOptions(Contracts.UpdateReq.Types.Options options, StreamName streamName, LogPosition startFrom) {
+			if (streamName.IsAllStream)
+				options.All = UpdateAllOptions(startFrom);
+			else
+				options.Stream = UpdateStreamOptions(streamName, startFrom);
+		}
 
-	static AllOptions ConvertToAllOptions(LogPosition start, ReadFilter filter, HeartbeatOptions heartbeat) {
-		var allFilter = ConvertToFilterOptions(filter, heartbeat);
+		static Contracts.CreateReq.Types.AllOptions CreateAllOptions(LogPosition start, ReadFilter filter, HeartbeatOptions heartbeat) {
+			var allFilter = FilterOptionsConverter.ToCreateFilterOptions(filter, heartbeat);
 
-		return start switch {
-			_ when start == LogPosition.Latest => new() { End = DefaultEmpty, Filter = allFilter },
-			_ when start == LogPosition.Earliest => new() { Start = DefaultEmpty, Filter = allFilter },
-			_ => new() { Position = new() { CommitPosition = (ulong)start.Value, PreparePosition = (ulong)start.Value }, Filter = allFilter }
-		};
+			return start switch {
+				_ when start == LogPosition.Latest => new() { End = DefaultEmpty, Filter = allFilter },
+				_ when start == LogPosition.Earliest => new() { Start = DefaultEmpty, Filter = allFilter },
+				_ => new() { Position = new() { CommitPosition = (ulong)start.Value, PreparePosition = (ulong)start.Value }, Filter = allFilter }
+			};
+		}
+
+		static Contracts.UpdateReq.Types.AllOptions UpdateAllOptions(LogPosition start) {
+			return start switch {
+				_ when start == LogPosition.Latest   => new() { End   = DefaultEmpty },
+				_ when start == LogPosition.Earliest => new() { Start = DefaultEmpty },
+				_ => new() {
+					Position = new() {
+						CommitPosition  = (ulong)start.Value,
+						PreparePosition = (ulong)start.Value
+					}
+				}
+			};
+		}
+
+		static Contracts.CreateReq.Types.StreamOptions CreateStreamOptions(StreamName streamName, LogPosition start) =>
+			start switch {
+				_ when start == LogPosition.Latest   => new() { StreamIdentifier = streamName.Value, End      = DefaultEmpty },
+				_ when start == LogPosition.Earliest => new() { StreamIdentifier = streamName.Value, Start    = DefaultEmpty },
+				_                                    => new() { StreamIdentifier = streamName.Value, Revision = (ulong)start.Value }
+			};
+
+		static Contracts.UpdateReq.Types.StreamOptions UpdateStreamOptions(StreamName streamName, LogPosition start) =>
+			start switch {
+				_ when start == LogPosition.Latest   => new() { StreamIdentifier = streamName.Value, End      = DefaultEmpty },
+				_ when start == LogPosition.Earliest => new() { StreamIdentifier = streamName.Value, Start    = DefaultEmpty },
+				_                                    => new() { StreamIdentifier = streamName.Value, Revision = (ulong)start.Value }
+			};
 	}
 
-	static StreamOptions ConvertToStreamOptions(string streamName, LogPosition start) =>
-		start switch {
-			_ when start == LogPosition.Latest   => new() { StreamIdentifier = streamName, End      = DefaultEmpty, },
-			_ when start == LogPosition.Earliest => new() { StreamIdentifier = streamName, Start    = DefaultEmpty },
-			_                                    => new() { StreamIdentifier = streamName, Revision = (ulong)start.Value }
-		};
+	static class FilterOptionsConverter {
+		internal static Contracts.CreateReq.Types.AllOptions.Types.FilterOptions ToCreateFilterOptions(ReadFilter filter, HeartbeatOptions heartbeat) {
+			var options = filter.Scope switch {
+				ReadFilterScope.Stream => new Contracts.CreateReq.Types.AllOptions.Types.FilterOptions { StreamIdentifier = new() { Regex = filter.Expression } },
+				ReadFilterScope.Record => new Contracts.CreateReq.Types.AllOptions.Types.FilterOptions { EventType = new() { Regex = filter.Expression } }
+			};
 
-	static FilterOptions ConvertToFilterOptions(ReadFilter filter, HeartbeatOptions heartbeat) {
-		FilterOptions options = filter.Scope switch {
-			ReadFilterScope.Stream => new() { StreamIdentifier = new() { Regex = filter.Expression } },
-			ReadFilterScope.Record => new() { EventType        = new() { Regex = filter.Expression } },
-		};
+			options.Max = (uint)heartbeat.RecordsThreshold;
+			options.CheckpointIntervalMultiplier = 1;
 
-		options.Max = (uint)heartbeat.RecordsThreshold;
+			return options;
+		}
+	}
 
-		options.CheckpointIntervalMultiplier = 1;
+	static class LegacyBackwardCompatibility {
+		internal static void ApplyToCreateOptions(Contracts.CreateReq.Types.Options options, StreamName streamName, LogPosition startFrom, string consumerStrategyName) {
+			if (!CreateConsumerStrategies.TryGetValue(consumerStrategyName, out var strategy))
+				throw new ArgumentException($"Unknown consumer strategy: {consumerStrategyName}");
 
-		return options;
+			options.Settings.NamedConsumerStrategy = strategy;
+			options.Settings.Revision              = streamName.IsAllStream ? startFrom : 0;
+			options.StreamIdentifier               = streamName.IsAllStream ? string.Empty : streamName.Value;
+		}
+
+		internal static void ApplyToUpdateOptions(Contracts.UpdateReq.Types.Options options, StreamName streamName, LogPosition startFrom, string consumerStrategyName) {
+			if (!UpdateConsumerStrategies.TryGetValue(consumerStrategyName, out var strategy))
+				throw new ArgumentException($"Unknown consumer strategy: {consumerStrategyName}");
+
+			options.Settings.NamedConsumerStrategy = strategy;
+			options.Settings.Revision              = streamName.IsAllStream ? startFrom : 0;
+			options.StreamIdentifier               = streamName.IsAllStream ? string.Empty : streamName.Value;
+		}
 	}
 
 	public static async ValueTask<Record> MapToRecord(

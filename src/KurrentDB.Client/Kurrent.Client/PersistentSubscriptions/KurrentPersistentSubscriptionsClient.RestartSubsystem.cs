@@ -7,7 +7,7 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Restarts the persistent subscriptions subsystem.
 	/// </summary>
-	public async Task RestartSubsystemAsync(CancellationToken cancellationToken = default) {
+	public async ValueTask RestartSubsystemAsync(CancellationToken cancellationToken = default) {
 		if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsRestartSubsystem) {
 			await ServiceClient
 				.RestartSubsystemAsync(new Empty(), cancellationToken: cancellationToken)

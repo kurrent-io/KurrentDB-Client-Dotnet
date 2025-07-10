@@ -77,11 +77,19 @@ public sealed class PersistentSubscriptionSettings {
 	/// </summary>
 	/// <exception cref="ArgumentOutOfRangeException"></exception>
 	public PersistentSubscriptionSettings(
-		LogPosition startFrom, bool resolveLinkTos = false,
-		bool extraStatistics = false, TimeSpan? messageTimeout = null, int maxRetryCount = 10,
-		int liveBufferSize = 500, int readBatchSize = 20, int historyBufferSize = 500,
-		TimeSpan? checkPointAfter = null, int checkPointLowerBound = 10, int checkPointUpperBound = 1000,
-		int maxSubscriberCount = 0, string consumerStrategyName = SystemConsumerStrategies.RoundRobin
+		LogPosition startFrom,
+		bool resolveLinkTos = false,
+		bool extraStatistics = false,
+		TimeSpan? messageTimeout = null,
+		int maxRetryCount = 10,
+		int liveBufferSize = 500,
+		int readBatchSize = 20,
+		int historyBufferSize = 500,
+		TimeSpan? checkPointAfter = null,
+		int checkPointLowerBound = 10,
+		int checkPointUpperBound = 1000,
+		int maxSubscriberCount = 0,
+		string consumerStrategyName = SystemConsumerStrategies.RoundRobin
 	) {
 		messageTimeout  ??= TimeSpan.FromSeconds(30);
 		checkPointAfter ??= TimeSpan.FromSeconds(2);

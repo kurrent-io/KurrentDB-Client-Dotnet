@@ -44,7 +44,7 @@ partial class KurrentPersistentSubscriptionsClient {
 
 		return await ListHttpAsync().ConfigureAwait(false);
 
-		async Task<IEnumerable<PersistentSubscriptionInfo>> ListHttpAsync( ) {
+		async ValueTask<IEnumerable<PersistentSubscriptionInfo>> ListHttpAsync( ) {
 			var path = $"/subscriptions/{UrlEncode(streamName)}";
 			var result = await HttpGet<IList<PersistentSubscriptionDto>>(
 					path,
@@ -60,7 +60,7 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Lists all persistent subscriptions.
 	/// </summary>
-	public async Task<IEnumerable<PersistentSubscriptionInfo>> ListAll(CancellationToken cancellationToken = default) {
+	public async ValueTask<IEnumerable<PersistentSubscriptionInfo>> ListAll(CancellationToken cancellationToken = default) {
 		if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsList) {
 			var req = new ListReq {
 				Options = new ListReq.Types.Options {
@@ -81,7 +81,7 @@ partial class KurrentPersistentSubscriptionsClient {
 		return result.Select(PersistentSubscriptionInfo.From);
 	}
 
-	async Task<IEnumerable<PersistentSubscriptionInfo>> ListGrpc(ListReq req, CancellationToken cancellationToken) {
+	async ValueTask<IEnumerable<PersistentSubscriptionInfo>> ListGrpc(ListReq req, CancellationToken cancellationToken) {
 		using var call = ServiceClient.ListAsync(req, cancellationToken: cancellationToken);
 		var response = await call.ResponseAsync.ConfigureAwait(false);
 		return response.Subscriptions.Select(PersistentSubscriptionInfo.From);

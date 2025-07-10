@@ -7,7 +7,6 @@ using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
 using Kurrent.Client.Model;
 using Kurrent.Client.Model.PersistentSubscription;
-using Kurrent.Client.SchemaRegistry;
 using Kurrent.Client.SchemaRegistry.Serialization;
 using KurrentDB.Client;
 using static System.Threading.Channels.Channel;
@@ -22,7 +21,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 	/// <exception cref="ArgumentNullException"></exception>
 	/// <exception cref="ArgumentException"></exception>
 	/// <exception cref="ArgumentOutOfRangeException"></exception>
-	public async Task<PersistentSubscription> SubscribeToStream(
+	public async ValueTask<PersistentSubscription> SubscribeToStream(
 		string streamName,
 		string groupName,
 		Func<PersistentSubscription, Record, int?, CancellationToken, Task> eventAppeared,
@@ -49,9 +48,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 	/// <param name="bufferSize">The size of the buffer.</param>
 	/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 	/// <returns></returns>
-	public PersistentSubscriptionResult SubscribeToStream(
-		string streamName, string groupName, int bufferSize = 10, CancellationToken cancellationToken = default
-	) {
+	public PersistentSubscriptionResult SubscribeToStream(string streamName, string groupName, int bufferSize = 10, CancellationToken cancellationToken = default) {
 		ArgumentNullException.ThrowIfNull(streamName);
 		ArgumentNullException.ThrowIfNull(groupName);
 		ArgumentException.ThrowIfNullOrEmpty(streamName, nameof(streamName));
@@ -73,7 +70,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 
 		return new PersistentSubscriptionResult(streamName, groupName, GetClient, request, LegacySettings, SerializerProvider, MetadataDecoder, cancellationToken);
 
-		async Task<PersistentSubscriptions.PersistentSubscriptionsClient> GetClient(CancellationToken ct) {
+		async ValueTask<PersistentSubscriptions.PersistentSubscriptionsClient> GetClient(CancellationToken ct) {
 			if (streamName is not SystemStreams.AllStream) return ServiceClient;
 
 			await EnsureCompatibility(streamName, ct);
@@ -84,7 +81,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged
 	/// </summary>
-	public async Task<PersistentSubscription> SubscribeToAll(
+	public async ValueTask<PersistentSubscription> SubscribeToAll(
 		string groupName,
 		Func<PersistentSubscription, Record, int?, CancellationToken, Task> eventAppeared,
 		Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
@@ -161,7 +158,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 		internal PersistentSubscriptionResult(
 			string streamName,
 			string groupName,
-			Func<CancellationToken, Task<PersistentSubscriptions.PersistentSubscriptionsClient>> getClient,
+			Func<CancellationToken, ValueTask<PersistentSubscriptions.PersistentSubscriptionsClient>> getClient,
 			ReadReq request,
 			KurrentDBClientSettings settings,
 			ISchemaSerializerProvider serializationProvider,
@@ -195,7 +192,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 						PersistentSubscriptionMessage subscriptionMessage = response.ContentCase switch {
 							SubscriptionConfirmation => new PersistentSubscriptionMessage.SubscriptionConfirmation(response.SubscriptionConfirmation.SubscriptionId),
 							Event => new PersistentSubscriptionMessage.Event(
-								await response.Event.MapToRecord(SerializerProvider, MetadataDecoder, SchemaRegistryPolicy.NoRequirements, skipDecoding: true, cancellationToken),
+								await response.Event.MapToRecord(SerializerProvider, MetadataDecoder, ct: cancellationToken),
 								response.Event.CountCase switch {
 									ReadResp.Types.ReadEvent.CountOneofCase.RetryCount => response.Event.RetryCount,
 									_                                                  => null
@@ -329,19 +326,6 @@ public partial class KurrentPersistentSubscriptionsClient {
 					}
 				);
 		}
-
-		static EventRecord? ConvertToEventRecord(ReadResp.Types.ReadEvent.Types.RecordedEvent? e) =>
-			e is null
-				? null
-				: new EventRecord(
-					e.StreamIdentifier!,
-					Uuid.FromDto(e.Id),
-					new StreamPosition(e.StreamRevision),
-					new Position(e.CommitPosition, e.PreparePosition),
-					e.Metadata,
-					e.Data.ToByteArray(),
-					e.CustomMetadata.ToByteArray()
-				);
 
 		/// <inheritdoc />
 		public async ValueTask DisposeAsync() {
