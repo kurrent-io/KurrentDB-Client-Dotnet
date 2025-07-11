@@ -58,7 +58,7 @@ partial class KurrentPersistentSubscriptionsClient {
 	}
 
 	/// <summary>
-	/// Lists all persistent subscriptions.
+	/// Lists all persistent subscriptions to $all and streams.
 	/// </summary>
 	public async ValueTask<IEnumerable<PersistentSubscriptionInfo>> ListAll(CancellationToken cancellationToken = default) {
 		if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsList) {
