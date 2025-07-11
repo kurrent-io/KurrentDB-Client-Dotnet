@@ -63,7 +63,7 @@ public readonly partial record struct LogPosition : IComparable<LogPosition>, IC
 	/// <exception cref="InvalidLogPosition">
 	/// Thrown when the provided string is not in the correct format or contains invalid values.
 	/// </exception>
-	public static LogPosition From(string position) {
+	internal static LogPosition From(string position) {
 		if (string.IsNullOrEmpty(position))
 			return Unset;
 
