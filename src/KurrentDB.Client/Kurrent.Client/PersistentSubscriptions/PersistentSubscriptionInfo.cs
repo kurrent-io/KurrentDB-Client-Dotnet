@@ -2,6 +2,7 @@
 
 using Google.Protobuf.Collections;
 using EventStore.Client.PersistentSubscriptions;
+using Humanizer;
 using Kurrent.Client.Model;
 using KurrentDB.Client;
 
@@ -11,39 +12,38 @@ namespace Kurrent.Client;
 /// Provides the details for a persistent subscription.
 /// </summary>
 public record PersistentSubscriptionInfo {
-	public string                                            EventSource { get; init; }
-	public string                                            GroupName   { get; init; }
-	public string                                            Status      { get; init; }
-	public IEnumerable<PersistentSubscriptionConnectionInfo> Connections { get; init; }
+	public string                                            EventSource { get; init; } = null!;
+	public string                                            GroupName   { get; init; } = null!;
+	public string                                            Status      { get; init; } = null!;
+	public IEnumerable<PersistentSubscriptionConnectionInfo> Connections { get; init; } = null!;
+	public PersistentSubscriptionStats                       Stats       { get; init; } = null!;
 	public PersistentSubscriptionSettings?                   Settings    { get; init; }
-	public PersistentSubscriptionStats                       Stats       { get; init; }
 
 	internal static PersistentSubscriptionInfo From(SubscriptionInfo info) {
-		var startFrom                     = LogPosition.Unset;
-		var lastCheckpointedEventPosition = LogPosition.Unset;
-		var lastKnownEventPosition        = LogPosition.Unset;
+		var startFrom = info.EventSource is SystemStreams.AllStream
+			? LogPosition.From(info.StartFrom)
+			: long.TryParse(info.StartFrom, out var streamPosition)
+				? LogPosition.From(streamPosition)
+				: LogPosition.Unset;
 
-		if (info.EventSource is SystemStreams.AllStream) {
-			startFrom                     = LogPosition.From(info.StartFrom);
-			lastCheckpointedEventPosition = LogPosition.From(info.LastCheckpointedEventPosition);
-			lastKnownEventPosition        = LogPosition.From(info.LastKnownEventPosition);
-		} else {
-			if (long.TryParse(info.StartFrom, out var streamPosition))
-				startFrom = LogPosition.From(streamPosition);
+		var lastCheckpointedEventPosition = info.EventSource is SystemStreams.AllStream
+			? LogPosition.From(info.LastCheckpointedEventPosition)
+			: ulong.TryParse(info.LastCheckpointedEventPosition, out var checkpointPosition)
+				? LogPosition.From((long)checkpointPosition)
+				: LogPosition.Unset;
 
-			if (ulong.TryParse(info.LastCheckpointedEventPosition, out var position))
-				lastCheckpointedEventPosition = LogPosition.From((long)position);
-
-			if (ulong.TryParse(info.LastKnownEventPosition, out position))
-				lastKnownEventPosition = LogPosition.From((long)position);
-		}
+		var lastKnownEventPosition = info.EventSource is SystemStreams.AllStream
+			? LogPosition.From(info.LastKnownEventPosition)
+			: ulong.TryParse(info.LastKnownEventPosition, out var knownPosition)
+				? LogPosition.From((long)knownPosition)
+				: LogPosition.Unset;
 
 		return new PersistentSubscriptionInfo {
 			EventSource = info.EventSource,
 			GroupName   = info.GroupName,
 			Status      = info.Status,
 			Connections = From(info.Connections),
-			Settings = new PersistentSubscriptionSettings {
+			Settings = new() {
 				StartFrom            = startFrom,
 				ResolveLinkTos       = info.ResolveLinkTos,
 				ExtraStatistics      = info.ExtraStatistics,
@@ -55,10 +55,10 @@ public record PersistentSubscriptionInfo {
 				CheckPointUpperBound = info.MaxCheckPointCount,
 				MaxSubscriberCount   = info.MaxSubscriberCount,
 				ConsumerStrategyName = info.NamedConsumerStrategy,
-				MessageTimeout       = TimeSpan.FromMilliseconds(info.MessageTimeoutMilliseconds),
-				CheckPointAfter      = TimeSpan.FromMilliseconds(info.CheckPointAfterMilliseconds)
+				MessageTimeout       = info.MessageTimeoutMilliseconds.Milliseconds(),
+				CheckPointAfter      = info.CheckPointAfterMilliseconds.Milliseconds()
 			},
-			Stats = new PersistentSubscriptionStats {
+			Stats = new() {
 				AveragePerSecond              = info.AveragePerSecond,
 				TotalItems                    = info.TotalItems,
 				CountSinceLastMeasurement     = info.CountSinceLastMeasurement,
@@ -76,32 +76,31 @@ public record PersistentSubscriptionInfo {
 
 	internal static PersistentSubscriptionInfo From(PersistentSubscriptionDto info) {
 		PersistentSubscriptionSettings? settings = null;
-		if (info.Config is not null) {
+
+		if (info.Config is not null)
 			settings = new PersistentSubscriptionSettings {
-				ResolveLinkTos = info.Config.ResolveLinktos,
-				// we only need to support StreamPosition as $all was never implemented in http api.
+				ResolveLinkTos       = info.Config.ResolveLinktos,
 				StartFrom            = LogPosition.From((long)info.Config.StartFrom),
 				ExtraStatistics      = info.Config.ExtraStatistics,
-				MessageTimeout       = TimeSpan.FromMilliseconds(info.Config.MessageTimeoutMilliseconds),
 				MaxRetryCount        = info.Config.MaxRetryCount,
 				LiveBufferSize       = info.Config.LiveBufferSize,
 				ReadBatchSize        = info.Config.ReadBatchSize,
 				HistoryBufferSize    = info.Config.BufferSize,
-				CheckPointAfter      = TimeSpan.FromMilliseconds(info.Config.CheckPointAfterMilliseconds),
+				MessageTimeout       = info.Config.MessageTimeoutMilliseconds.Milliseconds(),
+				CheckPointAfter      = info.Config.CheckPointAfterMilliseconds.Milliseconds(),
 				CheckPointLowerBound = info.Config.MinCheckPointCount,
 				CheckPointUpperBound = info.Config.MaxCheckPointCount,
 				MaxSubscriberCount   = info.Config.MaxSubscriberCount,
 				ConsumerStrategyName = info.Config.NamedConsumerStrategy
 			};
-		}
 
-		return new PersistentSubscriptionInfo {
+		return new() {
 			EventSource = info.EventStreamId,
 			GroupName = info.GroupName,
 			Status = info.Status,
 			Connections = PersistentSubscriptionConnectionInfo.CreateFrom(info.Connections),
 			Settings = settings,
-			Stats = new PersistentSubscriptionStats {
+			Stats = new() {
 				AveragePerSecond              = (int)info.AverageItemsPerSecond,
 				TotalItems                    = info.TotalItemsProcessed,
 				CountSinceLastMeasurement     = info.CountSinceLastMeasurement,
@@ -117,10 +116,8 @@ public record PersistentSubscriptionInfo {
 		};
 	}
 
-	static IEnumerable<PersistentSubscriptionConnectionInfo> From(
-		RepeatedField<SubscriptionInfo.Types.ConnectionInfo> connections
-	) {
-		return connections.Select(conn =>
+	static IEnumerable<PersistentSubscriptionConnectionInfo> From(RepeatedField<SubscriptionInfo.Types.ConnectionInfo> connections) =>
+		connections.Select(conn =>
 			new PersistentSubscriptionConnectionInfo {
 				From                      = conn.From,
 				Username                  = conn.Username,
@@ -133,11 +130,12 @@ public record PersistentSubscriptionInfo {
 				ExtraStatistics           = From(conn.ObservedMeasurements)
 			}
 		);
-	}
 
 	static Dictionary<string, long> From(IEnumerable<SubscriptionInfo.Types.Measurement> measurements) =>
 		measurements.ToDictionary(k => k.Key, v => v.Value);
 }
+
+#region dtos
 
 record PersistentSubscriptionDto(
 	string EventStreamId,
@@ -188,3 +186,6 @@ record PersistentSubscriptionConnectionInfoDto(
 );
 
 record PersistentSubscriptionMeasurementInfoDto(string Key, long Value);
+
+#endregion
+

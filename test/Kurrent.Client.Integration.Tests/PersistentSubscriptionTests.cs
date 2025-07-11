@@ -1,5 +1,6 @@
 using Kurrent.Client.Model;
 using Kurrent.Client.Testing.Shouldly;
+using KurrentDB.Client;
 using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Client.Tests.PersistentSubscriptions;
@@ -101,7 +102,7 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 
 		var expected = new PersistentSubscriptionInfo {
 			GroupName   = NewGroupName(),
-			EventSource = "$all",
+			EventSource = SystemStreams.AllStream,
 			Status      = "Live",
 			Settings    = settings
 		};
