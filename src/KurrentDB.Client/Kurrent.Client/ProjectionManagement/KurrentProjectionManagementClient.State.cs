@@ -18,7 +18,7 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="partition"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public async Task<JsonDocument> GetResult(string name, string? partition = null, CancellationToken cancellationToken = default) {
+	public async ValueTask<JsonDocument> GetResult(string name, string? partition = null, CancellationToken cancellationToken = default) {
 		var value = await GetResultInternal(name, partition, cancellationToken).ConfigureAwait(false);
 
 		await using var stream = new MemoryStream();
@@ -43,7 +43,7 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="cancellationToken"></param>
 	/// <typeparam name="T"></typeparam>
 	/// <returns></returns>
-	public async Task<T> GetResult<T>(
+	public async ValueTask<T> GetResult<T>(
 		string name,
 		string? partition = null,
 		JsonSerializerOptions? serializerOptions = null,
@@ -87,7 +87,7 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="partition"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public async Task<JsonDocument> GetState(
+	public async ValueTask<JsonDocument> GetState(
 		string name, string? partition = null, CancellationToken cancellationToken = default
 	) {
 		var value = await GetStateInternal(name, partition, cancellationToken).ConfigureAwait(false);
@@ -114,7 +114,7 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="cancellationToken"></param>
 	/// <typeparam name="T"></typeparam>
 	/// <returns></returns>
-	public async Task<T> GetState<T>(
+	public async ValueTask<T> GetState<T>(
 		string name, string? partition = null, JsonSerializerOptions? serializerOptions = null, CancellationToken cancellationToken = default
 	) {
 		var value = await GetStateInternal(name, partition, cancellationToken).ConfigureAwait(false);

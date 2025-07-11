@@ -10,7 +10,7 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="name"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public async Task Enable(string name, CancellationToken cancellationToken = default) {
+	public async ValueTask Enable(string name, CancellationToken cancellationToken = default) {
 		using var call = ServiceClient.EnableAsync(
 			new EnableReq {
 				Options = new EnableReq.Types.Options {
@@ -29,7 +29,7 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="name"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public async Task Reset(string name, CancellationToken cancellationToken = default) {
+	public async ValueTask Reset(string name, CancellationToken cancellationToken = default) {
 		using var call = ServiceClient.ResetAsync(
 			new ResetReq {
 				Options = new ResetReq.Types.Options {
@@ -49,7 +49,7 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="name"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public Task Abort(string name, CancellationToken cancellationToken = default) => DisableInternal(name, false, cancellationToken);
+	public ValueTask Abort(string name, CancellationToken cancellationToken = default) => DisableInternal(name, false, cancellationToken);
 
 	/// <summary>
 	/// Disables a projection. Saves the projection's checkpoint.
@@ -57,7 +57,7 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="name"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public Task Disable(string name, CancellationToken cancellationToken = default) =>
+	public ValueTask Disable(string name, CancellationToken cancellationToken = default) =>
 		DisableInternal(name, true, cancellationToken);
 
 	/// <summary>
@@ -65,12 +65,12 @@ public partial class KurrentProjectionManagementClient {
 	/// </summary>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public async Task RestartSubsystem(CancellationToken cancellationToken = default) {
+	public async ValueTask RestartSubsystem(CancellationToken cancellationToken = default) {
 		using var call = ServiceClient.RestartSubsystemAsync(new Empty(), cancellationToken: cancellationToken);
 		await call.ResponseAsync.ConfigureAwait(false);
 	}
 
-	async Task DisableInternal(string name, bool writeCheckpoint, CancellationToken cancellationToken) {
+	async ValueTask DisableInternal(string name, bool writeCheckpoint, CancellationToken cancellationToken) {
 		using var call = ServiceClient.DisableAsync(
 			new DisableReq {
 				Options = new DisableReq.Types.Options {
