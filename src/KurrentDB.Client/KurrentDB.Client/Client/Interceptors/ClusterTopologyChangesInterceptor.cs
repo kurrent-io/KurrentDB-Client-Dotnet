@@ -105,8 +105,17 @@ partial class ClusterTopologyChangesInterceptor : Interceptor {
 			set => inner.WriteOptions = value;
 		}
 
-		public Task CompleteAsync()       => inner.CompleteAsync().ContinueWith(onTaskFaulted, ContinuationOptions);
-		public Task WriteAsync(T message) => inner.WriteAsync(message).ContinueWith(onTaskFaulted, ContinuationOptions);
+		public Task CompleteAsync() {
+			var task = inner.CompleteAsync();
+			task.ContinueWith(onTaskFaulted, ContinuationOptions);
+			return task;
+		}
+
+		public Task WriteAsync(T message) {
+			var task = inner.WriteAsync(message);
+			task.ContinueWith(onTaskFaulted, ContinuationOptions);
+			return task;
+		}
 	}
 
 	class StreamReader<T>(IAsyncStreamReader<T> inner, Action<Task> onTaskFaulted) : IAsyncStreamReader<T> {
