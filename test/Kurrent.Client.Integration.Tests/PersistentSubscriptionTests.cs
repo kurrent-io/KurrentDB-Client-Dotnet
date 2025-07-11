@@ -1,4 +1,5 @@
 using Kurrent.Client.Model;
+using Kurrent.Client.Testing.Shouldly;
 using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Client.Tests.PersistentSubscriptions;
@@ -17,11 +18,14 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		var gameEventsCount = simulations.Sum(x => x.Game.GameEvents.Count);
 
 		var filter          = ReadFilter.FromPrefixes(ReadFilterScope.Stream, streams);
-		var settings        = new PersistentSubscriptionSettings(LogPosition.Earliest);
+		var settings        = new PersistentSubscriptionSettings { StartFrom = LogPosition.Earliest };
 		var recordsReceived = new List<Record>();
 
 		// Act
-		await AutomaticClient.PersistentSubscription.CreateToAll(group, filter, settings, ct);
+		await AutomaticClient.PersistentSubscription.CreateToAll(
+			group, filter, settings,
+			ct
+		);
 
 		await using var subscription = AutomaticClient.PersistentSubscription.SubscribeToAll(group, cancellationToken: ct);
 
@@ -52,15 +56,18 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		var simulation = await SeedGame(ct);
 
 		var stream = simulation.Game.Stream;
-		var group  = simulation.Game.GameId.ToString();
+		var group  = NewGroupName();
 
 		var recordsReceived = new List<Record>();
-		var settings        = new PersistentSubscriptionSettings(LogPosition.Earliest);
+		var settings        = new PersistentSubscriptionSettings { StartFrom = LogPosition.Earliest };
 
 		var expectedIds = simulation.Game.GameEvents.Select(x => x.RecordId).ToList();
 
 		// Act
-		await AutomaticClient.PersistentSubscription.CreateToStream(stream, group, settings, ct);
+		await AutomaticClient.PersistentSubscription.CreateToStream(
+			stream, group, settings,
+			ct
+		);
 
 		await using var subscription = AutomaticClient.PersistentSubscription.SubscribeToStream(stream, group, cancellationToken: ct);
 
@@ -85,6 +92,59 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		recordsReceived.Select(x => x.Id).ShouldBe(expectedIds);
 	}
 
+	[Test]
+	public async Task get_info_to_all(CancellationToken ct) {
+		// Arrange
+		var settings = new PersistentSubscriptionSettings {
+			StartFrom = LogPosition.Earliest
+		};
+
+		var expected = new PersistentSubscriptionInfo {
+			GroupName   = NewGroupName(),
+			EventSource = "$all",
+			Status      = "Live",
+			Settings    = settings
+		};
+
+		// Act
+		await AutomaticClient.PersistentSubscription.CreateToAll(expected.GroupName, expected.Settings, ct);
+
+		var info = await AutomaticClient.PersistentSubscription.GetInfoToAll(expected.GroupName, ct);
+
+		// Assert
+		info.ShouldNotBeNull().ShouldBeEquivalentTo(
+			expected, config => config
+				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Connections)
+				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Stats)
+		);
+	}
+
+	[Test]
+	public async Task get_info_to_stream(CancellationToken ct) {
+		// Arrange
+		var stream = Guid.NewGuid().ToString("N");
+
+		var settings = new PersistentSubscriptionSettings { StartFrom = LogPosition.Earliest };
+
+		var expected = new PersistentSubscriptionInfo {
+			GroupName   = NewGroupName(),
+			EventSource = stream,
+			Status      = "Live",
+			Settings    = settings
+		};
+
+		// Act
+		await AutomaticClient.PersistentSubscription.CreateToStream(stream, expected.GroupName, expected.Settings, ct);
+
+		var info = await AutomaticClient.PersistentSubscription.GetInfoToStream(stream, expected.GroupName, ct);
+
+		// Assert
+		info.ShouldNotBeNull().ShouldBeEquivalentTo(
+			expected, config => config
+				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Connections)
+				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Stats)
+		);
+	}
 
 	#region helpers
 

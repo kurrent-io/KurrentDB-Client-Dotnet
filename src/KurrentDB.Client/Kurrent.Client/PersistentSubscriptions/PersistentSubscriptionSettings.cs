@@ -1,121 +1,77 @@
+using Humanizer;
 using Kurrent.Client.Model;
 using KurrentDB.Client;
 
 namespace Kurrent.Client;
 
 /// <summary>
-/// A class representing the settings of a persistent subscription.
+/// Represents the settings for a persistent subscription in the Kurrent client library.
 /// </summary>
-public sealed class PersistentSubscriptionSettings {
+public sealed record PersistentSubscriptionSettings {
 	/// <summary>
 	/// Whether the <see cref="PersistentSubscription"></see> should resolve linkTo events to their linked events.
 	/// </summary>
-	public readonly bool ResolveLinkTos;
+	public bool ResolveLinkTos { get; init; }
 
 	/// <summary>
 	/// Which event position in the stream or transaction file the subscription should start from.
 	/// </summary>
-	public readonly LogPosition StartFrom;
+	public LogPosition StartFrom { get; init; } = LogPosition.Unset;
 
 	/// <summary>
 	/// Whether to track latency statistics on this subscription.
 	/// </summary>
-	public readonly bool ExtraStatistics;
+	public bool ExtraStatistics { get; init; }
 
 	/// <summary>
 	/// The amount of time after which to consider a message as timed out and retried.
 	/// </summary>
-	public readonly TimeSpan MessageTimeout;
-
-	/// <summary>
-	/// The maximum number of retries (due to timeout) before a message is considered to be parked.
-	/// </summary>
-	public readonly int MaxRetryCount;
-
-	/// <summary>
-	/// The size of the buffer (in-memory) listening to live messages as they happen before paging occurs.
-	/// </summary>
-	public readonly int LiveBufferSize;
-
-	/// <summary>
-	/// The number of events read at a time when paging through history.
-	/// </summary>
-	public readonly int ReadBatchSize;
-
-	/// <summary>
-	/// The number of events to cache when paging through history.
-	/// </summary>
-	public readonly int HistoryBufferSize;
+	[TimeSpanRange(MinMilliseconds = 0, MaxMilliseconds = int.MaxValue)]
+	public TimeSpan MessageTimeout { get; init; } = 30.Seconds();
 
 	/// <summary>
 	/// The amount of time to try to checkpoint after.
 	/// </summary>
-	public readonly TimeSpan CheckPointAfter;
+	[TimeSpanRange(MinMilliseconds = 0, MaxMilliseconds = int.MaxValue)]
+	public TimeSpan CheckPointAfter { get; init; } = 2.Seconds();
+
+	/// <summary>
+	/// The maximum number of retries (due to timeout) before a message is considered to be parked.
+	/// </summary>
+	public int MaxRetryCount { get; init; } = 10;
+
+	/// <summary>
+	/// The size of the buffer (in-memory) listening to live messages as they happen before paging occurs.
+	/// </summary>
+	public int LiveBufferSize { get; init; } = 500;
+
+	/// <summary>
+	/// The number of events read at a time when paging through history.
+	/// </summary>
+	public int ReadBatchSize { get; init; } = 20;
+
+	/// <summary>
+	/// The number of events to cache when paging through history.
+	/// </summary>
+	public int HistoryBufferSize { get; init; } = 500;
 
 	/// <summary>
 	/// The minimum number of messages to process before a checkpoint may be written.
 	/// </summary>
-	public readonly int CheckPointLowerBound;
+	public int CheckPointLowerBound { get; init; } = 10;
 
 	/// <summary>
 	/// The maximum number of messages not checkpointed before forcing a checkpoint.
 	/// </summary>
-	public readonly int CheckPointUpperBound;
+	public int CheckPointUpperBound { get; init; } = 1000;
 
 	/// <summary>
 	/// The maximum number of subscribers allowed.
 	/// </summary>
-	public readonly int MaxSubscriberCount;
+	public int MaxSubscriberCount { get; init; }
 
 	/// <summary>
 	/// The strategy to use for distributing events to client consumers. See <see cref="SystemConsumerStrategies"/> for system supported strategies.
 	/// </summary>
-	public readonly string ConsumerStrategyName;
-
-	/// <summary>
-	/// Constructs a new <see cref="PersistentSubscriptionSettings"/>.
-	/// </summary>
-	/// <exception cref="ArgumentOutOfRangeException"></exception>
-	public PersistentSubscriptionSettings(
-		LogPosition startFrom,
-		bool resolveLinkTos = false,
-		bool extraStatistics = false,
-		TimeSpan? messageTimeout = null,
-		int maxRetryCount = 10,
-		int liveBufferSize = 500,
-		int readBatchSize = 20,
-		int historyBufferSize = 500,
-		TimeSpan? checkPointAfter = null,
-		int checkPointLowerBound = 10,
-		int checkPointUpperBound = 1000,
-		int maxSubscriberCount = 0,
-		string consumerStrategyName = SystemConsumerStrategies.RoundRobin
-	) {
-		messageTimeout  ??= TimeSpan.FromSeconds(30);
-		checkPointAfter ??= TimeSpan.FromSeconds(2);
-
-		if (messageTimeout.Value < TimeSpan.Zero || messageTimeout.Value.TotalMilliseconds > int.MaxValue)
-			throw new ArgumentOutOfRangeException(
-				nameof(messageTimeout),
-				$"{nameof(messageTimeout)} must be greater than {TimeSpan.Zero} and less than or equal to {TimeSpan.FromMilliseconds(int.MaxValue)}");
-
-		if (checkPointAfter.Value < TimeSpan.Zero || checkPointAfter.Value.TotalMilliseconds > int.MaxValue)
-			throw new ArgumentOutOfRangeException(
-				nameof(checkPointAfter),
-				$"{nameof(checkPointAfter)} must be greater than {TimeSpan.Zero} and less than or equal to {TimeSpan.FromMilliseconds(int.MaxValue)}");
-
-		ResolveLinkTos       = resolveLinkTos;
-		StartFrom            = startFrom;
-		ExtraStatistics      = extraStatistics;
-		MessageTimeout       = messageTimeout.Value;
-		MaxRetryCount        = maxRetryCount;
-		LiveBufferSize       = liveBufferSize;
-		ReadBatchSize        = readBatchSize;
-		HistoryBufferSize    = historyBufferSize;
-		CheckPointAfter      = checkPointAfter.Value;
-		CheckPointLowerBound = checkPointLowerBound;
-		CheckPointUpperBound = checkPointUpperBound;
-		MaxSubscriberCount   = maxSubscriberCount;
-		ConsumerStrategyName = consumerStrategyName;
-	}
+	public string ConsumerStrategyName { get; init; } = SystemConsumerStrategies.RoundRobin;
 }

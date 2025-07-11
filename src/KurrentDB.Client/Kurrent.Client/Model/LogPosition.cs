@@ -61,6 +61,9 @@ public readonly record struct LogPosition : IComparable<LogPosition>, IComparabl
 	/// Thrown when the provided string is not in the correct format or contains invalid values.
 	/// </exception>
 	public static LogPosition From(string position) {
+		if (string.IsNullOrEmpty(position))
+			return Unset;
+
 		var span       = position.AsSpan().Trim();
 		var slashIndex = span.IndexOf('/');
 
@@ -70,7 +73,7 @@ public readonly record struct LogPosition : IComparable<LogPosition>, IComparabl
 		var commitSpan  = span[..slashIndex];
 		var prepareSpan = span[(slashIndex + 1)..];
 
-		if (!TryParsePosition("C", commitSpan, out var commitPosition) || !TryParsePosition("P", prepareSpan, out var preparePosition))
+		if (!TryParsePosition("C", commitSpan, out var commitPosition) || !TryParsePosition("P", prepareSpan, out _))
 			throw new InvalidLogPosition(position);
 
 		return new LogPosition((long)commitPosition);
