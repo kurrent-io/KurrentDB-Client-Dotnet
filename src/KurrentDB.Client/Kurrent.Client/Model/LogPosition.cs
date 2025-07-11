@@ -1,4 +1,7 @@
 // ReSharper disable ConvertIfStatementToReturnStatement
+// ReSharper disable DuplicatedSequentialIfBodies
+
+using System.Text.RegularExpressions;
 
 namespace Kurrent.Client.Model;
 
@@ -6,7 +9,7 @@ namespace Kurrent.Client.Model;
 /// Record position in the global log.
 /// </summary>
 [PublicAPI]
-public readonly record struct LogPosition : IComparable<LogPosition>, IComparable {
+public readonly partial record struct LogPosition : IComparable<LogPosition>, IComparable {
 	/// <summary>
 	/// Record position in the global log.
 	/// </summary>
@@ -52,7 +55,7 @@ public readonly record struct LogPosition : IComparable<LogPosition>, IComparabl
 	/// Creates a <see cref="LogPosition"/> instance from a provided position string.
 	/// </summary>
 	/// <param name="position">
-	/// The position string in the format "C:&lt;commit&gt;/P:&lt;prepare&gt;".
+	/// The position string in the format "C:commit/P:prepare".
 	/// </param>
 	/// <returns>
 	/// A new instance of <see cref="LogPosition"/> corresponding to the provided position string.
@@ -64,28 +67,15 @@ public readonly record struct LogPosition : IComparable<LogPosition>, IComparabl
 		if (string.IsNullOrEmpty(position))
 			return Unset;
 
-		var span       = position.AsSpan().Trim();
-		var slashIndex = span.IndexOf('/');
+		var match = LogPositionRegex().Match(position.Trim());
 
-		if (slashIndex < 0)
+		if (!match.Success)
 			throw new InvalidLogPosition(position);
 
-		var commitSpan  = span[..slashIndex];
-		var prepareSpan = span[(slashIndex + 1)..];
-
-		if (!TryParsePosition("C", commitSpan, out var commitPosition) || !TryParsePosition("P", prepareSpan, out _))
+		if (!ulong.TryParse(match.Groups["commit"].Value, out var commitPosition))
 			throw new InvalidLogPosition(position);
 
 		return new LogPosition((long)commitPosition);
-
-		static bool TryParsePosition(string expectedPrefix, ReadOnlySpan<char> value, out ulong result) {
-			result = 0;
-			var colonIndex = value.IndexOf(':');
-			if (colonIndex < 0) return false;
-			if (!value[..colonIndex].Equals(expectedPrefix, StringComparison.Ordinal)) return false;
-
-			return ulong.TryParse(value[(colonIndex + 1)..], out result);
-		}
 	}
 
 	public static implicit operator long(LogPosition _)  => _.Value;
@@ -112,7 +102,10 @@ public readonly record struct LogPosition : IComparable<LogPosition>, IComparabl
     public static bool operator <=(LogPosition left, LogPosition right) => left.CompareTo(right) <= 0;
     public static bool operator >=(LogPosition left, LogPosition right) => left.CompareTo(right) >= 0;
 
-    #endregion
+	#endregion
+
+	[GeneratedRegex(@"^C:(?<commit>[0-9]*)\/P:(?<prepare>[0-9]*)$")]
+	private static partial Regex LogPositionRegex();
 }
 
 /// <summary>

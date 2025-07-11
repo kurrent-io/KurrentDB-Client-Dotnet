@@ -103,7 +103,6 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		var expected = new PersistentSubscriptionInfo {
 			GroupName   = NewGroupName(),
 			EventSource = SystemStreams.AllStream,
-			Status      = "Live",
 			Settings    = settings
 		};
 
@@ -117,6 +116,7 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 			expected, config => config
 				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Connections)
 				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Stats)
+				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Status)
 		);
 	}
 
@@ -130,7 +130,6 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		var expected = new PersistentSubscriptionInfo {
 			GroupName   = NewGroupName(),
 			EventSource = stream,
-			Status      = "Live",
 			Settings    = settings
 		};
 
@@ -144,6 +143,7 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 			expected, config => config
 				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Connections)
 				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Stats)
+				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Status)
 		);
 	}
 

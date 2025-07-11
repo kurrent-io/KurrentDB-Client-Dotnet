@@ -53,12 +53,12 @@ public record PersistentSubscriptionStats {
 	public long ParkedMessageCount { get; init; }
 
 	/// <summary>
-	/// The <see cref="IPosition"/> of the last checkpoint. This will be null if there are no checkpoints.
+	/// The <see cref="LogPosition"/> of the last checkpoint. This will be null if there are no checkpoints.
 	/// </summary>
 	public LogPosition LastCheckpointedEventPosition { get; init; }
 
 	/// <summary>
-	/// The <see cref="IPosition"/> of the last known event. This will be undefined if no events have been received yet.
+	/// The <see cref="LogPosition"/> of the last known event. This will be undefined if no events have been received yet.
 	/// </summary>
 	public LogPosition LastKnownEventPosition { get; init; }
 }
