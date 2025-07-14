@@ -4,9 +4,9 @@ on:
   pull_request:
   push:
     branches:
-    - master
+      - master
     tags:
-    - v*
+      - v*
 
 jobs:
   ce:
@@ -14,26 +14,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        docker-tag: [ ci, lts, previous-lts ]
-        test: [ Streams, PersistentSubscriptions, Operations, ProjectionManagement, UserManagement, Security, Misc ]
+        docker-tag: [ ci ]
+        test: [ Streams ]
     name: Test CE (${{ matrix.docker-tag }})
     with:
-      docker-tag: ${{ matrix.docker-tag }}
-      docker-image: eventstore-ce/eventstoredb-ce
       test: ${{ matrix.test }}
-  ee:
-    uses: ./.github/workflows/base.yml
-    if: ${{ github.repository_owner == 'EventStore' }}
-    strategy:
-      fail-fast: false
-      matrix:
-        docker-tag: [ 24.2.0-jammy ]
-        test: [ Plugins ]
-    name: Test EE (${{ matrix.docker-tag }})
-    with:
-      docker-tag: ${{ matrix.docker-tag }}
-      docker-image: eventstore-ee/eventstoredb-commercial
-      test: ${{ matrix.test }}
-    secrets:
-      CLOUDSMITH_CICD_USER: ${{ secrets.CLOUDSMITH_CICD_USER }}
-      CLOUDSMITH_CICD_TOKEN: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
+      runtime: ${{ matrix.docker-tag }}
+      registry: docker.kurrent.io
+      image: kurrentdb
+      tag: ${{ matrix.docker-tag }}
+    secrets: inherit

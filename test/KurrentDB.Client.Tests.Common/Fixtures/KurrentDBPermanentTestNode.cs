@@ -1,47 +1,10 @@
-// ReSharper disable InconsistentNaming
-
-// using Ductus.FluentDocker.Builders;
-// using Ductus.FluentDocker.Model.Builders;
-// using KurrentDB.Client.Tests.FluentDocker;
-//
-// namespace KurrentDB.Client.Tests;
-//
-// public class EventStorePermanentTestNode(EventStoreFixtureOptions? options = null) : BaseTestNode(options) {
-// 	protected override ContainerBuilder ConfigureContainer(ContainerBuilder builder) {
-// 		var port      = Options.ClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
-// 		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
-//
-// 		var containerName = "es-client-dotnet-test";
-//
-// 		return builder
-// 			.UseImage(Options.Environment["ES_DOCKER_IMAGE"])
-// 			.WithName(containerName)
-// 			.WithPublicEndpointResolver()
-// 			.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
-// 			.ExposePort(port, 2113)
-// 			.KeepContainer().KeepRunning().ReuseIfExists()
-// 			.WaitUntilReadyWithConstantBackoff(
-// 				1_000,
-// 				60,
-// 				service => {
-// 					var output = service.ExecuteCommand("curl -u admin:changeit --cacert /etc/eventstore/certs/ca/ca.crt https://localhost:2113/health/live");
-// 					if (!output.Success)
-// 						throw new Exception(output.Error);
-// 				}
-// 			);
-// 	}
-// }
-
 using System.Diagnostics.CodeAnalysis;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Model.Builders;
-using Ductus.FluentDocker.Model.Containers;
-using Ductus.FluentDocker.Services;
 using KurrentDB.Client;
 using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
 using Serilog.Extensions.Logging;
-using static System.TimeSpan;
 
 public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null) : TestContainerService {
 	KurrentDBFixtureOptions Options { get; } = options ?? DefaultOptions();
@@ -64,22 +27,22 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 			// .With(x => x.ConnectivitySettings.DiscoveryInterval = FromSeconds(1));
 
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
-			["KURRENTDB_MEM_DB"]                              = "true",
-			["KURRENTDB_CERTIFICATE_FILE"]                    = "/etc/kurrentdb/certs/node/node.crt",
-			["KURRENTDB_CERTIFICATE_PRIVATE_KEY_FILE"]        = "/etc/kurrentdb/certs/node/node.key",
-			["KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/kurrentdb/certs/ca",
-			["KURRENTDB__PLUGINS__USERCERTIFICATES__ENABLED"] = "true",
-			["KURRENTDB_STREAM_EXISTENCE_FILTER_SIZE"]        = "10000",
-			["KURRENTDB_STREAM_INFO_CACHE_CAPACITY"]          = "10000",
-			["KURRENTDB_ENABLE_ATOM_PUB_OVER_HTTP"]           = "true",
-			["KURRENTDB_LOG_LEVEL"]                           = "Default", // required to use serilog settings
-			["KURRENTDB_DISABLE_LOG_FILE"]                    = "true",
-			["KURRENTDB_START_STANDARD_PROJECTIONS"]          = "true",
-			["KURRENTDB_RUN_PROJECTIONS"]                     = "All",
-			["KURRENTDB_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"]    = "2113",
-			["KURRENTDB_ADVERTISE_NODE_PORT_TO_CLIENT_AS"]    = "2113",
-			["KURRENTDB_NODE_PORT"]                           = "2113",
-			["KURRENTDB_MAX_APPEND_SIZE"]                     = "4194304" // Sets the limit to 4MB
+			["EVENTSTORE_MEM_DB"]                              = "true",
+			["EVENTSTORE_CERTIFICATE_FILE"]                    = "/etc/kurrentdb/certs/node/node.crt",
+			["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"]        = "/etc/kurrentdb/certs/node/node.key",
+			["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/kurrentdb/certs/ca",
+			["EVENTSTORE__PLUGINS__USERCERTIFICATES__ENABLED"] = "true",
+			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"]        = "10000",
+			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]          = "10000",
+			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]           = "true",
+			["EVENTSTORE_LOG_LEVEL"]                           = "Default", // required to use serilog settings
+			["EVENTSTORE_DISABLE_LOG_FILE"]                    = "true",
+			["EVENTSTORE_START_STANDARD_PROJECTIONS"]          = "true",
+			["EVENTSTORE_RUN_PROJECTIONS"]                     = "All",
+			["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"]    = "2113",
+			["EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS"]    = "2113",
+			["EVENTSTORE_NODE_PORT"]                           = "2113",
+			["EVENTSTORE_MAX_APPEND_SIZE"]                     = "4194304" // Sets the limit to 4MB
 		};
 
 		if (GlobalEnvironment.DockerImage.Contains("commercial")) {
@@ -126,70 +89,67 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
             });
 	}
 
-    static bool TryParseKurrentDBVersion(ReadOnlySpan<char> input, [MaybeNullWhen(false)] out Version version) {
-        version = null!;
+	static bool TryParseKurrentDBVersion(ReadOnlySpan<char> input, [MaybeNullWhen(false)] out Version version) {
+		version = null!;
 
-        if (input.IsEmpty)
-            return false;
+		if (input.IsEmpty)
+			return false;
 
-        var versionPrefix = "KurrentDB version ".AsSpan();
+		var kurrentPrefix    = "KurrentDB version ".AsSpan();
+		var eventStorePrefix = "EventStore version ".AsSpan();
 
-        if (!input.StartsWith(versionPrefix))
-            return false;
+		ReadOnlySpan<char> versionPart;
+		if (input.StartsWith(kurrentPrefix))
+			versionPart = input[kurrentPrefix.Length..];
+		else if (input.StartsWith(eventStorePrefix))
+			versionPart = input[eventStorePrefix.Length..];
+		else
+			return false;
 
-        try {
-            // Skip past "KurrentDB version "
-            var versionPart = input[versionPrefix.Length..];
+		try {
+			var spaceIndex  = versionPart.IndexOf(' ');
+			var versionText = spaceIndex >= 0 ? versionPart[..spaceIndex] : versionPart;
 
-            // Extract the version portion (everything before the first space)
-            var spaceIndex  = versionPart.IndexOf(' ');
-            var versionText = spaceIndex >= 0 ? versionPart[..spaceIndex] : versionPart;
+			Span<int> components = stackalloc int[4];
 
-            // Parse version components by finding dots
-            Span<int> components = stackalloc int[4];
+			var componentCount = 0;
+			var start          = 0;
 
-            var componentCount = 0;
-            var start          = 0;
+			for (var i = 0; i <= versionText.Length; i++) {
+				if (i != versionText.Length && versionText[i] != '.') continue;
 
-            for (var i = 0; i <= versionText.Length; i++) {
-                if (i != versionText.Length && versionText[i] != '.') continue;
+				if (componentCount >= 4)
+					break;
 
-                if (componentCount >= 4)
-                    break;
+				var componentSpan = versionText.Slice(start, i - start);
 
-                var componentSpan = versionText.Slice(start, i - start);
+				var numericEnd = 0;
+				while (numericEnd < componentSpan.Length && char.IsDigit(componentSpan[numericEnd]))
+					numericEnd++;
 
-                // Extract only the numeric part of the component
-                var numericEnd = 0;
-                while (numericEnd < componentSpan.Length && char.IsDigit(componentSpan[numericEnd]))
-	                numericEnd++;
+				if (numericEnd == 0 || !int.TryParse(componentSpan[..numericEnd], out components[componentCount]))
+					return false;
 
-                if (numericEnd == 0 || !int.TryParse(componentSpan[..numericEnd], out components[componentCount]))
-	                return false;
+				componentCount++;
+				start = i + 1;
+			}
 
-                componentCount++;
-                start = i + 1;
+			if (componentCount < 2)
+				return false;
 
-            }
+			version = componentCount switch {
+				2 => new Version(components[0], components[1]),
+				3 => new Version(components[0], components[1], components[2]),
+				>= 4 => new Version(
+					components[0], components[1], components[2],
+					components[3]
+				),
+				_ => null
+			};
 
-            if (componentCount < 2)
-                return false;
-
-            // Create Version object with appropriate constructor
-            version = componentCount switch {
-                2 => new Version(components[0], components[1]),
-                3 => new Version(components[0], components[1], components[2]),
-                >= 4 => new Version(
-                    components[0], components[1], components[2],
-                    components[3]
-                ),
-                _ => null
-            };
-
-            return version is not null;
-        }
-        catch (Exception ex) {
-	        throw new Exception($"Failed to parse KurrentDB version from: {input.ToString()}", ex);
-        }
-    }
+			return version is not null;
+		} catch (Exception ex) {
+			throw new Exception($"Failed to parse version from: {input.ToString()}", ex);
+		}
+	}
 }

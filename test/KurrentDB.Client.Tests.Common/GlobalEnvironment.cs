@@ -25,10 +25,11 @@ public static class GlobalEnvironment {
 			// configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.kurrent.io/kurrent-preview/kurrentdb");
 			// configuration.EnsureValue("ES_DOCKER_TAG", "25.0.1-experimental-arm64-8.0-jammy");
 
-			configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.cloudsmith.io/eventstore/kurrent-staging/kurrentdb");
-			configuration.EnsureValue("ES_DOCKER_TAG", "ci");
+			// configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.cloudsmith.io/eventstore/kurrent-staging/kurrentdb");
+			// configuration.EnsureValue("ES_DOCKER_TAG", "ci");
+			// configuration.EnsureValue("ES_DOCKER_IMAGE", $"{configuration["ES_DOCKER_REGISTRY"]}:{configuration["ES_DOCKER_TAG"]}");
 
-			configuration.EnsureValue("ES_DOCKER_IMAGE", $"{configuration["ES_DOCKER_REGISTRY"]}:{configuration["ES_DOCKER_TAG"]}");
+			configuration.EnsureValue("ES_DOCKER_IMAGE", "docker.cloudsmith.io/eventstore/kurrent-staging/kurrentdb:ci");
 
 			configuration.EnsureValue("KURRENTDB_TELEMETRY_OPTOUT", "true");
 			configuration.EnsureValue("KURRENTDB_ALLOW_UNKNOWN_OPTIONS", "true");
