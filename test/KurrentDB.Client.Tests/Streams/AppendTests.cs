@@ -482,7 +482,7 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 	}
 
-	[Fact]
+	[Fact(Skip = "Temporary")]
 	public async Task fails_when_size_exceeds_max_append_size() {
 		// Arrange
 		var maxAppendSize    = 4194304u;

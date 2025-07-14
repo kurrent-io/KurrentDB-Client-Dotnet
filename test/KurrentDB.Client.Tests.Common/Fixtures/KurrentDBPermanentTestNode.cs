@@ -28,9 +28,9 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
 			["EVENTSTORE_MEM_DB"]                              = "true",
-			["EVENTSTORE_CERTIFICATE_FILE"]                    = "/etc/kurrentdb/certs/node/node.crt",
-			["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"]        = "/etc/kurrentdb/certs/node/node.key",
-			["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/kurrentdb/certs/ca",
+			["EVENTSTORE_CERTIFICATE_FILE"]                    = "/etc/eventstore/certs/node/node.crt",
+			["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"]        = "/etc/eventstore/certs/node/node.key",
+			["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/eventstore/certs/ca",
 			["EVENTSTORE__PLUGINS__USERCERTIFICATES__ENABLED"] = "true",
 			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"]        = "10000",
 			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]          = "10000",
@@ -69,87 +69,17 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 			.WithName("kurrentdb-dotnet-test")
 			.WithPublicEndpointResolver()
 			.WithEnvironment(env)
-			.MountVolume(certsPath, "/etc/kurrentdb/certs", MountType.ReadOnly)
+			.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
 			.ExposePort(port, 2113)
 			.KeepContainer().KeepRunning().ReuseIfExists()
-			.WaitUntilReadyWithConstantBackoff(500, 10, service => {
-                var output = service.ExecuteCommand("curl -u admin:changeit --cacert /etc/kurrentdb/certs/ca/ca.crt https://localhost:2113/health/live");
-                if (!output.Success) {
-	                var connectionError = output.Log.FirstOrDefault(x => x.Contains("curl:"));
-	                throw connectionError is not null
-		                ? new Exception($"KurrentDB health check failed: {connectionError}")
-		                : new Exception(
-			                $"KurrentDB is not running or not reachable. {Environment.NewLine}{output.Error}"
-		                );
-                }
-
-                var versionOutput = service.ExecuteCommand("/opt/kurrentdb/kurrentd --version");
-                if (versionOutput.Success && TryParseKurrentDBVersion(versionOutput.Log.FirstOrDefault(), out var version))
-	                _version ??= version;
-            });
-	}
-
-	static bool TryParseKurrentDBVersion(ReadOnlySpan<char> input, [MaybeNullWhen(false)] out Version version) {
-		version = null!;
-
-		if (input.IsEmpty)
-			return false;
-
-		var kurrentPrefix    = "KurrentDB version ".AsSpan();
-		var eventStorePrefix = "EventStore version ".AsSpan();
-
-		ReadOnlySpan<char> versionPart;
-		if (input.StartsWith(kurrentPrefix))
-			versionPart = input[kurrentPrefix.Length..];
-		else if (input.StartsWith(eventStorePrefix))
-			versionPart = input[eventStorePrefix.Length..];
-		else
-			return false;
-
-		try {
-			var spaceIndex  = versionPart.IndexOf(' ');
-			var versionText = spaceIndex >= 0 ? versionPart[..spaceIndex] : versionPart;
-
-			Span<int> components = stackalloc int[4];
-
-			var componentCount = 0;
-			var start          = 0;
-
-			for (var i = 0; i <= versionText.Length; i++) {
-				if (i != versionText.Length && versionText[i] != '.') continue;
-
-				if (componentCount >= 4)
-					break;
-
-				var componentSpan = versionText.Slice(start, i - start);
-
-				var numericEnd = 0;
-				while (numericEnd < componentSpan.Length && char.IsDigit(componentSpan[numericEnd]))
-					numericEnd++;
-
-				if (numericEnd == 0 || !int.TryParse(componentSpan[..numericEnd], out components[componentCount]))
-					return false;
-
-				componentCount++;
-				start = i + 1;
-			}
-
-			if (componentCount < 2)
-				return false;
-
-			version = componentCount switch {
-				2 => new Version(components[0], components[1]),
-				3 => new Version(components[0], components[1], components[2]),
-				>= 4 => new Version(
-					components[0], components[1], components[2],
-					components[3]
-				),
-				_ => null
-			};
-
-			return version is not null;
-		} catch (Exception ex) {
-			throw new Exception($"Failed to parse version from: {input.ToString()}", ex);
-		}
+			.WaitUntilReadyWithConstantBackoff(
+				1_000,
+				60,
+				service => {
+					var output = service.ExecuteCommand("curl -u admin:changeit --cacert /etc/eventstore/certs/ca/ca.crt https://localhost:2113/health/live");
+					if (!output.Success)
+						throw new Exception(output.Error);
+				}
+			);
 	}
 }

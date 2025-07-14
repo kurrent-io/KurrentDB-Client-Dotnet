@@ -5,22 +5,17 @@ on:
   push:
     branches:
       - master
-    tags:
-      - v*
 
 jobs:
-  ce:
+  ci:
+    name: Tests
     uses: ./.github/workflows/base.yml
     strategy:
       fail-fast: false
       matrix:
-        docker-tag: [ ci ]
         test: [ Streams ]
-    name: Test CE (${{ matrix.docker-tag }})
+        runtime: [ previous-lts, lts, ci ]
     with:
       test: ${{ matrix.test }}
-      runtime: ${{ matrix.docker-tag }}
-      registry: docker.kurrent.io
-      image: kurrentdb
-      tag: ${{ matrix.docker-tag }}
+      runtime: ${{ matrix.runtime }}
     secrets: inherit

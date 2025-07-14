@@ -52,7 +52,7 @@ public abstract record StreamMessage {
 	/// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that a checkpoint has been reached.
 	/// </summary>
 	/// <param name="Position">The <see cref="Position" />.</param>
-	public record AllStreamCheckpointReached(Position Position, DateTimeOffset Timestamp) : StreamMessage;
+	public record AllStreamCheckpointReached(Position Position, DateTimeOffset? Timestamp) : StreamMessage;
 
 	/// <summary>
 	/// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that a checkpoint has been reached.
@@ -71,7 +71,7 @@ public abstract record StreamMessage {
 	/// <summary>
 	/// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that the subscription is live.
 	/// </summary>
-	public record CaughtUp(Position? Position, long? StreamRevision, DateTimeOffset Timestamp) : StreamMessage {
+	public record CaughtUp(Position? Position, long? StreamRevision, DateTimeOffset? Timestamp) : StreamMessage {
 		public bool HasPosition       => Position.HasValue;
 		public bool HasStreamRevision => StreamRevision.HasValue;
 	}
@@ -79,7 +79,7 @@ public abstract record StreamMessage {
 	/// <summary>
 	/// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that the subscription has switched to catch up mode.
 	/// </summary>
-	public record FellBehind(Position? Position, long? StreamRevision, DateTimeOffset Timestamp) : StreamMessage {
+	public record FellBehind(Position? Position, long? StreamRevision, DateTimeOffset? Timestamp) : StreamMessage {
 		public bool HasPosition       => Position.HasValue;
 		public bool HasStreamRevision => StreamRevision.HasValue;
 	}

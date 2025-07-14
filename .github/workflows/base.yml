@@ -42,7 +42,7 @@ jobs:
 
   test:
     needs: load_configuration
-    timeout-minutes: 20
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -51,25 +51,22 @@ jobs:
         configuration: [ release ]
     runs-on: ${{ matrix.os }}
     name: ${{ inputs.test }} (${{ matrix.os }}, ${{ matrix.framework }})
-    env:
-      CLOUDSMITH_CICD_USER: ${{ secrets.CLOUDSMITH_CICD_USER }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Print Docker Version
-        shell: bash
-        run: |
-          docker --version
-
       - name: Login to Cloudsmith
         uses: docker/login-action@v3
         with:
-          registry: ${{ needs.load_configuration.outputs.registry }}
+          registry: docker.kurrent.io
           username: ${{ secrets.CLOUDSMITH_CICD_USER }}
           password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
+
+      - name: Pull KurrentDB Docker Image
+        run: |
+          docker pull "${{ needs.load_configuration.outputs.registry }}/${{ needs.load_configuration.outputs.image }}:${{ needs.load_configuration.outputs.tag }}"
 
       - name: Install dotnet SDKs
         uses: actions/setup-dotnet@v3
@@ -89,3 +86,11 @@ jobs:
             --framework ${{ matrix.framework }} \
             --filter "Category=Target:${{ inputs.test }}" \
             test/KurrentDB.Client.Tests
+
+#        run: |
+#          sudo ./gencert.sh
+#          dotnet test --configuration ${{ matrix.configuration }} --blame \
+#            --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
+#            --framework ${{ matrix.framework }} \
+#            --filter "Category=Target:${{ inputs.test }} & FullyQualifiedName~ReadAllEventsBackwardTests" \
+#            test/KurrentDB.Client.Tests

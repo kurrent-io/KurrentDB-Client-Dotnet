@@ -30,16 +30,17 @@ public static class GlobalEnvironment {
 			// configuration.EnsureValue("ES_DOCKER_IMAGE", $"{configuration["ES_DOCKER_REGISTRY"]}:{configuration["ES_DOCKER_TAG"]}");
 
 			configuration.EnsureValue("ES_DOCKER_IMAGE", "docker.cloudsmith.io/eventstore/kurrent-staging/kurrentdb:ci");
+			// configuration.EnsureValue("ES_DOCKER_IMAGE", "docker.cloudsmith.io/eventstore-ee/eventstoredb-commercial:23.10.5-commercial-bookworm-slim");
 
-			configuration.EnsureValue("KURRENTDB_TELEMETRY_OPTOUT", "true");
-			configuration.EnsureValue("KURRENTDB_ALLOW_UNKNOWN_OPTIONS", "true");
-			configuration.EnsureValue("KURRENTDB_MEM_DB", "false");
-			configuration.EnsureValue("KURRENTDB_RUN_PROJECTIONS", "None");
-			configuration.EnsureValue("KURRENTDB_START_STANDARD_PROJECTIONS", "false");
-			configuration.EnsureValue("KURRENTDB_LOG_LEVEL", "Information");
-			configuration.EnsureValue("KURRENTDB_DISABLE_LOG_FILE", "true");
-			configuration.EnsureValue("KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH", "/etc/kurrentdb/certs/ca");
-			configuration.EnsureValue("KURRENTDB_ENABLE_ATOM_PUB_OVER_HTTP", "true");
+			configuration.EnsureValue("EVENTSTORE_TELEMETRY_OPTOUT", "true");
+			configuration.EnsureValue("EVENTSTORE_ALLOW_UNKNOWN_OPTIONS", "true");
+			configuration.EnsureValue("EVENTSTORE_MEM_DB", "false");
+			configuration.EnsureValue("EVENTSTORE_RUN_PROJECTIONS", "None");
+			configuration.EnsureValue("EVENTSTORE_START_STANDARD_PROJECTIONS", "false");
+			configuration.EnsureValue("EVENTSTORE_LOG_LEVEL", "Information");
+			configuration.EnsureValue("EVENTSTORE_DISABLE_LOG_FILE", "true");
+			configuration.EnsureValue("EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH", "/etc/eventstore/certs/ca");
+			configuration.EnsureValue("EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP", "true");
 			// configuration.EnsureValue("KURRENTDB_APPLICATION_MAX_APPEND_SIZE", "4194304");
 		}
 	}

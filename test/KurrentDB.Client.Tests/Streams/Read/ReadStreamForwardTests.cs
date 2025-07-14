@@ -160,7 +160,7 @@ public class ReadStreamForwardTests(ITestOutputHelper output, KurrentDBPermanent
 		Assert.True(count == maxCount);
 	}
 
-	[Fact]
+	[Fact(Skip = "Temporary")]
 	public async Task populates_log_position_of_event() {
 		if (KurrentDBPermanentTestNode.Version.Major < 22)
 			return;

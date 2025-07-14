@@ -12,19 +12,19 @@ public static class KurrentDBConfiguration {
     /// Default insecure configuration for KurrentDB.
     /// </summary>
     public static readonly IReadOnlyDictionary<string, string?> Insecure = new Dictionary<string, string?> {
-        ["KURRENTDB_TELEMETRY_OPTOUT"]          = "true",
-        ["KURRENTDB_ALLOW_UNKNOWN_OPTIONS"]     = "false",
-        ["KURRENTDB_MEM_DB"]                    = "false",
-        ["KURRENTDB_DISABLE_LOG_FILE"]          = "true",
-        ["KURRENTDB_LOG_LEVEL"]                 = "Verbose",
-        ["KURRENTDB_ENABLE_ATOM_PUB_OVER_HTTP"] = "true",
-        ["KURRENTDB_RUN_PROJECTIONS"]            = "All",
-        ["KURRENTDB_START_STANDARD_PROJECTIONS"] = "true",
-        ["KURRENTDB_NODE_PORT"]                  = "2113",
-        ["KURRENTDB_INSECURE"]                   = "true",
+        ["EVENTSTORE_TELEMETRY_OPTOUT"]          = "true",
+        ["EVENTSTORE_ALLOW_UNKNOWN_OPTIONS"]     = "false",
+        ["EVENTSTORE_MEM_DB"]                    = "false",
+        ["EVENTSTORE_DISABLE_LOG_FILE"]          = "true",
+        ["EVENTSTORE_LOG_LEVEL"]                 = "Verbose",
+        ["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"] = "true",
+        ["EVENTSTORE_RUN_PROJECTIONS"]            = "All",
+        ["EVENTSTORE_START_STANDARD_PROJECTIONS"] = "true",
+        ["EVENTSTORE_NODE_PORT"]                  = "2113",
+        ["EVENTSTORE_INSECURE"]                   = "true",
 
-        ["KURRENTDB_USER_CERTIFICATES__ENABLED"]          = "false",
-        ["KURRENTDB__PLUGINS__USERCERTIFICATES__ENABLED"] = "false",
+        ["EVENTSTORE_USER_CERTIFICATES__ENABLED"]          = "false",
+        ["EVENTSTORE__PLUGINS__USERCERTIFICATES__ENABLED"] = "false",
     };
 
     /// <summary>
@@ -33,12 +33,12 @@ public static class KurrentDBConfiguration {
     /// It includes settings for trusted root certificates and node certificates.
     /// </summary>
     public static readonly IReadOnlyDictionary<string, string?> Secure = new Dictionary<string, string?>(Insecure) {
-        ["KURRENTDB_INSECURE"]                            = "false",
-        ["KURRENTDB_USER_CERTIFICATES__ENABLED"]          = "true",
-        ["KURRENTDB__PLUGINS__USERCERTIFICATES__ENABLED"] = "true",
-        ["KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/kurrentdb/certs/ca",
-        ["KURRENTDB_CERTIFICATE_FILE"]                    = "/etc/kurrentdb/certs/node/node.crt",
-        ["KURRENTDB_CERTIFICATE_PRIVATE_KEY_FILE"]        = "/etc/kurrentdb/certs/node/node.key",
+        ["EVENTSTORE_INSECURE"]                            = "false",
+        ["EVENTSTORE_USER_CERTIFICATES__ENABLED"]          = "true",
+        ["EVENTSTORE__PLUGINS__USERCERTIFICATES__ENABLED"] = "true",
+        ["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/eventstore/certs/ca",
+        ["EVENTSTORE_CERTIFICATE_FILE"]                    = "/etc/eventstore/certs/node/node.crt",
+        ["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"]        = "/etc/eventstore/certs/node/node.key",
     };
 
     /// <summary>
@@ -47,7 +47,7 @@ public static class KurrentDBConfiguration {
     /// </summary>
     public static IReadOnlyDictionary<string, string?> FromContext(Dictionary<string, string?>? baseConfiguration = null) {
         var fromContext = ApplicationContext.Configuration.AsEnumerable()
-            .Where(x => x.Key.StartsWith("KURRENTDB_"))
+            .Where(x => x.Key.StartsWith("EVENTSTORE_"))
             .Where(x => !string.IsNullOrWhiteSpace(x.Value))
             .OrderBy(x => x.Key)
             .ToDictionary(x => x.Key, x => x.Value);
@@ -70,7 +70,7 @@ public class KurrentDBTestContainer : TestContainer {
     public KurrentDBTestContainer(Dictionary<string, string?> settings) : base(DefaultImage) {
         ActiveConfiguration = KurrentDBConfiguration.FromContext(settings).ToDictionary();
 
-        IsSecure = ActiveConfiguration.TryGetValue("KURRENTDB_INSECURE", out var value) && value == "false";
+        IsSecure = ActiveConfiguration.TryGetValue("EVENTSTORE_INSECURE", out var value) && value == "false";
 
         if (IsSecure) {
             AuthenticatedConnectionString = "kurrentdb://admin:changeit@localhost:2113/?tls=true&tlsVerifyCert=false";
@@ -93,13 +93,13 @@ public class KurrentDBTestContainer : TestContainer {
 
     protected override ContainerBuilder ConfigureContainer(ContainerBuilder builder) {
         var healthCheckCommand = IsSecure
-            ? "curl -u admin:changeit --cacert /etc/kurrentdb/certs/ca/ca.crt https://localhost:2113/health/live"
+            ? "curl -u admin:changeit --cacert /etc/eventstore/certs/ca/ca.crt https://localhost:2113/health/live"
             : "curl -o - -I http://admin:changeit@localhost:2113/health/live";
 
         if (IsSecure) {
             var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
             CertificatesManager.CheckCertificates(certsPath);
-            builder = builder.MountVolume(certsPath, "/etc/kurrentdb/certs", MountType.ReadOnly);
+            builder = builder.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly);
         }
 
         return builder

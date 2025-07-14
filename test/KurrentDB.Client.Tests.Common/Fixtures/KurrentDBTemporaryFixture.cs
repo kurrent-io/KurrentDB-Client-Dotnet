@@ -92,7 +92,7 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 					InitClient<KurrentDBClient>(async x => Streams = await Task.FromResult(x)),
 					InitClient<KurrentDBProjectionManagementClient>(
 						async x => DBProjections = await Task.FromResult(x),
-						Options.Environment["KURRENTDB_RUN_PROJECTIONS"] != "None"
+						Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None"
 					),
 					InitClient<KurrentDBPersistentSubscriptionsClient>(async x => Subscriptions = SkipPsWarmUp ? x : await Task.FromResult(x)),
 					InitClient<KurrentDBOperationsClient>(async x => DBOperations = await Task.FromResult(x))
