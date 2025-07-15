@@ -1,26 +1,21 @@
-using System.Globalization;
+// ReSharper disable InconsistentNaming
+// ReSharper disable InvertIf
+
 using System.Net;
 using System.Net.Sockets;
 using Ductus.FluentDocker.Builders;
-using Ductus.FluentDocker.Extensions;
 using Ductus.FluentDocker.Model.Builders;
-using Ductus.FluentDocker.Services.Extensions;
-using KurrentDB.Client.Tests.FluentDocker;
 using Humanizer;
+using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
 using Serilog.Extensions.Logging;
-using static System.TimeSpan;
 
-namespace KurrentDB.Client.Tests.TestNode;
+namespace KurrentDB.Client.Tests;
 
 public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null) : TestContainerService {
 	static readonly NetworkPortProvider NetworkPortProvider = new(NetworkPortProvider.DefaultEsdbPort);
 
 	KurrentDBFixtureOptions Options { get; } = options ?? DefaultOptions();
-
-	static Version? _version;
-
-	public static Version Version => _version;
 
 	public static KurrentDBFixtureOptions DefaultOptions() {
 		const string connString = "kurrentdb://admin:changeit@localhost:{port}/?tlsVerifyCert=false";
@@ -30,80 +25,34 @@ public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null)
 		var defaultSettings = KurrentDBClientSettings
 			.Create(connString.Replace("{port}", $"{port}"))
 			.With(x => x.LoggerFactory = new SerilogLoggerFactory(Log.Logger))
-			.With(x => x.DefaultDeadline = Application.DebuggerIsAttached ? new TimeSpan?() : FromSeconds(30))
-			.With(x => x.ConnectivitySettings.MaxDiscoverAttempts = 20)
-			.With(x => x.ConnectivitySettings.DiscoveryInterval = FromSeconds(1));
+			.With(x => x.RetrySettings = KurrentDBClientRetrySettings.Default);
 
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
-			["EVENTSTORE_MEM_DB"]                           = "true",
-			["EVENTSTORE_CERTIFICATE_FILE"]                 = "/etc/eventstore/certs/node/node.crt",
-			["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"]     = "/etc/eventstore/certs/node/node.key",
-			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"]     = "10000",
-			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]       = "10000",
-			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]        = "true",
-			["EVENTSTORE_LOG_LEVEL"]                        = "Default", // required to use serilog settings
-			["EVENTSTORE_DISABLE_LOG_FILE"]                 = "true",
-			["EVENTSTORE_CHUNK_SIZE"]                       = (1024 * 1024 * 1024).ToString(),
-			["EVENTSTORE_MAX_APPEND_SIZE"]                  = "4194304", // Sets the limit to 4MB
-			["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}"
+			["EVENTSTORE_MEM_DB"]                              = "true",
+			["EVENTSTORE_CERTIFICATE_FILE"]                    = "/etc/eventstore/certs/node/node.crt",
+			["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"]        = "/etc/eventstore/certs/node/node.key",
+			["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/eventstore/certs/ca",
+			["EVENTSTORE__PLUGINS__USERCERTIFICATES__ENABLED"] = "true",
+			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"]        = "10000",
+			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]          = "10000",
+			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]           = "true",
+			["EVENTSTORE_LOG_LEVEL"]                           = "Default",
+			["EVENTSTORE_DISABLE_LOG_FILE"]                    = "true",
+			["EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS"]    = $"{port}",
+			["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"]    = $"{port}",
+			["EVENTSTORE_MAX_APPEND_SIZE"]                     = $"{4.Megabytes().Bytes}"
 		};
-
-		if (GlobalEnvironment.DockerImage.Contains("commercial")) {
-			defaultEnvironment["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/eventstore/certs/ca";
-			defaultEnvironment["EventStore__Plugins__UserCertificates__Enabled"] = "true";
-		}
-
-		if (port != NetworkPortProvider.DefaultEsdbPort) {
-			if (GlobalEnvironment.Variables.TryGetValue("ES_DOCKER_TAG", out var tag) && tag == "ci")
-				defaultEnvironment["EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS"] = $"{port}";
-			else
-				defaultEnvironment["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{port}";
-		}
 
 		return new(defaultSettings, defaultEnvironment);
 	}
 
-	static Version GetVersion() {
-		const string versionPrefix     = "KurrentDB version";
-		const string esdbVersionPrefix = "EventStoreDB version";
-
-		using var cts = new CancellationTokenSource(FromSeconds(30));
-		using var eventstore = new Builder().UseContainer()
-			.UseImage(GlobalEnvironment.DockerImage)
-			.Command("--version")
-			.Build()
-			.Start();
-
-		using var log  = eventstore.Logs(true, cts.Token);
-		var       logs = log.ReadToEnd();
-		foreach (var line in logs) {
-			if (line.StartsWith(versionPrefix) &&
-			    Version.TryParse(new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()), out var version)) {
-				return version;
-			}
-
-			if (line.StartsWith(esdbVersionPrefix) &&
-			    Version.TryParse(new string(ReadVersion(line[(esdbVersionPrefix.Length + 1)..]).ToArray()), out var esdbVersion)) {
-				return esdbVersion;
-			}
-		}
-
-		throw new InvalidOperationException($"Could not determine server version from logs: {string.Join(Environment.NewLine, logs)}");
-
-		IEnumerable<char> ReadVersion(string s) {
-			foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) {
-				yield return c;
-			}
-		}
-	}
-
 	protected override ContainerBuilder Configure() {
-		var env = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
+		var env  = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
+		var port = Options.DBClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 
-		var port      = Options.DBClientSettings.ConnectivitySettings.ResolvedAddressOrDefault.Port;
 		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
 
-		var containerName = $"es-client-dotnet-test-{port}-{Guid.NewGuid().ToString()[30..]}";
+		var containerName = $"dotnet-client-test-{port}-{Guid.NewGuid().ToString()[30..]}";
 
 		CertificatesManager.VerifyCertificatesExist(certsPath);
 
@@ -134,6 +83,8 @@ public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null)
 /// </summary>
 /// <param name="port"></param>
 class NetworkPortProvider(int port = 2114) {
+	int _port            = port;
+
 	public const int DefaultEsdbPort = 2113;
 
 	static readonly SemaphoreSlim Semaphore = new(1, 1);
@@ -145,7 +96,7 @@ class NetworkPortProvider(int port = 2114) {
 			using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
 			while (true) {
-				var nexPort = Interlocked.Increment(ref port);
+				var nexPort = Interlocked.Increment(ref _port);
 
 				try {
 					await socket.ConnectAsync(IPAddress.Any, nexPort);
@@ -164,5 +115,5 @@ class NetworkPortProvider(int port = 2114) {
 		}
 	}
 
-	public int NextAvailablePort => GetNextAvailablePort(FromMilliseconds(100)).GetAwaiter().GetResult();
+	public int NextAvailablePort => GetNextAvailablePort(100.Milliseconds()).GetAwaiter().GetResult();
 }

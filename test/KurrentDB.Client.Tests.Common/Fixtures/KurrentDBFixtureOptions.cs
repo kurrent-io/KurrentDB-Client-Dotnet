@@ -1,3 +1,6 @@
+// ReSharper disable InconsistentNaming
+// ReSharper disable InvertIf
+
 namespace KurrentDB.Client.Tests;
 
 public record KurrentDBFixtureOptions(
