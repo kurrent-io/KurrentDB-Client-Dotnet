@@ -83,21 +83,55 @@ public abstract partial class TestContainerService : TestService<IContainerServi
 		}
 	}
 
+	// static Version GetVersion() {
+	// 	using var cts = new CancellationTokenSource(30.Seconds());
+	// 	using var database = new Builder().UseContainer()
+	// 		.UseImage(GlobalEnvironment.DockerImage)
+	// 		.Command("--version")
+	// 		.Build()
+	// 		.Start();
+	//
+	// 	using var log  = database.Logs(true, cts.Token);
+	//
+	// 	foreach (var line in log.ReadToEnd())
+	// 		if (TryParseVersion(line, out var version))
+	// 			return version;
+	//
+	// 	throw new InvalidOperationException("Could not determine server version from logs");
+	// }
+
 	static Version GetVersion() {
+		const string versionPrefix     = "KurrentDB version";
+		const string esdbVersionPrefix = "EventStoreDB version";
+
 		using var cts = new CancellationTokenSource(30.Seconds());
-		using var database = new Builder().UseContainer()
+		using var eventstore = new Builder().UseContainer()
 			.UseImage(GlobalEnvironment.DockerImage)
 			.Command("--version")
 			.Build()
 			.Start();
 
-		using var log  = database.Logs(true, cts.Token);
-
-		foreach (var line in log.ReadToEnd())
-			if (TryParseVersion(line, out var version))
+		using var log  = eventstore.Logs(true, cts.Token);
+		var       logs = log.ReadToEnd();
+		foreach (var line in logs) {
+			if (line.StartsWith(versionPrefix) &&
+			    Version.TryParse(new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()), out var version)) {
 				return version;
+			}
 
-		throw new InvalidOperationException("Could not determine server version from logs");
+			if (line.StartsWith(esdbVersionPrefix) &&
+			    Version.TryParse(new string(ReadVersion(line[(esdbVersionPrefix.Length + 1)..]).ToArray()), out var esdbVersion)) {
+				return esdbVersion;
+			}
+		}
+
+		throw new InvalidOperationException($"Could not determine server version from logs: {string.Join(Environment.NewLine, logs)}");
+
+		IEnumerable<char> ReadVersion(string s) {
+			foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) {
+				yield return c;
+			}
+		}
 	}
 
 	/// <summary>

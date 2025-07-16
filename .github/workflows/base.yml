@@ -8,10 +8,6 @@ on:
       CLOUDSMITH_CICD_TOKEN:
         required: false
     inputs:
-      test:
-        required: true
-        type: string
-
       runtime:
         required: true
         type: string
@@ -41,16 +37,18 @@ jobs:
       tag: ${{ inputs.tag }}
 
   test:
-    name: ${{ inputs.test }} (${{ matrix.os }}, ${{ matrix.framework }})
+    name: Test
     needs: load_configuration
     timeout-minutes: 10
+
     strategy:
       fail-fast: false
       matrix:
         framework: [ net9.0 ]
-        os: [ ubuntu-latest ]
-        configuration: [ release ]
-    runs-on: ${{ matrix.os }}
+        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement, Security, Misc ]
+
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -81,8 +79,8 @@ jobs:
           ES_DOCKER_IMAGE: "${{ needs.load_configuration.outputs.registry }}/${{ needs.load_configuration.outputs.image }}:${{ needs.load_configuration.outputs.tag }}"
         run: |
           sudo ./gencert.sh
-          dotnet test --configuration ${{ matrix.configuration }} --blame \
+          dotnet test --configuration release --blame \
             --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
             --framework ${{ matrix.framework }} \
-            --filter "Category=Target:${{ inputs.test }}" \
+            --filter "Category=Target:${{ matrix.test }}" \
             test/KurrentDB.Client.Tests

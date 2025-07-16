@@ -7,15 +7,13 @@ on:
       - master
 
 jobs:
-  ci:
+  tests:
     name: Tests
     uses: ./.github/workflows/base.yml
     strategy:
       fail-fast: false
       matrix:
-        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement, Security, Misc ]
         runtime: [ previous-lts, lts, ci ]
     with:
-      test: ${{ matrix.test }}
       runtime: ${{ matrix.runtime }}
     secrets: inherit
