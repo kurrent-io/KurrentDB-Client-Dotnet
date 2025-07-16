@@ -2,7 +2,6 @@
 // ReSharper disable InvertIf
 
 using Ductus.FluentDocker.Builders;
-using Ductus.FluentDocker.Model.Builders;
 using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
 using Serilog.Extensions.Logging;
@@ -13,12 +12,10 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 	KurrentDBFixtureOptions Options { get; } = options ?? DefaultOptions();
 
 	public static KurrentDBFixtureOptions DefaultOptions() {
-		const string uri = "kurrentdb://admin:changeit@localhost:{port}/?tlsVerifyCert=false";
-
 		const int port = 2113;
 
 		var defaultSettings = KurrentDBClientSettings
-			.Create(uri.Replace("{port}", port.ToString()))
+			.Create(ConnectionString.Replace("{port}", port.ToString()))
 			.With(x => x.LoggerFactory = new SerilogLoggerFactory(Log.Logger))
 			.With(x => x.RetrySettings = KurrentDBClientRetrySettings.Default);
 
@@ -34,37 +31,12 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 	}
 
 	protected override ContainerBuilder Configure() {
-		var env  = Options.Environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
-		var port = Options.DBClientSettings.ConnectivitySettings.Address?.Port ?? KurrentDBClientConnectivitySettings.DefaultPort;
+		var builder = CreateContainer(Options.Environment);
 
-		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
+		builder.KeepContainer()
+			.KeepRunning()
+			.ReuseIfExists();
 
-		CertificatesManager.VerifyCertificatesExist(certsPath);
-
-		return new Builder()
-			.UseContainer()
-			.UseImage(Options.Environment["ES_DOCKER_IMAGE"])
-			.WithName("dotnet-client-test")
-			.WithPublicEndpointResolver()
-			.WithEnvironment(env)
-			.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
-			.ExposePort(port, 2113)
-			.KeepContainer().KeepRunning().ReuseIfExists()
-			.WaitUntilReadyWithConstantBackoff(
-				1_000,
-				60,
-				service => {
-					var output = service.ExecuteCommand("curl -u admin:changeit --cacert /etc/eventstore/certs/ca/ca.crt https://localhost:2113/health/live");
-					if (!output.Success)
-						throw new Exception(output.Error);
-
-					var versionOutput = service.ExecuteCommand("/opt/kurrentdb/kurrentd --version");
-					if (!versionOutput.Success)
-						versionOutput = service.ExecuteCommand("/opt/eventstore/eventstored --version");
-
-					if (versionOutput.Success && TryParseVersion(versionOutput.Log.FirstOrDefault(), out var version))
-						_version ??= version;
-				}
-			);
+		return AddReadinessCheck(builder);
 	}
 }

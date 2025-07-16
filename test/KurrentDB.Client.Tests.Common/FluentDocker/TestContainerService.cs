@@ -7,16 +7,68 @@ using Ductus.FluentDocker.Services;
 using System.Net;
 using System.Net.Sockets;
 using Humanizer;
+using Ductus.FluentDocker.Model.Builders;
 
 namespace KurrentDB.Client.Tests.FluentDocker;
 
+/// <summary>
+/// Provides an abstract service for managing containerized KurrentDB environments
+/// during testing. It acts as a specialized test service for FluentDocker containers.
+/// </summary>
+/// <remarks>
+/// This class includes methods and utilities for customizing and managing containers,
+/// such as setting up environment variables, exposing ports, readiness checks, and
+/// ensuring required configurations for KurrentDB container instances in test scenarios.
+/// </remarks>
 public abstract partial class TestContainerService : TestService<IContainerService, ContainerBuilder> {
-	internal static Version? _version;
+	static Version? _version;
 
-	public static Version Version => _version;
+	public static Version Version => _version!;
 
-	[GeneratedRegex(@"\b(?:KurrentDB|EventStore)\s+version\s+([0-9]+(?:\.[0-9]+)*)")]
-	private static partial Regex VersionRegex();
+	internal static string ConnectionString => "kurrentdb://admin:changeit@localhost:{port}/?tlsVerifyCert=false";
+
+	protected static ContainerBuilder CreateContainer(
+		IDictionary<string, string?> environment, string containerName = "dotnet-client-test", int port = 2113
+	) {
+		var env = environment.Select(pair => $"{pair.Key}={pair.Value}").ToArray();
+
+		var certsPath = Path.Combine(Environment.CurrentDirectory, "certs");
+
+		CertificatesManager.VerifyCertificatesExist(certsPath);
+
+		return new Builder()
+			.UseContainer()
+			.UseImage(environment["ES_DOCKER_IMAGE"])
+			.WithName(containerName)
+			.WithPublicEndpointResolver()
+			.WithEnvironment(env)
+			.MountVolume(certsPath, "/etc/eventstore/certs", MountType.ReadOnly)
+			.ExposePort(port, 2113);
+	}
+
+	/// <summary>
+	/// Adds readiness check to a container builder for KurrentDB containers.
+	/// </summary>
+	/// <param name="builder">The builder to configure.</param>
+	/// <returns>The configured builder with readiness check.</returns>
+	protected static ContainerBuilder AddReadinessCheck(ContainerBuilder builder) {
+		return builder.WaitUntilReadyWithConstantBackoff(
+			1_000,
+			60,
+			service => {
+				var output = service.ExecuteCommand("curl -u admin:changeit --cacert /etc/eventstore/certs/ca/ca.crt https://localhost:2113/health/live");
+				if (!output.Success)
+					throw new Exception(output.Error);
+
+				var versionOutput = service.ExecuteCommand("/opt/kurrentdb/kurrentd --version");
+				if (!versionOutput.Success)
+					versionOutput = service.ExecuteCommand("/opt/eventstore/eventstored --version");
+
+				if (versionOutput.Success && TryParseVersion(versionOutput.Log.FirstOrDefault(), out var version))
+					_version ??= version;
+			}
+		);
+	}
 
 	/// Attempts to parse a version number from the given input string.
 	/// This method looks for a version pattern within the input string, such as
@@ -82,4 +134,7 @@ public abstract partial class TestContainerService : TestService<IContainerServi
 
 		public int NextAvailablePort => GetNextAvailablePort(100.Milliseconds()).GetAwaiter().GetResult();
 	}
+
+	[GeneratedRegex(@"\b(?:KurrentDB|EventStore)\s+version\s+([0-9]+(?:\.[0-9]+)*)")]
+	private static partial Regex VersionRegex();
 }
