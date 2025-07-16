@@ -302,11 +302,11 @@ public class ConnectionStringTests {
 	[InlineData("kurrentdb://localhost", true)]
 	[InlineData("kurrentdb://localhost/?tls=false", false)]
 	[InlineData("kurrentdb://localhost/?tls=true", true)]
-	[InlineData("kurrentdb://localhost1,localhost2,localhost3", true)]
-	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=false", false)]
-	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=true", true)]
+	[InlineData("kurrentdb+discover://localhost1,localhost2,localhost3", true)]
+	[InlineData("kurrentdb+discover://localhost1,localhost2,localhost3/?tls=false", false)]
+	[InlineData("kurrentdb+discover://localhost1,localhost2,localhost3/?tls=true", true)]
 	public void use_tls(string connectionString, bool expectedUseTls) {
-		var result         = KurrentDBClientSettings.Create(connectionString);
+		var result = KurrentDBClientSettings.Create(connectionString);
 		var expectedScheme = expectedUseTls ? "https" : "http";
 		Assert.NotEqual(expectedUseTls, result.ConnectivitySettings.Insecure);
 		Assert.Equal(expectedScheme, result.ConnectivitySettings.ResolvedAddressOrDefault.Scheme);
@@ -322,15 +322,15 @@ public class ConnectionStringTests {
 	[InlineData("kurrentdb://localhost/?tls=false", null, false)]
 	[InlineData("kurrentdb://localhost/?tls=false", true, false)]
 	[InlineData("kurrentdb://localhost/?tls=false", false, true)]
-	[InlineData("kurrentdb://localhost1,localhost2,localhost3", null, true)]
-	[InlineData("kurrentdb://localhost1,localhost2,localhost3", true, true)]
-	[InlineData("kurrentdb://localhost1,localhost2,localhost3", false, true)]
-	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=true", null, true)]
-	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=true", true, true)]
-	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=true", false, true)]
-	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=false", null, false)]
-	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=false", true, false)]
-	[InlineData("kurrentdb://localhost1,localhost2,localhost3/?tls=false", false, false)]
+	[InlineData("kurrentdb+discover://localhost1,localhost2,localhost3", null, true)]
+	[InlineData("kurrentdb+discover://localhost1,localhost2,localhost3", true, true)]
+	[InlineData("kurrentdb+discover://localhost1,localhost2,localhost3", false, true)]
+	[InlineData("kurrentdb+discover://localhost1,localhost2,localhost3/?tls=true", null, true)]
+	[InlineData("kurrentdb+discover://localhost1,localhost2,localhost3/?tls=true", true, true)]
+	[InlineData("kurrentdb+discover://localhost1,localhost2,localhost3/?tls=true", false, true)]
+	[InlineData("kurrentdb+discover://localhost1,localhost2,localhost3/?tls=false", null, false)]
+	[InlineData("kurrentdb+discover://localhost1,localhost2,localhost3/?tls=false", true, false)]
+	[InlineData("kurrentdb+discover://localhost1,localhost2,localhost3/?tls=false", false, false)]
 	public void allow_tls_override_for_single_node(string connectionString, bool? insecureOverride, bool expectedUseTls) {
 		var result   = KurrentDBClientSettings.Create(connectionString);
 		var settings = result.ConnectivitySettings;
@@ -347,7 +347,6 @@ public class ConnectionStringTests {
 
 	[Theory]
 	[InlineData("kurrentdb://localhost:1234", "localhost", 1234)]
-	[InlineData("kurrentdb://localhost:1234,localhost:4567", null, null)]
 	[InlineData("kurrentdb+discover://localhost:1234", null, null)]
 	[InlineData("kurrentdb+discover://localhost:1234,localhost:4567", null, null)]
 	public void connection_string_with_custom_ports(string connectionString, string? expectedHost, int? expectedPort) {

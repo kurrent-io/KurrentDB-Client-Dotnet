@@ -242,21 +242,21 @@ public partial class KurrentDBClient {
 
 				StreamMessage.AllStreamCheckpointReached OnCheckpointMessage(ReadResp.Types.Checkpoint checkpoint) {
 					var position  = new Position(checkpoint.CommitPosition, checkpoint.PreparePosition);
-					var timestamp = checkpoint.Timestamp.ToDateTimeOffset();
+					var timestamp = checkpoint.Timestamp?.ToDateTimeOffset();
 					return new(position, timestamp);
 				}
 
 				static StreamMessage.CaughtUp OnCaughtUpMessage(ReadResp.Types.CaughtUp caughtUp) {
 					Position? position  = caughtUp.Position is not null ? new(caughtUp.Position.CommitPosition, caughtUp.Position.PreparePosition) : null;
 					long?     revision  = caughtUp.HasStreamRevision ? caughtUp.StreamRevision : null;
-					var       timestamp = caughtUp.Timestamp.ToDateTimeOffset();
+					var       timestamp = caughtUp.Timestamp?.ToDateTimeOffset();
 					return new(position, revision, timestamp);
 				}
 
 				static StreamMessage.FellBehind OnFellBehindMessage(ReadResp.Types.FellBehind fellBehind) {
 					Position? position  = fellBehind.Position is not null ? new(fellBehind.Position.CommitPosition, fellBehind.Position.PreparePosition) : null;
 					long?     revision  = fellBehind.HasStreamRevision ? fellBehind.StreamRevision : null;
-					var       timestamp = fellBehind.Timestamp.ToDateTimeOffset();
+					var       timestamp = fellBehind.Timestamp?.ToDateTimeOffset();
 					return new(position, revision, timestamp);
 				}
 			}

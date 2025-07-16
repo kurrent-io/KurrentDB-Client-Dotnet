@@ -148,6 +148,6 @@ public sealed class KurrentClientOptionsBuilder : OptionsBuilder<KurrentClientOp
     /// </summary>
     /// <param name="schemaOptions">The schema configuration options.</param>
     /// <returns>The builder instance for method chaining.</returns>
-    internal KurrentClientOptionsBuilder WithSchema(KurrentClientSchemaOptions schemaOptions) =>
+    public KurrentClientOptionsBuilder WithSchema(KurrentClientSchemaOptions schemaOptions) =>
         With(options => options with { Schema = schemaOptions });
 }

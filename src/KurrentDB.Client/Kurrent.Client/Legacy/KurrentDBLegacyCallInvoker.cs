@@ -14,10 +14,11 @@ namespace Kurrent.Client.Legacy;
 /// from the LegacyClusterClient for each gRPC call.
 /// </remarks>
 sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
-    readonly SemaphoreSlim       _capabilitiesLock = new(1, 1);
-    readonly LegacyClusterClient _legacyClient;
-    readonly bool                _disposeClient;
-    volatile ServerCapabilities  _currentCapabilities;
+	readonly SemaphoreSlim       _stateLock = new(1, 1);
+	readonly LegacyClusterClient _legacyClient;
+	readonly bool                _disposeClient;
+	volatile ServerCapabilities  _currentCapabilities;
+	volatile string              _currentChannelTarget;
 
     bool _disposed;
 
@@ -31,9 +32,10 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
     /// Optional; indicates whether the legacy client should be disposed when this invoker is disposed.
     /// </param>
     internal KurrentDBLegacyCallInvoker(LegacyClusterClient legacyClient, bool disposeClient = true) {
-	    _legacyClient        = legacyClient;
-        _disposeClient       = disposeClient;
-        _currentCapabilities = null!;
+	    _legacyClient         = legacyClient;
+	    _disposeClient        = disposeClient;
+	    _currentCapabilities  = null!;
+	    _currentChannelTarget = null!;
     }
 
     /// <summary>
@@ -42,6 +44,14 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
     /// <exception cref="InvalidOperationException">Thrown when server capabilities are not yet initialized.</exception>
     public ServerCapabilities ServerCapabilities => _currentCapabilities ?? throw new InvalidOperationException(
         "Server capabilities are not initialized. Ensure the client is connected before accessing this property."
+    );
+
+    /// <summary>
+    /// Gets the current channel target from the connected node.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Thrown when server capabilities are not yet initialized.</exception>
+    public string ChannelTarget => _currentChannelTarget ?? throw new InvalidOperationException(
+	    "Channel target is not initialized. Ensure the client is connected before accessing this property."
     );
 
     /// <summary>
@@ -55,7 +65,7 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
 	    var channelInfo = await _legacyClient.ForceReconnect().ConfigureAwait(false);
 
 	    // update capabilities in a thread-safe manner
-	    await UpdateServerCapabilities(channelInfo.ServerCapabilities, cancellationToken);
+		await UpdateChannelInfo(channelInfo, cancellationToken);
     }
 
     /// <summary>
@@ -81,8 +91,8 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
 		    // must be called for every gRPC operation as per requirements
 		    var channelInfo = await _legacyClient.Connect(cancellationToken).ConfigureAwait(false);
 
-		    // update capabilities in a thread-safe manner
-		    await UpdateServerCapabilities(channelInfo.ServerCapabilities, cancellationToken);
+		    // update capabilities and channel target in a thread-safe manner
+		    await UpdateChannelInfo(channelInfo, cancellationToken);
 
 		    return channelInfo.CallInvoker;
 	    }
@@ -91,16 +101,19 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
     /// <summary>
     ///  Updates the server capabilities in a thread-safe manner.
     /// </summary>
-    async Task UpdateServerCapabilities(ServerCapabilities capabilities, CancellationToken cancellationToken) {
+    async Task UpdateChannelInfo(ChannelInfo channelInfo, CancellationToken cancellationToken = default) {
+	    var capabilities = channelInfo.ServerCapabilities;
+	    var target       = channelInfo.Channel.Target;
+
 	    if (capabilities == _currentCapabilities) return;
 
 	    // update capabilities in a thread-safe manner
-	    await _capabilitiesLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+	    await _stateLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 	    try {
-		    _currentCapabilities = capabilities;
-	    }
-	    finally {
-		    _capabilitiesLock.Release();
+		    _currentCapabilities  = capabilities;
+		    _currentChannelTarget = target;
+	    } finally {
+		    _stateLock.Release();
 	    }
     }
 
@@ -134,7 +147,7 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
 		    return;
 
 	    _disposed = true;
-	    _capabilitiesLock.Dispose();
+	    _stateLock.Dispose();
 
 	    if (_disposeClient)
 		    await _legacyClient.DisposeAsync().ConfigureAwait(false);

@@ -1,0 +1,19 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  tests:
+    name: ${{ matrix.runtime }}
+    uses: ./.github/workflows/base.yml
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [ previous-lts, lts, ci ]
+    with:
+      runtime: ${{ matrix.runtime }}
+    secrets: inherit

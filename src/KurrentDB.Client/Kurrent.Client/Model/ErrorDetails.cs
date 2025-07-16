@@ -48,4 +48,16 @@ public static partial class ErrorDetails {
     /// </summary>
     [KurrentOperationError(typeof(Types.LogPositionNotFound))]
     public readonly partial record struct LogPositionNotFound;
+
+    /// <summary>
+    /// Represents an error indicating that the specified user could not be found.
+    /// </summary>
+    [KurrentOperationError(typeof(Types.UserNotFound))]
+    public readonly partial record struct UserNotFound;
+
+    /// <summary>
+    /// Represents an error indicating that the user is not authenticated, typically due to missing or incorrect credentials.
+    /// </summary>
+    [KurrentOperationError(typeof(Types.NotAuthenticated))]
+    public readonly partial record struct NotAuthenticated;
 }

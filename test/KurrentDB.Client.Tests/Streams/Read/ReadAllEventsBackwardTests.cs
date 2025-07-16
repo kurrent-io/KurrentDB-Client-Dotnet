@@ -8,8 +8,7 @@ namespace KurrentDB.Client.Tests;
 [Trait("Category", "Operation:Read")]
 [Trait("Category", "Operation:Read:Backwards")]
 [Trait("Category", "Database:Dedicated")]
-public class ReadAllEventsBackwardTests(ITestOutputHelper output, ReadAllEventsFixture fixture)
-	: KurrentTemporaryTests<ReadAllEventsFixture>(output, fixture) {
+public class ReadAllEventsBackwardTests(ITestOutputHelper output, ReadAllEventsFixture fixture) : KurrentTemporaryTests<ReadAllEventsFixture>(output, fixture) {
 	[Fact]
 	public async Task return_empty_if_reading_from_start() {
 		var result = await Fixture.Streams.ReadAllAsync(Direction.Backwards, Position.Start, 1).CountAsync();
@@ -68,7 +67,10 @@ public class ReadAllEventsBackwardTests(ITestOutputHelper output, ReadAllEventsF
 	[Fact]
 	public async Task with_timeout_fails_when_operation_expired() {
 		var ex = await Fixture.Streams
-			.ReadAllAsync(Direction.Backwards, Position.Start, 1, false, TimeSpan.Zero)
+			.ReadAllAsync(
+				Direction.Backwards, Position.Start, 1,
+				false, TimeSpan.Zero
+			)
 			.ToArrayAsync()
 			.AsTask().ShouldThrowAsync<RpcException>();
 
@@ -83,13 +85,4 @@ public class ReadAllEventsBackwardTests(ITestOutputHelper output, ReadAllEventsF
 
 		result.ForEach(x => x.Event.EventType.ShouldStartWith(KurrentDBTemporaryFixture.AnotherTestEventTypePrefix));
 	}
-
-	[Fact(Skip = "Not Implemented")]
-	public Task be_able_to_read_all_one_by_one_until_end_of_stream() => throw new NotImplementedException();
-
-	[Fact(Skip = "Not Implemented")]
-	public Task be_able_to_read_events_slice_at_time() => throw new NotImplementedException();
-
-	[Fact(Skip = "Not Implemented")]
-	public Task when_got_int_max_value_as_maxcount_should_throw() => throw new NotImplementedException();
 }

@@ -1,6 +1,6 @@
 namespace Kurrent.Client;
 
-class KurrentClientSchemaOptionsValidator : FluentOptionsValidator<KurrentClientSchemaOptionsValidator, KurrentClientSchemaOptions> {
+public class KurrentClientSchemaOptionsValidator : FluentOptionsValidator<KurrentClientSchemaOptionsValidator, KurrentClientSchemaOptions> {
     public KurrentClientSchemaOptionsValidator() {
         // // Schema configuration consistency warning
         // RuleFor(options => options.AutoRegister)

@@ -3,12 +3,9 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Kurrent.Client.Model;
-using Kurrent.Client.Testing.Fixtures;
 using Kurrent.Client.Testing.Sample;
-using Kurrent.Variant;
 using RockPaperScissors;
 using Serilog;
-using Serilog.Extensions.Logging;
 using TicTacToe;
 using GameDraw = TicTacToe.GameDraw;
 using GameWon = TicTacToe.GameWon;
@@ -256,4 +253,6 @@ public partial class KurrentClientTestFixture {
             simulatedGame.GameEvents
         );
     }
+
+	public static TestUserFaker Users => TestUserFaker.Instance;
 }

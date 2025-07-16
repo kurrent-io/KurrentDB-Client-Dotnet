@@ -1,3 +1,6 @@
+// ReSharper disable InconsistentNaming
+// ReSharper disable InvertIf
+
 namespace KurrentDB.Client.Tests;
 
 public record KurrentDBFixtureOptions(
@@ -12,8 +15,8 @@ public record KurrentDBFixtureOptions(
 	public KurrentDBFixtureOptions RunProjections(bool runProjections = true) =>
 		this with {
 			Environment = Environment.With(x => {
-					x["KURRENTDB_START_STANDARD_PROJECTIONS"] = runProjections.ToString();
-					x["KURRENTDB_RUN_PROJECTIONS"]            = runProjections ? "All" : "None";
+					x["EVENTSTORE_START_STANDARD_PROJECTIONS"] = runProjections.ToString();
+					x["EVENTSTORE_RUN_PROJECTIONS"]            = runProjections ? "All" : "None";
 				}
 			)
 		};

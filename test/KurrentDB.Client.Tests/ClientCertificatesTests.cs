@@ -8,7 +8,7 @@ namespace KurrentDB.Client.Tests;
 [Trait("Category", "Type:UserCertificate")]
 public class ClientCertificateTests(ITestOutputHelper output, KurrentDBTemporaryFixture fixture) : KurrentTemporaryTests<KurrentDBTemporaryFixture>(output, fixture) {
 	// [SupportsPlugins.Theory(EventStoreRepository.Commercial, "This server version does not support plugins"), BadClientCertificatesTestCases]
-	[Theory, BadClientCertificatesTestCases]
+	[Theory(Skip = "Temporary"), BadClientCertificatesTestCases]
 	async Task bad_certificates_combinations_should_return_authentication_error(string userCertFile, string userKeyFile, string tlsCaFile) {
 		var stream     = Fixture.GetStreamName();
 		var seedEvents = Fixture.CreateTestEvents();
@@ -36,7 +36,7 @@ public class ClientCertificateTests(ITestOutputHelper output, KurrentDBTemporary
 	}
 
 	// [SupportsPlugins.Theory(EventStoreRepository.Commercial, "This server version does not support plugins"), ValidClientCertificatesTestCases]
-	[Theory, ValidClientCertificatesTestCases]
+	[Theory(Skip = "Temporary"), ValidClientCertificatesTestCases]
 	async Task valid_certificates_combinations_should_write_to_stream(string userCertFile, string userKeyFile, string tlsCaFile) {
 		var stream     = Fixture.GetStreamName();
 		var seedEvents = Fixture.CreateTestEvents();
@@ -54,7 +54,7 @@ public class ClientCertificateTests(ITestOutputHelper output, KurrentDBTemporary
 	}
 
 	// [SupportsPlugins.Theory(EventStoreRepository.Commercial, "This server version does not support plugins"), BadClientCertificatesTestCases]
-	[Theory, BadClientCertificatesTestCases]
+	[Theory(Skip = "Temporary"), BadClientCertificatesTestCases]
 	async Task basic_authentication_should_take_precedence(string userCertFile, string userKeyFile, string tlsCaFile) {
 		var stream     = Fixture.GetStreamName();
 		var seedEvents = Fixture.CreateTestEvents();

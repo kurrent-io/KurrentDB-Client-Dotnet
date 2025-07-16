@@ -1,4 +1,6 @@
-﻿#pragma warning disable CS8321 // Local function is declared but never used
+﻿using KurrentDB.Client;
+
+#pragma warning disable CS8321 // Local function is declared but never used
 
 var settings = KurrentDBClientSettings.Create("kurrentdb://localhost:2113?tls=false");
 

@@ -1,10 +1,15 @@
+// ReSharper disable ConvertIfStatementToReturnStatement
+// ReSharper disable DuplicatedSequentialIfBodies
+
+using System.Text.RegularExpressions;
+
 namespace Kurrent.Client.Model;
 
 /// <summary>
 /// Record position in the global log.
 /// </summary>
 [PublicAPI]
-public readonly record struct LogPosition : IComparable<LogPosition>, IComparable {
+public readonly partial record struct LogPosition : IComparable<LogPosition>, IComparable {
 	/// <summary>
 	/// Record position in the global log.
 	/// </summary>
@@ -43,8 +48,35 @@ public readonly record struct LogPosition : IComparable<LogPosition>, IComparabl
 		position switch {
 			-1000 => Unset,
 			>= 0  => new LogPosition(position),
-			_     => throw new InvalidLogPosition(new(position))
+			_     => throw new InvalidLogPosition(new LogPosition(position))
 		};
+
+	/// <summary>
+	/// Creates a <see cref="LogPosition"/> instance from a provided position string.
+	/// </summary>
+	/// <param name="position">
+	/// The position string in the format "C:commit/P:prepare".
+	/// </param>
+	/// <returns>
+	/// A new instance of <see cref="LogPosition"/> corresponding to the provided position string.
+	/// </returns>
+	/// <exception cref="InvalidLogPosition">
+	/// Thrown when the provided string is not in the correct format or contains invalid values.
+	/// </exception>
+	internal static LogPosition From(string position) {
+		if (string.IsNullOrEmpty(position))
+			return Unset;
+
+		var match = LogPositionRegex().Match(position.Trim());
+
+		if (!match.Success)
+			throw new InvalidLogPosition(position);
+
+		if (!ulong.TryParse(match.Groups["commit"].Value, out var commitPosition))
+			throw new InvalidLogPosition(position);
+
+		return new LogPosition((long)commitPosition);
+	}
 
 	public static implicit operator long(LogPosition _)  => _.Value;
 	public static implicit operator ulong(LogPosition _) => (ulong)_.Value;
@@ -70,8 +102,27 @@ public readonly record struct LogPosition : IComparable<LogPosition>, IComparabl
     public static bool operator <=(LogPosition left, LogPosition right) => left.CompareTo(right) <= 0;
     public static bool operator >=(LogPosition left, LogPosition right) => left.CompareTo(right) >= 0;
 
-    #endregion
+	#endregion
+
+	[GeneratedRegex(@"^C:(?<commit>[0-9]*)\/P:(?<prepare>[0-9]*)$")]
+	private static partial Regex LogPositionRegex();
 }
 
-public class InvalidLogPosition(LogPosition value)
-    : ArgumentException($"Log position is invalid: {value.ToString()}");
+/// <summary>
+/// Exception thrown when a log position is invalid.
+/// </summary>
+public class InvalidLogPosition : ArgumentException {
+    /// <summary>
+    /// Initializes a new instance with the specified <paramref name="value"/>.
+    /// </summary>
+    /// <param name="value">The invalid log position.</param>
+    public InvalidLogPosition(LogPosition value)
+        : base($"Log position is invalid: {value.ToString()}") { }
+
+    /// <summary>
+    /// Initializes a new instance with the specified <paramref name="value"/>.
+    /// </summary>
+    /// <param name="value">The invalid log position as a string.</param>
+    public InvalidLogPosition(string value)
+        : base($"Log position is invalid: {value}") { }
+}

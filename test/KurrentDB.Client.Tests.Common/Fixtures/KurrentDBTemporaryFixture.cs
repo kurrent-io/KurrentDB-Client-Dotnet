@@ -1,8 +1,5 @@
 // ReSharper disable InconsistentNaming
 
-using Ductus.FluentDocker.Builders;
-using Ductus.FluentDocker.Extensions;
-using Ductus.FluentDocker.Services.Extensions;
 using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
 using Serilog.Extensions.Logging;
@@ -20,7 +17,6 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 
 		var httpClientHandler = new HttpClientHandler();
 		httpClientHandler.ServerCertificateCustomValidationCallback = delegate { return true; };
-		// ServicePointManager.ServerCertificateValidationCallback     = delegate { return true; };
 	}
 
 	public KurrentDBTemporaryFixture() : this(options => options) { }
@@ -40,8 +36,8 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 	public KurrentDBFixtureOptions Options { get; }
 	public Faker                   Faker   { get; } = new Faker();
 
-	public Version EventStoreVersion               { get; private set; } = null!;
-	public bool    EventStoreHasLastStreamPosition { get; private set; }
+	public Version DatabaseVersion               { get; private set; } = null!;
+	public bool    HasLastStreamPosition { get; private set; }
 
 	public KurrentDBClient                        Streams       { get; private set; } = null!;
 	public KurrentDBUserManagementClient          DBUsers       { get; private set; } = null!;
@@ -85,8 +81,8 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 
 		try {
 			await Service.Start();
-			EventStoreVersion               = GetKurrentVersion();
-			EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
+			DatabaseVersion       = TestContainerService.Version;
+			HasLastStreamPosition = (DatabaseVersion?.Major ?? int.MaxValue) >= 21;
 
 			if (!WarmUpCompleted.CurrentValue) {
 				Logger.Warning("*** Warmup started ***");
@@ -96,7 +92,7 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 					InitClient<KurrentDBClient>(async x => Streams = await Task.FromResult(x)),
 					InitClient<KurrentDBProjectionManagementClient>(
 						async x => DBProjections = await Task.FromResult(x),
-						Options.Environment["KURRENTDB_RUN_PROJECTIONS"] != "None"
+						Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None"
 					),
 					InitClient<KurrentDBPersistentSubscriptionsClient>(async x => Subscriptions = SkipPsWarmUp ? x : await Task.FromResult(x)),
 					InitClient<KurrentDBOperationsClient>(async x => DBOperations = await Task.FromResult(x))
@@ -122,38 +118,6 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 			var client = (Activator.CreateInstance(typeof(T), DBClientSettings) as T)!;
 			await action(client);
 			return client;
-		}
-
-		static Version GetKurrentVersion() {
-			const string versionPrefix = "KurrentDB version";
-
-			using var cancellator = new CancellationTokenSource(FromSeconds(30));
-			using var eventstore = new Builder()
-				.UseContainer()
-				.UseImage(GlobalEnvironment.DockerImage)
-				.Command("--version")
-				.Build()
-				.Start();
-
-			using var log = eventstore.Logs(true, cancellator.Token);
-			foreach (var line in log.ReadToEnd()) {
-				Logger.Information("KurrentDB: {Line}", line);
-				if (line.StartsWith(versionPrefix) &&
-				    Version.TryParse(
-					    new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()),
-					    out var version
-				    )) {
-					return version;
-				}
-			}
-
-			throw new InvalidOperationException("Could not determine server version.");
-
-			IEnumerable<char> ReadVersion(string s) {
-				foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) {
-					yield return c;
-				}
-			}
 		}
 	}
 

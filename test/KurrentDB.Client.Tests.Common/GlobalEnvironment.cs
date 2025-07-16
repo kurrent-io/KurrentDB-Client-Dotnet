@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using Humanizer;
 using Microsoft.Extensions.Configuration;
 
 namespace KurrentDB.Client.Tests;
@@ -19,35 +20,25 @@ public static class GlobalEnvironment {
 		return;
 
 		static void EnsureDefaults(IConfiguration configuration) {
-			configuration.EnsureValue("ES_USE_CLUSTER", "false");
-			configuration.EnsureValue("ES_USE_EXTERNAL_SERVER", "false");
+			// internal defaults
+			configuration.EnsureValue("ES_DOCKER_IMAGE", "docker.cloudsmith.io/eventstore/kurrent-staging/kurrentdb:ci");
 
-			// configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.kurrent.io/kurrent-preview/kurrentdb"); // preview
-			// configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.kurrent.io/kurrent-latest/kurrentdb");  // latest
-
-			configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.kurrent.io/kurrent-preview/kurrentdb"); // arm64 experimental
-
-			// static string DefaultImage => "docker.kurrent.io/kurrent-preview/kurrentdb:25.0.1-experimental-arm64-8.0-jammy";
-
-
-			// configuration.EnsureValue("ES_DOCKER_REGISTRY", "docker.kurrent.io/kurrent-lts/kurrentdb");  // latest lts
-
-			// configuration.EnsureValue("ES_DOCKER_TAG", "ci");
-			configuration.EnsureValue("ES_DOCKER_TAG", "25.0.1-experimental-arm64-8.0-jammy");
-			// configuration.EnsureValue("ES_DOCKER_TAG", "latest");
-
-			configuration.EnsureValue("ES_DOCKER_IMAGE", $"{configuration["ES_DOCKER_REGISTRY"]}:{configuration["ES_DOCKER_TAG"]}");
-
-			configuration.EnsureValue("KURRENTDB_TELEMETRY_OPTOUT", "true");
-			configuration.EnsureValue("KURRENTDB_ALLOW_UNKNOWN_OPTIONS", "true");
-			configuration.EnsureValue("KURRENTDB_MEM_DB", "false");
-			configuration.EnsureValue("KURRENTDB_RUN_PROJECTIONS", "None");
-			configuration.EnsureValue("KURRENTDB_START_STANDARD_PROJECTIONS", "false");
-			configuration.EnsureValue("KURRENTDB_LOG_LEVEL", "Information");
-			configuration.EnsureValue("KURRENTDB_DISABLE_LOG_FILE", "true");
-			configuration.EnsureValue("KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH", "/etc/kurrentdb/certs/ca");
-			configuration.EnsureValue("KURRENTDB_ENABLE_ATOM_PUB_OVER_HTTP", "true");
-			// configuration.EnsureValue("KURRENTDB_APPLICATION_MAX_APPEND_SIZE", "4194304");
+			// database defaults
+			configuration.EnsureValue("EVENTSTORE_TELEMETRY_OPTOUT", "true");
+			configuration.EnsureValue("EVENTSTORE_ALLOW_UNKNOWN_OPTIONS", "true");
+			configuration.EnsureValue("EVENTSTORE_RUN_PROJECTIONS", "None");
+			configuration.EnsureValue("EVENTSTORE_START_STANDARD_PROJECTIONS", "false");
+			configuration.EnsureValue("EVENTSTORE_MEM_DB", "true");
+			configuration.EnsureValue("EVENTSTORE_CERTIFICATE_FILE", "/etc/eventstore/certs/node/node.crt");
+			configuration.EnsureValue("EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE", "/etc/eventstore/certs/node/node.key");
+			configuration.EnsureValue("EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH", "/etc/eventstore/certs/ca");
+			configuration.EnsureValue("EVENTSTORE__PLUGINS__USERCERTIFICATES__ENABLED", "true");
+			configuration.EnsureValue("EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE", "10000");
+			configuration.EnsureValue("EVENTSTORE_STREAM_INFO_CACHE_CAPACITY", "10000");
+			configuration.EnsureValue("EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP", "true");
+			configuration.EnsureValue("EVENTSTORE_LOG_LEVEL", "Default");
+			configuration.EnsureValue("EVENTSTORE_DISABLE_LOG_FILE", "true");
+			configuration.EnsureValue("EVENTSTORE_MAX_APPEND_SIZE", $"{4.Megabytes().Bytes}");
 		}
 	}
 

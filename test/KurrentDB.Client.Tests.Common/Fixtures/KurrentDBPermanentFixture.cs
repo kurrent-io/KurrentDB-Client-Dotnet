@@ -1,5 +1,6 @@
 // ReSharper disable InconsistentNaming
 
+using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
 using static System.TimeSpan;
 
@@ -33,8 +34,8 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 	public KurrentDBFixtureOptions    Options { get; }
 	public Faker                      Faker   { get; } = new();
 
-	public Version EventStoreVersion               { get; private set; } = null!;
-	public bool    EventStoreHasLastStreamPosition { get; private set; }
+	public Version DatabaseVersion       { get; private set; } = null!;
+	public bool    HasLastStreamPosition { get; private set; }
 
 	public KurrentDBClient                        Streams       { get; private set; } = null!;
 	public KurrentDBUserManagementClient          DBUsers       { get; private set; } = null!;
@@ -72,8 +73,8 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 
 		try {
 			await Service.Start();
-			EventStoreVersion               = KurrentDBPermanentTestNode.Version;
-			EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
+			DatabaseVersion       = TestContainerService.Version;
+			HasLastStreamPosition = (DatabaseVersion?.Major ?? int.MaxValue) >= 21;
 
 			if (!WarmUpCompleted.CurrentValue) {
 				Logger.Warning("*** Warmup started ***");
@@ -83,7 +84,7 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 					InitClient<KurrentDBClient>(async x => Streams               = await Task.FromResult(x)),
 					InitClient<KurrentDBProjectionManagementClient>(
 						async x => DBProjections = await Task.FromResult(x),
-						Options.Environment["KURRENTDB_RUN_PROJECTIONS"] != "None"
+						Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None"
 					),
 					InitClient<KurrentDBPersistentSubscriptionsClient>(async x => Subscriptions = SkipPsWarmUp ? x : await Task.FromResult(x)),
 					InitClient<KurrentDBOperationsClient>(async x => DBOperations               = await Task.FromResult(x))
@@ -92,12 +93,10 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 				WarmUpCompleted.EnsureCalledOnce();
 
 				Logger.Warning("*** Warmup completed ***");
-			}
-			else {
+			} else {
 				Logger.Information("*** Warmup skipped ***");
 			}
-		}
-		finally {
+		} finally {
 			WarmUpGatekeeper.Release();
 		}
 
@@ -117,8 +116,7 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 	public async Task DisposeAsync() {
 		try {
 			await OnTearDown();
-		}
-		catch {
+		} catch {
 			// ignored
 		}
 

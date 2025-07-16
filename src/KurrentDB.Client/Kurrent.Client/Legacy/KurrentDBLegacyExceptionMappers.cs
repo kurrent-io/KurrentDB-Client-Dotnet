@@ -25,6 +25,16 @@ static class KurrentDBLegacyExceptionMappers {
             ? new(x => x.With("reason", "Access denied while reading all streams."))
             : throw new InvalidCastException($"Expected {nameof(AccessDeniedException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.AccessDenied)}.", ex);
 
+    public static ErrorDetails.UserNotFound AsUserNotFoundError(this Exception ex) =>
+        ex is UserNotFoundException
+			? new(x => x.With("reason", "User not found."))
+			: throw new InvalidCastException($"Expected {nameof(UserNotFoundException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.UserNotFound)}.", ex);
+
+    public static ErrorDetails.NotAuthenticated AsNotAuthenticatedError(this Exception ex) =>
+	    ex is NotAuthenticatedException
+		    ? new(x => x.With("reason", "User is not authenticated."))
+		    : throw new InvalidCastException($"Expected {nameof(NotAuthenticatedException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.NotAuthenticated)}.", ex);
+
     public static ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict(this Exception ex) =>
         ex is WrongExpectedVersionException lex
             ? new(x => x.With("stream", lex.StreamName).With("expected_revision", lex.ExpectedVersion).With("actual_revision", lex.ActualVersion))

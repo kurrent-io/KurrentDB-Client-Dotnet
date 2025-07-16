@@ -1,3 +1,5 @@
+// ReSharper disable InconsistentNaming
+
 using System.Runtime.CompilerServices;
 using System.Text;
 using Kurrent.Client;

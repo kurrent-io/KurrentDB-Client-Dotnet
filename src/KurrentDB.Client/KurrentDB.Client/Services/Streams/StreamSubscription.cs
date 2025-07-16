@@ -10,7 +10,7 @@ public class StreamSubscription : IDisposable {
 	readonly KurrentDBClient.StreamSubscriptionResult                                    _subscription;
 	readonly IAsyncEnumerator<StreamMessage>                                             _messages;
 	readonly Func<StreamSubscription, ResolvedEvent, CancellationToken, Task>            _eventAppeared;
-	readonly Func<StreamSubscription, Position, DateTimeOffset, CancellationToken, Task> _checkpointReached;
+	readonly Func<StreamSubscription, Position, DateTimeOffset?, CancellationToken, Task> _checkpointReached;
 	readonly Action<StreamSubscription, SubscriptionDroppedReason, Exception?>?          _subscriptionDropped;
 	readonly ILogger                                                                     _log;
 	readonly CancellationTokenSource                                                     _cts;
@@ -27,7 +27,7 @@ public class StreamSubscription : IDisposable {
 		Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 		Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped,
 		ILogger log,
-		Func<StreamSubscription, Position, DateTimeOffset, CancellationToken, Task>? checkpointReached = null,
+		Func<StreamSubscription, Position, DateTimeOffset?, CancellationToken, Task>? checkpointReached = null,
 		CancellationToken cancellationToken = default
 	) {
 		var messages = subscription.Messages;
@@ -56,7 +56,7 @@ public class StreamSubscription : IDisposable {
 		Func<StreamSubscription, ResolvedEvent, CancellationToken, Task> eventAppeared,
 		Action<StreamSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped,
 		ILogger log,
-		Func<StreamSubscription, Position, DateTimeOffset, CancellationToken, Task>? checkpointReached,
+		Func<StreamSubscription, Position, DateTimeOffset?, CancellationToken, Task>? checkpointReached,
 		CancellationToken cancellationToken = default
 	) {
 		_cts                        = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
