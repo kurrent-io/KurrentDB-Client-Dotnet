@@ -1,5 +1,6 @@
 // ReSharper disable InconsistentNaming
 
+using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
 using static System.TimeSpan;
 
@@ -72,7 +73,7 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 
 		try {
 			await Service.Start();
-			EventStoreVersion               = KurrentDBPermanentTestNode.Version;
+			EventStoreVersion               = TestContainerService.Version;
 			EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
 
 			if (!WarmUpCompleted.CurrentValue) {

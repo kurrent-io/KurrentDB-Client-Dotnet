@@ -1,8 +1,6 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable InvertIf
 
-using System.Net;
-using System.Net.Sockets;
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Model.Builders;
 using Humanizer;
@@ -28,19 +26,8 @@ public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null)
 			.With(x => x.RetrySettings = KurrentDBClientRetrySettings.Default);
 
 		var defaultEnvironment = new Dictionary<string, string?>(GlobalEnvironment.Variables) {
-			["EVENTSTORE_MEM_DB"]                              = "true",
-			["EVENTSTORE_CERTIFICATE_FILE"]                    = "/etc/eventstore/certs/node/node.crt",
-			["EVENTSTORE_CERTIFICATE_PRIVATE_KEY_FILE"]        = "/etc/eventstore/certs/node/node.key",
-			["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/eventstore/certs/ca",
-			["EVENTSTORE__PLUGINS__USERCERTIFICATES__ENABLED"] = "true",
-			["EVENTSTORE_STREAM_EXISTENCE_FILTER_SIZE"]        = "10000",
-			["EVENTSTORE_STREAM_INFO_CACHE_CAPACITY"]          = "10000",
-			["EVENTSTORE_ENABLE_ATOM_PUB_OVER_HTTP"]           = "true",
-			["EVENTSTORE_LOG_LEVEL"]                           = "Default",
-			["EVENTSTORE_DISABLE_LOG_FILE"]                    = "true",
-			["EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS"]    = $"{port}",
-			["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"]    = $"{port}",
-			["EVENTSTORE_MAX_APPEND_SIZE"]                     = $"{4.Megabytes().Bytes}"
+			["EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS"] = $"{port}",
+			["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{port}",
 		};
 
 		return new(defaultSettings, defaultEnvironment);
@@ -71,49 +58,16 @@ public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null)
 					var output = service.ExecuteCommand("curl -u admin:changeit --cacert /etc/eventstore/certs/ca/ca.crt https://localhost:2113/health/live");
 					if (!output.Success)
 						throw new Exception(output.Error);
+
+					var versionOutput = service.ExecuteCommand("/opt/kurrentdb/kurrentd --version");
+					if (!versionOutput.Success)
+						versionOutput = service.ExecuteCommand("/opt/eventstore/eventstored --version");
+
+					if (versionOutput.Success && TryParseVersion(versionOutput.Log.FirstOrDefault(), out var version))
+						_version ??= version;
 				}
 			);
 
 		return builder;
 	}
-}
-
-/// <summary>
-/// Using the default 2113 port assumes that the test is running sequentially.
-/// </summary>
-/// <param name="port"></param>
-class NetworkPortProvider(int port = 2114) {
-	int _port            = port;
-
-	public const int DefaultEsdbPort = 2113;
-
-	static readonly SemaphoreSlim Semaphore = new(1, 1);
-
-	async Task<int> GetNextAvailablePort(TimeSpan delay = default) {
-		await Semaphore.WaitAsync();
-
-		try {
-			using var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-			while (true) {
-				var nexPort = Interlocked.Increment(ref _port);
-
-				try {
-					await socket.ConnectAsync(IPAddress.Any, nexPort);
-				} catch (SocketException ex) {
-					if (ex.SocketErrorCode is SocketError.ConnectionRefused or not SocketError.IsConnected) {
-						return nexPort;
-					}
-
-					await Task.Delay(delay);
-				} finally {
-					if (socket.Connected) await socket.DisconnectAsync(true);
-				}
-			}
-		} finally {
-			Semaphore.Release();
-		}
-	}
-
-	public int NextAvailablePort => GetNextAvailablePort(100.Milliseconds()).GetAwaiter().GetResult();
 }
