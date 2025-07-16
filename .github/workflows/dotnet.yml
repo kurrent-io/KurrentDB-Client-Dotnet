@@ -7,7 +7,7 @@ on:
 jobs:
   tests:
     name: ${{ matrix.runtime }}
-    uses: ./.github/workflows/base.yml
+    uses: ./.github/workflows/test.yml
     strategy:
       fail-fast: false
       matrix:
