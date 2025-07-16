@@ -2,7 +2,6 @@
 // ReSharper disable InvertIf
 
 using Ductus.FluentDocker.Builders;
-using Humanizer;
 using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
 using Serilog.Extensions.Logging;
@@ -10,9 +9,9 @@ using Serilog.Extensions.Logging;
 namespace KurrentDB.Client.Tests;
 
 public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null) : TestContainerService {
-	static readonly NetworkPortProvider NetworkPortProvider = new(NetworkPortProvider.DefaultEsdbPort);
-
 	KurrentDBFixtureOptions Options { get; } = options ?? DefaultOptions();
+
+	static readonly NetworkPortProvider NetworkPortProvider = new(NetworkPortProvider.DefaultPort);
 
 	public static KurrentDBFixtureOptions DefaultOptions() {
 		var port = NetworkPortProvider.NextAvailablePort;

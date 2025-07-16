@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test: [ Streams ]
+        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement, Security, Misc ]
         runtime: [ previous-lts, lts, ci ]
     with:
       test: ${{ matrix.test }}

@@ -34,8 +34,8 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 	public KurrentDBFixtureOptions    Options { get; }
 	public Faker                      Faker   { get; } = new();
 
-	public Version EventStoreVersion               { get; private set; } = null!;
-	public bool    EventStoreHasLastStreamPosition { get; private set; }
+	public Version DatabaseVersion       { get; private set; } = null!;
+	public bool    HasLastStreamPosition { get; private set; }
 
 	public KurrentDBClient                        Streams       { get; private set; } = null!;
 	public KurrentDBUserManagementClient          DBUsers       { get; private set; } = null!;
@@ -73,8 +73,8 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 
 		try {
 			await Service.Start();
-			EventStoreVersion               = TestContainerService.Version;
-			EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
+			DatabaseVersion       = TestContainerService.Version;
+			HasLastStreamPosition = (DatabaseVersion?.Major ?? int.MaxValue) >= 21;
 
 			if (!WarmUpCompleted.CurrentValue) {
 				Logger.Warning("*** Warmup started ***");
@@ -93,12 +93,10 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 				WarmUpCompleted.EnsureCalledOnce();
 
 				Logger.Warning("*** Warmup completed ***");
-			}
-			else {
+			} else {
 				Logger.Information("*** Warmup skipped ***");
 			}
-		}
-		finally {
+		} finally {
 			WarmUpGatekeeper.Release();
 		}
 
@@ -118,8 +116,7 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 	public async Task DisposeAsync() {
 		try {
 			await OnTearDown();
-		}
-		catch {
+		} catch {
 			// ignored
 		}
 

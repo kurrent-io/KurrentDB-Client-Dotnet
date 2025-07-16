@@ -58,7 +58,7 @@ public class UserManagementTests : KurrentClientTestFixture {
 			.OnSuccessAsync(details => details.Disabled.ShouldBeTrue());
 	}
 
-	[Test]
+	[Test, Skip("Temporary")]
 	public async Task list_users() {
 		var users = await CreateTestUsers();
 

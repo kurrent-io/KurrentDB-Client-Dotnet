@@ -6,24 +6,17 @@ using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Services;
 using System.Net;
 using System.Net.Sockets;
+using Ductus.FluentDocker.Extensions;
 using Humanizer;
 using Ductus.FluentDocker.Model.Builders;
+using Ductus.FluentDocker.Services.Extensions;
 
 namespace KurrentDB.Client.Tests.FluentDocker;
 
-/// <summary>
-/// Provides an abstract service for managing containerized KurrentDB environments
-/// during testing. It acts as a specialized test service for FluentDocker containers.
-/// </summary>
-/// <remarks>
-/// This class includes methods and utilities for customizing and managing containers,
-/// such as setting up environment variables, exposing ports, readiness checks, and
-/// ensuring required configurations for KurrentDB container instances in test scenarios.
-/// </remarks>
 public abstract partial class TestContainerService : TestService<IContainerService, ContainerBuilder> {
 	static Version? _version;
 
-	public static Version Version => _version!;
+	public static Version Version => _version ??= GetVersion();
 
 	internal static string ConnectionString => "kurrentdb://admin:changeit@localhost:{port}/?tlsVerifyCert=false";
 
@@ -46,11 +39,6 @@ public abstract partial class TestContainerService : TestService<IContainerServi
 			.ExposePort(port, 2113);
 	}
 
-	/// <summary>
-	/// Adds readiness check to a container builder for KurrentDB containers.
-	/// </summary>
-	/// <param name="builder">The builder to configure.</param>
-	/// <returns>The configured builder with readiness check.</returns>
 	protected static ContainerBuilder AddReadinessCheck(ContainerBuilder builder) {
 		return builder.WaitUntilReadyWithConstantBackoff(
 			1_000,
@@ -77,7 +65,7 @@ public abstract partial class TestContainerService : TestService<IContainerServi
 	/// <param name="input">The input span containing the version string to parse.</param>
 	/// <param name="version">When the method returns, contains the parsed <see cref="Version"/> object, or null if parsing failed.</param>
 	/// <returns><c>true</c> if the version could be successfully parsed; otherwise, <c>false</c>.</returns>
-	internal static bool TryParseVersion(ReadOnlySpan<char> input, [MaybeNullWhen(false)] out Version version) {
+	static bool TryParseVersion(ReadOnlySpan<char> input, [MaybeNullWhen(false)] out Version version) {
 		version = null!;
 
 		if (input.IsEmpty)
@@ -95,6 +83,23 @@ public abstract partial class TestContainerService : TestService<IContainerServi
 		}
 	}
 
+	static Version GetVersion() {
+		using var cts = new CancellationTokenSource(30.Seconds());
+		using var database = new Builder().UseContainer()
+			.UseImage(GlobalEnvironment.DockerImage)
+			.Command("--version")
+			.Build()
+			.Start();
+
+		using var log  = database.Logs(true, cts.Token);
+
+		foreach (var line in log.ReadToEnd())
+			if (TryParseVersion(line, out var version))
+				return version;
+
+		throw new InvalidOperationException("Could not determine server version from logs");
+	}
+
 	/// <summary>
 	/// Using the default 2113 port assumes that the test is running sequentially.
 	/// </summary>
@@ -102,7 +107,7 @@ public abstract partial class TestContainerService : TestService<IContainerServi
 	internal class NetworkPortProvider(int port = 2114) {
 		int _port = port;
 
-		public const int DefaultEsdbPort = 2113;
+		public const int DefaultPort = 2113;
 
 		static readonly SemaphoreSlim Semaphore = new(1, 1);
 

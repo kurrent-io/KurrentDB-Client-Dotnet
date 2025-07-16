@@ -41,6 +41,7 @@ jobs:
       tag: ${{ inputs.tag }}
 
   test:
+    name: ${{ inputs.test }} (${{ matrix.os }}, ${{ matrix.framework }})
     needs: load_configuration
     timeout-minutes: 10
     strategy:
@@ -50,7 +51,6 @@ jobs:
         os: [ ubuntu-latest ]
         configuration: [ release ]
     runs-on: ${{ matrix.os }}
-    name: ${{ inputs.test }} (${{ matrix.os }}, ${{ matrix.framework }})
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -86,11 +86,3 @@ jobs:
             --framework ${{ matrix.framework }} \
             --filter "Category=Target:${{ inputs.test }}" \
             test/KurrentDB.Client.Tests
-
-#        run: |
-#          sudo ./gencert.sh
-#          dotnet test --configuration ${{ matrix.configuration }} --blame \
-#            --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
-#            --framework ${{ matrix.framework }} \
-#            --filter "Category=Target:${{ inputs.test }} & FullyQualifiedName~ReadAllEventsBackwardTests" \
-#            test/KurrentDB.Client.Tests
