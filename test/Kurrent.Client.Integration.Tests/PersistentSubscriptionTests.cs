@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Client.Tests.PersistentSubscriptions;
 
+[Category("PersistentSubscriptions")]
 public class PersistentSubscriptionTests : KurrentClientTestFixture {
 	[Test]
 	public async Task subscribe_to_all(CancellationToken ct) {

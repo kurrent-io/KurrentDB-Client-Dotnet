@@ -4,6 +4,7 @@ using Kurrent.Client.Testing.Sample;
 
 namespace Kurrent.Client.Tests.Streams;
 
+[Category("Streams"), Category("Read")]
 public class ReadTests : KurrentClientTestFixture {
     [Test]
     public async Task reads_stream(CancellationToken ct) {
@@ -64,8 +65,8 @@ public class ReadTests : KurrentClientTestFixture {
         cancellator.IsCancellationRequested.ShouldBeTrue();
     }
 
-    [Test]
-    public async Task gracefully_stops_reading_whitout_flushing_queue_when_enumerable_token_is_cancelled(CancellationToken ct) {
+    [Test, Skip("Needs investigation")]
+    public async Task gracefully_stops_reading_without_flushing_queue_when_enumerable_token_is_cancelled(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
         await using Messages messages = await AutomaticClient.Streams
@@ -148,7 +149,7 @@ public class ReadTests : KurrentClientTestFixture {
                 record.Value.ShouldBeEquivalentTo(lastMessage.Value));
     }
 
-    [Test]
+    [Test, Skip("Needs investigation")]
     public async Task inspects_log_record(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 

@@ -4,6 +4,7 @@ using Kurrent.Client.Testing.TUnit;
 
 namespace Kurrent.Client.Tests.Streams;
 
+[Category("Streams"), Category("Append")]
 public class AppendTests : KurrentClientTestFixture {
     [Test]
     public async Task creates_stream(CancellationToken ct) {

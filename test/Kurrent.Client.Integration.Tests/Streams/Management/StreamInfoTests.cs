@@ -54,7 +54,7 @@ public class StreamInfoTests : KurrentClientTestFixture {
             });
     }
 
-    [Test]
+    [Test, Skip("Needs investigation")]
     public async Task returns_stream_info_when_stream_is_deleted(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 

@@ -62,10 +62,6 @@ jobs:
           username: ${{ secrets.CLOUDSMITH_CICD_USER }}
           password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
 
-      - name: Pull KurrentDB Docker Image
-        run: |
-          docker pull "${{ needs.load_configuration.outputs.registry }}/${{ needs.load_configuration.outputs.image }}:${{ needs.load_configuration.outputs.tag }}"
-
       - name: Install dotnet SDKs
         uses: actions/setup-dotnet@v3
         with:
@@ -76,7 +72,7 @@ jobs:
       - name: Run Tests
         shell: bash
         env:
-          ES_DOCKER_IMAGE: "${{ needs.load_configuration.outputs.registry }}/${{ needs.load_configuration.outputs.image }}:${{ needs.load_configuration.outputs.tag }}"
+          TESTCONTAINER_KURRENTDB_IMAGE: "${{ needs.load_configuration.outputs.registry }}/${{ needs.load_configuration.outputs.image }}:${{ needs.load_configuration.outputs.tag }}"
         run: |
           sudo ./gencert.sh
           dotnet test --configuration release --blame \
@@ -84,3 +80,4 @@ jobs:
             --framework ${{ matrix.framework }} \
             --filter "Category=Target:${{ matrix.test }}" \
             test/KurrentDB.Client.Tests
+

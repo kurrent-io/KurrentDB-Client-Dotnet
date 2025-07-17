@@ -10,10 +10,10 @@ public static class GlobalEnvironment {
 
 		UseCluster        = Application.Configuration.GetValue<bool>("ES_USE_CLUSTER");
 		UseExternalServer = Application.Configuration.GetValue<bool>("ES_USE_EXTERNAL_SERVER");
-		DockerImage       = Application.Configuration.GetValue<string>("ES_DOCKER_IMAGE")!;
+		DockerImage       = Application.Configuration.GetValue<string>("TESTCONTAINER_KURRENTDB_IMAGE")!;
 
 		Variables = Application.Configuration.AsEnumerable()
-			.Where(x => x.Key.StartsWith("ES_") || x.Key.StartsWith("EVENTSTORE_") || x.Key.StartsWith("KURRENTDB_"))
+			.Where(x => x.Key.StartsWith("TESTCONTAINER_") || x.Key.StartsWith("EVENTSTORE_") || x.Key.StartsWith("KURRENTDB_"))
 			.OrderBy(x => x.Key)
 			.ToImmutableDictionary(x => x.Key, x => x.Value ?? string.Empty)!;
 
@@ -21,7 +21,7 @@ public static class GlobalEnvironment {
 
 		static void EnsureDefaults(IConfiguration configuration) {
 			// internal defaults
-			configuration.EnsureValue("ES_DOCKER_IMAGE", "docker.cloudsmith.io/eventstore/kurrent-staging/kurrentdb:ci");
+			configuration.EnsureValue("TESTCONTAINER_KURRENTDB_IMAGE", "docker.cloudsmith.io/eventstore/kurrent-staging/kurrentdb:ci");
 
 			// database defaults
 			configuration.EnsureValue("EVENTSTORE_TELEMETRY_OPTOUT", "true");

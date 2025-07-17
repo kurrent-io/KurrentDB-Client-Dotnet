@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Client.Tests.Streams;
 
+[Category("Streams"), Category("Subscription")]
 public class SubscriptionTests : KurrentClientTestFixture {
     [Test]
     public async Task subscribes_to_all_streams(CancellationToken ct) {

@@ -65,7 +65,9 @@ public class KurrentDBTestContainer : TestContainer {
     public const string DefaultUsername = "admin";
     public const string DefaultPassword = "changeit";
 
-    static string DefaultImage => "docker.kurrent.io/kurrent-preview/kurrentdb:25.0.1-experimental-arm64-8.0-jammy";
+    static string DefaultImage => ApplicationContext.Configuration["Kurrent:Client:Tests:ContainerImage"]
+                               ?? Environment.GetEnvironmentVariable("TESTCONTAINER_KURRENTDB_IMAGE")
+                               ?? "docker.cloudsmith.io/eventstore/kurrent-staging/kurrentdb:ci";
 
     public KurrentDBTestContainer(Dictionary<string, string?> settings) : base(DefaultImage) {
         ActiveConfiguration = KurrentDBConfiguration.FromContext(settings).ToDictionary();

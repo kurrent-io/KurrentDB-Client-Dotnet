@@ -31,7 +31,7 @@ public abstract partial class TestContainerService : TestService<IContainerServi
 
 		return new Builder()
 			.UseContainer()
-			.UseImage(environment["ES_DOCKER_IMAGE"])
+			.UseImage(environment["TESTCONTAINER_KURRENTDB_IMAGE"])
 			.WithName(containerName)
 			.WithPublicEndpointResolver()
 			.WithEnvironment(env)

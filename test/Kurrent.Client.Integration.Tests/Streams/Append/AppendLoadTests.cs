@@ -4,6 +4,7 @@ using Kurrent.Client.Testing.TUnit;
 
 namespace Kurrent.Client.Tests.Streams;
 
+[Category("Streams")]
 public class AppendLoadTests : KurrentClientTestFixture {
     public class CreatesMultipleStreamsTransactionallyState : TestCaseGenerator<int> {
         protected override IEnumerable<int> Data() => [

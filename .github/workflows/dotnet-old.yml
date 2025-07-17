@@ -1,3 +1,5 @@
+name: Old
+
 on:
   pull_request:
   push:
@@ -5,9 +7,9 @@ on:
       - master
 
 jobs:
-  tests:
+  old:
     name: ${{ matrix.runtime }}
-    uses: ./.github/workflows/test.yml
+    uses: ./.github/workflows/test-old.yml
     strategy:
       fail-fast: false
       matrix:

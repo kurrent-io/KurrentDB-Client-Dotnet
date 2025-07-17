@@ -119,7 +119,7 @@ public partial class KurrentClientTestFixture : TestFixture {
 }
 
 public record KurrentClientTestFixtureOptions {
-    public static string SectionName => "KurrentClient:Tests";
+    public static string SectionName => "Kurrent:Client:Tests";
 
     /// <summary>
     /// If true, the test fixture will automatically wire up KurrentDB test containers
