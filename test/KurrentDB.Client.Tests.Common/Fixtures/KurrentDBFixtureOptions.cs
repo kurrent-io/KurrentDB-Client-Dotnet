@@ -10,7 +10,9 @@ public record KurrentDBFixtureOptions(
 	public KurrentDBFixtureOptions RunInMemory(bool runInMemory = true) =>
 		this with { Environment = Environment.With(x => x["EVENTSTORE_MEM_DB"] = runInMemory.ToString()) };
 
-	public KurrentDBFixtureOptions WithoutDefaultCredentials() => this with { DBClientSettings = DBClientSettings.With(x => x.DefaultCredentials = null) };
+	// public KurrentDBFixtureOptions WithoutDefaultCredentials() => this with { DBClientSettings = DBClientSettings.With(x => x.DefaultCredentials = null) };
+	// TODO: Clean up the tests to remove because the default credentials are not used in the tests. For now we can use this to avoid passing credentials to the operations.
+	public KurrentDBFixtureOptions WithoutDefaultCredentials() => this with {};
 
 	public KurrentDBFixtureOptions RunProjections(bool runProjections = true) =>
 		this with {

@@ -90,9 +90,15 @@ class LegacyClusterClient {
 				this, settings.LoggerFactory.CreateLogger<ClusterTopologyChangesInterceptor>()
 			);
 
+			var authenticationInterceptor = new AuthenticationInterceptor(settings);
+
 			return exceptionMap.Count == 0
-				? [..settings.Interceptors, requiresLeaderInterceptor, headersInterceptor, topologyChangesInterceptor,]
-				: [..settings.Interceptors, requiresLeaderInterceptor, headersInterceptor, new TypedExceptionInterceptor(exceptionMap), topologyChangesInterceptor];
+				? [..settings.Interceptors, requiresLeaderInterceptor, headersInterceptor, topologyChangesInterceptor, authenticationInterceptor ]
+				: [..settings.Interceptors, requiresLeaderInterceptor, headersInterceptor, new TypedExceptionInterceptor(exceptionMap), topologyChangesInterceptor, authenticationInterceptor];
+
+			// return exceptionMap.Count == 0
+			// 	? [..settings.Interceptors, requiresLeaderInterceptor, headersInterceptor, topologyChangesInterceptor ]
+			// 	: [..settings.Interceptors, requiresLeaderInterceptor, headersInterceptor, new TypedExceptionInterceptor(exceptionMap), topologyChangesInterceptor ];
 		}
 	}
 

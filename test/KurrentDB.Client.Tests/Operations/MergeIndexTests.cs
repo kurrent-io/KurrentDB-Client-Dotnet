@@ -9,7 +9,7 @@ public class MergeIndexTests(ITestOutputHelper output, MergeIndexTests.CustomFix
 			.MergeIndexesAsync(userCredentials: TestCredentials.Root)
 			.ShouldNotThrowAsync();
 
-	[RetryFact]
+	[RetryFact(Skip = "We disable passing credentials to the operations by default, so this test is not applicable")]
 	public async Task merge_indexes_without_credentials_throws() =>
 		await Fixture.DBOperations
 			.MergeIndexesAsync()

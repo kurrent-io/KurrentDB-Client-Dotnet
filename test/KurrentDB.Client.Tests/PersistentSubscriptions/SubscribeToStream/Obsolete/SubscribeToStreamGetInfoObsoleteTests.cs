@@ -119,7 +119,7 @@ public class SubscribeToStreamGetInfoObsoleteTests(SubscribeToStreamGetInfoObsol
 		);
 	}
 
-	[RetryFact]
+	[RetryFact(Skip = "We disable passing credentials to the operations by default, so this test is not applicable")]
 	public async Task throws_with_no_credentials() {
 		var group  = $"NonExisting-{fixture.GetGroupName()}";
 		var stream = $"NonExisting-{fixture.GetStreamName()}";

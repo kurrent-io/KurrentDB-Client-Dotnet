@@ -1,3 +1,5 @@
+// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+
 using EventStore.Client.Users;
 using Grpc.Core;
 using Kurrent.Client.Legacy;
@@ -23,7 +25,7 @@ public class KurrentUserManagementClient {
 		try {
 			await ServiceClient.ChangePasswordAsync(
 				new ChangePasswordReq {
-					Options = new ChangePasswordReq.Types.Options {
+					Options = new() {
 						CurrentPassword = currentPassword,
 						NewPassword     = newPassword,
 						LoginName       = loginName
@@ -33,13 +35,15 @@ public class KurrentUserManagementClient {
 			);
 
 			return new Result<Success, ChangePasswordError>();
-		} catch (Exception ex) {
+		} catch (RpcException ex) {
 			return Result.Failure<Success, ChangePasswordError>(
-				ex switch {
-					AccessDeniedException => ex.AsAccessDeniedError(),
-					_                     => throw KurrentClientException.CreateUnknown(nameof(EnableUser), ex)
+				ex.StatusCode switch {
+					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+					_                           => throw KurrentClientException.CreateUnknown(nameof(ChangePassword), ex)
 				}
 			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(ChangePassword), ex);
 		}
 	}
 
@@ -51,7 +55,7 @@ public class KurrentUserManagementClient {
 			await ServiceClient
 				.CreateAsync(
 					new CreateReq {
-						Options = new CreateReq.Types.Options {
+						Options = new() {
 							LoginName = loginName,
 							FullName  = fullName,
 							Password  = password,
@@ -62,14 +66,16 @@ public class KurrentUserManagementClient {
 				);
 
 			return new Result<Success, CreateUserError>();
-		} catch (Exception ex) {
+		} catch (RpcException ex) {
 			return Result.Failure<Success, CreateUserError>(
-				ex switch {
-					AccessDeniedException     => ex.AsAccessDeniedError(),
-					NotAuthenticatedException => ex.AsNotAuthenticatedError(),
-					_                         => throw KurrentClientException.CreateUnknown(nameof(CreateUser), ex)
+				ex.StatusCode switch {
+					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
+					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+					_                           => throw KurrentClientException.CreateUnknown(nameof(CreateUser), ex)
 				}
 			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(CreateUser), ex);
 		}
 	}
 
@@ -77,7 +83,7 @@ public class KurrentUserManagementClient {
 		try {
 			await ServiceClient.DeleteAsync(
 				new DeleteReq {
-					Options = new DeleteReq.Types.Options {
+					Options = new() {
 						LoginName = loginName
 					}
 				},
@@ -85,15 +91,17 @@ public class KurrentUserManagementClient {
 			);
 
 			return new Result<Success, DeleteUserError>();
-		} catch (Exception ex) {
+		} catch (RpcException ex) {
 			return Result.Failure<Success, DeleteUserError>(
-				ex switch {
-					UserNotFoundException     => ex.AsUserNotFoundError(),
-					NotAuthenticatedException => ex.AsNotAuthenticatedError(),
-					AccessDeniedException     => ex.AsAccessDeniedError(),
-					_                         => throw KurrentClientException.CreateUnknown(nameof(GetUser), ex)
+				ex.StatusCode switch {
+					StatusCode.NotFound         => ex.AsUserNotFoundError(),
+					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
+					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+					_                           => throw KurrentClientException.CreateUnknown(nameof(GetUser), ex)
 				}
 			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(DeleteUser), ex);
 		}
 	}
 
@@ -101,21 +109,23 @@ public class KurrentUserManagementClient {
 		try {
 			await ServiceClient.DisableAsync(
 				new DisableReq {
-					Options = new DisableReq.Types.Options {
+					Options = new() {
 						LoginName = loginName
 					}
 				}, cancellationToken: cancellationToken
 			);
 
 			return new Result<Success, DisableUserError>();
-		} catch (Exception ex) {
+		} catch (RpcException ex) {
 			return Result.Failure<Success, DisableUserError>(
-				ex switch {
-					AccessDeniedException     => ex.AsAccessDeniedError(),
-					NotAuthenticatedException => ex.AsNotAuthenticatedError(),
-					_                         => throw KurrentClientException.CreateUnknown(nameof(EnableUser), ex)
+				ex.StatusCode switch {
+					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
+					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+					_                           => throw KurrentClientException.CreateUnknown(nameof(DisableUser), ex)
 				}
 			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(DisableUser), ex);
 		}
 	}
 
@@ -123,7 +133,7 @@ public class KurrentUserManagementClient {
 		try {
 			await ServiceClient.EnableAsync(
 				new EnableReq {
-					Options = new EnableReq.Types.Options {
+					Options = new() {
 						LoginName = loginName
 					}
 				},
@@ -131,14 +141,16 @@ public class KurrentUserManagementClient {
 			);
 
 			return new Result<Success, EnableUserError>();
-		} catch (Exception ex) {
+		} catch (RpcException ex) {
 			return Result.Failure<Success, EnableUserError>(
-				ex switch {
-					AccessDeniedException     => ex.AsAccessDeniedError(),
-					NotAuthenticatedException => ex.AsNotAuthenticatedError(),
-					_                         => throw KurrentClientException.CreateUnknown(nameof(EnableUser), ex)
+				ex.StatusCode switch {
+					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
+					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+					_                           => throw KurrentClientException.CreateUnknown(nameof(EnableUser), ex)
 				}
 			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(EnableUser), ex);
 		}
 	}
 
@@ -147,13 +159,15 @@ public class KurrentUserManagementClient {
 			return await ListAllCore(loginName, cancellationToken)
 				.FirstAsync(cancellationToken: cancellationToken)
 				.ConfigureAwait(false);
-		} catch (Exception ex) {
+		} catch (RpcException ex) {
 			return Result.Failure<UserDetails, GetUserError>(
-				ex switch {
-					AccessDeniedException => ex.AsAccessDeniedError(),
-					_                     => throw KurrentClientException.CreateUnknown(nameof(GetUser), ex)
+				ex.StatusCode switch {
+					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+					_                           => throw KurrentClientException.CreateUnknown(nameof(GetUser), ex)
 				}
 			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(GetUser), ex);
 		}
 	}
 
@@ -161,7 +175,7 @@ public class KurrentUserManagementClient {
 
 	IAsyncEnumerable<UserDetails> ListAllCore(string? loginName, CancellationToken cancellationToken = default) {
 		var req = loginName is not null
-			? new DetailsReq { Options = { LoginName = loginName } }
+			? new DetailsReq { Options = new() { LoginName = loginName } }
 			: new DetailsReq();
 
 		var call = ServiceClient.Details(req, cancellationToken: cancellationToken);
@@ -184,7 +198,7 @@ public class KurrentUserManagementClient {
 		try {
 			await ServiceClient.ResetPasswordAsync(
 				new ResetPasswordReq {
-					Options = new ResetPasswordReq.Types.Options {
+					Options = new() {
 						NewPassword = newPassword,
 						LoginName   = loginName
 					}
@@ -193,14 +207,16 @@ public class KurrentUserManagementClient {
 			);
 
 			return new Result<Success, ResetPasswordError>();
-		} catch (Exception ex) {
+		} catch (RpcException ex) {
 			return Result.Failure<Success, ResetPasswordError>(
-				ex switch {
-					AccessDeniedException     => ex.AsAccessDeniedError(),
-					NotAuthenticatedException => ex.AsNotAuthenticatedError(),
-					_                         => throw KurrentClientException.CreateUnknown(nameof(EnableUser), ex)
+				ex.StatusCode switch {
+					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
+					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+					_                           => throw KurrentClientException.CreateUnknown(nameof(ResetPassword), ex)
 				}
 			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(ResetPassword), ex);
 		}
 	}
 }

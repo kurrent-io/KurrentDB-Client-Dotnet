@@ -20,7 +20,7 @@ static class KurrentDBCallOptions {
 	static CallOptions Create(KurrentDBClientSettings settings, TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
 		return new(
 			cancellationToken: cancellationToken,
-			deadline: DeadlineAfter(deadline),
+			deadline: DeadlineAfter(deadline)
 			// could this be because of the way the client is created?
 			// and the core client cannot have this header added to every call?
 			// ensure the headers interceptor works, if not let this value be added here...
@@ -32,17 +32,19 @@ static class KurrentDBCallOptions {
 			// 			: bool.FalseString
 			// 	}
 			// },
-			credentials: (userCredentials ?? settings.DefaultCredentials) is not null
-				? CallCredentials.FromInterceptor(async (_, metadata) => {
-					var credentials = userCredentials ?? settings.DefaultCredentials;
 
-					var authorizationHeader = await settings.OperationOptions
-						.GetAuthenticationHeaderValue(credentials!, CancellationToken.None)
-						.ConfigureAwait(false);
-
-					metadata.Add(Constants.Headers.Authorization, authorizationHeader);
-				})
-				: null
+			// Doing it at the interceptor level instead of here
+			// credentials: (userCredentials ?? settings.DefaultCredentials) is not null
+			// 	? CallCredentials.FromInterceptor(async (_, metadata) => {
+			// 		var credentials = userCredentials ?? settings.DefaultCredentials;
+			//
+			// 		var authorizationHeader = await settings.OperationOptions
+			// 			.GetAuthenticationHeaderValue(credentials!, CancellationToken.None)
+			// 			.ConfigureAwait(false);
+			//
+			// 		metadata.Add(Constants.Headers.Authorization, authorizationHeader);
+			// 	})
+			// 	: null
 		);
 
 		static DateTime? DeadlineAfter(TimeSpan? timeoutAfter) =>
@@ -53,3 +55,4 @@ static class KurrentDBCallOptions {
 					: DateTime.UtcNow.Add(timeoutAfter.Value);
 	}
 }
+

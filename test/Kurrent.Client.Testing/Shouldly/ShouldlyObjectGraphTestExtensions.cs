@@ -129,6 +129,68 @@ public static class ShouldlyObjectGraphTestExtensions {
         );
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ShouldBeSubsetOf<T>(this IEnumerable<T> subset, IEnumerable<T> collection, string? customMessage = null) {
+        CompareSubset(
+            subset, collection, new List<string>(), null, customMessage
+        );
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ShouldBeSubsetOf<T>(
+        this IEnumerable<T> subset, IEnumerable<T> collection, Action<EquivalencyConfiguration>? configure, string? customMessage = null
+    ) {
+        var config = new EquivalencyConfiguration();
+        configure?.Invoke(config);
+
+        CompareSubset(
+            subset, collection, new List<string>(), config, customMessage
+        );
+    }
+
+    static void CompareSubset<T>(
+        IEnumerable<T> subset,
+        IEnumerable<T> collection,
+        IList<string> path,
+        EquivalencyConfiguration? config,
+        string? customMessage,
+        [CallerMemberName] string shouldlyMethod = null!
+    ) {
+        var subsetList = subset.ToList();
+        var collectionList = collection.ToList();
+
+        if (subsetList.Count > collectionList.Count)
+            ThrowException(
+                $"Expected subset with {subsetList.Count} items to be a subset of collection with {collectionList.Count} items",
+                null, path,
+                customMessage, shouldlyMethod
+            );
+
+        // For each item in subset, find a matching item in collection
+        foreach (var subsetItem in subsetList) {
+            var found = false;
+            foreach (var collectionItem in collectionList) {
+                try {
+                    CompareObjects(
+                        subsetItem, collectionItem, new List<string>(),
+                        new Dictionary<object, IList<object?>>(), config, customMessage
+                    );
+                    found = true;
+                    break;
+                }
+                catch (ShouldAssertException) {
+                    // Not a match, continue searching
+                }
+            }
+
+            if (!found)
+                ThrowException(
+                    subsetItem, "<no matching item in collection>", path,
+                    customMessage, shouldlyMethod
+                );
+        }
+    }
+
     static void CompareObjects(
         [NotNullIfNotNull(nameof(expected))] this object? actual,
         [NotNullIfNotNull(nameof(actual))] object? expected,

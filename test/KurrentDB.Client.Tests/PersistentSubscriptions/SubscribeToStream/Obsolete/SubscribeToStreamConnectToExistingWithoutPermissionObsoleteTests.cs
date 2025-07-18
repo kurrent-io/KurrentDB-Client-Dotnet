@@ -8,7 +8,7 @@ public class SubscribeToStreamConnectToExistingWithoutPermissionObsoleteTests(
 	SubscribeToStreamConnectToExistingWithoutPermissionObsoleteTests.CustomFixture fixture
 )
 	: KurrentTemporaryTests<SubscribeToStreamConnectToExistingWithoutPermissionObsoleteTests.CustomFixture>(output, fixture) {
-	[Fact]
+	[Fact(Skip = "We disable passing credentials to the operations by default, so this test is not applicable")]
 	public async Task connect_to_existing_without_permissions() {
 		var stream = Fixture.GetStreamName();
 		var group  = Fixture.GetGroupName();

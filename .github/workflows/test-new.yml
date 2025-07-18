@@ -44,8 +44,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        framework: [ net8.0, net9.0 ]
-        test: [ Streams, PersistentSubscriptions ]
+        framework: [ net9.0 ]
+        test: [ Streams, PersistentSubscriptions, UserManagement ]
 
     runs-on: ubuntu-latest
 

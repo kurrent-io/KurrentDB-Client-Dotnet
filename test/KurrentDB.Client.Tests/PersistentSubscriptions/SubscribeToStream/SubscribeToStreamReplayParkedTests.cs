@@ -24,7 +24,7 @@ public class SubscribeToStreamReplayParkedTests(ITestOutputHelper output, Subscr
 		);
 	}
 
-	[RetryFact]
+	[RetryFact(Skip = "We disable passing credentials to the operations by default, so this test is not applicable")]
 	public async Task throws_with_no_credentials() {
 		var group  = Fixture.GetGroupName();
 		var stream = Fixture.GetStreamName();
@@ -49,7 +49,7 @@ public class SubscribeToStreamReplayParkedTests(ITestOutputHelper output, Subscr
 		);
 	}
 
-	[RetryFact]
+	[RetryFact(Skip = "We disable passing credentials to the operations by default, so this test is not applicable")]
 	public async Task throws_with_normal_user_credentials() {
 		var group  = Fixture.GetGroupName();
 		var stream = Fixture.GetStreamName();

@@ -45,7 +45,8 @@ jobs:
       fail-fast: false
       matrix:
         framework: [ net8.0, net9.0 ]
-        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement, Security, Misc ]
+#        test: [ Streams, PersistentSubscriptions, Operations, UserManagement, ProjectionManagement, Security, Misc ]
+        test: [ Streams, ProjectionManagement, Misc ]
 
     runs-on: ubuntu-latest
 

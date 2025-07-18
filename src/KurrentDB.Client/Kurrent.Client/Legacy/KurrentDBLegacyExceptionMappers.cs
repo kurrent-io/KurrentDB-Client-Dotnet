@@ -1,3 +1,4 @@
+using Grpc.Core;
 using Kurrent.Client.Model;
 using KurrentDB.Client;
 
@@ -16,22 +17,22 @@ static class KurrentDBLegacyExceptionMappers {
             : throw new InvalidCastException($"Expected {nameof(StreamDeletedException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.StreamDeleted)}.", ex);
 
     public static ErrorDetails.AccessDenied AsAccessDeniedError(this Exception ex, StreamName stream) =>
-        ex is AccessDeniedException
+        ex is RpcException
             ? new(x => x.With("stream", stream))
             : throw new InvalidCastException($"Expected {nameof(AccessDeniedException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.AccessDenied)}.", ex);
 
     public static ErrorDetails.AccessDenied AsAccessDeniedError(this Exception ex) =>
-        ex is AccessDeniedException
+        ex is RpcException
             ? new(x => x.With("reason", "Access denied while reading all streams."))
             : throw new InvalidCastException($"Expected {nameof(AccessDeniedException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.AccessDenied)}.", ex);
 
     public static ErrorDetails.UserNotFound AsUserNotFoundError(this Exception ex) =>
-        ex is UserNotFoundException
+        ex is RpcException
 			? new(x => x.With("reason", "User not found."))
 			: throw new InvalidCastException($"Expected {nameof(UserNotFoundException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.UserNotFound)}.", ex);
 
     public static ErrorDetails.NotAuthenticated AsNotAuthenticatedError(this Exception ex) =>
-	    ex is NotAuthenticatedException
+	    ex is RpcException
 		    ? new(x => x.With("reason", "User is not authenticated."))
 		    : throw new InvalidCastException($"Expected {nameof(NotAuthenticatedException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.NotAuthenticated)}.", ex);
 

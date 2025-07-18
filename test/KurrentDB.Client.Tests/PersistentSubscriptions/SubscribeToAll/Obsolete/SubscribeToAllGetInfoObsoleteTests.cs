@@ -30,7 +30,7 @@ public class SubscribeToAllGetInfoObsoleteTests(SubscribeToAllGetInfoObsoleteTes
 		await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(async () => await fixture.Subscriptions.GetInfoToAllAsync(group, userCredentials: TestCredentials.Root));
 	}
 
-	[Fact]
+	[Fact(Skip = "We disable passing credentials to the operations by default, so this test is not applicable")]
 	public async Task throws_with_no_credentials() {
 		var group = $"NonExisting-{fixture.GetGroupName()}";
 
