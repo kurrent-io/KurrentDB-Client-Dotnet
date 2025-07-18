@@ -28,12 +28,11 @@ public class SubscribeToAllReplayParkedTests(ITestOutputHelper output, Subscribe
 		await Fixture.Subscriptions.CreateToAllAsync(group, new(), userCredentials: TestCredentials.Root);
 
 		var nonExistingGroup = Fixture.GetGroupName();
-		await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(
-			() =>
-				Fixture.Subscriptions.ReplayParkedMessagesToAllAsync(
-					nonExistingGroup,
-					userCredentials: TestCredentials.Root
-				)
+		await Assert.ThrowsAsync<PersistentSubscriptionNotFoundException>(() =>
+			Fixture.Subscriptions.ReplayParkedMessagesToAllAsync(
+				nonExistingGroup,
+				userCredentials: TestCredentials.Root
+			)
 		);
 	}
 
@@ -43,9 +42,8 @@ public class SubscribeToAllReplayParkedTests(ITestOutputHelper output, Subscribe
 
 		await Fixture.Subscriptions.CreateToAllAsync(group, new(), userCredentials: TestCredentials.Root);
 
-		await Assert.ThrowsAsync<AccessDeniedException>(
-			() =>
-				Fixture.Subscriptions.ReplayParkedMessagesToAllAsync(group)
+		await Assert.ThrowsAsync<AccessDeniedException>(() =>
+			Fixture.Subscriptions.ReplayParkedMessagesToAllAsync(group)
 		);
 	}
 
@@ -55,12 +53,11 @@ public class SubscribeToAllReplayParkedTests(ITestOutputHelper output, Subscribe
 
 		await Fixture.Subscriptions.CreateToAllAsync(group, new(), userCredentials: TestCredentials.Root);
 
-		await Assert.ThrowsAsync<NotAuthenticatedException>(
-			() =>
-				Fixture.Subscriptions.ReplayParkedMessagesToAllAsync(
-					group,
-					userCredentials: TestCredentials.TestBadUser
-				)
+		await Assert.ThrowsAsync<NotAuthenticatedException>(() =>
+			Fixture.Subscriptions.ReplayParkedMessagesToAllAsync(
+				group,
+				userCredentials: TestCredentials.TestBadUser
+			)
 		);
 	}
 
@@ -72,12 +69,11 @@ public class SubscribeToAllReplayParkedTests(ITestOutputHelper output, Subscribe
 			.CreateUserWithRetry(user.Username!, user.Username!, [], user.Password!, TestCredentials.Root)
 			.WithTimeout();
 
-		await Assert.ThrowsAsync<AccessDeniedException>(
-			() =>
-				Fixture.Subscriptions.ReplayParkedMessagesToAllAsync(
-					Fixture.GetGroupName(),
-					userCredentials: user
-				)
+		await Assert.ThrowsAsync<AccessDeniedException>(() =>
+			Fixture.Subscriptions.ReplayParkedMessagesToAllAsync(
+				Fixture.GetGroupName(),
+				userCredentials: user
+			)
 		);
 	}
 

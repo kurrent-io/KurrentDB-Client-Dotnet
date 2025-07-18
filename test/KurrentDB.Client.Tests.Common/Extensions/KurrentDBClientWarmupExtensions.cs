@@ -19,7 +19,7 @@ public static class KurrentDBClientWarmupExtensions {
 			.Handle<RpcException>(ex => ex.StatusCode != StatusCode.Unimplemented)
 			.Or<Exception>()
 			.WaitAndRetryAsync(DefaultBackoffDelay)
-			.WrapAsync(Policy.TimeoutAsync(RediscoverTimeout, (_, _, _) => client.RediscoverAsync()))
+			.WrapAsync(Policy.TimeoutAsync(RediscoverTimeout, async (_, _, _) => await client.RediscoverAsync().ConfigureAwait(false)))
 			.ExecuteAsync(
 				async ct => {
 					try {
@@ -80,7 +80,7 @@ public static class KurrentDBClientWarmupExtensions {
 					userCredentials: TestCredentials.Root,
 					cancellationToken: ct
 				);
-			}, 
+			},
 			cancellationToken
 		);
 

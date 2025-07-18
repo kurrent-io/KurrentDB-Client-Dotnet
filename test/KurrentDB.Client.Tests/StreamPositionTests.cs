@@ -23,8 +23,8 @@ public class StreamPositionTests : ValueObjectTests<StreamPosition> {
 	}
 
 	public static IEnumerable<object?[]> AdditionOutOfBoundsCases() {
-		yield return new object?[] { StreamPosition.End, 1 };
-		yield return new object?[] { new StreamPosition(long.MaxValue), long.MaxValue + 2UL };
+		yield return [StreamPosition.End, 1];
+		yield return [new StreamPosition(long.MaxValue), long.MaxValue + 2UL];
 	}
 
 	[Theory]
@@ -42,8 +42,8 @@ public class StreamPositionTests : ValueObjectTests<StreamPosition> {
 	}
 
 	public static IEnumerable<object?[]> SubtractionOutOfBoundsCases() {
-		yield return new object?[] { new StreamPosition(1), 2 };
-		yield return new object?[] { StreamPosition.Start, 1 };
+		yield return [new StreamPosition(1), 2];
+		yield return [StreamPosition.Start, 1];
 	}
 
 	[Theory]
@@ -54,8 +54,8 @@ public class StreamPositionTests : ValueObjectTests<StreamPosition> {
 	}
 
 	public static IEnumerable<object?[]> ArgumentOutOfRangeTestCases() {
-		yield return new object?[] { long.MaxValue + 1UL };
-		yield return new object?[] { ulong.MaxValue - 1UL };
+		yield return [long.MaxValue + 1UL];
+		yield return [ulong.MaxValue - 1UL];
 	}
 
 	[Theory]

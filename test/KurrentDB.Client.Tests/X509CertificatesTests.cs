@@ -1,5 +1,4 @@
 using System.Security.Cryptography.X509Certificates;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests;
 

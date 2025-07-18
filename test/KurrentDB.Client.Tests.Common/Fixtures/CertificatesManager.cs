@@ -21,7 +21,7 @@ static class CertificatesManager {
 					$"Could not locate the certificates file {file} needed to run EventStoreDB. Please run the 'gencert' tool at the root of the repository."
 				);
 	}
-	
+
 	/// <summary>
 	/// SS: not ready yet.
 	/// </summary>

@@ -18,7 +18,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 			await Fixture.Streams.AppendToStreamAsync(
 				$"stream-{evt.EventId.ToGuid():N}",
 				StreamState.NoStream,
-				new[] { evt }
+				[evt]
 			);
 
 		await using var subscription = Fixture.Streams.SubscribeToAll(FromAll.Start);
@@ -32,7 +32,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 			await Fixture.Streams.AppendToStreamAsync(
 				$"stream-{evt.EventId.ToGuid():N}",
 				StreamState.NoStream,
-				new[] { evt }
+				[evt]
 			);
 
 		await Subscribe().WithTimeout();
@@ -72,7 +72,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 			await Fixture.Streams.AppendToStreamAsync(
 				$"stream-{evt.EventId.ToGuid():N}",
 				StreamState.NoStream,
-				new[] { evt }
+				[evt]
 			);
 
 		await Subscribe().WithTimeout();
@@ -107,7 +107,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 			writeResult = await Fixture.Streams.AppendToStreamAsync(
 				$"stream-{evt.EventId.ToGuid():N}",
 				StreamState.NoStream,
-				new[] { evt }
+				[evt]
 			);
 
 		var position = FromAll.After(writeResult.LogPosition);
@@ -123,7 +123,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 			await Fixture.Streams.AppendToStreamAsync(
 				$"stream-{evt.EventId.ToGuid():N}",
 				StreamState.NoStream,
-				new[] { evt }
+				[evt]
 			);
 
 		await Subscribe().WithTimeout();
@@ -216,7 +216,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 			await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
 				StreamState.NoStream,
-				new[] { evt }
+				[evt]
 			);
 
 		var filterOptions = new SubscriptionFilterOptions(filter.Create(streamPrefix), 1);
@@ -233,7 +233,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 			await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
 				StreamState.NoStream,
-				new[] { evt }
+				[evt]
 			);
 
 		bool checkpointReached = false;
@@ -303,7 +303,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 			await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
 				StreamState.NoStream,
-				new[] { evt }
+				[evt]
 			);
 
 		var filterOptions = new SubscriptionFilterOptions(filter.Create(streamPrefix), 1);
@@ -320,7 +320,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 			await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
 				StreamState.NoStream,
-				new[] { evt }
+				[evt]
 			);
 
 		bool checkpointReached = false;
@@ -387,7 +387,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 			writeResult = await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
 				StreamState.NoStream,
-				new[] { evt }
+				[evt]
 			);
 
 		var position = FromAll.After(writeResult.LogPosition);
@@ -406,7 +406,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, SubscribeToAllTests.C
 			await Fixture.Streams.AppendToStreamAsync(
 				$"{streamPrefix}-{evt.EventId.ToGuid():N}",
 				StreamState.NoStream,
-				new[] { evt }
+				[evt]
 			);
 
 		bool checkpointReached = false;

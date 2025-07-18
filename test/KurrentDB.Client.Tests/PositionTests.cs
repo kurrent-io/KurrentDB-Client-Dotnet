@@ -1,5 +1,4 @@
 using AutoFixture;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests;
 
@@ -28,10 +27,10 @@ public class PositionTests : ValueObjectTests<Position> {
 		const string commitPosition  = nameof(commitPosition);
 		const string preparePosition = nameof(preparePosition);
 
-		yield return new object?[] { 5, 6, commitPosition };
-		yield return new object?[] { ulong.MaxValue - 1, 6, commitPosition };
-		yield return new object?[] { ulong.MaxValue, ulong.MaxValue - 1, preparePosition };
-		yield return new object?[] { (ulong)long.MaxValue + 1, long.MaxValue, commitPosition };
+		yield return [5, 6, commitPosition];
+		yield return [ulong.MaxValue - 1, 6, commitPosition];
+		yield return [ulong.MaxValue, ulong.MaxValue - 1, preparePosition];
+		yield return [(ulong)long.MaxValue + 1, long.MaxValue, commitPosition];
 	}
 
 	[Theory]
@@ -50,13 +49,13 @@ public class PositionTests : ValueObjectTests<Position> {
 	}
 
 	public static IEnumerable<object?[]> ParseTestCases() {
-		yield return new object?[] { "", false, null };
-		yield return new object?[] { "CP", false, null };
-		yield return new object?[] { "C:6\\P:5", false, null };
-		yield return new object[] { Position.Start.ToString(), true, Position.Start };
-		yield return new object[] { Position.End.ToString(), true, Position.End };
-		yield return new object[] { "C:6/P:5", true, new Position(6, 5) };
-		yield return new object[] { "C: 6/P:5", true, new Position(6, 5) };
+		yield return ["", false, null];
+		yield return ["CP", false, null];
+		yield return ["C:6\\P:5", false, null];
+		yield return [Position.Start.ToString(), true, Position.Start];
+		yield return [Position.End.ToString(), true, Position.End];
+		yield return ["C:6/P:5", true, new Position(6, 5)];
+		yield return ["C: 6/P:5", true, new Position(6, 5)];
 	}
 
 	class ScenarioFixture : Fixture {
