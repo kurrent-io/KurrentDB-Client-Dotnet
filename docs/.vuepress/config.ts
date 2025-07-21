@@ -20,7 +20,7 @@ export default defineUserConfig({
     md.use(replaceLinkPlugin, {
       replaceLink: (link: string, _) => link
         .replace("@api", "/api")
-        .replace("@server", "/server")
+        .replace("@server/", "/server/{version}/")
     });
     md.use(dl);
   },
