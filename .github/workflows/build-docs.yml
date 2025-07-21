@@ -4,7 +4,11 @@ on:
   push:
     branches: [release/**/**]
     paths:
-      - '**.md'
+      - "**.md"
+  pull_request:
+    branches: [release/**/**]
+    paths:
+      - "**.md"
 
 jobs:
   dispatch:
