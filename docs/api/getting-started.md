@@ -27,7 +27,6 @@ dotnet add package EventStoreDB.Client
 dotnet add package EventStore.Client.Grpc.Streams 
 ```
 
-
 ### Connection string
 
 Each SDK has its own way of configuring the client, but the connection string can always be used. 
@@ -37,13 +36,13 @@ Since version 22.10, ESDB supports gossip on single-node deployments, so `esdb+d
 The connection string has the following format:
 
 ```
-kurrentdb+discover://admin:changeit@cluster.dns.name:2113
+esdb+discover://admin:changeit@cluster.dns.name:2113
 ```
 
 There, `cluster.dns.name` is the name of a DNS `A` record that points to all the cluster nodes. Alternatively, you can list cluster nodes separated by comma instead of the cluster DNS name:
 
 ```
-kurrentdb+discover://admin:changeit@node1.dns.name:2113,node2.dns.name:2113,node3.dns.name:2113
+esdb+discover://admin:changeit@node1.dns.name:2113,node2.dns.name:2113,node3.dns.name:2113
 ```
 
 There are a number of query parameters that can be used in the connection string to instruct the cluster how and where the connection should be established. All query parameters are optional.
@@ -76,7 +75,7 @@ var client = new EventStoreClient(EventStoreClientSettings.Create("esdb://admin:
 
 The client instance can be used as a singleton across the whole application. It doesn't need to open or close the connection.
 
-<!-- ### Creating an event
+### Creating an event
 
 You can write anything to EventStoreDB as events. The client needs a byte array as the event payload. Normally, you'd use a serialized object, and it's up to you to choose the serialization method.
 
@@ -88,7 +87,20 @@ We use JSON for serialization in the documentation examples.
 
 The code snippet below creates an event object instance, serializes it, and adds it as a payload to the `EventData` structure, which the client can then write to the database.
 
-@[code{createEvent}](@grpc:quick-start/Program.cs)
+```cs
+using System.Text.Json;
+
+var evt = new TestEvent {
+	EntityId      = Guid.NewGuid().ToString("N"),
+	ImportantData = "I wrote my first event!"
+};
+
+var eventData = new EventData(
+	Uuid.NewUuid(),
+	"TestEvent",
+	JsonSerializer.SerializeToUtf8Bytes(evt)
+);
+```
 
 ### Appending events
 
@@ -96,7 +108,14 @@ Each event in the database has its own unique identifier (UUID). The database us
 
 In the snippet below, we append the event to the stream `some-stream`.
 
-@[code{appendEvents}](@grpc:quick-start/Program.cs)
+```cs
+await client.AppendToStreamAsync(
+	"some-stream",
+	StreamState.Any,
+	new[] { eventData },
+	cancellationToken: cancellationToken
+);
+```
 
 Here we are appending events without checking if the stream exists or if the stream version matches the expected event version. See more advanced scenarios in [appending events documentation](./appending-events.md).
 
@@ -104,7 +123,16 @@ Here we are appending events without checking if the stream exists or if the str
 
 Finally, we can read events back from the `some-stream` stream.
 
-@[code{readStream}](@grpc:quick-start/Program.cs)
+```cs
+var result = client.ReadStreamAsync(
+	Direction.Forwards,
+	"some-stream",
+	StreamPosition.Start,
+	cancellationToken: cancellationToken
+);
+
+var events = await result.ToListAsync(cancellationToken);
+```
 
 When you read events from the stream, you get a collection of `ResolvedEvent` structures. The event payload is returned as a byte array and needs to be deserialized. See more advanced scenarios in [reading events documentation](./reading-events.md).
- -->
+

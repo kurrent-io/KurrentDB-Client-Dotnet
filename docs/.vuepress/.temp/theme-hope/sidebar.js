@@ -1,1 +1,1 @@
-export const sidebarData = {"/api/":["getting-started"]};
+export const sidebarData = {"/":[{"text":".NET","prefix":"api/","collapsible":true,"children":["getting-started","appending-events","reading-events","subscriptions","persistent-subscriptions","projections","authentication","observability","delete-stream"]}]};

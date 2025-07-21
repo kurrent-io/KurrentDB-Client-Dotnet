@@ -15,10 +15,9 @@ import * as clientConfig13 from 'C:/Code/KurrentDB-Client-Dotnet/docs/.vuepress/
 import * as clientConfig14 from 'C:/Code/KurrentDB-Client-Dotnet/docs/node_modules/.pnpm/@vuepress+plugin-active-header-links@2.0.0-rc.74_typescript@5.5.3_vuepress@2.0.0-rc.19_@vuepr_r5y7tkmwkyholh5n3q336zpjae/node_modules/@vuepress/plugin-active-header-links/lib/client/config.js'
 import * as clientConfig15 from 'C:/Code/KurrentDB-Client-Dotnet/docs/node_modules/.pnpm/@vuepress+plugin-catalog@2.0.0-rc.74_typescript@5.5.3_vuepress@2.0.0-rc.19_@vuepress+bundler-_qci3qtf6g6ntij3hadrhnfgiqu/node_modules/@vuepress/plugin-catalog/lib/client/config.js'
 import * as clientConfig16 from 'C:/Code/KurrentDB-Client-Dotnet/docs/node_modules/.pnpm/@vuepress+plugin-nprogress@2.0.0-rc.74_typescript@5.5.3_vuepress@2.0.0-rc.19_@vuepress+bundle_bkvgirsz4aufonhielzirz4vty/node_modules/@vuepress/plugin-nprogress/lib/client/config.js'
-import * as clientConfig17 from 'C:/Code/KurrentDB-Client-Dotnet/docs/node_modules/.pnpm/@vuepress+plugin-search@2.0.0-rc.74_typescript@5.5.3_vuepress@2.0.0-rc.19_@vuepress+bundler-v_ujxi5qpj2omlzkp42mza4tince/node_modules/@vuepress/plugin-search/lib/client/config.js'
-import * as clientConfig18 from 'C:/Code/KurrentDB-Client-Dotnet/docs/node_modules/.pnpm/@vuepress+plugin-redirect@2.0.0-rc.74_typescript@5.5.3_vuepress@2.0.0-rc.19_@vuepress+bundler_ksbuhrt2mimcib7kywix2wvzhm/node_modules/@vuepress/plugin-redirect/lib/client/config.js'
-import * as clientConfig19 from 'C:/Code/KurrentDB-Client-Dotnet/docs/.vuepress/.temp/theme-hope/config.js'
-import * as clientConfig20 from 'C:/Code/KurrentDB-Client-Dotnet/docs/.vuepress/client.ts'
+import * as clientConfig17 from 'C:/Code/KurrentDB-Client-Dotnet/docs/node_modules/.pnpm/@vuepress+plugin-redirect@2.0.0-rc.74_typescript@5.5.3_vuepress@2.0.0-rc.19_@vuepress+bundler_ksbuhrt2mimcib7kywix2wvzhm/node_modules/@vuepress/plugin-redirect/lib/client/config.js'
+import * as clientConfig18 from 'C:/Code/KurrentDB-Client-Dotnet/docs/.vuepress/.temp/theme-hope/config.js'
+import * as clientConfig19 from 'C:/Code/KurrentDB-Client-Dotnet/docs/.vuepress/client.ts'
 
 export const clientConfigs = [
   clientConfig0,
@@ -41,5 +40,4 @@ export const clientConfigs = [
   clientConfig17,
   clientConfig18,
   clientConfig19,
-  clientConfig20,
 ].map((m) => m.default).filter(Boolean)
