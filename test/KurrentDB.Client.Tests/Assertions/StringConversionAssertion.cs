@@ -13,13 +13,13 @@ class StringConversionAssertion : IdiomaticAssertion {
 	public override void Verify(Type type) {
 		var context = new SpecimenContext(_builder);
 
-		var constructor = type.GetConstructor(new[] { typeof(string) });
+		var constructor = type.GetConstructor([typeof(string)]);
 
 		if (constructor is null)
 			return;
 
 		var value    = (string)context.Resolve(typeof(string));
-		var instance = constructor.Invoke(new object[] { value });
+		var instance = constructor.Invoke([value]);
 		var args     = new[] { instance };
 
 		var @explicit = type

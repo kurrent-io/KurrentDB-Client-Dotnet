@@ -423,7 +423,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentDBPerm
 		);
 
 		foreach (var e in events) {
-			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.Any, new[] { e });
+			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.Any, [e]);
 		}
 
 		await eventsReceived.Task.WithTimeout();
@@ -487,7 +487,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentDBPerm
 		);
 
 		foreach (var e in events)
-			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.NoStream, new[] { e });
+			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.NoStream, [e]);
 
 		var resumedEvent = await resumedSource.Task.WithTimeout(TimeSpan.FromSeconds(10));
 		Assert.True(resumedEvent.Event.Position > checkPoint);
@@ -578,7 +578,7 @@ public class SubscribeToAllObsoleteTests(ITestOutputHelper output, KurrentDBPerm
 		);
 
 		foreach (var e in events)
-			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.NoStream, new[] { e });
+			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.NoStream, [e]);
 
 		Task<ResolvedEvent> resumed = resumedSource.Task;
 

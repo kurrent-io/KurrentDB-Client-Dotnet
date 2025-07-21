@@ -1,6 +1,4 @@
-﻿using KurrentDB.Client;
-
-#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+﻿#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
 
 namespace KurrentDB.Client.Tests;
 
@@ -173,7 +171,9 @@ public class SharingProviderTests {
 	[RetryFact]
 	public async Task StopsAfterBeingDisposed() {
 		Action<bool>? onBroken = null;
-		var           count    = 0;
+
+		var count = 0;
+
 		using var sut = new SharingProvider<bool, int>(
 			async (_, f) => {
 				onBroken = f;
@@ -200,7 +200,7 @@ public class SharingProviderTests {
 	public async Task ExampleUsage() {
 		// factory waits to be signalled by completeConstruction being released
 		// sometimes the factory succeeds, sometimes it throws.
-		// failure of the produced item is trigged by 
+		// failure of the produced item is trigged by
 		var completeConstruction  = new SemaphoreSlim(0);
 		var constructionCompleted = new SemaphoreSlim(0);
 
@@ -215,7 +215,7 @@ public class SharingProviderTests {
 				}
 				else {
 					_ = triggerFailure.WaitAsync().ContinueWith(
-						t => {
+						_ => {
 							onBroken(input + 1);
 							failed.Release();
 						}
