@@ -8,124 +8,150 @@ head:
 
 # Observability
 
-The KurrentDB gRPC clients are designed with observability in mind, offering
-support for OpenTelemetry. This integration provides a set of distributed
-traces, enabling developers to gain deeper insights into their system.
+The .NET client provides observability capabilities through OpenTelemetry
+integration. This enables you to monitor, trace, and troubleshoot your event
+store operations with distributed tracing support.
 
-## Required packages
+## Prerequisites
 
-The KurrentDB C# client includes OpenTelemetry support by default.
+Install the required OpenTelemetry package from NuGet:
 
-## Instrumentation
-
-To emit trace data, you must first install and use the dedicated package, as instructed in the
-[Required Packages](./observability.md#required-packages) section, if provided. This package
-includes the necessary instrumentation that needs to be registered with the client.
-
-```cs
-var host = Host.CreateDefaultBuilder()
-  .ConfigureServices(
-    (_, services) => {
-      services.AddSingleton(new ActivitySource(serviceName));
-      services
-        .AddOpenTelemetry()
-        .ConfigureResource(builder => builder.AddService(serviceName))
-        .WithTracing(tracerProvider => {
-          tracerProviderBuilder
-            .AddEventStoreClientInstrumentation();
-        });
-    }
-  )
-  .Build();
+```bash
+dotnet add package EventStore.Client.Extensions.OpenTelemetry
 ```
 
-## Traces
+You'll also need to install exporters for your chosen observability platform:
 
-Traces provide a clear picture of how operations are carried out in a
-distributed system, making it easier to maintain and enhance the system over
-time. Traces from the clients can be exported to any compatible collector that
-supports the OpenTelemetry protocol (OTLP).
+```bash
+# For console output
+dotnet add package OpenTelemetry.Exporter.Console
 
-In order for the client to emit traces, you need to need to enable
-instrumentation as described in
-[Instrumentation](./observability.md#instrumentation).
+# For Jaeger
+dotnet add package OpenTelemetry.Exporter.Jaeger
 
-For more guidance on setting up and utilizing tracing, refer to the
-[OpenTelemetry](https://opentelemetry.io/) documentation.
+# For OTLP (OpenTelemetry Protocol)
+dotnet add package OpenTelemetry.Exporter.OpenTelemetryProtocol
 
-An example of a trace is shown below:
+# For Seq
+dotnet add package Seq.Extensions.Logging
+```
+
+## Basic Configuration
+
+Configure instrumentation using the `AddEventStoreClientInstrumentation()`
+extension method. Here's a minimal setup:
+
+```csharp {15}
+using EventStore.Client.Extensions.OpenTelemetry;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+
+const string serviceName = "my-eventstore-app";
+
+var host = Host.CreateDefaultBuilder()
+    .ConfigureServices((_, services) =>
+    {
+        services.AddOpenTelemetry()
+            .ConfigureResource(builder => builder.AddService(serviceName))
+            .WithTracing(tracerBuilder => tracerBuilder
+                .AddEventStoreClientInstrumentation()
+                .AddConsoleExporter()
+            );
+    })
+    .Build();
+
+await host.RunAsync();
+```
+
+## Trace Exporters
+
+OpenTelemetry supports various exporters to send trace data to different
+observability platforms. You can find a list of available exporters in the
+[OpenTelemetry Registry](https://opentelemetry.io/ecosystem/registry/?component=exporter&language=dotnet).
+
+You can configure multiple exporters simultaneously:
+
+```csharp {10-18}
+using OpenTelemetry.Exporter;
+
+var host = Host.CreateDefaultBuilder()
+    .ConfigureServices((_, services) =>
+    {
+        services.AddOpenTelemetry()
+            .ConfigureResource(builder => builder.AddService("my-eventstore-app"))
+            .WithTracing(tracerBuilder => tracerBuilder
+                .AddEventStoreClientInstrumentation()
+                .AddConsoleExporter()
+                .AddJaegerExporter(options =>
+                {
+                    options.Endpoint = new Uri("http://localhost:14268/api/traces");
+                })
+                .AddOtlpExporter(options =>
+                {
+                    options.Endpoint = new Uri("http://localhost:4318/v1/traces");
+                })
+            );
+    })
+    .Build();
+```
+
+For detailed configuration options, refer to the
+[OpenTelemetry .NET documentation](https://opentelemetry.io/docs/languages/dotnet/).
+
+## Understanding Traces
+
+### What Gets Traced
+
+The .NET client currently creates traces for append, catch-up and persistent
+subscription operations.
+
+### Trace Attributes
+
+Each trace includes metadata to help with debugging and monitoring:
+
+| Attribute                 | Description                            | Example                               |
+| ------------------------- | -------------------------------------- | ------------------------------------- |
+| `db.user`                 | Database user name                     | `admin`                               |
+| `db.system`               | Database system identifier             | `eventstoredb`                        |
+| `db.operation`            | Type of operation performed            | `streams.append`, `streams.subscribe` |
+| `db.eventstoredb.stream`  | Stream name or identifier              | `user-events-123`                     |
+| `server.address`          | EventStoreDB server address            | `localhost`                           |
+| `server.port`             | EventStoreDB server port               | `2113`                                |
+| `otel.status_code`        | Status code for the operation          | `UNSET`, `OK`, `ERROR`                |
+| `otel.status_description` | Status of a span                       |                                       |
+| `exception.type`          | Exception type if an error occurred    |                                       |
+| `exception.message`       | Exception message if an error occurred |                                       |
+| `exception.stacktrace`    | Stack trace of the exception           |                                       |
+
+### Sample Trace Output
+
+Here's an example trace from a stream append operation:
 
 ```bash
 Activity.TraceId:            8da04787239dbb85c1f9c6fba1b1f0d6
 Activity.SpanId:             4352ec4a66a20b95
 Activity.TraceFlags:         Recorded
-Activity.ActivitySourceName: kurrentdb
+Activity.ActivitySourceName: eventstoredb
 Activity.DisplayName:        streams.append
 Activity.Kind:               Client
 Activity.StartTime:          2024-05-29T06:50:41.2519016Z
 Activity.Duration:           00:00:00.1500707
 Activity.Tags:
-    db.kurrentdb.stream: d7caa2a5-1e19-4108-9541-58d5fba02d42
+    db.eventstoredb.stream: example-stream
     server.address: localhost
     server.port: 2113
-    db.system: kurrentdb
+    db.system: eventstoredb
     db.operation: streams.append
+    event.count: 3
 StatusCode: Ok
 Resource associated with Activity:
-    service.name: sample
+    service.name: my-eventstore-app
     service.instance.id: 7316ef20-c354-4e64-97da-c1b99c2c28b0
+    service.version: 1.0.0
+    deployment.environment: production
     telemetry.sdk.name: opentelemetry
     telemetry.sdk.language: dotnet
-    telemetry.sdk.version: 1.8.1
+    telemetry.sdk.version: 1.9.0
 ```
-
-In this case, the trace is for an append operation on a stream. The trace
-includes the trace ID, span ID, trace flags, activity source name, display name,
-kind, start time, duration, tags, status code, and resource associated with the
-activity.
-
-::: note
-The structure of the trace may vary depending on the client and the operation
-being performed but will generally include the same information.
-:::
-
-## Exporting traces
-
-You can set up various exporters to send traces to different destinations.
-Additionally, you have the option to export these traces to a collector of your
-choice, such as [Jaeger](https://www.jaegertracing.io/) or [Seq](https://datalust.co/seq).
-
-For instance, if you choose to use Jaeger as your backend of choice, you can
-view your traces in the Jaeger UI, which provides a powerful interface for
-querying and visualizing your trace data.
-
-The code snippets below demonstrate how to set up one or more exporters for each
-client:
-
-```cs {11-17}
-var host = Host.CreateDefaultBuilder()
-  .ConfigureServices(
-    (_, services) => {
-      services.AddSingleton(new ActivitySource(serviceName));
-      services
-        .AddOpenTelemetry()
-        .ConfigureResource(builder => builder.AddService(serviceName))
-        .WithTracing(tracerProvider => {
-          tracerProviderBuilder
-            .AddEventStoreClientInstrumentation()
-            .AddConsoleExporter()
-            .AddJaegerExporter(
-              options => {
-                options.Endpoint = new Uri("http://localhost:4317");
-                options.Protocol = JaegerExportProtocol.UdpCompactThrift;
-              }
-            );
-        });
-    }
-  )
-  .Build();
-```
-
-For more details on configuring exporters for specific programming languages,
-refer to the [OpenTelemetry](https://opentelemetry.io/docs/languages/)
-documentation.

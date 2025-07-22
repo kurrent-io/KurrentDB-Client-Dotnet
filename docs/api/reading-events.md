@@ -8,16 +8,16 @@ head:
 
 # Reading Events
 
-There are two options for reading events from KurrentDB. You can either: 
-    1. Read from an individual stream, or 
-    2. Read from the `$all` stream, which will return all events in the store.
+There are two options for reading events from EventStoreDB. You can either read
+from an individual stream, or read from the `$all` stream, which will return all
+events in the store.
 
-Each event in KurrentDB belongs to an individual stream. When reading events, pick the name of the stream from which you want to read the events and choose whether to read the stream forwards or backwards. 
+Each event in EventStoreDB belongs to an individual stream. When reading events, pick the name of the stream from which you want to read the events and choose whether to read the stream forwards or backwards. 
 
 All events have a `StreamPosition` and a `Position`.  `StreamPosition` is a *big int* (unsigned 64-bit integer) and represents the place of the event in the stream. `Position` is the event's logical position, and is represented by `CommitPosition` and a `PreparePosition`. Note that when reading events you will supply a different "position" depending on whether you are reading from an individual stream or the `$all` stream.
 
 :::tip
-Check [connecting to KurrentDB instructions](getting-started.md#required-packages) to learn how to configure and use the client SDK.
+Check [connecting to EventStoreDB instructions](getting-started.md#required-packages) to learn how to configure and use the client SDK.
 :::
 
 ## Reading from a stream
@@ -30,7 +30,7 @@ The simplest way to read a stream forwards is to supply a stream name, read dire
 
 
 ```cs
-var events = client.ReadStreamAsync(Direction.Forwards, "some-stream", StreamPosition.Start);
+var events = client.ReadStreamAsync(Direction.Forwards, "example-stream", StreamPosition.Start);
 ```
 
 This will return an enumerable that can be iterated on:
@@ -48,7 +48,7 @@ Passing in the max count will limit the number of events returned.
 
 #### resolveLinkTos
 
-When using projections to create new events, you can set whether the generated events are pointers to existing events. Setting this value to `true` tells KurrentDB to return the event as well as the event linking to it.
+When using projections to create new events, you can set whether the generated events are pointers to existing events. Setting this value to `true` tells EventStoreDB to return the event as well as the event linking to it.
 
 #### configureOperationOptions
 
@@ -61,7 +61,7 @@ The `userCredentials` argument is optional. It is used to override the default c
 ```cs
 var result = client.ReadStreamAsync(
   Direction.Forwards,
-  "some-stream",
+  "example-stream",
   StreamPosition.Start,
   userCredentials: new UserCredentials("admin", "changeit"),
   cancellationToken: cancellationToken
@@ -82,7 +82,7 @@ Console.WriteLine(events.LastStreamPosition);
 In addition to reading a stream forwards, streams can be read backwards. To read all the events backwards, set the *stream position* to the end:
 
 ```cs
-var events = client.ReadStreamAsync(Direction.Backwards, "some-stream", StreamPosition.End);
+var events = client.ReadStreamAsync(Direction.Backwards, "example-stream", StreamPosition.End);
 
 await foreach (var e in events)
   Console.WriteLine(Encoding.UTF8.GetString(e.Event.Data.ToArray()));
@@ -101,7 +101,7 @@ It is important to check the value of this field before attempting to iterate an
 For example:
 
 ```cs
-var result = client.ReadStreamAsync(Direction.Forwards, "some-stream", 10, 20);
+var result = client.ReadStreamAsync(Direction.Forwards, "example-stream", 10, 20);
 
 if (await result.ReadState == ReadState.StreamNotFound) return;
 
@@ -136,7 +136,7 @@ Passing in the max count allows you to limit the number of events that returned.
 
 #### resolveLinkTos
 
-When using projections to create new events you can set whether the generated events are pointers to existing events. Setting this value to true will tell KurrentDB to return the event as well as the event linking to it.
+When using projections to create new events you can set whether the generated events are pointers to existing events. Setting this value to true will tell EventStoreDB to return the event as well as the event linking to it.
 
 ```cs
 var result = client.ReadAllAsync(
@@ -149,7 +149,7 @@ var result = client.ReadAllAsync(
 
 #### configureOperationOptions
 
-This argument is generic setting class for all operations that can be set on all operations executed against KurrentDB.
+This argument is generic setting class for all operations that can be set on all operations executed against EventStoreDB.
 
 #### userCredentials
 The credentials used to read the data can be used by the subscription as follows. This will override the default credentials set on the connection.
@@ -177,7 +177,7 @@ Read one event backwards to find the last position in the `$all` stream.
 
 ### Handling system events
 
-KurrentDB will also return system events when reading from the `$all` stream. In most cases you can ignore these events.
+EventStoreDB will also return system events when reading from the `$all` stream. In most cases you can ignore these events.
 
 All system events begin with `$` or `$$` and can be easily ignored by checking the `EventType` property.
 

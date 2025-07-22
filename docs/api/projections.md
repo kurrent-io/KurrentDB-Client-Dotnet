@@ -9,11 +9,9 @@ head:
 
 # Projection management
 
-The various gRPC client APIs include dedicated clients that allow you to manage projections.
+The client provides a way to manage projections in EventStoreDB. 
 
 For a detailed explanation of projections, see the [server documentation](@server/features/projections/README.md).
-
-You can find the full sample code from this documentation page in the respective [clients repositories](https://github.com/kurrent-io/?q=client).
 
 ## Required packages
 
@@ -26,7 +24,7 @@ dotnet add package EventStore.Client.Grpc.ProjectionManagement
 
 ## Creating a client
 
-Projection management operations are exposed through a dedicated client.
+Projection management operations are exposed through the dedicated client.
 
 ```cs
 var settings = EventStoreClientSettings.Create(connection);
@@ -41,26 +39,29 @@ Creates a projection that runs until the last event in the store, and then conti
 Projections have explicit names, and you can enable or disable them via this name.
 
 ```cs
-const string js = @"fromAll()
-                .when({
-                    $init: function() {
-                        return {
-                            count: 0
-                        };
-                    },
-                    $any: function(s, e) {
-                        s.count += 1;
-                    }
-                })
-                .outputState();";
+const string js = """
+  fromAll()
+    .when({
+      $init: function() {
+        return {
+          count: 0
+        };
+      },
+      $any: function(s, e) {
+        s.count += 1;
+      }
+    })
+    .outputState();
+""";
 
-var name = $"countEvents_Create_{Guid.NewGuid()}";
-await managementClient.CreateContinuousAsync(name, js);
+await managementClient.CreateContinuousAsync("count-events", js);
 ```
 
 Trying to create projections with the same name will result in an error:
 
 ```cs
+var name = "count-events";
+
 await managementClient.CreateContinuousAsync(name, js);
 try {
   await managementClient.CreateContinuousAsync(name, js);
@@ -132,7 +133,7 @@ catch (RpcException e) when (e.Message.Contains("NotFound")) { // will be remove
 
 ## Delete a projection
 
-This feature is not available for this client.
+This feature is currently not supported by the client.  
 
 ## Abort a projection
 
@@ -183,20 +184,22 @@ catch (RpcException e) when (e.Message.Contains("NotFound")) { // will be remove
 Updates a projection with a given name. The query parameter contains the new JavaScript. Updating system projections using this operation is not supported at the moment.
 
 ```cs
-const string js = @"fromAll()
-                .when({
-                    $init: function() {
-                        return {
-                            count: 0
-                        };
-                    },
-                    $any: function(s, e) {
-                        s.count += 1;
-                    }
-                })
-                .outputState();";
+const string js = """
+fromAll()
+  .when({
+      $init: function() {
+          return {
+              count: 0
+          };
+      },
+      $any: function(s, e) {
+          s.count += 1;
+      }
+  })
+  .outputState();
+""";
 
-var name = $"countEvents_Update_{Guid.NewGuid()}";
+var name = "count-events";
 
 await managementClient.CreateContinuousAsync(name, "fromAll().when()");
 await managementClient.UpdateAsync(name, js);
@@ -223,6 +226,7 @@ See the [projection details](#projection-details) section for an explanation of 
 
 ```cs
 var details = managementClient.ListAllAsync();
+
 await foreach (var detail in details)
   Console.WriteLine(
     $@"{detail.Name}, {detail.Status}, {detail.CheckpointStatus}, {detail.Mode}, {detail.Progress}"
@@ -248,10 +252,20 @@ Gets the status of a named projection.
 See the [projection details](#projection-details) section for an explanation of the returned values.
 
 ```cs
-const string js =
-  "fromAll().when({$init:function(){return {count:0};},$any:function(s, e){s.count += 1;}}).outputState();";
+const string js = """
+fromAll()
+  .when({
+    $init: function() {
+      return { count: 0 };
+    },
+    $any: function(state, event) {
+      state.count += 1;
+    }
+  })
+  .outputState();
+""";
 
-var name = $"countEvents_status_{Guid.NewGuid()}";
+var name = "count-events";
 
 await managementClient.CreateContinuousAsync(name, js);
 var status = await managementClient.GetStatusAsync(name);
@@ -265,12 +279,23 @@ Console.WriteLine(
 Retrieves the state of a projection.
 
 ```cs
-const string js =
-  "fromAll().when({$init:function(){return {count:0};},$any:function(s, e){s.count += 1;}}).outputState();";
+const string js = """
+fromAll()
+  .when({
+    $init: function() {
+      return { count: 0 };
+    },
+    $any: function(s, e) {
+      s.count += 1;
+    }
+  })
+  .outputState();
+""";
 
-var name = $"countEvents_State_{Guid.NewGuid()}";
+var name = $"count-events";
 
 await managementClient.CreateContinuousAsync(name, js);
+
 //give it some time to process and have a state.
 await Task.Delay(500);
 
@@ -282,7 +307,7 @@ Console.WriteLine(result);
 
 static async Task<string> DocToString(JsonDocument d) {
   await using var stream = new MemoryStream();
-  var             writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = false });
+  var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = false });
   d.WriteTo(writer);
   await writer.FlushAsync();
   return Encoding.UTF8.GetString(stream.ToArray());
@@ -294,22 +319,23 @@ static async Task<string> DocToString(JsonDocument d) {
 Retrieves the result of the named projection and partition.
 
 ```cs
-const string js = @"fromAll()
-                .when({
-                    $init: function() {
-                        return {
-                            count: 0
-                        };
-                    },
-                    $any: function(s, e) {
-                        s.count += 1;
-                    }
-                })
-                .outputState();";
+const string js = """
+fromAll()
+  .when({
+    $init: function() {
+      return { count: 0 };
+    },
+    $any: function(s, e) {
+      s.count += 1;
+    }
+  })
+  .outputState();
+""";
 
-var name = $"countEvents_Result_{Guid.NewGuid()}";
+var name = "count-events";
 
 await managementClient.CreateContinuousAsync(name, js);
+
 await Task.Delay(500); //give it some time to have a result.
 
 // Results are retrieved either as  JsonDocument or a typed result 
@@ -330,7 +356,7 @@ static string DocToString(JsonDocument d) {
 
 ## Projection Details
 
-[List all](#list-all-projections), [list continuous](#list-continuous-projections) and [get status](#get-status) all return the details and statistics of projections
+The `ListAllAsync`, `ListContinuousAsync`, and `GetStatusAsync` methods return detailed statistics and information about projections. Below is an explanation of the fields included in the projection details:
 
 | Field                                | Description                                                                                                                                                                                           |
 |--------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

@@ -18,60 +18,39 @@ You can read more about persistent subscriptions in the [server documentation](@
 
 ## Required packages
 
-Add the .NET `EventStore.Client.Grpc` and `EventStore.Client.Grpc.PersistentSubscriptions` package to your project:
+Add the `EventStore.Client.Grpc` and `EventStore.Client.Grpc.PersistentSubscriptions` package to your project:
 
 ```bash
 dotnet add package EventStoreDB.Client
 dotnet add package EventStore.Client.Grpc.PersistentSubscriptions
 ```
 
-## Creating a subscription group
+## Creating a Subscription Group
 
-The first step of dealing with a persistent subscription is to create a subscription group. You will receive an error if you attempt to create a subscription group multiple times. You must have admin permissions to create a persistent subscription group.
+The first step in working with a persistent subscription is to create a subscription group. Note that attempting to create a subscription group multiple times will result in an error. Admin permissions are required to create a persistent subscription group.
 
-### Subscribing to one stream
+The following examples demonstrate how to create a subscription group for a persistent subscription. You can subscribe to a specific stream or to the `$all` stream, which includes all events.
 
-The following sample shows how to create a subscription group for a persistent subscription where you want to receive events from a specific stream. It could be a normal stream, or a stream of links (like `$ce` category stream).
-
-```cs
-var userCredentials = new UserCredentials("admin", "changeit");
-
-var settings = new PersistentSubscriptionSettings();
-await client.CreateToStreamAsync(
-  "test-stream",
-  "subscription-group",
-  settings,
-  userCredentials: userCredentials
-);
-
-Console.WriteLine("Subscription to stream created");
-```
-
-| Parameter     | Description                                         |
-|:--------------|:----------------------------------------------------|
-| `stream`      | The stream the persistent subscription is on.       |
-| `groupName`   | The name of the subscription group to create.       |
-| `settings`    | The settings to use when creating the subscription. |
-| `credentials` | The user credentials to use for this operation.     |
-
-### Subscribing to $all
-
-The ability to subscribe to `$all` was introduced in EventStoreDB **21.10**. Persistent subscriptions to `$all` also support [filtering](subscriptions.md#server-side-filtering).
-
-You can create a subscription group on $all much the same way you would create a subscription group on a stream:
+### Subscribing to a Specific Stream
 
 ```cs
-var userCredentials = new UserCredentials("admin", "changeit");
-var filter = StreamFilter.Prefix("test");
-
 var settings = new PersistentSubscriptionSettings();
-await client.CreateToAllAsync(
-  "subscription-group",
-  filter,
-  settings,
-  userCredentials: userCredentials
-);
+await client.CreateToStreamAsync("example-stream", "subscription-group", settings);
 ```
+
+### Subscribing to `$all`
+
+```cs
+var settings = new PersistentSubscriptionSettings();
+await client.CreateToAllAsync("subscription-group", StreamFilter.Prefix("user"), settings);
+```
+
+::: note
+As from EventStoreDB 21.10, the ability to subscribe to `$all` supports
+[server-side filtering](subscriptions.md#server-side-filtering). You can create
+a subscription group for `$all` similarly to how you would for a specific
+stream:
+:::
 
 ## Connecting a consumer
 
@@ -84,7 +63,11 @@ The most important parameter to pass when connecting is the buffer size. This re
 The code below shows how to connect to an existing subscription group for a specific stream:
 
 ```cs
-await using var subscription = client.SubscribeToStream("test-stream", "subscription-group", cancellationToken: ct);
+await using var subscription = client.SubscribeToStream(
+  "example-stream",
+  "subscription-group",
+  cancellationToken: ct
+);
 
 await foreach (var message in subscription.Messages) {
   switch (message) {
@@ -105,13 +88,7 @@ await foreach (var message in subscription.Messages) {
 | `groupName`           | The name of the subscription group to subscribe to.                                          |
 | `eventAppeared`       | The action to call when an event arrives over the subscription.                              |
 | `subscriptionDropped` | The action to call if the subscription is dropped.                                           |
-| `credentials`         | The user credentials to use for this operation.                                              |
 | `bufferSize`          | The number of in-flight messages this client is allowed. **Default: 10**                     |
-| `autoAck`             | Whether to automatically acknowledge messages after eventAppeared returns. **Default: true** |
-
-::: warning
-The `autoAck` parameter will be deprecated in the next client release. You'll need to explicitly [manage acknowledgements](#acknowledgements).
-:::
 
 ### Connecting to $all
 
@@ -144,7 +121,9 @@ If processing is successful, you must send an Ack (acknowledge) to the server to
 await using var subscription = client.SubscribeToStream(
   "test-stream",
   "subscription-group",
-  cancellationToken: ct);
+  cancellationToken: ct
+);
+
 await foreach (var message in subscription.Messages) {
   switch (message) {
     case PersistentSubscriptionMessage.SubscriptionConfirmation(var subscriptionId):
@@ -191,7 +170,7 @@ This option can be seen as a fall-back scenario for high availability, when a si
 
 For use with an indexing projection such as the system `$by_category` projection.
 
-KurrentDB inspects the event for its source stream id, hashing the id to one of 1024 buckets assigned to individual clients. When a client disconnects, its buckets are assigned to other clients. When a client connects, it is assigned some existing buckets. This naively attempts to maintain a balanced workload.
+EventStoreDB inspects the event for its source stream id, hashing the id to one of 1024 buckets assigned to individual clients. When a client disconnects, its buckets are assigned to other clients. When a client connects, it is assigned some existing buckets. This naively attempts to maintain a balanced workload.
 
 The main aim of this strategy is to decrease the likelihood of concurrency and ordering issues while maintaining load balancing. This is **not a guarantee**, and you should handle the usual ordering and concurrency issues.
 
@@ -200,17 +179,12 @@ The main aim of this strategy is to decrease the likelihood of concurrency and o
 You can edit the settings of an existing subscription group while it is running, you don't need to delete and recreate it to change settings. When you update the subscription group, it resets itself internally, dropping the connections and having them reconnect. You must have admin permissions to update a persistent subscription group.
 
 ```cs
-var userCredentials = new UserCredentials("admin", "changeit");
-var settings = new PersistentSubscriptionSettings(true, checkPointLowerBound: 20);
-
-await client.UpdateToStreamAsync(
-  "test-stream",
-  "subscription-group",
-  settings,
-  userCredentials: userCredentials
+var settings = new PersistentSubscriptionSettings(
+  resolveLinkTos: true,
+  checkPointLowerBound: 20
 );
 
-Console.WriteLine("Subscription updated");
+await client.UpdateToStreamAsync("example-stream", "subscription-group", settings);
 ```
 
 | Parameter     | Description                                         |
@@ -218,7 +192,6 @@ Console.WriteLine("Subscription updated");
 | `stream`      | The stream the persistent subscription is on.       |
 | `groupName`   | The name of the subscription group to update.       |
 | `settings`    | The settings to use when creating the subscription. |
-| `credentials` | The user credentials to use for this operation.     |
 
 ## Persistent subscription settings
 
@@ -248,16 +221,9 @@ Remove a subscription group with the delete operation. Like the creation of grou
 
 ```cs
 try {
-  var userCredentials = new UserCredentials("admin", "changeit");
-  await client.DeleteToStreamAsync(
-    "test-stream",
-    "subscription-group",
-    userCredentials: userCredentials
-  );
-
-  Console.WriteLine("Subscription to stream deleted");
+  await client.DeleteToStreamAsync("example-stream", "subscription-group");
 } catch (PersistentSubscriptionNotFoundException) {
-  // ignore
+  Console.WriteLine("Subscription group does not exist.");
 } catch (Exception ex) {
   Console.WriteLine($"Subscription to stream delete error: {ex.GetType()} {ex.Message}");
 }
@@ -267,4 +233,3 @@ try {
 |:--------------|:-----------------------------------------------|
 | `stream`      | The stream the persistent subscription is on.  |
 | `groupName`   | The name of the subscription group to delete.  |
-| `credentials` | The user credentials to use for this operation |

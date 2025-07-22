@@ -28,7 +28,7 @@ The simplest stream subscription looks like the following :
 
 ```cs
 await using var subscription = client.SubscribeToStream(
-  "some-stream",
+  "example-stream",
   FromStream.Start,
   cancellationToken: ct
 );
@@ -83,11 +83,11 @@ The positions provided to the subscriptions are exclusive. You will only receive
 
 To subscribe to a stream from a specific position, you must provide a *stream position*. This can be `Start`, `End` or a *big int* (unsigned 64 bit integer) position.
 
-The following subscribes to the stream `some-stream` at position `20`, this means that events `21` and onward will be handled:
+The following subscribes to the stream `example-stream` at position `20`, this means that events `21` and onward will be handled:
 
 ```cs
 await using var subscription = client.SubscribeToStream(
-  "some-stream",
+  "example-stream",
   FromStream.After(StreamPosition.FromInt64(20)),
   cancellationToken: ct
 );
@@ -140,7 +140,7 @@ You can subscribe to a stream to get live updates by subscribing to the end of t
 
 ```cs
 await using var subscription = client.SubscribeToStream(
-  "some-stream",
+  "example-stream",
   FromStream.End,
   cancellationToken: ct
 );
@@ -176,7 +176,7 @@ Keep in mind that when you subscribe to a stream from a specific position, as de
 
 ## Resolving link-to events
 
-Link-to events point to events in other streams in KurrentDB. These are generally created by projections such as the `$by_event_type` projection which links events of the same event type into the same stream. This makes it easier to look up all events of a specific type.
+Link-to events point to events in other streams in EventStoreDB. These are generally created by projections such as the `$by_event_type` projection which links events of the same event type into the same stream. This makes it easier to look up all events of a specific type.
 
 ::: tip
 [Filtered subscriptions](subscriptions.md#server-side-filtering) make it easier and faster to subscribe to all events of a specific type or matching a prefix.
@@ -230,7 +230,7 @@ var checkpoint = await ReadStreamCheckpointAsync() switch {
 
 try {
   await using var subscription = client.SubscribeToStream(
-    "some-stream",
+    "example-stream",
     checkpoint,
     cancellationToken: ct
   );
@@ -314,7 +314,7 @@ await foreach (var message in subscription.Messages) {
 
 ## Server-side filtering
 
-KurrentDB allows you to filter the events whilst subscribing to the `$all` stream to only receive the events you care about.
+EventStoreDB allows you to filter the events whilst subscribing to the `$all` stream to only receive the events you care about.
 
 You can filter by event type or stream name using a regular expression or a prefix. Server-side filtering is currently only available on the `$all` stream.
 
@@ -351,7 +351,7 @@ The filtering API is described more in-depth in the [filtering section](subscrip
 
 ### Filtering out system events
 
-There are events in KurrentDB called system events. These are prefixed with a `$` and under most circumstances you won't care about these. They can be filtered out by passing in a `SubscriptionFilterOptions` when subscribing to the `$all` stream.
+There are events in EventStoreDB called system events. These are prefixed with a `$` and under most circumstances you won't care about these. They can be filtered out by passing in a `SubscriptionFilterOptions` when subscribing to the `$all` stream.
 
 ```cs
 await using var subscription = client.SubscribeToAll(
@@ -369,7 +369,7 @@ await foreach (var message in subscription.Messages) {
 ```
 
 ::: tip
-`$stats` events are no longer stored in KurrentDB by default so there won't be as many `$` events as before.
+`$stats` events are no longer stored in EventStoreDB by default so there won't be as many `$` events as before.
 :::
 
 ### Filtering by event type

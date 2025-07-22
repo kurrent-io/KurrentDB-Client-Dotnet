@@ -11,7 +11,7 @@ import { replaceLinkPlugin } from "./markdown/replaceLink";
 export default defineUserConfig({
   base: "/",
   dest: "public",
-  title: "KurrentDB Docs",
+  title: "Docs",
   description: "Event-native database",
   bundler: viteBundler({ viteOptions: { plugins: [vueDevTools(),], } }),
   markdown: { importCode: false },
