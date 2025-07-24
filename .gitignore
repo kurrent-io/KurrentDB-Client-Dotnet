@@ -369,3 +369,5 @@ docs/public
 
 # docs
 .temp
+.cache
+node_modules
