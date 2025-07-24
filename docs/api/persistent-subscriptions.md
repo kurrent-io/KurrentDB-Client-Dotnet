@@ -1,9 +1,5 @@
 ---
 order: 5
-head:
-  - - title
-    - {}
-    - Persistent Subscriptions | .NET | Clients | Kurrent Docs
 ---
 
 # Persistent Subscriptions
@@ -25,6 +21,16 @@ dotnet add package EventStoreDB.Client
 dotnet add package EventStore.Client.Grpc.PersistentSubscriptions
 ```
 
+## Creating a client
+
+To work with persistent subscriptions, you need to create an instance of the `EventStorePersistentSubscriptionsClient`. This client is used to manage persistent subscriptions, including creating, updating, and deleting subscription groups.
+
+```cs
+await using var client = new EventStorePersistentSubscriptionsClient(
+	EventStoreClientSettings.Create("esdb://localhost:2113?tls=false&tlsVerifyCert=false")
+);
+```
+
 ## Creating a Subscription Group
 
 The first step in working with a persistent subscription is to create a subscription group. Note that attempting to create a subscription group multiple times will result in an error. Admin permissions are required to create a persistent subscription group.
@@ -35,7 +41,7 @@ The following examples demonstrate how to create a subscription group for a pers
 
 ```cs
 var settings = new PersistentSubscriptionSettings();
-await client.CreateToStreamAsync("example-stream", "subscription-group", settings);
+await client.CreateToStreamAsync("order-123", "subscription-group", settings);
 ```
 
 ### Subscribing to `$all`
@@ -64,7 +70,7 @@ The code below shows how to connect to an existing subscription group for a spec
 
 ```cs
 await using var subscription = client.SubscribeToStream(
-  "example-stream",
+  "order-123",
   "subscription-group",
   cancellationToken: ct
 );
@@ -156,13 +162,13 @@ When creating a persistent subscription, you can choose between a number of cons
 
 ### RoundRobin (default)
 
-Distributes events to all clients evenly. If the client `bufferSize` is reached, the client won't receive more events until it acknowledges or not acknowledges events in its buffer.
+Distributes events to all clients evenly. If the buffer size is reached, the client won't receive more events until it acknowledges or not acknowledges events in its buffer.
 
 This strategy provides equal load balancing between all consumers in the group.
 
 ### DispatchToSingle
 
-Distributes events to a single client until the `bufferSize` is reached. After that, the next client is selected in a round-robin style, and the process repeats.
+Distributes events to a single client until the buffer size is reached. After that, the next client is selected in a round-robin style, and the process repeats.
 
 This option can be seen as a fall-back scenario for high availability, when a single consumer processes all the events until it reaches its maximum capacity. When that happens, another consumer takes the load to free up the main consumer resources.
 
@@ -184,7 +190,7 @@ var settings = new PersistentSubscriptionSettings(
   checkPointLowerBound: 20
 );
 
-await client.UpdateToStreamAsync("example-stream", "subscription-group", settings);
+await client.UpdateToStreamAsync("order-123", "subscription-group", settings);
 ```
 
 | Parameter     | Description                                         |
@@ -221,7 +227,7 @@ Remove a subscription group with the delete operation. Like the creation of grou
 
 ```cs
 try {
-  await client.DeleteToStreamAsync("example-stream", "subscription-group");
+  await client.DeleteToStreamAsync("order-123", "subscription-group");
 } catch (PersistentSubscriptionNotFoundException) {
   Console.WriteLine("Subscription group does not exist.");
 } catch (Exception ex) {

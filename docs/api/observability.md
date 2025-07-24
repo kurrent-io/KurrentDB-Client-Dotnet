@@ -1,9 +1,5 @@
 ---
 order: 8
-head:
-  - - title
-    - {}
-    - Observability | .NET | Clients | Kurrent Docs
 ---
 
 # Observability
@@ -41,7 +37,7 @@ dotnet add package Seq.Extensions.Logging
 Configure instrumentation using the `AddEventStoreClientInstrumentation()`
 extension method. Here's a minimal setup:
 
-```csharp {15}
+```cs {15}
 using EventStore.Client.Extensions.OpenTelemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -73,7 +69,7 @@ observability platforms. You can find a list of available exporters in the
 
 You can configure multiple exporters simultaneously:
 
-```csharp {10-18}
+```cs {10-18}
 using OpenTelemetry.Exporter;
 
 var host = Host.CreateDefaultBuilder()
@@ -111,19 +107,22 @@ subscription operations.
 
 Each trace includes metadata to help with debugging and monitoring:
 
-| Attribute                 | Description                            | Example                               |
-| ------------------------- | -------------------------------------- | ------------------------------------- |
-| `db.user`                 | Database user name                     | `admin`                               |
-| `db.system`               | Database system identifier             | `eventstoredb`                        |
-| `db.operation`            | Type of operation performed            | `streams.append`, `streams.subscribe` |
-| `db.eventstoredb.stream`  | Stream name or identifier              | `user-events-123`                     |
-| `server.address`          | EventStoreDB server address            | `localhost`                           |
-| `server.port`             | EventStoreDB server port               | `2113`                                |
-| `otel.status_code`        | Status code for the operation          | `UNSET`, `OK`, `ERROR`                |
-| `otel.status_description` | Status of a span                       |                                       |
-| `exception.type`          | Exception type if an error occurred    |                                       |
-| `exception.message`       | Exception message if an error occurred |                                       |
-| `exception.stacktrace`    | Stack trace of the exception           |                                       |
+| Attribute                         | Description                            | Example                               |
+| --------------------------------- | -------------------------------------- | ------------------------------------- |
+| `db.user`                         | Database user name                     | `admin`                               |
+| `db.system`                       | Database system identifier             | `eventstoredb`                        |
+| `db.operation`                    | Type of operation performed            | `streams.append`, `streams.subscribe` |
+| `db.eventstoredb.stream`          | Stream name or identifier              | `user-events-123`                     |
+| `db.eventstoredb.subscription.id` | Subscription identifier                | `user-events-123-sub`                 |
+| `db.eventstoredb.event.id`        | Event identifier                       | `event-456`                           |
+| `db.eventstoredb.event.type`      | Event type identifier                  | `user.created`                        |
+| `server.address`                  | EventStoreDB server address            | `localhost`                           |
+| `server.port`                     | EventStoreDB server port               | `2113`                                |
+| `otel.status_code`                | Status code for the operation          | `UNSET`, `OK`, `ERROR`                |
+| `otel.status_description`         | Status of a span                       |                                       |
+| `exception.type`                  | Exception type if an error occurred    |                                       |
+| `exception.message`               | Exception message if an error occurred |                                       |
+| `exception.stacktrace`            | Stack trace of the exception           |                                       |
 
 ### Sample Trace Output
 

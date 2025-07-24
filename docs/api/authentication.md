@@ -1,10 +1,6 @@
 ---
 title: Authentication
 order: 7
-head:
-  - - title
-    - {}
-    - Authentication | .NET | Clients | Kurrent Docs
 ---
 
 # Client x.509 certificate 

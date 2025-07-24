@@ -1,9 +1,5 @@
 ---
 order: 1
-head:
-  - - title
-    - {}
-    - Getting Started | .NET | Clients | EventStoreDB Docs
 ---
 
 # Getting started
@@ -15,7 +11,10 @@ Get started by connecting your application to EventStoreDB.
 To connect your application to EventStoreDB, instantiate and configure the client.
 
 ::: tip Insecure clusters
-All our GRPC clients are secure by default and must be configured to connect to an insecure server via [a connection string](#connection-string) or the client's configuration.
+The recommended way to connect to KurrentDB is using secure mode (which is
+the default). However, if your KurrentDB instance is running in insecure
+mode, you must explicitly set `tls=false` in your connection
+string or client configuration.
 :::
 
 ### Required packages
@@ -90,49 +89,50 @@ The code snippet below creates an event object instance, serializes it, and adds
 ```cs
 using System.Text.Json;
 
-var evt = new TestEvent {
-	EntityId      = Guid.NewGuid().ToString("N"),
-	ImportantData = "I wrote my first event!"
+public class OrderCreated {
+    public string? OrderId { get; set; }
+}
+
+var evt = new OrderCreated {
+    OrderId = Guid.NewGuid().ToString("N"),
 };
 
-var eventData = new EventData(
-	Uuid.NewUuid(),
-	"TestEvent",
-	JsonSerializer.SerializeToUtf8Bytes(evt)
+var orderCreated = new EventData(
+    Uuid.NewUuid(),
+    "OrderCreated",
+    JsonSerializer.SerializeToUtf8Bytes(evt)
 );
 ```
 
 ### Appending events
 
-Each event in the database has its own unique identifier (UUID). The database uses it to ensure idempotent writes, but it only works if you specify the stream revision when appending events to the stream.
+Each event in the database has its own unique identifier (UUID). The database
+uses it to ensure idempotent writes, but it only works if you specify the stream
+revision when appending events to the stream.
 
-In the snippet below, we append the event to the stream `some-stream`.
+In the snippet below, we append the event to the stream `order-123`.
 
 ```cs
-await client.AppendToStreamAsync(
-	"some-stream",
-	StreamState.Any,
-	new[] { eventData },
-	cancellationToken: cancellationToken
-);
+await client.AppendToStreamAsync("order-123", StreamState.Any, [orderCreated]);
 ```
 
-Here we are appending events without checking if the stream exists or if the stream version matches the expected event version. See more advanced scenarios in [appending events documentation](./appending-events.md).
+Here we are appending events without checking if the stream exists or if the
+stream version matches the expected event version. See more advanced scenarios
+in [appending events documentation](./appending-events.md).
 
 ### Reading events
 
-Finally, we can read events back from the `some-stream` stream.
+Finally, we can read events back from the `order-123` stream.
 
 ```cs
 var result = client.ReadStreamAsync(
-	Direction.Forwards,
-	"some-stream",
-	StreamPosition.Start,
-	cancellationToken: cancellationToken
+	Direction.Forwards, "order-123", StreamPosition.Start
 );
 
-var events = await result.ToListAsync(cancellationToken);
+var events = await result.ToListAsync();
 ```
 
-When you read events from the stream, you get a collection of `ResolvedEvent` structures. The event payload is returned as a byte array and needs to be deserialized. See more advanced scenarios in [reading events documentation](./reading-events.md).
-
+When you read events from the stream, you get a collection of `ResolvedEvent`
+structures. The event payload is returned as a byte array and needs to be
+deserialized. See more advanced scenarios in
+[reading events documentation](./reading-events.md).
