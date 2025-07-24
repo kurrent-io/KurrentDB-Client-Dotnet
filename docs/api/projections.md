@@ -1,10 +1,6 @@
 ﻿---
 order: 6
 title: Projections
-head:
-  - - title
-    - {}
-    - Projections | .NET | Clients | Kurrent Docs
 ---
 
 # Projection management
@@ -18,10 +14,9 @@ For a detailed explanation of projections, see the [server documentation](@serve
 Projection management operations are exposed through the dedicated client.
 
 ```cs
-var settings = KurrentDBClientSettings.Create(connection);
-settings.ConnectionName = "Projection management client";
-settings.DefaultCredentials = new UserCredentials("admin", "changeit");
-var managementClient = new KurrentDBProjectionManagementClient(settings);
+var client = new KurrentDBProjectionManagementClient(
+  KurrentDBClientSettings.Create("kurrentdb://localhost:2113?tls=false&tlsVerifyCert=false")
+);
 ```
 
 ## Create a projection
@@ -45,7 +40,7 @@ const string js = """
     .outputState();
 """;
 
-await managementClient.CreateContinuousAsync("count-events", js);
+await client.CreateContinuousAsync("count-events", js);
 ```
 
 Trying to create projections with the same name will result in an error:
@@ -53,9 +48,9 @@ Trying to create projections with the same name will result in an error:
 ```cs
 var name = "count-events";
 
-await managementClient.CreateContinuousAsync(name, js);
+await client.CreateContinuousAsync(name, js);
 try {
-  await managementClient.CreateContinuousAsync(name, js);
+  await client.CreateContinuousAsync(name, js);
 }
 catch (RpcException e) when (e.StatusCode is StatusCode.AlreadyExists) {
   Console.WriteLine(e.Message);
@@ -71,7 +66,7 @@ catch (RpcException e) when (e.Message.Contains("Conflict")) { // will be remove
 It is possible to restart the entire projection subsystem using the projections management client API. The user must be in the `$ops` or `$admin` group to perform this operation.
 
 ```cs
-await managementClient.RestartSubsystemAsync();
+await client.RestartSubsystemAsync();
 ```
 
 ## Enable a projection
@@ -81,14 +76,14 @@ Once enabled, the projection will start to process events even after restarting 
 You must have access to a projection to enable it, see the [ACL documentation](@server/security/user-authorization.md).
 
 ```cs
-await managementClient.EnableAsync("$by_category");
+await client.EnableAsync("$by_category");
 ```
 
 You can only enable an existing projection. When you try to enable a non-existing projection, you'll get an error:
 
  ```cs
 try {
-  await managementClient.EnableAsync("projection that does not exists");
+  await client.EnableAsync("projection that does not exists");
 }
 catch (RpcException e) when (e.StatusCode is StatusCode.NotFound) {
   Console.WriteLine(e.Message);
@@ -105,14 +100,14 @@ Once disabled, the projection will not process events even after restarting the 
 You must have access to a projection to disable it, see the [ACL documentation](@server/security/user-authorization.md).
 
 ```cs
-await managementClient.DisableAsync("$by_category");
+await client.DisableAsync("$by_category");
 ```
 
 You can only disable an existing projection. When you try to disable a non-existing projection, you'll get an error:
 
 ```cs
 try {
-  await managementClient.DisableAsync("projection that does not exists");
+  await client.DisableAsync("projection that does not exists");
 }
 catch (RpcException e) when (e.StatusCode is StatusCode.NotFound) {
   Console.WriteLine(e.Message);
@@ -131,14 +126,14 @@ This feature is currently not supported by the client.
 Aborts a projection, this will not save the projection's checkpoint.
 
 ```cs
-await managementClient.AbortAsync("countEvents_Abort");
+await client.AbortAsync("countEvents_Abort");
 ```
 
 You can only abort an existing projection. When you try to abort a non-existing projection, you'll get an error:
 
 ```cs
 try {
-  await managementClient.AbortAsync("projection that does not exists");
+  await client.AbortAsync("projection that does not exists");
 }
 catch (RpcException e) when (e.StatusCode is StatusCode.NotFound) {
   Console.WriteLine(e.Message);
@@ -153,14 +148,14 @@ catch (RpcException e) when (e.Message.Contains("NotFound")) { // will be remove
 Resets a projection, which causes deleting the projection checkpoint. This will force the projection to start afresh and re-emit events. Streams that are written to from the projection will also be soft-deleted.
 
 ```cs
-await managementClient.ResetAsync("countEvents_Reset");
+await client.ResetAsync("countEvents_Reset");
 ```
 
 Resetting a projection that does not exist will result in an error.
 
 ```cs
 try {
-  await managementClient.ResetAsync("projection that does not exists");
+  await client.ResetAsync("projection that does not exists");
 }
 catch (RpcException e) when (e.StatusCode is StatusCode.NotFound) {
   Console.WriteLine(e.Message);
@@ -192,15 +187,15 @@ fromAll()
 
 var name = "count-events";
 
-await managementClient.CreateContinuousAsync(name, "fromAll().when()");
-await managementClient.UpdateAsync(name, js);
+await client.CreateContinuousAsync(name, "fromAll().when()");
+await client.UpdateAsync(name, js);
 ```
 
 You can only update an existing projection. When you try to update a non-existing projection, you'll get an error:
 
 ```cs
 try {
-  await managementClient.UpdateAsync("Update Not existing projection", "fromAll().when()");
+  await client.UpdateAsync("Update Not existing projection", "fromAll().when()");
 }
 catch (RpcException e) when (e.StatusCode is StatusCode.NotFound) {
   Console.WriteLine(e.Message);
@@ -216,7 +211,7 @@ Returns a list of all projections, user defined & system projections.
 See the [projection details](#projection-details) section for an explanation of the returned values.
 
 ```cs
-var details = managementClient.ListAllAsync();
+var details = client.ListAllAsync();
 
 await foreach (var detail in details)
   Console.WriteLine(
@@ -230,7 +225,7 @@ Returns a list of all continuous projections.
 See the [projection details](#projection-details) section for an explanation of the returned values.
 
 ```cs
-var details = managementClient.ListContinuousAsync();
+var details = client.ListContinuousAsync();
 await foreach (var detail in details)
   Console.WriteLine(
     $@"{detail.Name}, {detail.Status}, {detail.CheckpointStatus}, {detail.Mode}, {detail.Progress}"
@@ -242,7 +237,7 @@ await foreach (var detail in details)
 Gets the status of a named projection.
 See the [projection details](#projection-details) section for an explanation of the returned values.
 
-```cs
+```cs{18}
 const string js = """
 fromAll()
   .when({
@@ -258,8 +253,10 @@ fromAll()
 
 var name = "count-events";
 
-await managementClient.CreateContinuousAsync(name, js);
-var status = await managementClient.GetStatusAsync(name);
+await client.CreateContinuousAsync(name, js);
+
+var status = await client.GetStatusAsync(name);
+
 Console.WriteLine(
   $@"{status?.Name}, {status?.Status}, {status?.CheckpointStatus}, {status?.Mode}, {status?.Progress}"
 );
@@ -269,7 +266,7 @@ Console.WriteLine(
 
 Retrieves the state of a projection.
 
-```cs
+```cs{20}
 const string js = """
 fromAll()
   .when({
@@ -285,31 +282,32 @@ fromAll()
 
 var name = $"count-events";
 
-await managementClient.CreateContinuousAsync(name, js);
+await client.CreateContinuousAsync(name, js);
 
-//give it some time to process and have a state.
-await Task.Delay(500);
+await Task.Delay(500); // give it some time to process and have a state.
 
-var stateDocument = await managementClient.GetStateAsync(name);
-var result        = await managementClient.GetStateAsync<Result>(name);
+var document = await client.GetStateAsync(name);
 
-Console.WriteLine(DocToString(stateDocument));
-Console.WriteLine(result);
+Console.WriteLine(document.RootElement.GetRawText())
+```
 
-static async Task<string> DocToString(JsonDocument d) {
-  await using var stream = new MemoryStream();
-  var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = false });
-  d.WriteTo(writer);
-  await writer.FlushAsync();
-  return Encoding.UTF8.GetString(stream.ToArray());
-}
+or you can retrieve the state as a typed result:
+
+```cs
+public class Result {
+	public int count { get; set; }
+
+	public override string ToString() => $"count= {count}";
+};
+
+var result = await client.GetStateAsync<Result>(name);
 ```
 
 ## Get result
 
 Retrieves the result of the named projection and partition.
 
-```cs
+```cs{20}
 const string js = """
 fromAll()
   .when({
@@ -325,24 +323,25 @@ fromAll()
 
 var name = "count-events";
 
-await managementClient.CreateContinuousAsync(name, js);
+await client.CreateContinuousAsync(name, js);
 
 await Task.Delay(500); //give it some time to have a result.
 
-// Results are retrieved either as  JsonDocument or a typed result 
-var document = await managementClient.GetResultAsync(name);
-var result   = await managementClient.GetResultAsync<Result>(name);
+var document = await client.GetResultAsync(name);
 
-Console.WriteLine(DocToString(document));
-Console.WriteLine(result);
+Console.WriteLine(document.RootElement.GetRawText())
+```
 
-static string DocToString(JsonDocument d) {
-  using var stream = new MemoryStream();
-  using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = false });
-  d.WriteTo(writer);
-  writer.Flush();
-  return Encoding.UTF8.GetString(stream.ToArray());
-}
+or it can be retrieved as a typed result:
+
+```cs
+public class Result {
+	public int count { get; set; }
+
+	public override string ToString() => $"count= {count}";
+};
+
+var result = await client.GetResultAsync<Result>(name);
 ```
 
 ## Projection Details

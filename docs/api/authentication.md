@@ -1,10 +1,6 @@
 ---
 title: Authentication
 order: 7
-head:
-  - - title
-    - {}
-    - Authentication | .NET | Clients | Kurrent Docs
 ---
 
 # Client x.509 certificate 
@@ -43,5 +39,5 @@ var settings = EventStoreClientSettings.Create(
   $"kurrentdb://localhost:2113/?tls=true&tlsVerifyCert=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}"
 );
 
-await using var client = new KurrentDBClient(settings);
+await using var client = new EventStoreClient(settings);
 ```

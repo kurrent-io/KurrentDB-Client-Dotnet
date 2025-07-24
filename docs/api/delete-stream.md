@@ -1,9 +1,5 @@
 ---
 order: 9
-head:
-  - - title
-    - {}
-    - Deleting Events | .NET | Clients | Kurrent Docs
 ---
 
 # Deleting Events
@@ -16,7 +12,7 @@ When you need to fully remove a stream, KurrentDB offers two options: Soft Delet
 Soft delete in KurrentDB allows you to mark a stream for deletion without completely removing it, so you can still add new events later. While you can do this through the UI, using code is often better for automating the process,
 handling many streams at once, or including custom rules. Code is especially helpful for large-scale deletions or when you need to integrate soft deletes into other workflows.
 
-```csharp
+```cs
 await client.DeleteAsync(streamName, StreamState.Any);
 ```
 
@@ -31,6 +27,6 @@ The stream can still be reopened by appending new events.
 
 Hard delete in KurrentDB permanently removes a stream and its events. While you can use the HTTP API, code is often better for automating the process, managing multiple streams, and ensuring precise control. Code is especially useful when you need to integrate hard delete into larger workflows or apply specific conditions. Note that when a stream is hard deleted, you cannot reuse the stream name, it will raise an exception if you try to append to it again.
 
-```csharp
+```cs
 await client.TombstoneAsync(streamName, StreamState.Any);
 ```

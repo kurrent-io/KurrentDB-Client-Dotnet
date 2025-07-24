@@ -1,9 +1,5 @@
 ---
 order: 3
-head:
-  - - title
-    - {}
-    - Reading Events | .NET | Clients | Kurrent Docs
 ---
 
 # Reading Events
@@ -16,10 +12,6 @@ Each event in KurrentDB belongs to an individual stream. When reading events, pi
 
 All events have a `StreamPosition` and a `Position`.  `StreamPosition` is a *big int* (unsigned 64-bit integer) and represents the place of the event in the stream. `Position` is the event's logical position, and is represented by `CommitPosition` and a `PreparePosition`. Note that when reading events you will supply a different "position" depending on whether you are reading from an individual stream or the `$all` stream.
 
-:::tip
-Check [connecting to KurrentDB instructions](getting-started.md#required-packages) to learn how to configure and use the client SDK.
-:::
-
 ## Reading from a stream
 
 You can read all the events or a sample of the events from individual streams, starting from any position in the stream, and can read either forward or backward. It is only possible to read events from a single stream at a time. You can read events from the global event log, which spans across streams. Learn more about this process in the [Read from `$all`](#reading-from-the-all-stream) section below.
@@ -30,14 +22,14 @@ The simplest way to read a stream forwards is to supply a stream name, read dire
 
 
 ```cs
-var events = client.ReadStreamAsync(Direction.Forwards, "example-stream", StreamPosition.Start);
+var events = client.ReadStreamAsync(Direction.Forwards, "order-123", StreamPosition.Start);
 ```
 
 This will return an enumerable that can be iterated on:
 
 ```cs
-await foreach (var @event in events)
-  Console.WriteLine(Encoding.UTF8.GetString(@event.Event.Data.ToArray()));
+await foreach (var e in events)
+  Console.WriteLine(Encoding.UTF8.GetString(e.OriginalEvent.Data.ToArray()));
 ```
 
 There are a number of additional arguments you can provide when reading a stream, listed below.
@@ -58,34 +50,48 @@ You can use the `configureOperationOptions` argument to provide a function that 
 
 The `userCredentials` argument is optional. It is used to override the default credentials specified when creating the client instance.
 
-```cs
+```cs{5}
 var result = client.ReadStreamAsync(
   Direction.Forwards,
-  "example-stream",
+  "order-123",
   StreamPosition.Start,
-  userCredentials: new UserCredentials("admin", "changeit"),
-  cancellationToken: cancellationToken
+  userCredentials: new UserCredentials("admin", "changeit")
 );
 ```
 
 ### Reading from a revision
 
-Instead of providing the `StreamPosition` you can also provide a specific stream revision as a *big int* (unsigned 64-bit integer).
+Instead of providing the `StreamPosition` you can also provide a specific stream revision as a big int (unsigned 64-bit integer). You can use `FirstStreamPosition` and `LastStreamPosition` from a previous read result as the starting revision.
 
-```cs
-Console.WriteLine(events.FirstStreamPosition);
-Console.WriteLine(events.LastStreamPosition);
+```cs{11}
+var orders = client.ReadStreamAsync(
+  Direction.Forwards,
+  "order-123",
+  StreamPosition.Start
+);
+
+if (orders.FirstStreamPosition is not null) {
+  var customers = client.ReadStreamAsync(
+    Direction.Forwards,
+    "customer-456",
+    orders.FirstStreamPosition
+  );
+}
 ```
 
 ### Reading backwards
 
 In addition to reading a stream forwards, streams can be read backwards. To read all the events backwards, set the *stream position* to the end:
 
-```cs
-var events = client.ReadStreamAsync(Direction.Backwards, "example-stream", StreamPosition.End);
+```cs{2}
+var events = client.ReadStreamAsync(
+  Direction.Backwards,
+  "order-123",
+  StreamPosition.End
+);
 
 await foreach (var e in events)
-  Console.WriteLine(Encoding.UTF8.GetString(e.Event.Data.ToArray()));
+  Console.WriteLine(Encoding.UTF8.GetString(e.OriginalEvent.Data.ToArray()));
 ```
 
 :::tip
@@ -100,13 +106,15 @@ It is important to check the value of this field before attempting to iterate an
 
 For example:
 
-```cs
-var result = client.ReadStreamAsync(Direction.Forwards, "example-stream", 10, 20);
+```cs{5}
+var result = client.ReadStreamAsync(
+  Direction.Forwards, "order-123", revision: 10, maxCount: 20
+);
 
 if (await result.ReadState == ReadState.StreamNotFound) return;
 
 await foreach (var e in result)
-  Console.WriteLine(Encoding.UTF8.GetString(e.Event.Data.ToArray()));
+  Console.WriteLine(Encoding.UTF8.GetString(e.OriginalEvent.Data.ToArray()));
 ```
 
 ## Reading from the $all stream
@@ -125,7 +133,7 @@ You can iterate asynchronously through the result:
 
 ```cs
 await foreach (var e in events)
-  Console.WriteLine(Encoding.UTF8.GetString(e.Event.Data.ToArray()));
+  Console.WriteLine(Encoding.UTF8.GetString(e.OriginalEvent.Data.ToArray()));
 ```
 
 There are a number of additional arguments you can provide when reading the `$all` stream.
@@ -138,12 +146,11 @@ Passing in the max count allows you to limit the number of events that returned.
 
 When using projections to create new events you can set whether the generated events are pointers to existing events. Setting this value to true will tell KurrentDB to return the event as well as the event linking to it.
 
-```cs
+```cs{4}
 var result = client.ReadAllAsync(
   Direction.Forwards,
   Position.Start,
-  resolveLinkTos: true,
-  cancellationToken: cancellationToken
+  resolveLinkTos: true
 );
 ```
 
@@ -154,7 +161,7 @@ This argument is generic setting class for all operations that can be set on all
 #### userCredentials
 The credentials used to read the data can be used by the subscription as follows. This will override the default credentials set on the connection.
 
-```cs
+```cs{4}
 var result = client.ReadAllAsync(
   Direction.Forwards,
   Position.Start,
@@ -181,13 +188,13 @@ KurrentDB will also return system events when reading from the `$all` stream. In
 
 All system events begin with `$` or `$$` and can be easily ignored by checking the `EventType` property.
 
-```cs
+```cs{4}
 var events = client.ReadAllAsync(Direction.Forwards, Position.Start);
 
 await foreach (var e in events) {
   if (e.Event.EventType.StartsWith("$")) continue;
 
-  Console.WriteLine(Encoding.UTF8.GetString(e.Event.Data.ToArray()));
+  Console.WriteLine(Encoding.UTF8.GetString(e.OriginalEvent.Data.ToArray()));
 }
 ```
 
