@@ -365,3 +365,8 @@ certs/
 certs-cluster/
 .DS_Store
 docs/public
+
+
+.cache
+.temp
+node_modules
