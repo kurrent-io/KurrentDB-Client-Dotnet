@@ -367,3 +367,5 @@ certs-cluster/
 docs/public
 
 .temp
+.cache
+node_modules
