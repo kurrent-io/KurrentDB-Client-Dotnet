@@ -36,6 +36,11 @@ public abstract class TestContainer {
     protected abstract ContainerBuilder ConfigureContainer(ContainerBuilder builder);
 
     public async ValueTask Start() {
+	    Logger.Information(
+		    "Starting {ServiceName} Container with Image: {Image}",
+		    ServiceName, Image
+	    );
+
         try {
             Service = ConfigureContainer(
                 new Builder()
