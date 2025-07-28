@@ -2,42 +2,37 @@
 
 namespace Kurrent.Client.Tests.Operations;
 
+[Skip("Ignore this because it interferes with other tests")]
 public class OperationTests : KurrentClientTestFixture {
 	[Test]
 	public async Task merge_indexes() =>
 		await AutomaticClient.Operations.MergeIndexes()
-			.ShouldNotThrowAsync()
-			.ShouldNotFailAsync();
+			.ShouldNotThrowOrFailAsync();
 
 	[Test]
 	public async Task resign_node() =>
 		await AutomaticClient.Operations.ResignNode()
-			.ShouldNotThrowAsync()
-			.ShouldNotFailAsync();
+			.ShouldNotThrowOrFailAsync();
 
 	[Test]
 	public async Task shutdown() =>
 		await AutomaticClient.Operations.Shutdown()
-			.ShouldNotThrowAsync()
-			.ShouldNotFailAsync();
+			.ShouldNotThrowOrFailAsync();
 
 	[Test]
-	public async Task set_node_priori() =>
+	public async Task set_node_priority() =>
 		await AutomaticClient.Operations.SetNodePriority(1)
-			.ShouldNotThrowAsync()
-			.ShouldNotFailAsync();
+			.ShouldNotThrowOrFailAsync();
 
 	[Test]
 	public async Task restart_persistent_subscriptions() =>
 		await AutomaticClient.Operations.RestartPersistentSubscriptions()
-			.ShouldNotThrowAsync()
-			.ShouldNotFailAsync();
+			.ShouldNotThrowOrFailAsync();
 
 	[Test]
 	public async Task start_scavenge() =>
 		await AutomaticClient.Operations.StartScavenge()
-			.ShouldNotThrowAsync()
-			.ShouldNotFailAsync();
+			.ShouldNotThrowOrFailAsync();
 
 	[Test]
 	public async Task stop_scavenge() =>

@@ -110,6 +110,8 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		// Act
 		await AutomaticClient.PersistentSubscription.CreateToAll(expected.GroupName, expected.Settings, ct);
 
+		await Task.Delay(1.Seconds(), ct);
+
 		var info = await AutomaticClient.PersistentSubscription.GetInfoToAll(expected.GroupName, ct);
 
 		// Assert
@@ -136,6 +138,8 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 
 		// Act
 		await AutomaticClient.PersistentSubscription.CreateToStream(stream, expected.GroupName, expected.Settings, ct);
+
+		await Task.Delay(1.Seconds(), ct);
 
 		var info = await AutomaticClient.PersistentSubscription.GetInfoToStream(stream, expected.GroupName, ct);
 

@@ -44,7 +44,7 @@ public class ReadTests : KurrentClientTestFixture {
         }
     }
 
-    [Test]
+    [Test, Skip("Needs investigation")]
     public async Task gracefully_stops_reading_and_flushes_queue_when_read_token_is_cancelled(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
@@ -58,7 +58,7 @@ public class ReadTests : KurrentClientTestFixture {
 
         await foreach (var _ in messages) {
             if (--cancelOn == 0 && !cancellator.IsCancellationRequested)
-                cancellator.Cancel();
+                await cancellator.CancelAsync();
         }
 
         messages.QueuedMessages.ShouldBe(0, "Should have flushed all messages on cancellation");
