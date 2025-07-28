@@ -34,6 +34,7 @@ public static class KurrentDBConfiguration {
     /// </summary>
     public static readonly IReadOnlyDictionary<string, string?> Secure = new Dictionary<string, string?>(Insecure) {
         ["EVENTSTORE_INSECURE"]                            = "false",
+        // TODO: This is causing some issues in secure tests
         // ["EVENTSTORE_USER_CERTIFICATES__ENABLED"]          = "true",
         // ["EVENTSTORE__PLUGINS__USERCERTIFICATES__ENABLED"] = "true",
         ["EVENTSTORE_TRUSTED_ROOT_CERTIFICATES_PATH"]      = "/etc/eventstore/certs/ca",

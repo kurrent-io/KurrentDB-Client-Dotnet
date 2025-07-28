@@ -46,6 +46,7 @@ public readonly partial record struct StartScavengeError : IVariantResultError<
 
 [PublicAPI]
 public readonly partial record struct StopScavengeError : IVariantResultError<
+	ErrorDetails.ScavengeNotFound,
 	ErrorDetails.AccessDenied,
 	ErrorDetails.NotAuthenticated
 >;

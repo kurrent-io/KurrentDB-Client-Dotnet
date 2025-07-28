@@ -117,4 +117,13 @@ message ErrorDetails {
       message : "The specified log position was not found."
     };
   }
+
+  // TODO: Should shared.proto be outside streams?
+  message ScavengeNotFound {
+    option (error_info) = {
+      code : "SCAVENGE_NOT_FOUND",
+      severity : RECOVERABLE,
+      message : "The specified scavenge was not found."
+    };
+  }
 }
