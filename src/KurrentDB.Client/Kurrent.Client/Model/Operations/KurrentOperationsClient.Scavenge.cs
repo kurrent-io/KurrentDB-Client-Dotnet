@@ -36,12 +36,12 @@ public partial class KurrentOperationsClient {
 			};
 
 			return Result.Success<DatabaseScavengeResult, StartScavengeError>(scavengeResult);
-		} catch (RpcException ex) {
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
 			return Result.Failure<DatabaseScavengeResult, StartScavengeError>(
-				ex.StatusCode switch {
-					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(Shutdown), ex)
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(StartScavenge), ex)
 				}
 			);
 		} catch (Exception ex) {
@@ -69,16 +69,21 @@ public partial class KurrentOperationsClient {
 			};
 
 			return Result.Success<DatabaseScavengeResult, StopScavengeError>(scavengeResult);
-		} catch (RpcException ex) {
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
 			return Result.Failure<DatabaseScavengeResult, StopScavengeError>(
-				ex.StatusCode switch {
-					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(Shutdown), ex)
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(StopScavenge), ex)
 				}
 			);
 		} catch (Exception ex) {
-			throw KurrentClientException.CreateUnknown(nameof(StopScavenge), ex);
+			return Result.Failure<DatabaseScavengeResult, StopScavengeError>(
+				ex switch {
+					ScavengeNotFoundException => ex.AsScavengeNotFoundError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(StopScavenge), ex)
+				}
+			);
 		}
 	}
 }

@@ -6,6 +6,7 @@ using EventStore.Client.Operations;
 using Grpc.Core;
 using Kurrent.Client.Legacy;
 using Kurrent.Client.Model;
+using KurrentDB.Client;
 
 namespace Kurrent.Client;
 
@@ -18,12 +19,12 @@ public partial class KurrentOperationsClient {
 			await call.ResponseAsync.ConfigureAwait(false);
 
 			return new Result<Success, ShutdownError>();
-		} catch (RpcException ex) {
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
 			return Result.Failure<Success, ShutdownError>(
-				ex.StatusCode switch {
-					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(Shutdown), ex)
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(Shutdown), ex)
 				}
 			);
 		} catch (Exception ex) {
@@ -37,12 +38,12 @@ public partial class KurrentOperationsClient {
 			await call.ResponseAsync.ConfigureAwait(false);
 
 			return new Result<Success, MergeIndexesError>();
-		} catch (RpcException ex) {
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
 			return Result.Failure<Success, MergeIndexesError>(
-				ex.StatusCode switch {
-					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(MergeIndexes), ex)
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(MergeIndexes), ex)
 				}
 			);
 		} catch (Exception ex) {
@@ -56,12 +57,12 @@ public partial class KurrentOperationsClient {
 			await call.ResponseAsync.ConfigureAwait(false);
 
 			return new Result<Success, ResignNodeError>();
-		} catch (RpcException ex) {
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
 			return Result.Failure<Success, ResignNodeError>(
-				ex.StatusCode switch {
-					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(ResignNode), ex)
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(ResignNode), ex)
 				}
 			);
 		} catch (Exception ex) {
@@ -75,12 +76,12 @@ public partial class KurrentOperationsClient {
 			await call.ResponseAsync.ConfigureAwait(false);
 
 			return new Result<Success, SetNodePriorityError>();
-		} catch (RpcException ex) {
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
 			return Result.Failure<Success, SetNodePriorityError>(
-				ex.StatusCode switch {
-					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(SetNodePriority), ex)
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(SetNodePriority), ex)
 				}
 			);
 		} catch (Exception ex) {
@@ -88,20 +89,18 @@ public partial class KurrentOperationsClient {
 		}
 	}
 
-	public async ValueTask<Result<Success, RestartPersistentSubscriptionsError>> RestartPersistentSubscriptions(
-		CancellationToken cancellationToken = default
-	) {
+	public async ValueTask<Result<Success, RestartPersistentSubscriptionsError>> RestartPersistentSubscriptions(CancellationToken cancellationToken = default) {
 		try {
 			using var call = ServiceClient.RestartPersistentSubscriptionsAsync(EmptyResult, cancellationToken: cancellationToken);
 			await call.ResponseAsync.ConfigureAwait(false);
 
 			return new Result<Success, RestartPersistentSubscriptionsError>();
-		} catch (RpcException ex) {
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
 			return Result.Failure<Success, RestartPersistentSubscriptionsError>(
-				ex.StatusCode switch {
-					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(RestartPersistentSubscriptions), ex)
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(RestartPersistentSubscriptions), ex)
 				}
 			);
 		} catch (Exception ex) {
