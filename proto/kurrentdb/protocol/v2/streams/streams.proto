@@ -37,8 +37,8 @@ service StreamsService {
 //  // Retrieve a batch of records
 //  rpc ReadStream(ReadRequest) returns (ReadResponse);
 
-  // Retrieve batches of records continuously.
-  rpc ReadSession(ReadRequest) returns (stream ReadResponse);
+//  // Retrieve batches of records continuously.
+//  rpc ReadSession(ReadRequest) returns (stream ReadResponse);
 }
 
 //===================================================================
@@ -164,158 +164,158 @@ message MultiStreamAppendResponse {
   }
 }
 
-//===================================================================
-// Read Operations
-//===================================================================
-
-// The scope of the read filter determines where the filter will be applied.
-enum ReadFilterScope {
-  READ_FILTER_SCOPE_UNSPECIFIED = 0;
-  // The filter will be applied to the record stream name
-  READ_FILTER_SCOPE_STREAM = 1;
-  // The filter will be applied to the record schema name
-  READ_FILTER_SCOPE_SCHEMA_NAME = 2;
-  // The filter will be applied to the properties of the record
-  READ_FILTER_SCOPE_PROPERTIES = 3;
-  // The filter will be applied to all the record properties
-  // including the stream and schema name
-  READ_FILTER_SCOPE_RECORD = 4;
-}
-
-// The filter to apply when reading records from the database
-// The combination of stream scope and literal expression indicates a direct stream name match,
-// while a regex expression indicates a pattern match across multiple streams.
-message ReadFilter {
-  // The scope of the filter.
-  ReadFilterScope scope = 1;
-  // The expression can be a regular expression or a literal value.
-  // If it starts with "~" it will be considered a regex.
-  string expression = 2;
-
-  //	// The optional name of the record property to filter on.
-  //	optional string property_name = 3;
-
-  // The optional property names to filter on.
-  repeated string property_names = 4;
-}
-
-// Record retrieved from the database.
-message Record {
-  // The unique identifier of the record in the database.
-  string record_id = 1;
-  // The position of the record in the database.
-  int64 position = 5;
-  // The actual data payload of the record, stored as bytes.
-  bytes data = 2;
-  // Additional information about the record.
-  map<string, DynamicValue> properties = 3;
-  // When the record was created.
-  google.protobuf.Timestamp timestamp = 4;
-  // The stream to which the record belongs.
-  optional string stream = 6;
-  // The revision of the stream created when the record was appended.
-  optional int64 stream_revision = 7;
-}
-
-// The direction in which to read records from the database (forwards or backwards).
-enum ReadDirection {
-  READ_DIRECTION_FORWARDS  = 0;
-  READ_DIRECTION_BACKWARDS = 1;
-}
-
-// The position from which to start reading records.
-// This can be either the earliest or latest position in the stream.
-enum ReadPositionConstants {
-  READ_POSITION_CONSTANTS_UNSPECIFIED = 0;
-  READ_POSITION_CONSTANTS_EARLIEST = 1;
-  READ_POSITION_CONSTANTS_LATEST = 2;
-}
-
-// Represents the successful outcome of a read operation.
-message ReadSuccess {
-  repeated Record records = 1;
-}
-
-// Represents the detailed error information when a read operation fails.
-message ReadFailure {
-  // The error details
-  oneof error {
-    // Failed because the client lacks sufficient permissions.
-    ErrorDetails.AccessDenied access_denied = 1;
-    // Failed because the target stream has been deleted.
-    ErrorDetails.StreamDeleted stream_deleted = 2;
-    // Failed because the expected stream revision did not match the actual revision.
-    ErrorDetails.StreamNotFound stream_not_found = 3;
-  }
-}
-
-message ReadRequest {
-  // The filter to apply when reading records.
-  optional ReadFilter filter = 1;
-  // The starting position of the log from which to read records.
-  optional int64 start_position = 2;
-  // Limit how many records can be returned.
-  // This will get capped at the default limit,
-  // which is up to 1000 records.
-  optional int64 limit = 3;
-  // The direction in which to read the stream (forwards or backwards).
-  ReadDirection direction = 4;
-  // Heartbeats can be enabled to monitor end-to-end session health.
-  HeartbeatOptions heartbeats = 5;
-  // The number of records to read in a single batch.
-  int32 batch_size = 6;
-}
-
-//message SubscriptionConfirmed {
-//	// The subscription ID that was confirmed.
-//	string subscription_id = 1;
-//	// The position of the last record read by the server.
-//	optional int64 position = 2;
-//	// When the subscription was confirmed.
-//	google.protobuf.Timestamp timestamp = 3;
+////===================================================================
+//// Read Operations
+////===================================================================
+//
+//// The scope of the read filter determines where the filter will be applied.
+//enum ReadFilterScope {
+//  READ_FILTER_SCOPE_UNSPECIFIED = 0;
+//  // The filter will be applied to the record stream name
+//  READ_FILTER_SCOPE_STREAM = 1;
+//  // The filter will be applied to the record schema name
+//  READ_FILTER_SCOPE_SCHEMA_NAME = 2;
+//  // The filter will be applied to the properties of the record
+//  READ_FILTER_SCOPE_PROPERTIES = 3;
+//  // The filter will be applied to all the record properties
+//  // including the stream and schema name
+//  READ_FILTER_SCOPE_RECORD = 4;
 //}
-
-// Read session response.
-message ReadResponse {
-  oneof result {
-    // Success represents the successful outcome of an read operation.
-    ReadSuccess success = 1;
-    // Failure represents the details of a failed read operation.
-    ReadFailure failure = 2;
-    // Heartbeat represents the health check of the read operation when
-    // the server has not found any records matching the filter for the specified
-    // period of time or records threshold.
-    // A heartbeat will be sent when the initial switch to real-time tailing happens.
-    Heartbeat heartbeat = 3;
-  }
-}
-
-// A health check will be sent when the server has not found any records
-// matching the filter for the specified period of time or records threshold. A
-// heartbeat will be sent when the initial switch to real-time tailing happens.
-message HeartbeatOptions {
-  bool enable = 1;
-  optional google.protobuf.Duration period = 2; // 30 seconds
-  optional int32 records_threshold = 3; // 500
-}
-
-enum HeartbeatType {
-  HEARTBEAT_TYPE_UNSPECIFIED = 0;
-  HEARTBEAT_TYPE_CHECKPOINT  = 1;
-  HEARTBEAT_TYPE_CAUGHT_UP   = 2;
-  HEARTBEAT_TYPE_FELL_BEHIND = 3;
-}
-
-message Heartbeat {
-  // This indicates whether the subscription is caught up, fell behind, or
-  // the filter has not been satisfied after a period of time or records threshold.
-  HeartbeatType type = 1;
-  // Checkpoint for resuming reads.
-  // It will always be populated unless the database is empty.
-  int64 position = 2;
-  // When the heartbeat was sent.
-  google.protobuf.Timestamp timestamp = 3;
-}
+//
+//// The filter to apply when reading records from the database
+//// The combination of stream scope and literal expression indicates a direct stream name match,
+//// while a regex expression indicates a pattern match across multiple streams.
+//message ReadFilter {
+//  // The scope of the filter.
+//  ReadFilterScope scope = 1;
+//  // The expression can be a regular expression or a literal value.
+//  // If it starts with "~" it will be considered a regex.
+//  string expression = 2;
+//
+//  //	// The optional name of the record property to filter on.
+//  //	optional string property_name = 3;
+//
+//  // The optional property names to filter on.
+//  repeated string property_names = 4;
+//}
+//
+//// Record retrieved from the database.
+//message Record {
+//  // The unique identifier of the record in the database.
+//  string record_id = 1;
+//  // The position of the record in the database.
+//  int64 position = 5;
+//  // The actual data payload of the record, stored as bytes.
+//  bytes data = 2;
+//  // Additional information about the record.
+//  map<string, DynamicValue> properties = 3;
+//  // When the record was created.
+//  google.protobuf.Timestamp timestamp = 4;
+//  // The stream to which the record belongs.
+//  optional string stream = 6;
+//  // The revision of the stream created when the record was appended.
+//  optional int64 stream_revision = 7;
+//}
+//
+//// The direction in which to read records from the database (forwards or backwards).
+//enum ReadDirection {
+//  READ_DIRECTION_FORWARDS  = 0;
+//  READ_DIRECTION_BACKWARDS = 1;
+//}
+//
+//// The position from which to start reading records.
+//// This can be either the earliest or latest position in the stream.
+//enum ReadPositionConstants {
+//  READ_POSITION_CONSTANTS_UNSPECIFIED = 0;
+//  READ_POSITION_CONSTANTS_EARLIEST = 1;
+//  READ_POSITION_CONSTANTS_LATEST = 2;
+//}
+//
+//// Represents the successful outcome of a read operation.
+//message ReadSuccess {
+//  repeated Record records = 1;
+//}
+//
+//// Represents the detailed error information when a read operation fails.
+//message ReadFailure {
+//  // The error details
+//  oneof error {
+//    // Failed because the client lacks sufficient permissions.
+//    ErrorDetails.AccessDenied access_denied = 1;
+//    // Failed because the target stream has been deleted.
+//    ErrorDetails.StreamDeleted stream_deleted = 2;
+//    // Failed because the expected stream revision did not match the actual revision.
+//    ErrorDetails.StreamNotFound stream_not_found = 3;
+//  }
+//}
+//
+//message ReadRequest {
+//  // The filter to apply when reading records.
+//  optional ReadFilter filter = 1;
+//  // The starting position of the log from which to read records.
+//  optional int64 start_position = 2;
+//  // Limit how many records can be returned.
+//  // This will get capped at the default limit,
+//  // which is up to 1000 records.
+//  optional int64 limit = 3;
+//  // The direction in which to read the stream (forwards or backwards).
+//  ReadDirection direction = 4;
+//  // Heartbeats can be enabled to monitor end-to-end session health.
+//  HeartbeatOptions heartbeats = 5;
+//  // The number of records to read in a single batch.
+//  int32 batch_size = 6;
+//}
+//
+////message SubscriptionConfirmed {
+////	// The subscription ID that was confirmed.
+////	string subscription_id = 1;
+////	// The position of the last record read by the server.
+////	optional int64 position = 2;
+////	// When the subscription was confirmed.
+////	google.protobuf.Timestamp timestamp = 3;
+////}
+//
+//// Read session response.
+//message ReadResponse {
+//  oneof result {
+//    // Success represents the successful outcome of an read operation.
+//    ReadSuccess success = 1;
+//    // Failure represents the details of a failed read operation.
+//    ReadFailure failure = 2;
+//    // Heartbeat represents the health check of the read operation when
+//    // the server has not found any records matching the filter for the specified
+//    // period of time or records threshold.
+//    // A heartbeat will be sent when the initial switch to real-time tailing happens.
+//    Heartbeat heartbeat = 3;
+//  }
+//}
+//
+//// A health check will be sent when the server has not found any records
+//// matching the filter for the specified period of time or records threshold. A
+//// heartbeat will be sent when the initial switch to real-time tailing happens.
+//message HeartbeatOptions {
+//  bool enable = 1;
+//  optional google.protobuf.Duration period = 2; // 30 seconds
+//  optional int32 records_threshold = 3; // 500
+//}
+//
+//enum HeartbeatType {
+//  HEARTBEAT_TYPE_UNSPECIFIED = 0;
+//  HEARTBEAT_TYPE_CHECKPOINT  = 1;
+//  HEARTBEAT_TYPE_CAUGHT_UP   = 2;
+//  HEARTBEAT_TYPE_FELL_BEHIND = 3;
+//}
+//
+//message Heartbeat {
+//  // This indicates whether the subscription is caught up, fell behind, or
+//  // the filter has not been satisfied after a period of time or records threshold.
+//  HeartbeatType type = 1;
+//  // Checkpoint for resuming reads.
+//  // It will always be populated unless the database is empty.
+//  int64 position = 2;
+//  // When the heartbeat was sent.
+//  google.protobuf.Timestamp timestamp = 3;
+//}
 
 ////===================================================================
 //// Read Operations

@@ -44,4 +44,6 @@ public record StreamInfo {
     /// Indicates whether the stream has metadata associated with it.
     /// </summary>
     public bool HasMetadata => Metadata != StreamMetadata.None;
+
+    public KurrentStreamsClient.StreamState State { get; init; } = KurrentStreamsClient.StreamState.NotFound;
 }

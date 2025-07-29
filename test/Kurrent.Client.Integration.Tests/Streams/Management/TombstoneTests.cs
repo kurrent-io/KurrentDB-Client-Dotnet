@@ -45,4 +45,32 @@ public class TombstoneTests : KurrentClientTestFixture {
             .ShouldFailAsync(error =>
                 error.Value.ShouldBeOfType<ErrorDetails.StreamNotFound>());
     }
+
+    [Test]
+    public async Task fails_to_tombstone_stream_with_stream_deleted_error_when_stream_was_deleted(CancellationToken ct) {
+        var simulation = await SeedGame(ct);
+
+        await AutomaticClient.Streams
+            .Delete(simulation.Game.Stream, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Streams
+            .Tombstone(simulation.Game.Stream, ct)
+            .ShouldFailAsync(error =>
+                error.Value.ShouldBeOfType<ErrorDetails.StreamDeleted>());
+    }
+
+    [Test]
+    public async Task fails_to_tombstone_stream_with_stream_tombstoned_error_when_stream_was_tombstoned(CancellationToken ct) {
+        var simulation = await SeedGame(ct);
+
+        await AutomaticClient.Streams
+            .Tombstone(simulation.Game.Stream, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Streams
+            .Tombstone(simulation.Game.Stream, ct)
+            .ShouldFailAsync(error =>
+                error.Value.ShouldBeOfType<ErrorDetails.StreamTombstoned>());
+    }
 }

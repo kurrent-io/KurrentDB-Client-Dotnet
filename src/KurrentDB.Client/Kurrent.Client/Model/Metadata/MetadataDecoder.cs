@@ -1,3 +1,6 @@
+// ReSharper disable SwitchStatementHandlesSomeKnownEnumValuesWithDefault
+// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Kurrent.Client.SchemaRegistry;
@@ -14,17 +17,17 @@ public abstract class MetadataDecoder : IMetadataDecoder {
     /// <inheritdoc />
     public Metadata Decode(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context) {
         if (bytes.IsEmpty)
-            return new Metadata();
+            return new Metadata()
+                .With(SystemMetadataKeys.SchemaName, context.SchemaName)
+                .With(SystemMetadataKeys.SchemaDataFormat, context.SchemaDataFormat);
 
         try {
             if (context.SchemaName == LinkSchemaName)
                 return DeserializeLinkMetadata(bytes);
 
-            var metadata = DecodeCore(bytes, context)
+            return DecodeCore(bytes, context)
                 .AddSchemaNameIfMissing(context.SchemaName)
                 .AddSchemaDataFormatIfMissing(context.SchemaDataFormat);
-
-            return metadata;
         }
         catch (Exception ex) when (ex is not MetadataDecodingException) {
             throw new MetadataDecodingException("Failed to decode metadata", ex);
@@ -35,7 +38,7 @@ public abstract class MetadataDecoder : IMetadataDecoder {
         var deserialized = JsonSerializer.Deserialize<Dictionary<string, JsonValue>>(bytes.Span)!;
         return new Metadata()
             .With(SystemMetadataKeys.SchemaName, LinkSchemaName)
-            .With(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Json) // change to json
+            .With(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Json)
             .With("$v", deserialized["$v"].ToString())
             .With("$c", deserialized["$c"].GetValue<long>())
             .With("$p", deserialized["$p"].GetValue<long>())
@@ -74,27 +77,6 @@ public readonly record struct MetadataDecoderContext(
     SchemaName SchemaName,
     SchemaDataFormat SchemaDataFormat
 );
-
-/// <summary>
-/// The default metadata decoder that deserializes metadata from JSON-encoded byte arrays.
-/// This allows for backward compatibility with previous metadata formats.
-/// </summary>
-[PublicAPI]
-public sealed class JsonMetadataDecoder : MetadataDecoder {
-    static readonly SchemaRegistry.Serialization.Json.JsonSerializer Serializer = new();
-
-    protected override Metadata DecodeCore(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context) {
-        return Serializer.Deserialize<Dictionary<string, string?>>(bytes) is { Count: > 0 } deserialized
-            ? new(deserialized.ToDictionary(x => x.Key, static kvp => EvolveValue(kvp)))
-            : new();
-
-        static object? EvolveValue(KeyValuePair<string, string?> kvp) => kvp switch {
-            { Key: SystemMetadataKeys.SchemaDataFormat, Value: not null } => Enum.Parse<SchemaDataFormat>(kvp.Value, ignoreCase: true),
-            { Key: SystemMetadataKeys.SchemaName,       Value: not null } => SchemaName.From(kvp.Value),
-            _                                                             => kvp.Value
-        };
-    }
-}
 
 public class MetadataDecodingException(string message, Exception? innerException = null)
     : KurrentClientException(errorCode: "MetadataDecodingError", message, null, innerException);

@@ -16,7 +16,7 @@ class TypedExceptionInterceptor : Interceptor {
 
 		ConvertRpcException = rpcEx => {
 			if (rpcEx.TryMapException(map, out var ex))
-				throw ex;
+				 throw ex;
 
 			throw rpcEx.StatusCode switch {
 				Unavailable when rpcEx.Status.Detail == "Deadline Exceeded" => rpcEx.ToDeadlineExceededRpcException(),

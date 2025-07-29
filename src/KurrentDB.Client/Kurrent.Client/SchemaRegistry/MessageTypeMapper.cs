@@ -1,4 +1,3 @@
-using Kurrent.Variant;
 using static Kurrent.Client.SchemaRegistry.MessageTypeMapperErrors;
 
 namespace Kurrent.Client.SchemaRegistry;
@@ -261,24 +260,24 @@ public class MessageTypeResolutionException(SchemaName schemaName) : MessageType
 }
 
 public static class MessageTypeMapperErrors {
-    public readonly record struct MessageTypeAlreadyMapped(string schemaName, Type attemptedMessageType, Type registeredMessageType) {
-        public override string ToString() => $"Message '{attemptedMessageType.Name}' is already mapped with the name '{schemaName}' as '{registeredMessageType.FullName}'";
+    public readonly record struct MessageTypeAlreadyMapped(string SchemaName, Type AttemptedMessageType, Type RegisteredMessageType) {
+        public override string ToString() => $"Message '{AttemptedMessageType.Name}' is already mapped with the name '{SchemaName}' as '{RegisteredMessageType.FullName}'";
     }
 
-    public readonly record struct SchemaNameMapNotFound(string schemaName) {
-        public override string ToString() => $"Schema '{schemaName}' not mapped";
+    public readonly record struct SchemaNameMapNotFound(string SchemaName) {
+        public override string ToString() => $"Schema '{SchemaName}' not mapped";
     }
 
-    public readonly record struct MessageTypeMapNotFound(Type messageType) {
-        public override string ToString() => $"Message '{messageType.Name}' not mapped";
+    public readonly record struct MessageTypeMapNotFound(Type MessageType) {
+        public override string ToString() => $"Message '{MessageType.Name}' not mapped";
     }
 
-    public readonly record struct MessageTypeConflict(SchemaName schemaName, Type mappedType, Type attemptedType) {
-        public override string ToString() => $"Schema '{schemaName}' is already mapped with type '{mappedType.FullName}' "
-                                           + $"but attempted to use with incompatible type '{attemptedType.FullName}'";
+    public readonly record struct MessageTypeConflict(SchemaName SchemaName, Type MappedType, Type AttemptedType) {
+        public override string ToString() => $"Schema '{SchemaName}' is already mapped with type '{MappedType.FullName}' "
+                                           + $"but attempted to use with incompatible type '{AttemptedType.FullName}'";
     }
 
-    public readonly record struct MessageTypeResolution(SchemaName schemaName) {
-        public override string ToString() => $"Schema '{schemaName}' not mapped and does not match any known type";
+    public readonly record struct MessageTypeResolution(SchemaName SchemaName) {
+        public override string ToString() => $"Schema '{SchemaName}' not mapped and does not match any known type";
     }
 }

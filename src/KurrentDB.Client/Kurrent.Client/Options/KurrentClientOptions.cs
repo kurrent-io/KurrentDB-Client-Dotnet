@@ -177,7 +177,7 @@ public record KurrentClientOptions : OptionsBase<KurrentClientOptions, KurrentCl
 	/// Responsible for decoding metadata attached to events.
 	/// </para>
 	/// </remarks>
-	public MetadataDecoder MetadataDecoder { get; init; } = new JsonMetadataDecoder();
+	public MetadataDecoder MetadataDecoder { get; init; } = new DefaultMetadataDecoder();
 
     /// <summary>
     /// An optional <see cref="ILoggerFactory"/> to use.

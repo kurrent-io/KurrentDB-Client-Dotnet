@@ -46,7 +46,7 @@ public class DeleteTests : KurrentClientTestFixture {
     }
 
     [Test]
-    public async Task fails_to_delete_stream_with_not_found_error_when_stream_was_deleted(CancellationToken ct) {
+    public async Task fails_to_delete_stream_with_stream_deleted_error_when_stream_was_deleted(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
         await AutomaticClient.Streams
@@ -60,7 +60,7 @@ public class DeleteTests : KurrentClientTestFixture {
     }
 
     [Test]
-    public async Task fails_to_delete_stream_with_stream_deleted_when_stream_was_tombstoned(CancellationToken ct) {
+    public async Task fails_to_delete_stream_with_stream_tombstoned_error_when_stream_was_tombstoned(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
         await AutomaticClient.Streams
@@ -70,6 +70,6 @@ public class DeleteTests : KurrentClientTestFixture {
         await AutomaticClient.Streams
             .Delete(simulation.Game.Stream, ct)
             .ShouldFailAsync(error =>
-                error.Value.ShouldBeOfType<ErrorDetails.StreamDeleted>());
+                error.Value.ShouldBeOfType<ErrorDetails.StreamTombstoned>());
     }
 }

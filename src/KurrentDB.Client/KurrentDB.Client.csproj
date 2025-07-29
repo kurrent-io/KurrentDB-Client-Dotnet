@@ -19,8 +19,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
     <PackageReference Include="NJsonSchema" Version="11.3.2" />
     <PackageReference Include="OneOf" Version="3.0.271" />
-    <PackageReference Include="System.Linq.Async" Version="6.0.3" 
-                      Condition="'$(TargetFramework)' != 'net8.0' OR '$(TargetFramework)' != 'net9.0'" />   
+    <PackageReference Include="System.Linq.Async" Version="6.0.3"
+                      Condition="'$(TargetFramework)' != 'net8.0' OR '$(TargetFramework)' != 'net9.0'" />
     <PackageReference Include="OpenTelemetry.Api" Version="1.12.0" />
 
     <PackageReference Include="OneOf.SourceGenerator" Version="3.0.271">
@@ -51,6 +51,12 @@
         GrpcServices="Client"
         Access="internal"
     />
+    <Protobuf Update="..\..\proto\kurrentdb\protocol\v2\streams\streams.read.proto">
+      <Generator>MSBuild:Compile</Generator>
+    </Protobuf>
+    <Protobuf Update="..\..\proto\kurrentdb\protocol\v2\streams\streams.bak.proto">
+      <Generator>MSBuild:Compile</Generator>
+    </Protobuf>
   </ItemGroup>
 
   <ItemGroup>
@@ -58,7 +64,7 @@
     <ProjectReference Include="..\Kurrent.Client.SourceGenerators\Kurrent.Client.SourceGenerators.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
 
-    <ProjectReference Include="..\Variant.SourceGenerators\Variant.SourceGenerators.csproj" 
+    <ProjectReference Include="..\Variant.SourceGenerators\Variant.SourceGenerators.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
 
     <!-- Runtime Library: Include assembly but don't propagate as dependency -->

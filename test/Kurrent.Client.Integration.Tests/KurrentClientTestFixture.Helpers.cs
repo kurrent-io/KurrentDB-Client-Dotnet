@@ -156,11 +156,11 @@ public partial class KurrentClientTestFixture {
                 .WithRecordId(moveId)
                 .WithValue(evt)
                 .WithMetadata(metadata
-                    .With("$tests.game.id", simulatedGame.GameId)
-                    .With("$tests.game.name", nameof(TicTacToe))
-                    .With("$tests.game.stream", simulatedGame.Stream)
-                    .With("$tests.game.move-id", moveId)
-                    .With("$tests.game.move-sequence", acc.Count + 1))
+                    .With("tests.game.id", simulatedGame.GameId)
+                    .With("tests.game.name", nameof(TicTacToe))
+                    .With("tests.game.stream", simulatedGame.Stream)
+                    .With("tests.game.move-id", moveId)
+                    .With("tests.game.move-sequence", acc.Count + 1))
                 .WithDataFormat(dataFormat)
                 .Build());
 
@@ -206,10 +206,10 @@ public partial class KurrentClientTestFixture {
 
             foreach (var evt in game.Events) {
                 var meta = new Metadata(metadata)
-                    .With("$tests.game", nameof(TicTacToe))
-                    .With("$tests.game.id", game.GameId)
-                    .With("$tests.game.move-id", generatedMessageCount)
-                    .With("$stream", $"{nameof(TicTacToe)}-{game.GameId:N}");
+                    .With("tests.game", nameof(TicTacToe))
+                    .With("tests.game.id", game.GameId)
+                    .With("tests.game.move-id", generatedMessageCount)
+                    .With("stream", $"{nameof(TicTacToe)}-{game.GameId:N}");
 
                 yield return Message.New
                     .WithValue(evt)

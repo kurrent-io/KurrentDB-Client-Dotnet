@@ -8,6 +8,7 @@ using KurrentDB.Client;
 using static Kurrent.Client.Model.ErrorDetails;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
 using static Kurrent.Client.Model.StreamsClientV1Mapper;
+using StreamMetadata = Kurrent.Client.Model.StreamMetadata;
 
 namespace Kurrent.Client;
 
@@ -301,17 +302,53 @@ public partial class KurrentStreamsClient {
         try {
             await session.ResponseStream.MoveNext(stoppingToken).ConfigureAwait(false);
 
-            if (session.ResponseStream.Current.ContentCase is ReadResp.ContentOneofCase.StreamNotFound)
-                return Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt
-                    .With("stream", request.Options.Stream.StreamIdentifier.StreamName.ToStringUtf8())));
+            if (session.ResponseStream.Current.ContentCase is ReadResp.ContentOneofCase.StreamNotFound) {
+                cancellator.Dispose();
+
+                // we must check the metadata stream to see if the stream was deleted.
+                // this is just a big brutal hack because:
+                // - what happens if the meta-stream is deleted in the meantime?
+                // - or we lose access to it?
+                // it's like inception but worst...
+                StreamName stream = request.Options.Stream.StreamIdentifier.StreamName.ToStringUtf8();
+
+                // and one must break out right here if the stream is a meta-stream cause otherwise
+                // we get into a logical loop and boom - stack overflow
+                // this is the most absurd thing ever
+                if (stream.IsMetastream)
+                    return Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt.With("stream", stream)));
+
+                return await this.ReadLastStreamRecord(SystemStreams.MetastreamOf(stream), cancellationToken)
+                    .MatchAsync(
+                        rec => {
+                            if (rec == Record.None)
+                                return Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt.With("stream", stream)));
+
+                            var metadata = (StreamMetadata)rec.Value!;
+                            if (metadata.TruncateBefore == StreamRevision.Max)
+                                return Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.With("stream", stream)));
+
+                            throw KurrentClientException.CreateUnknown(nameof(ReadCore),
+                                new InvalidOperationException($"Stream {stream} was not found, but metadata does exist and the stream was not truncated. This is unexpected."));
+                        },
+                        err => err.Case switch {
+                            ReadError.ReadErrorCase.StreamDeleted  => Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.With("stream", stream))),
+                            ReadError.ReadErrorCase.StreamNotFound => Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt.With("stream", stream))),
+                            ReadError.ReadErrorCase.AccessDenied   => Result.Failure<Messages, ReadError>(new AccessDenied(mt => mt.With("stream", stream)))
+                        }
+                    )
+                    .ConfigureAwait(false);
+            }
+
         }
         catch (AccessDeniedException) {
+            cancellator.Dispose();
             return Result.Failure<Messages, ReadError>(new AccessDenied(mt => mt
                 .With("stream", request.Options.Stream.StreamIdentifier.StreamName.ToStringUtf8())));
         }
         catch (StreamDeletedException) {
-            // TODO: THIS HAPPENS WHEN WE TOMBSTONE A STREAM - WE NEED A STREAM TOMBSTONED ERROR INSTEAD OF DELETED
-            return Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt
+            cancellator.Dispose();
+            return Result.Failure<Messages, ReadError>(new StreamTombstoned(mt => mt
                 .With("stream", request.Options.Stream.StreamIdentifier.StreamName.ToStringUtf8())));
         }
 

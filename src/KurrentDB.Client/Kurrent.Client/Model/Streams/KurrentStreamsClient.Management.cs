@@ -28,15 +28,23 @@ public partial class KurrentStreamsClient {
             return Result.Failure<LogPosition, DeleteStreamError>(
                 ex.ActualVersion == -1
                     ? new StreamNotFound(x => x.With("stream", stream))
-                    : ex.AsStreamRevisionConflict());
+                    : ex.AsStreamRevisionConflict()
+            );
+        }
+        catch (StreamDeletedException ex) {
+            return await GetStreamInfo(stream, cancellationToken).MatchAsync(
+                info => info.State switch {
+                    StreamState.Deleted    => Result.Failure<LogPosition, DeleteStreamError>(new StreamDeleted(x => x.With("stream", stream))),
+                    StreamState.Tombstoned => Result.Failure<LogPosition, DeleteStreamError>(new StreamTombstoned(x => x.With("stream", stream)))
+                },
+                err => Result.Failure<LogPosition, DeleteStreamError>(err.AsAccessDenied)
+            );
+        }
+        catch (AccessDeniedException ex) {
+            return Result.Failure<LogPosition, DeleteStreamError>(ex.AsAccessDeniedError(stream));
         }
         catch (Exception ex) {
-            return Result.Failure<LogPosition, DeleteStreamError>(ex switch {
-                StreamNotFoundException       => ex.AsStreamNotFoundError(),
-                StreamDeletedException        => ex.AsStreamDeletedError(),
-                AccessDeniedException         => ex.AsAccessDeniedError(stream),
-                _                             => throw KurrentClientException.CreateUnknown(nameof(Delete), ex)
-            });
+            throw KurrentClientException.CreateUnknown(nameof(Delete), ex);
         }
     }
 
@@ -63,13 +71,20 @@ public partial class KurrentStreamsClient {
                     ? new StreamNotFound(x => x.With("stream", stream))
                     : ex.AsStreamRevisionConflict());
         }
+        catch (StreamDeletedException ex) {
+            return await GetStreamInfo(stream, cancellationToken).MatchAsync(
+                info => info.State switch {
+                    StreamState.Deleted    => Result.Failure<LogPosition, TombstoneError>(new StreamDeleted(x => x.With("stream", stream))),
+                    StreamState.Tombstoned => Result.Failure<LogPosition, TombstoneError>(new StreamTombstoned(x => x.With("stream", stream)))
+                },
+                err => Result.Failure<LogPosition, TombstoneError>(err.AsAccessDenied)
+            );
+        }
+        catch (AccessDeniedException ex) {
+            return Result.Failure<LogPosition, TombstoneError>(ex.AsAccessDeniedError(stream));
+        }
         catch (Exception ex) {
-            return Result.Failure<LogPosition, TombstoneError>(ex switch {
-                StreamNotFoundException => ex.AsStreamNotFoundError(),
-                StreamDeletedException  => ex.AsStreamDeletedError(),
-                AccessDeniedException   => ex.AsAccessDeniedError(stream),
-                _                       => throw KurrentClientException.CreateUnknown(nameof(Tombstone), ex)
-            });
+            throw KurrentClientException.CreateUnknown(nameof(Delete), ex);
         }
     }
 
@@ -93,17 +108,20 @@ public partial class KurrentStreamsClient {
                 rec => {
                     if (rec == Record.None) return new StreamInfo(); // no metadata stream, return empty info
 
-                    var metadata = (StreamMetadata)rec.Value!;
+                    var metadata  = (StreamMetadata)rec.Value!;
+                    var isDeleted = metadata.TruncateBefore == StreamRevision.Max;
                     return new StreamInfo {
                         Metadata         = metadata,
                         MetadataRevision = rec.StreamRevision,
-                        IsDeleted        = metadata.TruncateBefore == StreamRevision.Max
+                        IsDeleted        = isDeleted,
+                        State            = isDeleted ? StreamState.Deleted : StreamState.Active
                     };
                 },
                 err => err.Case switch {
-                    ReadError.ReadErrorCase.StreamDeleted  => new StreamInfo { IsDeleted = true, IsTombstoned = true }, // TODO: THIS HAPPENS WHEN WE TOMBSTONE A STREAM - WE NEED A STREAMTOMBSTONED ERROR
-                    ReadError.ReadErrorCase.StreamNotFound => new StreamInfo(),
-                    ReadError.ReadErrorCase.AccessDenied   => Result.Failure<StreamInfo, GetStreamInfoError>(err.AsAccessDenied)
+                    ReadError.ReadErrorCase.StreamDeleted    => new StreamInfo { IsDeleted = true, IsTombstoned = true, State = StreamState.Tombstoned },
+                    ReadError.ReadErrorCase.StreamTombstoned => new StreamInfo { IsDeleted = true, IsTombstoned = true, State = StreamState.Tombstoned },
+                    ReadError.ReadErrorCase.StreamNotFound   => new StreamInfo(),
+                    ReadError.ReadErrorCase.AccessDenied     => Result.Failure<StreamInfo, GetStreamInfoError>(err.AsAccessDenied)
                 }
             )
             .ConfigureAwait(false);
@@ -123,15 +141,16 @@ public partial class KurrentStreamsClient {
                     LastStreamUpdate   = rec.Timestamp
                 },
                 err => err.Case switch {
-                    ReadError.ReadErrorCase.StreamDeleted  => result.Value with { IsDeleted = true },
-                    ReadError.ReadErrorCase.StreamNotFound => result,
-                    ReadError.ReadErrorCase.AccessDenied   => Result.Failure<StreamInfo, GetStreamInfoError>(err.AsAccessDenied)
+                    ReadError.ReadErrorCase.StreamDeleted    => result.Value with { IsDeleted = true, State = StreamState.Deleted },
+                    ReadError.ReadErrorCase.StreamTombstoned => result,
+                    ReadError.ReadErrorCase.StreamNotFound   => result,
+                    ReadError.ReadErrorCase.AccessDenied     => Result.Failure<StreamInfo, GetStreamInfoError>(err.AsAccessDenied)
                 }
             )
             .ConfigureAwait(false);
     }
 
-	public ValueTask<Result<StreamRevision, SetStreamMetadataError>> SetStreamMetadata(StreamName stream, StreamMetadata metadata, StreamRevision metaStreamRevision, CancellationToken cancellationToken = default) {
+    public ValueTask<Result<StreamRevision, SetStreamMetadataError>> SetStreamMetadata(StreamName stream, StreamMetadata metadata, StreamRevision metaStreamRevision, CancellationToken cancellationToken = default) {
         var metaStream = SystemStreams.MetastreamOf(stream);
         var message    = Message.Create(metadata);
 
@@ -178,6 +197,28 @@ public partial class KurrentStreamsClient {
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(maxAge, TimeSpan.MaxValue);
         return SetDataRetention(stream, null, maxAge, StreamRevision.Unset, cancellationToken);
     }
+
+    public enum StreamState { Active, Deleted, Tombstoned, NotFound }
+
+    // public async ValueTask<StreamState> CheckStreamState(StreamName stream, CancellationToken cancellationToken = default) {
+    //
+    //     // TODO SS: Create new specific implementation of check stream state on the server for protocol v2
+    //
+    //     var result = await GetStreamInfo(stream, cancellationToken).MatchAsync(
+    //         ok => ok.IsTombstoned
+    //             ? StreamState.Tombstoned
+    //             : ok.IsDeleted
+    //                 ? StreamState.Deleted
+    //                 : StreamState.Active,
+    //             ko => ko.Case switch {
+    //                 GetStreamInfoError.GetStreamInfoErrorCase.AccessDenied => throw new AccessDeniedException(stream, ko.AsAccessDenied),
+    //                 _                                                       => throw KurrentClientException.CreateUnknown(nameof(CheckStreamState), ko.Value)
+    //             }
+    //         )
+    //         .ConfigureAwait(false);
+    //
+    //
+    // }
 
     // public ValueTask<Result<StreamRevision, StreamExistsError>> StreamExists(StreamName stream, CancellationToken cancellationToken = default) =>
     //     this.ReadFirstStreamRecord(stream, cancellationToken).MatchAsync(

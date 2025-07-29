@@ -188,6 +188,7 @@ public abstract record ReadOptionsBase {
 public readonly partial record struct ReadError : IVariantResultError<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
+    ErrorDetails.StreamTombstoned,
     ErrorDetails.AccessDenied>;
 
 
@@ -389,6 +390,7 @@ public record Subscription : Messages {
 public readonly partial record struct DeleteStreamError : IVariantResultError<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
+    ErrorDetails.StreamTombstoned,
     ErrorDetails.AccessDenied,
     ErrorDetails.StreamRevisionConflict>;
 
@@ -396,6 +398,7 @@ public readonly partial record struct DeleteStreamError : IVariantResultError<
 public readonly partial record struct TombstoneError : IVariantResultError<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
+    ErrorDetails.StreamTombstoned,
     ErrorDetails.AccessDenied,
     ErrorDetails.StreamRevisionConflict>;
 
@@ -407,6 +410,7 @@ public readonly partial record struct GetStreamInfoError : IVariantResultError<
 public readonly partial record struct SetStreamMetadataError : IVariantResultError<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
+    ErrorDetails.StreamTombstoned,
     ErrorDetails.AccessDenied,
     ErrorDetails.StreamRevisionConflict>;
 
@@ -414,12 +418,8 @@ public readonly partial record struct SetStreamMetadataError : IVariantResultErr
 public readonly partial record struct TruncateStreamError : IVariantResultError<
     ErrorDetails.StreamNotFound,
     ErrorDetails.StreamDeleted,
+    ErrorDetails.StreamTombstoned,
     ErrorDetails.AccessDenied,
     ErrorDetails.StreamRevisionConflict>;
-
-
-[PublicAPI]
-public readonly partial record struct StreamExistsError : IVariantResultError<
-    ErrorDetails.AccessDenied>;
 
 #endregion

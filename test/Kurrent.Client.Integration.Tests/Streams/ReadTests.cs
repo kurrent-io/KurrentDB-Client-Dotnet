@@ -88,44 +88,6 @@ public class ReadTests : KurrentClientTestFixture {
     }
 
     [Test]
-    public async Task fails_with_stream_not_found_when_stream_was_deleted(CancellationToken ct) {
-        var simulation = await SeedGame(ct);
-
-        await AutomaticClient.Streams
-            .Delete(simulation.Game.Stream, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        await AutomaticClient.Streams
-            .ReadStream(simulation.Game.Stream, ct)
-            .ShouldFailAsync(error =>
-                error.Case.ShouldBe(ReadError.ReadErrorCase.StreamNotFound));
-    }
-
-    [Test]
-    public async Task fails_with_stream_deleted_when_stream_was_tombstoned(CancellationToken ct) {
-        var simulation = await SeedGame(ct);
-
-        await AutomaticClient.Streams
-            .Tombstone(simulation.Game.Stream, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        await AutomaticClient.Streams
-            .ReadStream(simulation.Game.Stream, ct)
-            .ShouldFailAsync(error =>
-                error.Case.ShouldBe(ReadError.ReadErrorCase.StreamDeleted));
-    }
-
-    [Test]
-    public async Task fails_with_stream_not_found_when_stream_does_not_exist(CancellationToken ct) {
-        var game = TrySimulateGame(GamesAvailable.TicTacToe);
-
-        await AutomaticClient.Streams
-            .ReadStream(game.Stream, ct)
-            .ShouldFailAsync(error =>
-                error.Case.ShouldBe(ReadError.ReadErrorCase.StreamNotFound));
-    }
-
-    [Test]
     public async Task reads_first_stream_record(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
@@ -166,5 +128,44 @@ public class ReadTests : KurrentClientTestFixture {
             .ShouldNotThrowOrFailAsync(record => {
                 record.IsDecoded.ShouldBeFalse();
             });
+    }
+
+
+    [Test]
+    public async Task fails_with_stream_deleted_error_when_stream_was_deleted(CancellationToken ct) {
+        var simulation = await SeedGame(ct);
+
+        await AutomaticClient.Streams
+            .Delete(simulation.Game.Stream, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Streams
+            .ReadStream(simulation.Game.Stream, ct)
+            .ShouldFailAsync(error =>
+                error.Case.ShouldBe(ReadError.ReadErrorCase.StreamDeleted));
+    }
+
+    [Test]
+    public async Task fails_with_stream_tombstoned_when_stream_was_tombstoned(CancellationToken ct) {
+        var simulation = await SeedGame(ct);
+
+        await AutomaticClient.Streams
+            .Tombstone(simulation.Game.Stream, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Streams
+            .ReadStream(simulation.Game.Stream, ct)
+            .ShouldFailAsync(error =>
+                error.Case.ShouldBe(ReadError.ReadErrorCase.StreamTombstoned));
+    }
+
+    [Test]
+    public async Task fails_with_stream_not_found_error_when_stream_does_not_exist(CancellationToken ct) {
+        var game = TrySimulateGame(GamesAvailable.TicTacToe);
+
+        await AutomaticClient.Streams
+            .ReadStream(game.Stream, ct)
+            .ShouldFailAsync(error =>
+                error.Case.ShouldBe(ReadError.ReadErrorCase.StreamNotFound));
     }
 }

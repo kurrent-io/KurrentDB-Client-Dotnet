@@ -293,9 +293,6 @@ public class KurrentOperationErrorGenerator : ISourceGenerator {
                 .Any(syntax => syntax.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)));
     }
 
-    /// <summary>
-    /// Returns the instance type name and its containing namespace.
-    /// </summary>
     static (string Name, string ContainingNamespace) GetInstanceNameAndNamespace(INamedTypeSymbol typeSymbol) {
         var instanceName = typeSymbol.Name;
         var ns = typeSymbol.ContainingNamespace.IsGlobalNamespace
@@ -305,9 +302,6 @@ public class KurrentOperationErrorGenerator : ISourceGenerator {
         return (Name: instanceName, ContainingNamespace: ns);
     }
 
-    /// <summary>
-    /// Must generate safe file name for the generated source file.
-    /// </summary>
     static string GenerateHintName(INamedTypeSymbol typeSymbol) {
         var typeNames          = GetInstanceNameAndNamespace(typeSymbol);
         var sanitizedTypeName  = SanitizeName(typeNames.Name);

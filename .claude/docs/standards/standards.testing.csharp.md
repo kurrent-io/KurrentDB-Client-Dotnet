@@ -118,7 +118,7 @@ test/
 [Test]
 public async Task append_event_updates_stream_position_when_event_is_valid() {
     // Arrange
-    var streamId = "test-stream";
+    var streamId  = "test-stream";
     var eventData = new EventData("test-event", "payload");
     var expectedPosition = 5;
     

@@ -4,7 +4,7 @@ using NJsonSchema;
 
 namespace Kurrent.Client.Tests;
 
-public partial class KurrentClientTestFixture : TestFixture {
+public partial class KurrentClientTestFixture {
 	protected static string NewSchemaName() => $"test-schema-{Guid.NewGuid():N}";
 
 	protected static JsonSchema NewJsonSchemaDefinition() {
@@ -24,8 +24,8 @@ public partial class KurrentClientTestFixture : TestFixture {
 }
 
 public static class JsonSchemaExtensions {
-	public static ByteString ToByteString(this JsonSchema schema)
-		=> ByteString.CopyFromUtf8(schema.ToJson());
+	public static ByteString ToByteString(this JsonSchema schema) =>
+		ByteString.CopyFromUtf8(schema.ToJson());
 
 	static JsonSchema AddField(this JsonSchema schema, string name, JsonObjectType type, object? defaultValue = null, bool? required = false) {
 		var clone = Clone(schema);

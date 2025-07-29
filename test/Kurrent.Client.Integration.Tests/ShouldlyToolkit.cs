@@ -1,9 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using JetBrains.Annotations;
-using Kurrent.Client.Model;
-
-using System.Runtime.CompilerServices;
 
 namespace Kurrent.Client.Tests;
 

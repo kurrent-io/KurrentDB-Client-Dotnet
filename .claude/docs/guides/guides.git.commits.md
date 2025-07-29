@@ -24,7 +24,7 @@
 ## Commit Types
 
 | Type       | Description                                         | Use When                                                           |
-| ---------- | --------------------------------------------------- | ------------------------------------------------------------------ |
+|------------|-----------------------------------------------------|--------------------------------------------------------------------|
 | `feat`     | A new feature for the user                          | Adding functionality that end users can directly benefit from      |
 | `fix`      | A bug fix for the user                              | Resolving issues that negatively impact user experience            |
 | `docs`     | Documentation changes                               | Updating README, API docs, code comments, or guides                |
@@ -107,7 +107,7 @@ Before generating a commit message, analyze:
 ### Smart Type Detection Rules
 
 | Code Pattern                | Likely Type | Reasoning                                       |
-| --------------------------- | ----------- | ----------------------------------------------- |
+|-----------------------------|-------------|-------------------------------------------------|
 | New public methods/classes  | `feat`      | Adding user-accessible functionality            |
 | Bug fix keywords in changes | `fix`       | Words like "fix", "bug", "issue", "error"       |
 | Performance optimizations   | `perf`      | Algorithmic improvements, caching, lazy loading |
@@ -131,7 +131,7 @@ Priority Order:
 
 ### Intelligent Scope Patterns
 | Pattern                         | Scope        | Example                                    |
-| ------------------------------- | ------------ | ------------------------------------------ |
+|---------------------------------|--------------|--------------------------------------------|
 | `src/components/auth/**`        | `auth`       | Authentication components                  |
 | `src/api/users/**`              | `user-api`   | User-related API endpoints                 |
 | `src/utils/**` + multiple areas | `utils`      | Utility functions affecting multiple areas |

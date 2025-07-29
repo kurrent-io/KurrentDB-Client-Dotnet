@@ -284,8 +284,8 @@ public class MetadataTests {
         metadata.Count.ShouldBe(2);
         metadata.ContainsKey("string").ShouldBeTrue();
         metadata.ContainsKey("missing").ShouldBeFalse();
-        metadata.Get<string>("string").ShouldBe("value");
-        metadata.Get<int>("int").ShouldBe(42);
+        metadata.GetRequired<string>("string").ShouldBe("value");
+        metadata.GetRequired<int>("int").ShouldBe(42);
         metadata.GetOrDefault<string>("missing", "default").ShouldBe("default");
         metadata.TryGet<string>("string", out var value).ShouldBeTrue();
         value.ShouldBe("value");

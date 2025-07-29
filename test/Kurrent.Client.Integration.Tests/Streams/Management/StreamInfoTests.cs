@@ -54,7 +54,18 @@ public class StreamInfoTests : KurrentClientTestFixture {
             });
     }
 
-    [Test, Skip("Needs investigation")]
+    [Test]
+    public async Task returns_stream_info_when_stream_does_not_exist(CancellationToken ct) {
+        await AutomaticClient.Streams
+            .GetStreamInfo("does_not_exist", ct)
+            .ShouldNotThrowOrFailAsync(info => {
+                info.HasMetadata.ShouldBeFalse();
+                info.IsDeleted.ShouldBeFalse();
+                info.IsTombstoned.ShouldBeFalse();
+            });
+    }
+
+    [Test]
     public async Task returns_stream_info_when_stream_is_deleted(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
@@ -65,6 +76,7 @@ public class StreamInfoTests : KurrentClientTestFixture {
         await AutomaticClient.Streams
             .GetStreamInfo(simulation.Game.Stream, ct)
             .ShouldNotThrowOrFailAsync(info => {
+                info.HasMetadata.ShouldBeTrue();
                 info.IsDeleted.ShouldBeTrue();
                 info.IsTombstoned.ShouldBeFalse();
             });
@@ -81,6 +93,7 @@ public class StreamInfoTests : KurrentClientTestFixture {
         await AutomaticClient.Streams
             .GetStreamInfo(simulation.Game.Stream, ct)
             .ShouldNotThrowOrFailAsync(info => {
+                info.HasMetadata.ShouldBeFalse(); // because the server does not let this happen... absurd...
                 info.IsDeleted.ShouldBeTrue();
                 info.IsTombstoned.ShouldBeTrue();
             });
@@ -134,7 +147,7 @@ public class StreamInfoTests : KurrentClientTestFixture {
     }
 
     [Test]
-    public async Task fails_to_sets_stream_metadata_when_stream_is_tombstoned(CancellationToken ct) {
+    public async Task fails_to_set_stream_metadata_when_stream_is_tombstoned(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
         await AutomaticClient.Streams

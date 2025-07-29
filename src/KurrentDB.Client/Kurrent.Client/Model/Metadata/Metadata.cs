@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Diagnostics;
 using System.Globalization;
+using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 
 namespace Kurrent.Client.Model;
 
@@ -10,29 +12,29 @@ namespace Kurrent.Client.Model;
 /// </summary>
 [PublicAPI]
 [DebuggerDisplay("{ToDebugString(prettyPrint: true)}")]
+[JsonConverter(typeof(MetadataJsonConverter))]
 public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
-	readonly Dictionary<string, object?> _dictionary;
-	bool _isLocked;
+	internal readonly Dictionary<string, object?> Dictionary;
 
 	/// <summary>
 	/// Initializes a new, empty instance of the Metadata class using ordinal string comparison.
 	/// </summary>
 	public Metadata() =>
-		_dictionary = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+		Dictionary = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>
 	/// Initializes a new instance of the Metadata class from an existing metadata instance.
 	/// </summary>
 	/// <param name="metadata">The metadata to copy from.</param>
     public Metadata(Metadata metadata) =>
-		_dictionary = new Dictionary<string, object?>(metadata._dictionary, StringComparer.OrdinalIgnoreCase);
+		Dictionary = new Dictionary<string, object?>(metadata.Dictionary, StringComparer.OrdinalIgnoreCase);
 
 	/// <summary>
 	/// Initializes a new instance of the Metadata class from a dictionary.
 	/// </summary>
 	/// <param name="items">The dictionary to copy from.</param>
     public Metadata(Dictionary<string, object?> items) {
-	    _dictionary = new Dictionary<string, object?>(items, StringComparer.OrdinalIgnoreCase);
+	    Dictionary = new Dictionary<string, object?>(items, StringComparer.OrdinalIgnoreCase);
 	}
 
 	/// <summary>
@@ -41,7 +43,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="items">The collection of key-value pairs to copy from.</param>
     public Metadata(IEnumerable<KeyValuePair<string, object?>> items) {
 		// Skip the dictionary constructor to avoid ambiguity
-		_dictionary = items.ToDictionary(k => k.Key, v => v.Value, StringComparer.OrdinalIgnoreCase);
+		Dictionary = items.ToDictionary(k => k.Key, v => v.Value, StringComparer.OrdinalIgnoreCase);
 	}
 
     public static Metadata Create(Dictionary<string, object?> items) => new(items);
@@ -65,7 +67,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// </code>
 	/// </example>
 	public Metadata Lock() {
-		_isLocked = true;
+		IsLocked = true;
 		return this;
 	}
 
@@ -94,14 +96,14 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// Throws an InvalidOperationException if this metadata instance is locked.
 	/// </summary>
 	Metadata ThrowIfLocked() =>
-        _isLocked ? throw new InvalidOperationException("Cannot modify locked metadata. Use CreateUnlockedCopy() to create a mutable copy.") : this;
+        IsLocked ? throw new InvalidOperationException("Cannot modify locked metadata. Use CreateUnlockedCopy() to create a mutable copy.") : this;
 
     #region . IDictionary .
 
 	/// <summary>
 	/// Gets the number of elements in the collection.
 	/// </summary>
-	public int Count => _dictionary.Count;
+	public int Count => Dictionary.Count;
 
 	/// <summary>
 	/// Gets a value indicating whether the dictionary is read-only.
@@ -111,17 +113,17 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <summary>
 	/// Gets a value indicating whether this metadata instance is locked and cannot be modified directly.
 	/// </summary>
-	public bool IsLocked => _isLocked;
+	public bool IsLocked { get; private set; }
 
 	/// <summary>
 	/// Gets an collection that contains the keys in the dictionary.
 	/// </summary>
-	public ICollection<string> Keys => _dictionary.Keys;
+	public ICollection<string> Keys => Dictionary.Keys;
 
 	/// <summary>
 	/// Gets an collection that contains the values in the dictionary.
 	/// </summary>
-	public ICollection<object?> Values => _dictionary.Values;
+	public ICollection<object?> Values => Dictionary.Values;
 
 	/// <summary>
 	/// Gets or sets the value associated with the specified key.
@@ -131,10 +133,10 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <exception cref="KeyNotFoundException">The key does not exist in the collection (when getting).</exception>
 	/// <exception cref="InvalidOperationException">Thrown when attempting to set a value on a locked metadata instance.</exception>
 	public object? this[string key] {
-		get => _dictionary[key];
+		get => Dictionary[key];
 		set {
 			ThrowIfLocked();
-			_dictionary[key] = value;
+			Dictionary[key] = value;
 		}
 	}
 
@@ -144,7 +146,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <exception cref="InvalidOperationException">Thrown when attempting to clear a locked metadata instance.</exception>
 	public void Clear() {
 		ThrowIfLocked();
-		_dictionary.Clear();
+		Dictionary.Clear();
 	}
 
 	/// <summary>
@@ -152,7 +154,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// </summary>
 	/// <param name="key">The key to locate.</param>
 	/// <returns>true if the dictionary contains an element with the specified key; otherwise, false.</returns>
-	public bool ContainsKey(string key) => _dictionary.ContainsKey(key);
+	public bool ContainsKey(string key) => Dictionary.ContainsKey(key);
 
 	/// <summary>
 	/// Removes the specified key from the dictionary.
@@ -162,14 +164,14 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <exception cref="InvalidOperationException">Thrown when attempting to remove from a locked metadata instance.</exception>
 	public bool Remove(string key) {
 		ThrowIfLocked();
-		return _dictionary.Remove(key);
+		return Dictionary.Remove(key);
 	}
 
 	/// <summary>
 	/// Returns an enumerator that iterates through the collection.
 	/// </summary>
 	/// <returns>An enumerator that can be used to iterate through the collection.</returns>
-	public IEnumerator<KeyValuePair<string, object?>> GetEnumerator() => _dictionary.GetEnumerator();
+	public IEnumerator<KeyValuePair<string, object?>> GetEnumerator() => Dictionary.GetEnumerator();
 
 	/// <summary>
 	/// Returns an enumerator that iterates through the collection.
@@ -190,7 +192,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <returns>true if the key was found and the value could be converted to type T; otherwise, false.</returns>
 	public bool TryGet<T>(string key, out T? value) {
 		// check if the key exists
-		if (!_dictionary.TryGetValue(key, out var obj)) {
+		if (!Dictionary.TryGetValue(key, out var obj)) {
 			value = default;
 			return false;
 		}
@@ -199,6 +201,10 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 			// direct type match (most common case)
 			case T typedValue:
 				value = typedValue;
+				return true;
+
+			case JsonValue jsonValue:
+				value = jsonValue.TryGetValue<T>(out var jsonTypedValue) ? jsonTypedValue : default;
 				return true;
 
 			// handle null case
@@ -268,14 +274,35 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
             ? typedValue
             : defaultValue;
 
-    public T Get<T>(string key) =>
+    /// <summary>
+    /// Gets the value associated with the specified key as the specified type.
+    /// Throws a KeyNotFoundException if the key is not found or if the value is null.
+    /// </summary>
+    /// <typeparam name="T">The type to get or convert to.</typeparam>
+    /// <param name="key">The key to retrieve.</param>
+    /// <returns>
+    /// The value associated with the specified key cast to type T.
+    /// </returns>
+    public T GetRequired<T>(string key) =>
         TryGet<T>(key, out var typedValue) && typedValue is not null
             ? typedValue
-            : throw new KeyNotFoundException($"Key '{key}' not found in metadata or value is null.");
+            : throw new KeyNotFoundException($"Key '{key}' not found or value is null.");
 
 	#endregion
 
 	#region . Modification Methods .
+
+	/// <summary>
+	/// Evolves the value associated with the specified key by applying a transformation function.
+	/// </summary>
+	public Metadata EvolveValue<T, TE>(string key, Func<T?, TE> transform) {
+		ThrowIfLocked();
+
+		if (TryGet<T>(key, out var value))
+			Dictionary[key] = transform(value);
+
+		return this;
+	}
 
 	/// <summary>
 	/// Adds or updates a key-value pair in the metadata.
@@ -287,7 +314,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <exception cref="InvalidOperationException">Thrown when attempting to modify a locked metadata instance.</exception>
 	public Metadata With<T>(string key, T? value) {
 		ThrowIfLocked();
-		_dictionary[key] = value;
+		Dictionary[key] = value;
 		return this;
 	}
 
@@ -300,7 +327,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <exception cref="InvalidOperationException">Thrown when attempting to modify a locked metadata instance.</exception>
 	public Metadata With(string key, object? value) {
 		ThrowIfLocked();
-		_dictionary[key] = value;
+		Dictionary[key] = value;
 		return this;
 	}
 
@@ -312,7 +339,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <exception cref="InvalidOperationException">Thrown when attempting to modify a locked metadata instance.</exception>
 	public Metadata WithMany(Metadata items) {
 		ThrowIfLocked();
-		foreach (var item in items) _dictionary[item.Key] = item.Value;
+		foreach (var item in items) Dictionary[item.Key] = item.Value;
 		return this;
 	}
 
@@ -324,7 +351,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <exception cref="InvalidOperationException">Thrown when attempting to modify a locked metadata instance.</exception>
 	public Metadata WithMany(params KeyValuePair<string, object?>[] items) {
 		ThrowIfLocked();
-		foreach (var item in items) _dictionary[item.Key] = item.Value;
+		foreach (var item in items) Dictionary[item.Key] = item.Value;
 		return this;
 	}
 
@@ -336,7 +363,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <exception cref="InvalidOperationException">Thrown when attempting to modify a locked metadata instance.</exception>
 	public Metadata WithMany(IEnumerable<KeyValuePair<string, object?>> items) {
 		ThrowIfLocked();
-		foreach (var item in items) _dictionary[item.Key] = item.Value;
+		foreach (var item in items) Dictionary[item.Key] = item.Value;
 		return this;
 	}
 
@@ -348,7 +375,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <exception cref="InvalidOperationException">Thrown when attempting to modify a locked metadata instance.</exception>
 	public Metadata Without(string key) {
 		ThrowIfLocked();
-		_dictionary.Remove(key);
+		Dictionary.Remove(key);
 		return this;
 	}
 
@@ -360,7 +387,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <exception cref="InvalidOperationException">Thrown when attempting to modify a locked metadata instance.</exception>
 	public Metadata WithoutMany(IEnumerable<string> keys) {
 		ThrowIfLocked();
-		foreach (var key in keys) _dictionary.Remove(key);
+		foreach (var key in keys) Dictionary.Remove(key);
 		return this;
 	}
 
@@ -372,7 +399,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <exception cref="InvalidOperationException">Thrown when attempting to modify a locked metadata instance.</exception>
 	public Metadata WithoutMany(params string[] keys) {
 		ThrowIfLocked();
-		foreach (var key in keys) _dictionary.Remove(key);
+		foreach (var key in keys) Dictionary.Remove(key);
 		return this;
 	}
 
@@ -390,9 +417,9 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <returns>This metadata instance for method chaining.</returns>
 	/// <exception cref="InvalidOperationException">Thrown when attempting to modify a locked metadata instance and condition is true.</exception>
 	public Metadata WithIf<T>(bool condition, string key, T? value) {
-		if (!condition) return this;
 		ThrowIfLocked();
-		_dictionary[key] = value;
+		if (!condition) return this;
+		Dictionary[key] = value;
 		return this;
 	}
 
@@ -407,9 +434,9 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <returns>This metadata instance for method chaining.</returns>
 	/// <exception cref="InvalidOperationException">Thrown when attempting to modify a locked metadata instance and condition is true.</exception>
 	public Metadata WithIf<T>(bool condition, string key, Func<T?> valueFactory) {
-		if (!condition) return this;
 		ThrowIfLocked();
-		_dictionary[key] = valueFactory();
+		if (!condition) return this;
+		Dictionary[key] = valueFactory();
 		return this;
 	}
 
@@ -423,9 +450,9 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <returns>This metadata instance for method chaining.</returns>
 	/// <exception cref="InvalidOperationException">Thrown when attempting to modify a locked metadata instance and predicate returns true.</exception>
 	public Metadata WithIf<T>(Func<Metadata, bool> predicate, string key, T? value) {
-		if (!predicate(this)) return this;
 		ThrowIfLocked();
-		_dictionary[key] = value;
+		if (!predicate(this)) return this;
+		Dictionary[key] = value;
 		return this;
 	}
 
@@ -440,9 +467,9 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <returns>This metadata instance for method chaining.</returns>
 	/// <exception cref="InvalidOperationException">Thrown when attempting to modify a locked metadata instance and predicate returns true.</exception>
 	public Metadata WithIf<T>(Func<Metadata, bool> predicate, string key, Func<T?> valueFactory) {
-		if (!predicate(this)) return this;
 		ThrowIfLocked();
-		_dictionary[key] = valueFactory();
+		if (!predicate(this)) return this;
+		Dictionary[key] = valueFactory();
 		return this;
 	}
 
@@ -452,10 +479,12 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="condition">The condition to evaluate.</param>
 	/// <param name="items">The metadata containing key-value pairs to be added or updated if the condition is true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
+	/// <exception cref="InvalidOperationException">Thrown when attempting to modify a locked metadata instance and condition is true.</exception>
 	public Metadata WithManyIf(bool condition, Metadata items) {
-		if (condition)
-			foreach (var item in items)
-				_dictionary[item.Key] = item.Value;
+		ThrowIfLocked();
+		if (!condition) return this;
+		foreach (var item in items)
+			Dictionary[item.Key] = item.Value;
 
 		return this;
 	}
@@ -467,10 +496,10 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="items">The dictionary containing key-value pairs to be added or updated if the condition is true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
 	public Metadata WithManyIf(bool condition, IDictionary<string, object?> items) {
-        if (!condition) return this;
-
+		ThrowIfLocked();
+		if (!condition) return this;
         foreach (var item in items)
-            _dictionary[item.Key] = item.Value;
+            Dictionary[item.Key] = item.Value;
 
         return this;
 	}
@@ -482,10 +511,10 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="items">The key-value pairs to add or update if the condition is true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
 	public Metadata WithManyIf(bool condition, params KeyValuePair<string, object?>[] items) {
-        if (!condition) return this;
-
+		ThrowIfLocked();
+		if (!condition) return this;
         foreach (var item in items)
-            _dictionary[item.Key] = item.Value;
+            Dictionary[item.Key] = item.Value;
 
         return this;
 	}
@@ -498,10 +527,10 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="itemsFactory">A function that produces the key-value pairs to add or update if the condition is true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
 	public Metadata WithManyIf(bool condition, Func<IEnumerable<KeyValuePair<string, object?>>> itemsFactory) {
-        if (!condition) return this;
-
+		ThrowIfLocked();
+		if (!condition) return this;
         foreach (var item in itemsFactory())
-            _dictionary[item.Key] = item.Value;
+            Dictionary[item.Key] = item.Value;
 
         return this;
 	}
@@ -513,10 +542,10 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="items">The metadata containing key-value pairs to be added or updated if the predicate returns true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
 	public Metadata WithManyIf(Func<Metadata, bool> predicate, Metadata items) {
-        if (!predicate(this)) return this;
-
+		ThrowIfLocked();
+		if (!predicate(this)) return this;
         foreach (var item in items)
-            _dictionary[item.Key] = item.Value;
+            Dictionary[item.Key] = item.Value;
 
         return this;
 	}
@@ -528,10 +557,10 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="items">The dictionary containing key-value pairs to be added or updated if the predicate returns true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
 	public Metadata WithManyIf(Func<Metadata, bool> predicate, IDictionary<string, object?> items) {
-        if (!predicate(this)) return this;
-
+		ThrowIfLocked();
+		if (!predicate(this)) return this;
         foreach (var item in items)
-            _dictionary[item.Key] = item.Value;
+            Dictionary[item.Key] = item.Value;
 
         return this;
 	}
@@ -543,10 +572,10 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="items">The key-value pairs to add or update if the predicate returns true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
 	public Metadata WithManyIf(Func<Metadata, bool> predicate, params KeyValuePair<string, object?>[] items) {
-        if (!predicate(this)) return this;
-
+		ThrowIfLocked();
+		if (!predicate(this)) return this;
         foreach (var item in items)
-            _dictionary[item.Key] = item.Value;
+            Dictionary[item.Key] = item.Value;
 
         return this;
 	}
@@ -559,10 +588,10 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="itemsFactory">A function that produces the key-value pairs to add or update if the predicate returns true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
 	public Metadata WithManyIf(Func<Metadata, bool> predicate, Func<IEnumerable<KeyValuePair<string, object?>>> itemsFactory) {
-        if (!predicate(this)) return this;
-
+		ThrowIfLocked();
+		if (!predicate(this)) return this;
         foreach (var item in itemsFactory())
-            _dictionary[item.Key] = item.Value;
+            Dictionary[item.Key] = item.Value;
 
         return this;
 	}
@@ -574,7 +603,8 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="key">The key to remove if the condition is true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
 	public Metadata WithoutIf(bool condition, string key) {
-		if (condition) _dictionary.Remove(key);
+		ThrowIfLocked();
+		if (condition) Dictionary.Remove(key);
 		return this;
 	}
 
@@ -585,10 +615,10 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="keys">The collection of keys to remove if the condition is true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
 	public Metadata WithoutManyIf(bool condition, IEnumerable<string> keys) {
-        if (!condition) return this;
-
+		ThrowIfLocked();
+		if (!condition) return this;
         foreach (var key in keys)
-            _dictionary.Remove(key);
+            Dictionary.Remove(key);
 
         return this;
 	}
@@ -600,10 +630,10 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="keys">The keys to remove if the condition is true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
 	public Metadata WithoutManyIf(bool condition, params string[] keys) {
-        if (!condition) return this;
-
+		ThrowIfLocked();
+		if (!condition) return this;
         foreach (var key in keys)
-            _dictionary.Remove(key);
+            Dictionary.Remove(key);
 
         return this;
 	}
@@ -615,7 +645,8 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="key">The key to remove if the predicate returns true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
 	public Metadata WithoutIf(Func<Metadata, bool> predicate, string key) {
-		if (predicate(this)) _dictionary.Remove(key);
+		ThrowIfLocked();
+		if (predicate(this)) Dictionary.Remove(key);
 		return this;
 	}
 
@@ -626,10 +657,10 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="keys">The collection of keys to remove if the predicate returns true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
 	public Metadata WithoutManyIf(Func<Metadata, bool> predicate, IEnumerable<string> keys) {
-        if (!predicate(this)) return this;
-
+		ThrowIfLocked();
+		if (!predicate(this)) return this;
         foreach (var key in keys)
-            _dictionary.Remove(key);
+            Dictionary.Remove(key);
 
         return this;
 	}
@@ -641,10 +672,10 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="keys">The keys to remove if the predicate returns true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
 	public Metadata WithoutManyIf(Func<Metadata, bool> predicate, params string[] keys) {
-        if (!predicate(this)) return this;
-
+		ThrowIfLocked();
+		if (!predicate(this)) return this;
         foreach (var key in keys)
-            _dictionary.Remove(key);
+            Dictionary.Remove(key);
 
         return this;
 	}
@@ -667,17 +698,21 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// <param name="condition">The condition to evaluate.</param>
 	/// <param name="transform">The transformation function to apply if the condition is true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
-	public Metadata TransformIf(bool condition, Func<Metadata, Metadata> transform) =>
-        !condition ? this : transform(this);
+	public Metadata TransformIf(bool condition, Func<Metadata, Metadata> transform) {
+		ThrowIfLocked();
+	    return !condition ? this : transform(this);
+	}
 
-    /// <summary>
+	/// <summary>
 	/// Applies a transformation function to the metadata only if a predicate evaluates to true.
 	/// </summary>
 	/// <param name="predicate">A function that tests this metadata instance and returns a boolean.</param>
 	/// <param name="transform">The transformation function to apply if the predicate returns true.</param>
 	/// <returns>This metadata instance for method chaining.</returns>
-	public Metadata TransformIf(Func<Metadata, bool> predicate, Func<Metadata, Metadata> transform) =>
-        !predicate(this) ? this : transform(this);
+	public Metadata TransformIf(Func<Metadata, bool> predicate, Func<Metadata, Metadata> transform) {
+		ThrowIfLocked();
+		return !predicate(this) ? this : transform(this);
+	}
 
 	/// <summary>
 	/// Creates a new Metadata instance where all values are converted to their string representation
@@ -697,13 +732,16 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 				TimeOnly timeOnly             => timeOnly.ToString("O"),
 				TimeSpan timeSpan             => timeSpan.ToString("c"),
 				Guid guid                     => guid.ToString("D"),
+				int int32                     => int32.ToString(CultureInfo.InvariantCulture),
+				long int64                    => int64.ToString(CultureInfo.InvariantCulture),
 				decimal dec                   => dec.ToString(CultureInfo.InvariantCulture),
 				double dbl                    => dbl.ToString(CultureInfo.InvariantCulture),
 				float flt                     => flt.ToString(CultureInfo.InvariantCulture),
-				byte b						  => b.ToString(CultureInfo.InvariantCulture),
-				char c                        => c.ToString(),
+				byte b                        => b.ToString(CultureInfo.InvariantCulture),
+				char c                        => c.ToString(CultureInfo.InvariantCulture),
 				byte[] bytes                  => Convert.ToBase64String(bytes),
-				ReadOnlyMemory<byte> memory   => Convert.ToBase64String(memory.ToArray()),
+				Memory<byte> memory           => Convert.ToBase64String(memory.Span),
+				ReadOnlyMemory<byte> memory   => Convert.ToBase64String(memory.Span),
 				string str                    => str,
 				IEnumerable enumerable        => string.Join(", ", enumerable.Cast<object?>().Select(ConvertValueToString)),
 				_                             => value.ToString()
@@ -716,13 +754,13 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 	/// Returns a string representation of the metadata suitable for debugging.
 	/// </summary>
 	public override string ToString() =>
-		$"Metadata({Count} items): {{{string.Join(", ", _dictionary.Select(p => $"{p.Key}={p.Value}"))}}}";
+		$"Metadata ({Count} items): {string.Join("\n", Dictionary.Select(p => $"  {p.Key} = {p.Value ?? "null"}"))}";
 
 	/// <summary>
 	/// Creates a debug view.
 	/// </summary>
-	public string ToDebugString(bool prettyPrint = false) =>
-		!prettyPrint ? ToString() : $"Metadata:\n{string.Join("\n", _dictionary.Select(p => $"  {p.Key} = {p.Value ?? "null"}"))}";
+	string ToDebugString(bool prettyPrint = false) =>
+		!prettyPrint ? ToString() : $"Metadata:\n{string.Join("\n", Dictionary.Select(p => $"  {p.Key} = {p.Value ?? "null"} {p.Value?.GetType().Name}"))}";
 
 	public static implicit operator Metadata(Dictionary<string, object?> dictionary) => new(dictionary);
 }

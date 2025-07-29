@@ -94,18 +94,18 @@ public record StreamConfiguration {
 ```csharp
 public class ServiceConfiguration {
     // Connection Properties
-    public string                    ConnectionString     { get; init; }
-    public TimeSpan                  ConnectionTimeout    { get; init; } = TimeSpan.FromSeconds(30);
-    public int                       MaxRetries           { get; init; } = 3;
+    public string                 ConnectionString  { get; init; }
+    public TimeSpan               ConnectionTimeout { get; init; } = TimeSpan.FromSeconds(30);
+    public int                    MaxRetries        { get; init; } = 3;
     
     // Service Dependencies  
-    public IEventRepository          EventRepository      { get; }
-    public ILogger<ServiceConfig>    Logger               { get; }
-    public IMemoryCache              Cache                { get; }
+    public IEventRepository       EventRepository   { get; }
+    public ILogger<ServiceConfig> Logger            { get; }
+    public IMemoryCache           Cache             { get; }
     
     // Advanced Configuration
-    public Func<string, bool>        EventFilter          { get; init; } = _ => true;
-    public Action<ProcessResult>     OnProcessComplete    { get; init; } = _ => { };
+    public Func<string, bool>     EventFilter       { get; init; } = _ => true;
+    public Action<ProcessResult>  OnProcessComplete { get; init; } = _ => { };
 }
 ```
 
@@ -113,12 +113,12 @@ public class ServiceConfiguration {
 
 ```csharp
 public string ProcessEventData(EventData eventData) => eventData switch {
-    { Type: var type, Data: var data } when type.StartsWith("order") && !string.IsNullOrEmpty(data)    => ProcessOrderEvent(data),
-    { Type: var type, Data: var data } when type.StartsWith("payment") && data.Length > 10             => ProcessPaymentEvent(data),
-    { Type: var type, Metadata.Source: var source } when type.Contains("user") && source == "api"      => ProcessUserEvent(eventData),
-    { Type: "system.heartbeat", Timestamp: var time } when time > DateTime.UtcNow.AddMinutes(-5)       => "HeartbeatProcessed",
-    { Type: null }                                                                                     => "InvalidEvent",
-    _                                                                                                  => "UnknownEvent"
+    { Type: var type, Data: var data } when type.StartsWith("order") && !string.IsNullOrEmpty(data) => ProcessOrderEvent(data),
+    { Type: var type, Data: var data } when type.StartsWith("payment") && data.Length > 10          => ProcessPaymentEvent(data),
+    { Type: var type, Metadata.Source: var source } when type.Contains("user") && source == "api"   => ProcessUserEvent(eventData),
+    { Type: "system.heartbeat", Timestamp: var time } when time > DateTime.UtcNow.AddMinutes(-5)    => "HeartbeatProcessed",
+    { Type: null }                                                                                  => "InvalidEvent",
+    _                                                                                               => "UnknownEvent"
 };
 ```
 
@@ -127,26 +127,26 @@ public string ProcessEventData(EventData eventData) => eventData switch {
 ```csharp
 return new ComplexConfiguration {
     // Basic Properties
-    Name               = "ProductionConfig",
-    IsEnabled          = true,
-    MaxConcurrency     = Environment.ProcessorCount,
+    Name           = "ProductionConfig",
+    IsEnabled      = true,
+    MaxConcurrency = Environment.ProcessorCount,
     
     // Nested Object Properties
-    DatabaseSettings   = new DatabaseConfiguration {
-        ConnectionString     = connectionString,
-        CommandTimeout       = TimeSpan.FromSeconds(30),
-        MaxPoolSize          = 100
+    DatabaseSettings = new DatabaseConfiguration {
+        ConnectionString = connectionString,
+        CommandTimeout   = TimeSpan.FromSeconds(30),
+        MaxPoolSize      = 100
     },
     
     // Collection Properties
-    AllowedEventTypes  = [
+    AllowedEventTypes = [
         "order.created",
         "order.updated", 
         "payment.processed"
     ],
     
     // Complex Lambda Properties
-    EventTransform     = eventData => new ProcessedEvent {
+    EventTransform = eventData => new ProcessedEvent {
         Id        = Guid.NewGuid(),
         Source    = eventData.Type,
         Data      = eventData.Data,
@@ -179,12 +179,12 @@ var processedResults = await sourceEvents
 
 ```csharp
 public class FluentConfigurationBuilder {
-    public FluentConfigurationBuilder WithConnectionString(string connectionString)  => this with { ConnectionString = connectionString };
-    public FluentConfigurationBuilder WithTimeout(TimeSpan timeout)                  => this with { Timeout = timeout };
-    public FluentConfigurationBuilder WithMaxRetries(int maxRetries)                 => this with { MaxRetries = maxRetries };
-    public FluentConfigurationBuilder WithEventFilter(Func<string, bool> filter)     => this with { EventFilter = filter };
-    public FluentConfigurationBuilder EnableCaching(bool enabled = true)             => this with { CachingEnabled = enabled };
-    public FluentConfigurationBuilder WithLogger(ILogger logger)                     => this with { Logger = logger };
+    public FluentConfigurationBuilder WithConnectionString(string connectionString) => this with { ConnectionString = connectionString };
+    public FluentConfigurationBuilder WithTimeout(TimeSpan timeout)                 => this with { Timeout = timeout };
+    public FluentConfigurationBuilder WithMaxRetries(int maxRetries)                => this with { MaxRetries = maxRetries };
+    public FluentConfigurationBuilder WithEventFilter(Func<string, bool> filter)    => this with { EventFilter = filter };
+    public FluentConfigurationBuilder EnableCaching(bool enabled = true)            => this with { CachingEnabled = enabled };
+    public FluentConfigurationBuilder WithLogger(ILogger logger)                    => this with { Logger = logger };
 }
 ```
 
