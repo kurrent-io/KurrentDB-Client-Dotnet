@@ -1,5 +1,9 @@
 using EventStore.Client;
 using EventStore.Client.Projections;
+using Grpc.Core;
+using Kurrent.Client.Legacy;
+using Kurrent.Client.Model;
+using KurrentDB.Client;
 
 namespace Kurrent.Client;
 
@@ -7,21 +11,35 @@ public partial class KurrentProjectionManagementClient {
 	/// <summary>
 	/// Creates a one-time projection.
 	/// </summary>
-	/// <param name="query"></param>
-	/// <param name="cancellationToken"></param>
-	/// <returns></returns>
-	public async ValueTask CreateOneTime(string query, CancellationToken cancellationToken = default) {
-		using var call = ServiceClient.CreateAsync(
-			new CreateReq {
-				Options = new CreateReq.Types.Options {
-					OneTime = new Empty(),
-					Query   = query
-				}
-			}
-		  , cancellationToken: cancellationToken
-		);
+	/// <param name="query">The query that defines the projection.</param>
+	/// <param name="cancellationToken">A token to observe for cancellation requests.</param>
+	/// <returns>A result containing the success state or an error indicating why the creation failed.</returns>
+	public async ValueTask<Result<Success, CreateOneTimeError>> CreateOneTime(string query, CancellationToken cancellationToken = default) {
+		try {
+			using var call = ServiceClient.CreateAsync(
+				new CreateReq {
+					Options = new CreateReq.Types.Options {
+						OneTime = new Empty(),
+						Query   = query
+					}
+				},
+				cancellationToken: cancellationToken
+			);
 
-		await call.ResponseAsync.ConfigureAwait(false);
+			await call.ResponseAsync.ConfigureAwait(false);
+
+			return new Result<Success, CreateOneTimeError>();
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<Success, CreateOneTimeError>(
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(CreateOneTime), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(CreateOneTime), ex);
+		}
 	}
 
 	/// <summary>
@@ -32,21 +50,37 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="trackEmittedStreams"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public async ValueTask CreateContinuous(string name, string query, bool trackEmittedStreams = false, CancellationToken cancellationToken = default) {
-		using var call = ServiceClient.CreateAsync(
-			new CreateReq {
-				Options = new CreateReq.Types.Options {
-					Continuous = new CreateReq.Types.Options.Types.Continuous {
-						Name                = name,
-						TrackEmittedStreams = trackEmittedStreams
-					},
-					Query = query
-				}
-			}
-		  , cancellationToken: cancellationToken
-		);
+	public async ValueTask<Result<Success, CreateContinuousError>> CreateContinuous(
+		string name, string query, bool trackEmittedStreams = false, CancellationToken cancellationToken = default
+	) {
+		try {
+			using var call = ServiceClient.CreateAsync(
+				new CreateReq {
+					Options = new CreateReq.Types.Options {
+						Continuous = new CreateReq.Types.Options.Types.Continuous {
+							Name                = name,
+							TrackEmittedStreams = trackEmittedStreams
+						},
+						Query = query
+					}
+				},
+				cancellationToken: cancellationToken
+			);
 
-		await call.ResponseAsync.ConfigureAwait(false);
+			await call.ResponseAsync.ConfigureAwait(false);
+
+			return new Result<Success, CreateContinuousError>();
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<Success, CreateContinuousError>(
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(CreateContinuous), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(CreateContinuous), ex);
+		}
 	}
 
 	/// <summary>
@@ -56,19 +90,33 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="query"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public async ValueTask CreateTransient(string name, string query, CancellationToken cancellationToken = default) {
-		using var call = ServiceClient.CreateAsync(
-			new CreateReq {
-				Options = new CreateReq.Types.Options {
-					Transient = new CreateReq.Types.Options.Types.Transient {
-						Name = name
-					},
-					Query = query
-				}
-			}
-		  , cancellationToken: cancellationToken
-		);
+	public async ValueTask<Result<Success, CreateTransientError>> CreateTransient(string name, string query, CancellationToken cancellationToken = default) {
+		try {
+			using var call = ServiceClient.CreateAsync(
+				new CreateReq {
+					Options = new CreateReq.Types.Options {
+						Transient = new CreateReq.Types.Options.Types.Transient {
+							Name = name
+						},
+						Query = query
+					}
+				},
+				cancellationToken: cancellationToken
+			);
 
-		await call.ResponseAsync.ConfigureAwait(false);
+			await call.ResponseAsync.ConfigureAwait(false);
+
+			return new Result<Success, CreateTransientError>();
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<Success, CreateTransientError>(
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(CreateTransient), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(CreateTransient), ex);
+		}
 	}
 }
