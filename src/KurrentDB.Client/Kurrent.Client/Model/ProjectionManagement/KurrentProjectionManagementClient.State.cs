@@ -1,8 +1,12 @@
 // ReSharper disable InconsistentNaming
+// ReSharper disable SwitchStatementHandlesSomeKnownEnumValuesWithDefault
 
 using System.Text.Json;
 using EventStore.Client.Projections;
 using Google.Protobuf.WellKnownTypes;
+using Grpc.Core;
+using Kurrent.Client.Legacy;
+using Kurrent.Client.Model;
 using KurrentDB.Client;
 using Type = System.Type;
 
@@ -18,20 +22,36 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="partition"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public async ValueTask<JsonDocument> GetResult(string name, string? partition = null, CancellationToken cancellationToken = default) {
-		var value = await GetResultInternal(name, partition, cancellationToken).ConfigureAwait(false);
+	public async ValueTask<Result<JsonDocument, GetResultError>> GetResult(
+		string name, string? partition = null, CancellationToken cancellationToken = default
+	) {
+		try {
+			var value = await GetResultInternal(name, partition, cancellationToken).ConfigureAwait(false);
 
-		await using var stream = new MemoryStream();
-		await using var writer = new Utf8JsonWriter(stream);
+			await using var stream = new MemoryStream();
+			await using var writer = new Utf8JsonWriter(stream);
 
-		var serializer = new ValueSerializer();
-		serializer.Write(writer, value, DefaultJsonSerializerOptions);
-		await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
-		stream.Position = 0;
+			var serializer = new ValueSerializer();
+			serializer.Write(writer, value, DefaultJsonSerializerOptions);
+			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+			stream.Position = 0;
 
-		return await JsonDocument
-			.ParseAsync(stream, cancellationToken: cancellationToken)
-			.ConfigureAwait(false);
+			return Result.Success<JsonDocument, GetResultError>(
+				await JsonDocument
+					.ParseAsync(stream, cancellationToken: cancellationToken)
+					.ConfigureAwait(false)
+			);
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<JsonDocument, GetResultError>(
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(GetResult), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(GetResult), ex);
+		}
 	}
 
 	/// <summary>
@@ -43,41 +63,36 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="cancellationToken"></param>
 	/// <typeparam name="T"></typeparam>
 	/// <returns></returns>
-	public async ValueTask<T> GetResult<T>(
+	public async ValueTask<Result<T, GetResultError>> GetResult<T>(
 		string name,
 		string? partition = null,
 		JsonSerializerOptions? serializerOptions = null,
 		CancellationToken cancellationToken = default
-	) {
-		var value = await GetResultInternal(name, partition, cancellationToken)
-			.ConfigureAwait(false);
+	) where T : notnull {
+		try {
+			var value = await GetResultInternal(name, partition, cancellationToken)
+				.ConfigureAwait(false);
 
-		await using var stream = new MemoryStream();
-		await using var writer = new Utf8JsonWriter(stream);
+			await using var stream = new MemoryStream();
+			await using var writer = new Utf8JsonWriter(stream);
 
-		var serializer = new ValueSerializer();
-		serializer.Write(writer, value, DefaultJsonSerializerOptions);
-		await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
-		stream.Position = 0;
+			var serializer = new ValueSerializer();
+			serializer.Write(writer, value, DefaultJsonSerializerOptions);
+			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+			stream.Position = 0;
 
-		return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
-	}
-
-	async ValueTask<Value> GetResultInternal(
-		string name, string? partition, CancellationToken cancellationToken
-	) {
-		using var call = ServiceClient.ResultAsync(
-			new ResultReq {
-				Options = new ResultReq.Types.Options {
-					Name      = name,
-					Partition = partition ?? string.Empty
+			return Result.Success<T, GetResultError>(JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!);
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<T, GetResultError>(
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(GetResult), ex)
 				}
-			}
-		  , cancellationToken: cancellationToken
-		);
-
-		var response = await call.ResponseAsync.ConfigureAwait(false);
-		return response.Result;
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(GetResult), ex);
+		}
 	}
 
 	/// <summary>
@@ -87,22 +102,36 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="partition"></param>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	public async ValueTask<JsonDocument> GetState(
+	public async ValueTask<Result<JsonDocument, GetStateError>> GetState(
 		string name, string? partition = null, CancellationToken cancellationToken = default
 	) {
-		var value = await GetStateInternal(name, partition, cancellationToken).ConfigureAwait(false);
+		try {
+			var value = await GetStateInternal(name, partition, cancellationToken).ConfigureAwait(false);
 
-		await using var stream = new MemoryStream();
-		await using var writer = new Utf8JsonWriter(stream);
+			await using var stream = new MemoryStream();
+			await using var writer = new Utf8JsonWriter(stream);
 
-		var serializer = new ValueSerializer();
-		serializer.Write(writer, value, DefaultJsonSerializerOptions);
-		stream.Position = 0;
-		await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+			var serializer = new ValueSerializer();
+			serializer.Write(writer, value, DefaultJsonSerializerOptions);
+			stream.Position = 0;
+			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 
-		return await JsonDocument
-			.ParseAsync(stream, cancellationToken: cancellationToken)
-			.ConfigureAwait(false);
+			return Result.Success<JsonDocument, GetStateError>(
+				await JsonDocument
+					.ParseAsync(stream, cancellationToken: cancellationToken)
+					.ConfigureAwait(false)
+			);
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<JsonDocument, GetStateError>(
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(GetState), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(GetState), ex);
+		}
 	}
 
 	/// <summary>
@@ -114,20 +143,32 @@ public partial class KurrentProjectionManagementClient {
 	/// <param name="cancellationToken"></param>
 	/// <typeparam name="T"></typeparam>
 	/// <returns></returns>
-	public async ValueTask<T> GetState<T>(
+	public async ValueTask<Result<T, GetStateError>> GetState<T>(
 		string name, string? partition = null, JsonSerializerOptions? serializerOptions = null, CancellationToken cancellationToken = default
-	) {
-		var value = await GetStateInternal(name, partition, cancellationToken).ConfigureAwait(false);
+	) where T : notnull {
+		try {
+			var value = await GetStateInternal(name, partition, cancellationToken).ConfigureAwait(false);
 
-		await using var stream = new MemoryStream();
-		await using var writer = new Utf8JsonWriter(stream);
+			await using var stream = new MemoryStream();
+			await using var writer = new Utf8JsonWriter(stream);
 
-		var serializer = new ValueSerializer();
-		serializer.Write(writer, value, DefaultJsonSerializerOptions);
-		await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
-		stream.Position = 0;
+			var serializer = new ValueSerializer();
+			serializer.Write(writer, value, DefaultJsonSerializerOptions);
+			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
+			stream.Position = 0;
 
-		return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
+			return Result.Success<T, GetStateError>(JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!);
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<T, GetStateError>(
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(GetState), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(GetState), ex);
+		}
 	}
 
 	async ValueTask<Value> GetStateInternal(
@@ -145,6 +186,23 @@ public partial class KurrentProjectionManagementClient {
 
 		var response = await call.ResponseAsync.ConfigureAwait(false);
 		return response.State;
+	}
+
+	async ValueTask<Value> GetResultInternal(
+		string name, string? partition, CancellationToken cancellationToken
+	) {
+		using var call = ServiceClient.ResultAsync(
+			new ResultReq {
+				Options = new ResultReq.Types.Options {
+					Name      = name,
+					Partition = partition ?? string.Empty
+				}
+			}
+		  , cancellationToken: cancellationToken
+		);
+
+		var response = await call.ResponseAsync.ConfigureAwait(false);
+		return response.Result;
 	}
 
 	class ValueSerializer : System.Text.Json.Serialization.JsonConverter<Value> {

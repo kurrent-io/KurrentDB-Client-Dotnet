@@ -25,7 +25,7 @@ public partial class KurrentClientTestFixture : TestFixture {
         if (options.AutoWireUpContainers) {
             Log.Information("KurrentDB test container auto wire up enabled, starting container...");
 
-            Container = new KurrentDBTestContainer(KurrentDBConfiguration.Secure.ToDictionary());
+            Container = new KurrentDBTestContainer(KurrentDBConfiguration.Insecure.ToDictionary());
             await Container.Start().ConfigureAwait(false);
 
             AuthenticatedConnectionString = Container.AuthenticatedConnectionString;

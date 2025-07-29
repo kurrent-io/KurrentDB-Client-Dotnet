@@ -100,6 +100,30 @@ public sealed class ProjectionDetails {
 	public readonly int WritePendingEventsAfterCheckpoint;
 
 	/// <summary>
+	/// Represents an empty or uninitialized projection details instance.
+	/// </summary>
+	public static readonly ProjectionDetails None = new(
+		coreProcessingTime: 0,
+		version: 0,
+		epoch: 0,
+		effectiveName: string.Empty,
+		writesInProgress: 0,
+		readsInProgress: 0,
+		partitionsCached: 0,
+		status: string.Empty,
+		stateReason: string.Empty,
+		name: string.Empty,
+		mode: string.Empty,
+		position: string.Empty,
+		progress: 0.0f,
+		lastCheckpoint: string.Empty,
+		eventsProcessedAfterRestart: 0,
+		checkpointStatus: string.Empty,
+		bufferedEvents: 0,
+		writePendingEventsBeforeCheckpoint: 0,
+		writePendingEventsAfterCheckpoint: 0);
+
+	/// <summary>
 	/// create a new <see cref="ProjectionDetails"/> class.
 	/// </summary>
 	/// <param name="coreProcessingTime"></param>
