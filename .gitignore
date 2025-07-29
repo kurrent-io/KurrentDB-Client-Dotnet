@@ -373,3 +373,7 @@ ai-agent-system/
 .cursor/
 .clinerules/
 .github/instructions/**
+
+.cache
+.temp
+node_modules

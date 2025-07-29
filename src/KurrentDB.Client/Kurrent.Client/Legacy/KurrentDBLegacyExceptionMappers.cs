@@ -36,10 +36,30 @@ static class KurrentDBLegacyExceptionMappers {
 		    ? new(x => x.With("reason", "User is not authenticated."))
 		    : throw new InvalidCastException($"Expected {nameof(NotAuthenticatedException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.NotAuthenticated)}.", ex);
 
+    public static ErrorDetails.ScavengeNotFound AsScavengeNotFoundError(this Exception ex) =>
+	    ex is ScavengeNotFoundException
+		    ? new(x => x.With("reason", ex.Message))
+		    : throw new InvalidCastException($"Expected {nameof(ScavengeNotFoundException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.ScavengeNotFound)}.", ex);
+
     public static ErrorDetails.StreamRevisionConflict AsStreamRevisionConflict(this Exception ex) =>
         ex is WrongExpectedVersionException lex
             ? new(x => x.With("stream", lex.StreamName).With("expected_revision", lex.ExpectedVersion).With("actual_revision", lex.ActualVersion))
             : throw new InvalidCastException($"Expected {nameof(WrongExpectedVersionException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.StreamRevisionConflict)}.", ex);
+
+    public static ErrorDetails.PersistentSubscriptionNotFound AsPersistentSubscriptionNotFoundError(this Exception ex, string streamName, string groupName) =>
+	    ex is RpcException
+		    ? new(x => x.With("stream", streamName).With("group", groupName))
+		    : throw new InvalidCastException($"Expected {nameof(PersistentSubscriptionNotFoundException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.PersistentSubscriptionNotFound)}.", ex);
+
+    public static ErrorDetails.MaximumSubscribersReached AsMaximumSubscribersReachedError(this Exception ex, string streamName, string groupName) =>
+	    ex is RpcException
+		    ? new(x => x.With("stream", streamName).With("group", groupName))
+		    : throw new InvalidCastException($"Expected {nameof(MaximumSubscribersReachedException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.MaximumSubscribersReached)}.", ex);
+
+    public static ErrorDetails.PersistentSubscriptionDropped AsPersistentSubscriptionDroppedError(this Exception ex, string streamName, string groupName) =>
+	    ex is RpcException
+		    ? new(x => x.With("stream", streamName).With("group", groupName))
+		    : throw new InvalidCastException($"Expected {nameof(PersistentSubscriptionDroppedByServerException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.PersistentSubscriptionDropped)}.", ex);
 
     public static StreamState MapToLegacyExpectedState(this ExpectedStreamState expectedState) {
         return expectedState switch {

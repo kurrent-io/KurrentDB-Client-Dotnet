@@ -29,7 +29,9 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 			ct
 		);
 
-		await using var subscription = AutomaticClient.PersistentSubscription.SubscribeToAll(group, cancellationToken: ct);
+		await using var subscription = await AutomaticClient.PersistentSubscription
+			.SubscribeToAll(group, cancellationToken: ct)
+			.ShouldNotThrowOrFailAsync();
 
 		await foreach (var msg in subscription.Messages.WithCancellation(ct)) {
 			switch (msg) {
@@ -71,7 +73,9 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 			ct
 		);
 
-		await using var subscription = AutomaticClient.PersistentSubscription.SubscribeToStream(stream, group, cancellationToken: ct);
+		await using var subscription = await AutomaticClient.PersistentSubscription
+			.SubscribeToStream(stream, group, cancellationToken: ct)
+			.ShouldNotThrowOrFailAsync();
 
 		await foreach (var msg in subscription.Messages.WithCancellation(ct)) {
 			switch (msg) {
@@ -110,7 +114,11 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		// Act
 		await AutomaticClient.PersistentSubscription.CreateToAll(expected.GroupName, expected.Settings, ct);
 
-		var info = await AutomaticClient.PersistentSubscription.GetInfoToAll(expected.GroupName, ct);
+		await Task.Delay(1.Seconds(), ct);
+
+		var info = await AutomaticClient.PersistentSubscription
+			.GetInfoToAll(expected.GroupName, ct)
+			.ShouldNotThrowOrFailAsync();
 
 		// Assert
 		info.ShouldNotBeNull().ShouldBeEquivalentTo(
@@ -137,7 +145,11 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		// Act
 		await AutomaticClient.PersistentSubscription.CreateToStream(stream, expected.GroupName, expected.Settings, ct);
 
-		var info = await AutomaticClient.PersistentSubscription.GetInfoToStream(stream, expected.GroupName, ct);
+		await Task.Delay(1.Seconds(), ct);
+
+		var info = await AutomaticClient.PersistentSubscription
+			.GetInfoToStream(stream, expected.GroupName, ct)
+			.ShouldNotThrowOrFailAsync();
 
 		// Assert
 		info.ShouldNotBeNull().ShouldBeEquivalentTo(
