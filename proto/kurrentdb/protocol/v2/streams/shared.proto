@@ -126,4 +126,28 @@ message ErrorDetails {
       message : "The specified scavenge was not found."
     };
   }
+
+  message PersistentSubscriptionNotFound {
+    option (error_info) = {
+      code : "PERSISTENT_SUBSCRIPTION_NOT_FOUND",
+      severity : RECOVERABLE,
+      message : "The specified persistent subscription was not found."
+    };
+  }
+
+  message MaximumSubscribersReached {
+    option (error_info) = {
+      code : "MAXIMUM_SUBSCRIBERS_REACHED",
+      severity : RECOVERABLE,
+      message : "The maximum number of subscribers for the stream has been reached."
+    };
+  }
+
+  message PersistentSubscriptionDropped {
+    option (error_info) = {
+      code : "PERSISTENT_SUBSCRIPTION_DROPPED",
+      severity : RECOVERABLE,
+      message : "The persistent subscription has been dropped."
+    };
+  }
 }

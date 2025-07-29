@@ -5,8 +5,10 @@ using System.Threading.Channels;
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
+using Kurrent.Client.Legacy;
 using Kurrent.Client.Model;
 using Kurrent.Client.Model.PersistentSubscription;
+using Kurrent.Client.Model.PersistentSubscriptions;
 using Kurrent.Client.SchemaRegistry.Serialization;
 using KurrentDB.Client;
 using static System.Threading.Channels.Channel;
@@ -21,7 +23,7 @@ public partial class KurrentPersistentSubscriptionsClient {
 	/// <exception cref="ArgumentNullException"></exception>
 	/// <exception cref="ArgumentException"></exception>
 	/// <exception cref="ArgumentOutOfRangeException"></exception>
-	public async ValueTask<PersistentSubscription> SubscribeToStream(
+	public async ValueTask<Result<PersistentSubscription, SubscribeToStreamError>> SubscribeToStream(
 		string streamName,
 		string groupName,
 		Func<PersistentSubscription, Record, int?, CancellationToken, Task> eventAppeared,
@@ -29,15 +31,37 @@ public partial class KurrentPersistentSubscriptionsClient {
 		int bufferSize = 10,
 		CancellationToken cancellationToken = default
 	) {
-		return await PersistentSubscription
-			.Confirm(
-				SubscribeToStream(streamName, groupName, bufferSize, cancellationToken),
-				eventAppeared,
-				subscriptionDropped ?? delegate { },
-				Logger,
+		try {
+			var stream = await SubscribeToStream(
+				streamName, groupName, bufferSize,
 				cancellationToken
-			)
-			.ConfigureAwait(false);
+			);
+
+			var subscription = await PersistentSubscription
+				.Confirm(
+					stream.Value,
+					eventAppeared,
+					subscriptionDropped ?? delegate { },
+					Logger,
+					cancellationToken
+				)
+				.ConfigureAwait(false);
+
+			return Result.Success<PersistentSubscription, SubscribeToStreamError>(subscription);
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<PersistentSubscription, SubscribeToStreamError>(
+				ex switch {
+					AccessDeniedException                              => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException                          => rpcEx.AsNotAuthenticatedError(),
+					PersistentSubscriptionNotFoundException pEx        => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
+					MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
+					PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
+					_                                                  => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
+		}
 	}
 
 	/// <summary>
@@ -48,27 +72,52 @@ public partial class KurrentPersistentSubscriptionsClient {
 	/// <param name="bufferSize">The size of the buffer.</param>
 	/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 	/// <returns></returns>
-	public PersistentSubscriptionResult SubscribeToStream(string streamName, string groupName, int bufferSize = 10, CancellationToken cancellationToken = default) {
+	public async ValueTask<Result<PersistentSubscriptionResult, SubscribeToStreamError>> SubscribeToStream(
+		string streamName, string groupName, int bufferSize = 10, CancellationToken cancellationToken = default
+	) {
 		ArgumentNullException.ThrowIfNull(streamName);
 		ArgumentNullException.ThrowIfNull(groupName);
 		ArgumentException.ThrowIfNullOrEmpty(streamName, nameof(streamName));
 		ArgumentException.ThrowIfNullOrEmpty(groupName, nameof(groupName));
 		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(bufferSize);
 
-		var readOptions = new ReadReq.Types.Options {
-			BufferSize = bufferSize,
-			GroupName  = groupName,
-			UuidOption = new ReadReq.Types.Options.Types.UUIDOption { Structured = new Empty() }
-		};
+		try {
+			var readOptions = new ReadReq.Types.Options {
+				BufferSize = bufferSize,
+				GroupName  = groupName,
+				UuidOption = new ReadReq.Types.Options.Types.UUIDOption { Structured = new Empty() }
+			};
 
-		if (streamName is SystemStreams.AllStream)
-			readOptions.All = new Empty();
-		else
-			readOptions.StreamIdentifier = streamName;
+			if (streamName is SystemStreams.AllStream)
+				readOptions.All = new Empty();
+			else
+				readOptions.StreamIdentifier = streamName;
 
-		var request = new ReadReq { Options = readOptions };
+			var request = new ReadReq { Options = readOptions };
 
-		return new PersistentSubscriptionResult(streamName, groupName, GetClient, request, LegacySettings, SerializerProvider, MetadataDecoder, cancellationToken);
+			return await ValueTask.FromResult(
+				Result.Success<PersistentSubscriptionResult, SubscribeToStreamError>(
+					new PersistentSubscriptionResult(
+						streamName, groupName, GetClient,
+						request, LegacySettings, SerializerProvider,
+						MetadataDecoder, cancellationToken
+					)
+				)
+			);
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<PersistentSubscriptionResult, SubscribeToStreamError>(
+				ex switch {
+					AccessDeniedException                              => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException                          => rpcEx.AsNotAuthenticatedError(),
+					PersistentSubscriptionNotFoundException pEx        => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
+					MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
+					PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
+					_                                                  => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
+		}
 
 		async ValueTask<PersistentSubscriptions.PersistentSubscriptionsClient> GetClient(CancellationToken ct) {
 			if (streamName is not SystemStreams.AllStream) return ServiceClient;
@@ -81,14 +130,30 @@ public partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged
 	/// </summary>
-	public async ValueTask<PersistentSubscription> SubscribeToAll(
+	public async ValueTask<Result<PersistentSubscription, SubscribeToAllError>> SubscribeToAll(
 		string groupName,
 		Func<PersistentSubscription, Record, int?, CancellationToken, Task> eventAppeared,
 		Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
 		int bufferSize = 10,
 		CancellationToken cancellationToken = default
-	) =>
-		await SubscribeToStream(SystemStreams.AllStream, groupName, eventAppeared, subscriptionDropped, bufferSize, cancellationToken).ConfigureAwait(false);
+	) {
+		try {
+			var subscription = await SubscribeToStream(SystemStreams.AllStream, groupName, eventAppeared, subscriptionDropped, bufferSize, cancellationToken).ConfigureAwait(false);
+			return Result.Success<PersistentSubscription, SubscribeToAllError>(subscription.Value);
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<PersistentSubscription, SubscribeToAllError>(
+				ex switch {
+					AccessDeniedException                              => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException                          => rpcEx.AsNotAuthenticatedError(),
+					MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
+					PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
+					_                                                  => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
+		}
+	}
 
 	/// <summary>
 	/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged.
@@ -97,10 +162,29 @@ public partial class KurrentPersistentSubscriptionsClient {
 	/// <param name="bufferSize">The size of the buffer.</param>
 	/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 	/// <returns></returns>
-	public PersistentSubscriptionResult SubscribeToAll(string groupName, int bufferSize = 10, CancellationToken cancellationToken = default) =>
-		SubscribeToStream(SystemStreams.AllStream, groupName, bufferSize,
-			cancellationToken
-		);
+	public async ValueTask<Result<PersistentSubscriptionResult, SubscribeToAllError> > SubscribeToAll(string groupName, int bufferSize = 10, CancellationToken cancellationToken = default) {
+		try {
+			var subscription = await SubscribeToStream(
+				SystemStreams.AllStream, groupName, bufferSize, cancellationToken
+			);
+
+			return await ValueTask.FromResult(
+				Result.Success<PersistentSubscriptionResult, SubscribeToAllError>(subscription.Value)
+			);
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<PersistentSubscriptionResult, SubscribeToAllError>(
+				ex switch {
+					AccessDeniedException                              => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException                          => rpcEx.AsNotAuthenticatedError(),
+					MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
+					PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
+					_                                                  => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
+		}
+	}
 
 	public class PersistentSubscriptionResult : IAsyncEnumerable<Record>, IAsyncDisposable, IDisposable {
 		const int MaxEventIdLength = 2000;

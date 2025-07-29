@@ -3,6 +3,7 @@ using EventStore.Client.Projections;
 using Grpc.Core;
 using Kurrent.Client.Legacy;
 using Kurrent.Client.Model;
+using Kurrent.Client.Model.ProjectionManagement;
 using KurrentDB.Client;
 
 namespace Kurrent.Client;

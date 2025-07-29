@@ -1,7 +1,10 @@
 // ReSharper disable InconsistentNaming
 
+using Grpc.Core;
+using Kurrent.Client.Legacy;
+using Kurrent.Client.Model;
+using Kurrent.Client.Model.PersistentSubscriptions;
 using KurrentDB.Client;
-
 using static Kurrent.Client.Model.PersistentSubscription.PersistentSubscriptionV1Mapper.Requests;
 
 namespace Kurrent.Client;
@@ -15,11 +18,29 @@ public partial class KurrentPersistentSubscriptionsClient {
 	/// <param name="settings">The settings for configuring the persistent subscription.</param>
 	/// <param name="cancellationToken">An optional token to cancel the asynchronous operation.</param>
 	/// <returns>A task representing the asynchronous operation.</returns>
-	public async ValueTask UpdateToStream(string streamName, string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default) {
-		await EnsureCompatibility(streamName, cancellationToken);
-		var request = UpdateSubscriptionRequest(streamName, groupName, settings);
-		using var call = ServiceClient.UpdateAsync(request, cancellationToken: cancellationToken);
-		await call.ResponseAsync.ConfigureAwait(false);
+	public async ValueTask<Result<Success, UpdateToStreamError>> UpdateToStream(
+		string streamName, string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
+	) {
+		try {
+			await EnsureCompatibility(streamName, cancellationToken);
+			var request = UpdateSubscriptionRequest(streamName, groupName, settings);
+
+			using var call = ServiceClient.UpdateAsync(request, cancellationToken: cancellationToken);
+			await call.ResponseAsync.ConfigureAwait(false);
+
+			return Result.Success<Success, UpdateToStreamError>(Success.Instance);
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<Success, UpdateToStreamError>(
+				ex switch {
+					AccessDeniedException                       => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException                   => rpcEx.AsNotAuthenticatedError(),
+					PersistentSubscriptionNotFoundException pEx => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
+					_                                           => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
+		}
 	}
 
 	/// <summary>
@@ -29,6 +50,26 @@ public partial class KurrentPersistentSubscriptionsClient {
 	/// <param name="settings">The settings for configuring the persistent subscription.</param>
 	/// <param name="cancellationToken">An optional token to cancel the asynchronous operation.</param>
 	/// <returns>A task representing the asynchronous operation.</returns>
-	public async ValueTask UpdateToAll(string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default) =>
-		await UpdateToStream(SystemStreams.AllStream, groupName, settings, cancellationToken).ConfigureAwait(false);
+	public async ValueTask<Result<Success, UpdateToAllError>> UpdateToAll(
+		string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
+	) {
+		try {
+			await UpdateToStream(
+				SystemStreams.AllStream, groupName, settings,
+				cancellationToken
+			).ConfigureAwait(false);
+
+			return Result.Success<Success, UpdateToAllError>(Success.Instance);
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<Success, UpdateToAllError>(
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
+		}
+	}
 }

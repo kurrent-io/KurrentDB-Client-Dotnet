@@ -2,6 +2,10 @@
 
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
+using Grpc.Core;
+using Kurrent.Client.Legacy;
+using Kurrent.Client.Model;
+using Kurrent.Client.Model.PersistentSubscriptions;
 using KurrentDB.Client;
 
 namespace Kurrent.Client;
@@ -10,8 +14,11 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Lists persistent subscriptions to $all.
 	/// </summary>
-	public async ValueTask<IEnumerable<PersistentSubscriptionInfo>> ListToAll(CancellationToken cancellationToken = default) {
-		if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsList) {
+	public async ValueTask<Result<IEnumerable<PersistentSubscriptionInfo>, ListToAllError>> ListToAll(CancellationToken cancellationToken = default) {
+		try {
+			if (!LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsList)
+				throw new NotSupportedException("The server does not support listing the persistent subscriptions.");
+
 			var req = new ListReq {
 				Options = new ListReq.Types.Options {
 					ListForStream = new ListReq.Types.StreamOption {
@@ -20,31 +27,58 @@ partial class KurrentPersistentSubscriptionsClient {
 				}
 			};
 
-			return await ListGrpc(req, cancellationToken).ConfigureAwait(false);
-		}
+			var info = await ListGrpc(req, cancellationToken).ConfigureAwait(false);
 
-		throw new NotSupportedException("The server does not support listing the persistent subscriptions.");
+			return Result.Success<IEnumerable<PersistentSubscriptionInfo>, ListToAllError>(info);
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<IEnumerable<PersistentSubscriptionInfo>, ListToAllError>(
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
+		}
 	}
 
 	/// <summary>
 	/// Lists persistent subscriptions to the specified stream.
 	/// </summary>
-	public async ValueTask<IEnumerable<PersistentSubscriptionInfo>> ListToStream(string streamName, CancellationToken cancellationToken = default) {
-		if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsList) {
-			var req = new ListReq {
-				Options = new ListReq.Types.Options {
-					ListForStream = new ListReq.Types.StreamOption {
-						Stream = streamName
+	public async ValueTask<Result<IEnumerable<PersistentSubscriptionInfo>, ListToStreamError>> ListToStream(
+		string streamName, CancellationToken cancellationToken = default
+	) {
+		try {
+			if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsList) {
+				var req = new ListReq {
+					Options = new ListReq.Types.Options {
+						ListForStream = new ListReq.Types.StreamOption {
+							Stream = streamName
+						}
 					}
-				}
-			};
+				};
 
-			return await ListGrpc(req, cancellationToken).ConfigureAwait(false);
+				return Result.Success<IEnumerable<PersistentSubscriptionInfo>, ListToStreamError>(await ListGrpc(req, cancellationToken).ConfigureAwait(false));
+			}
+
+			var info = await ListHttpAsync().ConfigureAwait(false);
+
+			return Result.Success<IEnumerable<PersistentSubscriptionInfo>, ListToStreamError>(info);
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<IEnumerable<PersistentSubscriptionInfo>, ListToStreamError>(
+				ex switch {
+					AccessDeniedException                       => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException                   => rpcEx.AsNotAuthenticatedError(),
+					PersistentSubscriptionNotFoundException pEx => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
+					_                                           => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
 		}
 
-		return await ListHttpAsync().ConfigureAwait(false);
-
-		async ValueTask<IEnumerable<PersistentSubscriptionInfo>> ListHttpAsync( ) {
+		async ValueTask<IEnumerable<PersistentSubscriptionInfo>> ListHttpAsync() {
 			var path = $"/subscriptions/{UrlEncode(streamName)}";
 			var result = await HttpGet<IList<PersistentSubscriptionDto>>(
 					path,
@@ -60,30 +94,42 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Lists all persistent subscriptions to $all and streams.
 	/// </summary>
-	public async ValueTask<IEnumerable<PersistentSubscriptionInfo>> ListAll(CancellationToken cancellationToken = default) {
-		if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsList) {
-			var req = new ListReq {
-				Options = new ListReq.Types.Options {
-					ListAllSubscriptions = new Empty()
+	public async ValueTask<Result<IEnumerable<PersistentSubscriptionInfo>, ListAllError>> ListAll(CancellationToken cancellationToken = default) {
+		try {
+			if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsList) {
+				var req = new ListReq {
+					Options = new ListReq.Types.Options {
+						ListAllSubscriptions = new Empty()
+					}
+				};
+
+				return Result.Success<IEnumerable<PersistentSubscriptionInfo>, ListAllError>(await ListGrpc(req, cancellationToken).ConfigureAwait(false));
+			}
+
+			var result = await HttpGet<IList<PersistentSubscriptionDto>>(
+					path: "/subscriptions",
+					onNotFound: () => throw new PersistentSubscriptionNotFoundException(string.Empty, string.Empty),
+					cancellationToken
+				)
+				.ConfigureAwait(false);
+
+			return Result.Success<IEnumerable<PersistentSubscriptionInfo>, ListAllError>(result.Select(PersistentSubscriptionInfo.From));
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<IEnumerable<PersistentSubscriptionInfo>, ListAllError>(
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
 				}
-			};
-
-			return await ListGrpc(req, cancellationToken).ConfigureAwait(false);
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
 		}
-
-		var result = await HttpGet<IList<PersistentSubscriptionDto>>(
-				path: "/subscriptions",
-				onNotFound: () => throw new PersistentSubscriptionNotFoundException(string.Empty, string.Empty),
-				cancellationToken
-			)
-			.ConfigureAwait(false);
-
-		return result.Select(PersistentSubscriptionInfo.From);
 	}
 
 	async ValueTask<IEnumerable<PersistentSubscriptionInfo>> ListGrpc(ListReq req, CancellationToken cancellationToken) {
-		using var call = ServiceClient.ListAsync(req, cancellationToken: cancellationToken);
-		var response = await call.ResponseAsync.ConfigureAwait(false);
+		using var call     = ServiceClient.ListAsync(req, cancellationToken: cancellationToken);
+		var       response = await call.ResponseAsync.ConfigureAwait(false);
 		return response.Subscriptions.Select(PersistentSubscriptionInfo.From);
 	}
 }

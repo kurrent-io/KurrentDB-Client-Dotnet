@@ -1,5 +1,9 @@
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
+using Grpc.Core;
+using Kurrent.Client.Legacy;
+using Kurrent.Client.Model;
+using Kurrent.Client.Model.PersistentSubscriptions;
 using KurrentDB.Client;
 using NotSupportedException = System.NotSupportedException;
 
@@ -9,49 +13,78 @@ partial class KurrentPersistentSubscriptionsClient {
 	/// <summary>
 	/// Retry the parked messages of the persistent subscription
 	/// </summary>
-	public async ValueTask ReplayParkedMessagesToAll(
+	public async ValueTask<Result<Success, ReplayParkedMessagesToAllError>> ReplayParkedMessagesToAll(
 		string groupName, long? stopAt = null, CancellationToken cancellationToken = default
 	) {
-		if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsReplayParked) {
-			var request = new ReplayParkedReq {
-				Options = new ReplayParkedReq.Types.Options {
-					GroupName = groupName,
-					All       = new Empty()
-				},
-			};
+		try {
+			if (!LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll)
+				throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
 
-			await ReplayParkedGrpc(request, stopAt, cancellationToken).ConfigureAwait(false);
+			if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsReplayParked) {
+				var request = new ReplayParkedReq {
+					Options = new ReplayParkedReq.Types.Options {
+						GroupName = groupName,
+						All       = new Empty()
+					},
+				};
 
-			return;
+				await ReplayParkedGrpc(request, stopAt, cancellationToken).ConfigureAwait(false);
+
+				return Result.Success<Success, ReplayParkedMessagesToAllError>(Success.Instance);
+			}
+
+			await ReplayParkedHttp(SystemStreams.AllStream, groupName, stopAt, cancellationToken).ConfigureAwait(false);
+
+			return Result.Success<Success, ReplayParkedMessagesToAllError>(Success.Instance);
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<Success, ReplayParkedMessagesToAllError>(
+				ex switch {
+					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
+					_                         => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
 		}
-
-		if (!LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll)
-			throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
-
-		await ReplayParkedHttp(SystemStreams.AllStream, groupName, stopAt, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>
 	/// Retry the parked messages of the persistent subscription
 	/// </summary>
-	public async ValueTask ReplayParkedMessagesToStream(
+	public async ValueTask<Result<Success, ReplayParkedMessagesToStreamError>> ReplayParkedMessagesToStream(
 		string streamName, string groupName, long? stopAt = null, CancellationToken cancellationToken = default
 	) {
-		if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsReplayParked) {
-			var req = new ReplayParkedReq {
-				Options = new ReplayParkedReq.Types.Options {
-					GroupName        = groupName,
-					StreamIdentifier = streamName
-				},
-			};
+		try {
+			if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsReplayParked) {
+				var req = new ReplayParkedReq {
+					Options = new ReplayParkedReq.Types.Options {
+						GroupName        = groupName,
+						StreamIdentifier = streamName
+					},
+				};
 
-			await ReplayParkedGrpc(req, stopAt, cancellationToken)
-				.ConfigureAwait(false);
+				await ReplayParkedGrpc(req, stopAt, cancellationToken)
+					.ConfigureAwait(false);
 
-			return;
+				return Result.Success<Success, ReplayParkedMessagesToStreamError>(Success.Instance);
+			}
+
+			await ReplayParkedHttp(streamName, groupName, stopAt, cancellationToken).ConfigureAwait(false);
+
+			return Result.Success<Success, ReplayParkedMessagesToStreamError>(Success.Instance);
+		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
+			return Result.Failure<Success, ReplayParkedMessagesToStreamError>(
+				ex switch {
+					AccessDeniedException                       => rpcEx.AsAccessDeniedError(),
+					NotAuthenticatedException                   => rpcEx.AsNotAuthenticatedError(),
+					PersistentSubscriptionNotFoundException pEx => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
+					_                                           => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+				}
+			);
+		} catch (Exception ex) {
+			throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
 		}
-
-		await ReplayParkedHttp(streamName, groupName, stopAt, cancellationToken).ConfigureAwait(false);
 	}
 
 	async ValueTask ReplayParkedGrpc(

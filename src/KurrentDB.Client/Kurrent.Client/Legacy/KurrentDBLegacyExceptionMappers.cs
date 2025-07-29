@@ -46,6 +46,21 @@ static class KurrentDBLegacyExceptionMappers {
             ? new(x => x.With("stream", lex.StreamName).With("expected_revision", lex.ExpectedVersion).With("actual_revision", lex.ActualVersion))
             : throw new InvalidCastException($"Expected {nameof(WrongExpectedVersionException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.StreamRevisionConflict)}.", ex);
 
+    public static ErrorDetails.PersistentSubscriptionNotFound AsPersistentSubscriptionNotFoundError(this Exception ex, string streamName, string groupName) =>
+	    ex is RpcException
+		    ? new(x => x.With("stream", streamName).With("group", groupName))
+		    : throw new InvalidCastException($"Expected {nameof(PersistentSubscriptionNotFoundException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.PersistentSubscriptionNotFound)}.", ex);
+
+    public static ErrorDetails.MaximumSubscribersReached AsMaximumSubscribersReachedError(this Exception ex, string streamName, string groupName) =>
+	    ex is RpcException
+		    ? new(x => x.With("stream", streamName).With("group", groupName))
+		    : throw new InvalidCastException($"Expected {nameof(MaximumSubscribersReachedException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.MaximumSubscribersReached)}.", ex);
+
+    public static ErrorDetails.PersistentSubscriptionDropped AsPersistentSubscriptionDroppedError(this Exception ex, string streamName, string groupName) =>
+	    ex is RpcException
+		    ? new(x => x.With("stream", streamName).With("group", groupName))
+		    : throw new InvalidCastException($"Expected {nameof(PersistentSubscriptionDroppedByServerException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.PersistentSubscriptionDropped)}.", ex);
+
     public static StreamState MapToLegacyExpectedState(this ExpectedStreamState expectedState) {
         return expectedState switch {
             _ when expectedState == ExpectedStreamState.Any          => StreamState.Any,

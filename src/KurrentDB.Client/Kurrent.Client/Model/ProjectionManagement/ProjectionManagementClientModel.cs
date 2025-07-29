@@ -1,6 +1,6 @@
 using Kurrent.Variant;
 
-namespace Kurrent.Client.Model;
+namespace Kurrent.Client.Model.ProjectionManagement;
 
 [PublicAPI]
 public readonly partial record struct CreateOneTimeError : IVariantResultError<
