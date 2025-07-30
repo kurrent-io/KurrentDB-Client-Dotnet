@@ -9,9 +9,9 @@ partial class KurrentDBPersistentSubscriptionsClient {
 	/// <summary>
 	/// Lists persistent subscriptions to $all.
 	/// </summary>
-	public async Task<IEnumerable<PersistentSubscriptionInfo>> ListToAllAsync(TimeSpan? deadline = null,
-	                                                                          UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
-			
+	internal async Task<IEnumerable<PersistentSubscriptionInfo>> ListToAllAsync(TimeSpan? deadline = null,
+	                                                                            UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
 			var req = new ListReq() {
@@ -25,15 +25,15 @@ partial class KurrentDBPersistentSubscriptionsClient {
 			return await ListGrpcAsync(req, deadline, userCredentials, channelInfo.CallInvoker, cancellationToken)
 				.ConfigureAwait(false);
 		}
-			
+
 		throw new NotSupportedException("The server does not support listing the persistent subscriptions.");
 	}
 
 	/// <summary>
 	/// Lists persistent subscriptions to the specified stream.
 	/// </summary>
-	public async Task<IEnumerable<PersistentSubscriptionInfo>> ListToStreamAsync(string streamName, TimeSpan? deadline = null,
-	                                                                             UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+	internal async Task<IEnumerable<PersistentSubscriptionInfo>> ListToStreamAsync(string streamName, TimeSpan? deadline = null,
+	                                                                               UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
@@ -44,11 +44,11 @@ partial class KurrentDBPersistentSubscriptionsClient {
 					}
 				}
 			};
-				
+
 			return await ListGrpcAsync(req, deadline, userCredentials, channelInfo.CallInvoker, cancellationToken)
 				.ConfigureAwait(false);
 		}
-			
+
 		return await ListHttpAsync(streamName, channelInfo, deadline, userCredentials, cancellationToken)
 			.ConfigureAwait(false);
 	}
@@ -56,8 +56,8 @@ partial class KurrentDBPersistentSubscriptionsClient {
 	/// <summary>
 	/// Lists all persistent subscriptions.
 	/// </summary>
-	public async Task<IEnumerable<PersistentSubscriptionInfo>> ListAllAsync(TimeSpan? deadline = null,
-	                                                                        UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+	internal async Task<IEnumerable<PersistentSubscriptionInfo>> ListAllAsync(TimeSpan? deadline = null,
+	                                                                          UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
@@ -66,7 +66,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 					ListAllSubscriptions = new Empty()
 				}
 			};
-				
+
 			return await ListGrpcAsync(req, deadline, userCredentials, channelInfo.CallInvoker, cancellationToken)
 				.ConfigureAwait(false);
 		}
@@ -85,7 +85,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 
 	async Task<IEnumerable<PersistentSubscriptionInfo>> ListGrpcAsync(ListReq req, TimeSpan? deadline,
 	                                                                  UserCredentials? userCredentials, CallInvoker callInvoker, CancellationToken cancellationToken) {
-			
+
 		using var call = new PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
 			.ListAsync(req, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 

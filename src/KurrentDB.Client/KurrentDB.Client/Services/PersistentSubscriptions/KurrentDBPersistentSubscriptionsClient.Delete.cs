@@ -8,15 +8,15 @@ partial class KurrentDBPersistentSubscriptionsClient {
 	/// Deletes a persistent subscription.
 	/// </summary>
 	[Obsolete("DeleteAsync is no longer supported. Use DeleteToStreamAsync instead.", false)]
-	public Task DeleteAsync(string streamName, string groupName, TimeSpan? deadline = null,
-	                        UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) =>
+	internal Task DeleteAsync(string streamName, string groupName, TimeSpan? deadline = null,
+	                          UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) =>
 		DeleteToStreamAsync(streamName, groupName, deadline, userCredentials, cancellationToken);
 
 	/// <summary>
 	/// Deletes a persistent subscription.
 	/// </summary>
-	public async Task DeleteToStreamAsync(string streamName, string groupName, TimeSpan? deadline = null,
-	                                      UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+	internal async Task DeleteToStreamAsync(string streamName, string groupName, TimeSpan? deadline = null,
+	                                        UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 
 		if (streamName == SystemStreams.AllStream &&

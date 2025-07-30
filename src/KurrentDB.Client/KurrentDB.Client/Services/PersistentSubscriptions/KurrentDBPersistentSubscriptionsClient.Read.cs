@@ -16,7 +16,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 	/// <exception cref="ArgumentException"></exception>
 	/// <exception cref="ArgumentOutOfRangeException"></exception>
 	[Obsolete("SubscribeAsync is no longer supported. Use SubscribeToStream with manual acks instead.", false)]
-	public async Task<PersistentSubscription> SubscribeAsync(
+	internal async Task<PersistentSubscription> SubscribeAsync(
 		string streamName, string groupName,
 		Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 		Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
@@ -47,7 +47,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 	/// <exception cref="ArgumentNullException"></exception>
 	/// <exception cref="ArgumentException"></exception>
 	/// <exception cref="ArgumentOutOfRangeException"></exception>
-	public async Task<PersistentSubscription> SubscribeToStreamAsync(
+	internal async Task<PersistentSubscription> SubscribeToStreamAsync(
 		string streamName, string groupName,
 		Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 		Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
@@ -75,7 +75,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 	/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
 	/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 	/// <returns></returns>
-	public PersistentSubscriptionResult SubscribeToStream(
+	internal PersistentSubscriptionResult SubscribeToStream(
 		string streamName, string groupName, int bufferSize = 10,
 		UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
 	) {
@@ -136,7 +136,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 	/// <summary>
 	/// Subscribes to a persistent subscription to $all. Messages must be manually acknowledged
 	/// </summary>
-	public async Task<PersistentSubscription> SubscribeToAllAsync(
+	internal async Task<PersistentSubscription> SubscribeToAllAsync(
 		string groupName,
 		Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> eventAppeared,
 		Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>? subscriptionDropped = null,
@@ -162,14 +162,14 @@ partial class KurrentDBPersistentSubscriptionsClient {
 	/// <param name="userCredentials">The optional user credentials to perform operation with.</param>
 	/// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
 	/// <returns></returns>
-	public PersistentSubscriptionResult SubscribeToAll(
+	internal PersistentSubscriptionResult SubscribeToAll(
 		string groupName, int bufferSize = 10,
 		UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
 	) =>
 		SubscribeToStream(SystemStreams.AllStream, groupName, bufferSize, userCredentials, cancellationToken);
 
 	/// <inheritdoc />
-	public class PersistentSubscriptionResult : IAsyncEnumerable<ResolvedEvent>, IAsyncDisposable, IDisposable {
+	internal class PersistentSubscriptionResult : IAsyncEnumerable<ResolvedEvent>, IAsyncDisposable, IDisposable {
 		const int MaxEventIdLength = 2000;
 
 		readonly ReadReq                                _request;
@@ -303,21 +303,21 @@ partial class KurrentDBPersistentSubscriptionsClient {
 		/// </summary>
 		/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
 		/// <param name="eventIds">The <see cref="Uuid"/> of the <see cref="ResolvedEvent" />s to acknowledge. There should not be more than 2000 to ack at a time.</param>
-		public Task Ack(params Uuid[] eventIds) => AckInternal(eventIds);
+		internal Task Ack(params Uuid[] eventIds) => AckInternal(eventIds);
 
 		/// <summary>
 		/// Acknowledge that a message has completed processing (this will tell the server it has been processed).
 		/// </summary>
 		/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
 		/// <param name="eventIds">The <see cref="Uuid"/> of the <see cref="ResolvedEvent" />s to acknowledge. There should not be more than 2000 to ack at a time.</param>
-		public Task Ack(IEnumerable<Uuid> eventIds) => Ack(eventIds.ToArray());
+		internal Task Ack(IEnumerable<Uuid> eventIds) => Ack(eventIds.ToArray());
 
 		/// <summary>
 		/// Acknowledge that a message has completed processing (this will tell the server it has been processed).
 		/// </summary>
 		/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
 		/// <param name="resolvedEvents">The <see cref="ResolvedEvent"></see>s to acknowledge. There should not be more than 2000 to ack at a time.</param>
-		public Task Ack(params ResolvedEvent[] resolvedEvents) =>
+		internal Task Ack(params ResolvedEvent[] resolvedEvents) =>
 			Ack(Array.ConvertAll(resolvedEvents, resolvedEvent => resolvedEvent.OriginalEvent.EventId));
 
 		/// <summary>
@@ -325,7 +325,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 		/// </summary>
 		/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
 		/// <param name="resolvedEvents">The <see cref="ResolvedEvent"></see>s to acknowledge. There should not be more than 2000 to ack at a time.</param>
-		public Task Ack(IEnumerable<ResolvedEvent> resolvedEvents) =>
+		internal Task Ack(IEnumerable<ResolvedEvent> resolvedEvents) =>
 			Ack(resolvedEvents.Select(resolvedEvent => resolvedEvent.OriginalEvent.EventId));
 
 		/// <summary>
@@ -335,7 +335,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 		/// <param name="reason">A reason given.</param>
 		/// <param name="eventIds">The <see cref="Uuid"/> of the <see cref="ResolvedEvent" />s to nak. There should not be more than 2000 to nak at a time.</param>
 		/// <exception cref="ArgumentException">The number of eventIds exceeded the limit of 2000.</exception>
-		public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Uuid[] eventIds) =>
+		internal Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Uuid[] eventIds) =>
 			NackInternal(eventIds, action, reason);
 
 		/// <summary>

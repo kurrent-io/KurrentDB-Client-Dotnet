@@ -2,7 +2,7 @@
 
 namespace KurrentDB.Client;
 
-public static class ClusterMessages {
+static class ClusterMessages {
 	public record ClusterInfo(MemberInfo[] Members);
 
 	public record MemberInfo(Uuid InstanceId, VNodeState State, bool IsAlive, DnsEndPoint EndPoint);

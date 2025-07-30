@@ -6,7 +6,7 @@ namespace KurrentDB.Client;
 /// <summary>
 /// A class used to describe how to connect to an instance of KurrentDB.
 /// </summary>
-public class KurrentDBClientConnectivitySettings {
+class KurrentDBClientConnectivitySettings {
 	/// <summary>
 	/// The default port used for connecting to KurrentDB.
 	/// </summary>

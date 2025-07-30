@@ -3,7 +3,7 @@
 /// <summary>
 /// Provides the definitions of the available extra statistics.
 /// </summary>
-public static class PersistentSubscriptionExtraStatistic {
+static class PersistentSubscriptionExtraStatistic {
 #pragma warning disable CS1591
 	public const string Highest = "Highest";
 	public const string Mean = "Mean";

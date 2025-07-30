@@ -273,8 +273,8 @@ public record AllSubscriptionOptions : ReadAllOptions {
 
 [PublicAPI]
 public record StreamSubscriptionOptions : ReadStreamOptions {
-    private new ReadDirection Direction { get; init; }
-    private new long          Limit     { get; init; }
+    new ReadDirection Direction { get; init; }
+    new long          Limit     { get; init; }
 }
 
 [PublicAPI]

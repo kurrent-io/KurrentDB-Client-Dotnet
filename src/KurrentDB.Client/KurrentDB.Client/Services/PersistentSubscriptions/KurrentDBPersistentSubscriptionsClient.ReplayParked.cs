@@ -10,8 +10,8 @@ partial class KurrentDBPersistentSubscriptionsClient {
 	/// <summary>
 	/// Retry the parked messages of the persistent subscription
 	/// </summary>
-	public async Task ReplayParkedMessagesToAllAsync(string groupName, long? stopAt = null, TimeSpan? deadline = null,
-	                                                 UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+	internal async Task ReplayParkedMessagesToAllAsync(string groupName, long? stopAt = null, TimeSpan? deadline = null,
+	                                                   UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsReplayParked) {
@@ -24,7 +24,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 
 			await ReplayParkedGrpcAsync(req, stopAt, deadline, userCredentials, channelInfo.CallInvoker, cancellationToken)
 				.ConfigureAwait(false);
-				
+
 			return;
 		}
 
@@ -32,18 +32,18 @@ partial class KurrentDBPersistentSubscriptionsClient {
 			await ReplayParkedHttpAsync(SystemStreams.AllStream, groupName, stopAt, channelInfo,
 					deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
-				
+
 			return;
 		}
-			
+
 		throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
 	}
 
 	/// <summary>
 	/// Retry the parked messages of the persistent subscription
 	/// </summary>
-	public async Task ReplayParkedMessagesToStreamAsync(string streamName, string groupName, long? stopAt=null,
-	                                                    TimeSpan? deadline=null, UserCredentials? userCredentials=null, CancellationToken cancellationToken=default) {
+	internal async Task ReplayParkedMessagesToStreamAsync(string streamName, string groupName, long? stopAt=null,
+	                                                      TimeSpan? deadline=null, UserCredentials? userCredentials=null, CancellationToken cancellationToken=default) {
 
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsReplayParked) {
@@ -53,13 +53,13 @@ partial class KurrentDBPersistentSubscriptionsClient {
 					StreamIdentifier = streamName
 				},
 			};
-			
+
 			await ReplayParkedGrpcAsync(req, stopAt, deadline, userCredentials, channelInfo.CallInvoker, cancellationToken)
 				.ConfigureAwait(false);
-				
+
 			return;
 		}
-			
+
 		await ReplayParkedHttpAsync(streamName, groupName, stopAt, channelInfo, deadline, userCredentials, cancellationToken)
 			.ConfigureAwait(false);
 	}
@@ -70,7 +70,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 		if (numberOfEvents.HasValue) {
 			req.Options.StopAt = numberOfEvents.Value;
 		} else {
-			req.Options.NoLimit = new Empty();	
+			req.Options.NoLimit = new Empty();
 		}
 
 		await new PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)

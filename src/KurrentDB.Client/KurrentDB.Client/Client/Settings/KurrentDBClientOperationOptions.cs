@@ -3,7 +3,7 @@
 /// <summary>
 /// A class representing the options to apply to an individual operation.
 /// </summary>
-public class KurrentDBClientOperationOptions {
+class KurrentDBClientOperationOptions {
 	/// <summary>
 	/// Whether or not to immediately throw a <see cref="WrongExpectedVersionException"/> when an append fails.
 	/// </summary>

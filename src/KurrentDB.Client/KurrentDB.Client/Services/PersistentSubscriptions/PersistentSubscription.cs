@@ -5,7 +5,7 @@ namespace KurrentDB.Client;
 /// <summary>
 /// Represents a persistent subscription connection.
 /// </summary>
-public class PersistentSubscription : IDisposable {
+class PersistentSubscription : IDisposable {
 	readonly KurrentDBPersistentSubscriptionsClient.PersistentSubscriptionResult        _persistentSubscriptionResult;
 	readonly IAsyncEnumerator<PersistentSubscriptionMessage>                            _enumerator;
 	readonly Func<PersistentSubscription, ResolvedEvent, int?, CancellationToken, Task> _eventAppeared;
@@ -72,14 +72,14 @@ public class PersistentSubscription : IDisposable {
 	/// </summary>
 	/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
 	/// <param name="eventIds">The <see cref="Uuid"/> of the <see cref="ResolvedEvent" />s to acknowledge. There should not be more than 2000 to ack at a time.</param>
-	public Task Ack(IEnumerable<Uuid> eventIds) => Ack(eventIds.ToArray());
+	internal Task Ack(IEnumerable<Uuid> eventIds) => Ack(eventIds.ToArray());
 
 	/// <summary>
 	/// Acknowledge that a message has completed processing (this will tell the server it has been processed).
 	/// </summary>
 	/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
 	/// <param name="resolvedEvents">The <see cref="ResolvedEvent"></see>s to acknowledge. There should not be more than 2000 to ack at a time.</param>
-	public Task Ack(params ResolvedEvent[] resolvedEvents) =>
+	internal Task Ack(params ResolvedEvent[] resolvedEvents) =>
 		Ack(Array.ConvertAll(resolvedEvents, resolvedEvent => resolvedEvent.OriginalEvent.EventId));
 
 	/// <summary>
@@ -87,7 +87,7 @@ public class PersistentSubscription : IDisposable {
 	/// </summary>
 	/// <remarks>There is no need to ack a message if you have Auto Ack enabled.</remarks>
 	/// <param name="resolvedEvents">The <see cref="ResolvedEvent"></see>s to acknowledge. There should not be more than 2000 to ack at a time.</param>
-	public Task Ack(IEnumerable<ResolvedEvent> resolvedEvents) =>
+	internal Task Ack(IEnumerable<ResolvedEvent> resolvedEvents) =>
 		Ack(resolvedEvents.Select(resolvedEvent => resolvedEvent.OriginalEvent.EventId));
 
 
@@ -98,7 +98,7 @@ public class PersistentSubscription : IDisposable {
 	/// <param name="reason">A reason given.</param>
 	/// <param name="eventIds">The <see cref="Uuid"/> of the <see cref="ResolvedEvent" />s to nak. There should not be more than 2000 to nak at a time.</param>
 	/// <exception cref="ArgumentException">The number of eventIds exceeded the limit of 2000.</exception>
-	public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Uuid[] eventIds) => NackInternal(eventIds, action, reason);
+	internal Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Uuid[] eventIds) => NackInternal(eventIds, action, reason);
 
 	/// <summary>
 	/// Acknowledge that a message has failed processing (this will tell the server it has not been processed).
@@ -107,8 +107,8 @@ public class PersistentSubscription : IDisposable {
 	/// <param name="reason">A reason given.</param>
 	/// <param name="resolvedEvents">The <see cref="ResolvedEvent" />s to nak. There should not be more than 2000 to nak at a time.</param>
 	/// <exception cref="ArgumentException">The number of resolvedEvents exceeded the limit of 2000.</exception>
-	public Task Nack(PersistentSubscriptionNakEventAction action, string reason,
-	                 params ResolvedEvent[] resolvedEvents) =>
+	internal Task Nack(PersistentSubscriptionNakEventAction action, string reason,
+	                   params ResolvedEvent[] resolvedEvents) =>
 		Nack(action, reason,
 			Array.ConvertAll(resolvedEvents, resolvedEvent => resolvedEvent.OriginalEvent.EventId));
 
@@ -133,7 +133,7 @@ public class PersistentSubscription : IDisposable {
 							_persistentSubscriptionResult.StreamName, _persistentSubscriptionResult.GroupName));
 					return;
 				}
-					
+
 				_log.LogTrace(
 					"Persistent Subscription {subscriptionId} received event {streamName}@{streamRevision} {position}",
 					SubscriptionId, resolvedEvent.OriginalEvent.EventStreamId,

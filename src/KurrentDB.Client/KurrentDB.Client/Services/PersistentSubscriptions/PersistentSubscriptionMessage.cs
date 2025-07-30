@@ -3,7 +3,7 @@ namespace KurrentDB.Client;
 /// <summary>
 /// The base record of all stream messages.
 /// </summary>
-public abstract record PersistentSubscriptionMessage {
+abstract record PersistentSubscriptionMessage {
 	/// <summary>
 	/// A <see cref="PersistentSubscriptionMessage"/> that represents a <see cref="KurrentDB.Client.ResolvedEvent"/>.
 	/// </summary>
@@ -17,7 +17,7 @@ public abstract record PersistentSubscriptionMessage {
 	public record NotFound : PersistentSubscriptionMessage {
 		internal static readonly NotFound Instance = new();
 	}
-		
+
 	/// <summary>
 	/// A <see cref="PersistentSubscriptionMessage"/> indicating that the subscription is ready to send additional messages.
 	/// </summary>

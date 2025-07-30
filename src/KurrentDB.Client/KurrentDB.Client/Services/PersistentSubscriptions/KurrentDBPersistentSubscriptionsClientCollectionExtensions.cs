@@ -10,7 +10,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// <summary>
 /// A set of extension methods for <see cref="IServiceCollection"/> which provide support for an <see cref="KurrentDBPersistentSubscriptionsClient"/>.
 /// </summary>
-public static class KurrentDBPersistentSubscriptionsClientCollectionExtensions {
+static class KurrentDBPersistentSubscriptionsClientCollectionExtensions {
 	/// <summary>
 	/// Adds an <see cref="KurrentDBPersistentSubscriptionsClient"/> to the <see cref="IServiceCollection"/>.
 	/// </summary>

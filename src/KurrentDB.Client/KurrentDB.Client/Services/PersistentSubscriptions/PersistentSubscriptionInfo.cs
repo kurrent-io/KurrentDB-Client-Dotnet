@@ -12,7 +12,7 @@ namespace KurrentDB.Client;
 /// <param name="Connections">Active connections to the subscription.</param>
 /// <param name="Settings">The settings used to create the persistant subscription.</param>
 /// <param name="Stats">Live statistics for the persistent subscription.</param>
-public record PersistentSubscriptionInfo(
+record PersistentSubscriptionInfo(
 	string EventSource,
 	string GroupName,
 	string Status,
@@ -165,7 +165,7 @@ public record PersistentSubscriptionInfo(
 /// <param name="ParkedMessageCount">The current number of parked messages.</param>
 /// <param name="LastCheckpointedEventPosition">The <see cref="IPosition"/> of the last checkpoint. This will be null if there are no checkpoints.</param>
 /// <param name="LastKnownEventPosition">The <see cref="IPosition"/> of the last known event. This will be undefined if no events have been received yet.</param>
-public record PersistentSubscriptionStats(
+record PersistentSubscriptionStats(
 	int AveragePerSecond,
 	long TotalItems,
 	long CountSinceLastMeasurement,
@@ -191,7 +191,7 @@ public record PersistentSubscriptionStats(
 /// <param name="AvailableSlots">Number of available slots.</param>
 /// <param name="InFlightMessages">Number of in flight messages on this connection.</param>
 /// <param name="ExtraStatistics">Timing measurements for the connection. Can be enabled with the ExtraStatistics setting.</param>
-public record PersistentSubscriptionConnectionInfo(
+record PersistentSubscriptionConnectionInfo(
 	string From,
 	string Username,
 	string ConnectionName,

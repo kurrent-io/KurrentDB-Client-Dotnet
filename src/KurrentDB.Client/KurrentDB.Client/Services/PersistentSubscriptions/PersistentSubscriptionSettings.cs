@@ -3,7 +3,7 @@ namespace KurrentDB.Client;
 /// <summary>
 /// A class representing the settings of a persistent subscription.
 /// </summary>
-public sealed class PersistentSubscriptionSettings {
+sealed class PersistentSubscriptionSettings {
 	/// <summary>
 	/// Whether the <see cref="PersistentSubscription"></see> should resolve linkTo events to their linked events.
 	/// </summary>

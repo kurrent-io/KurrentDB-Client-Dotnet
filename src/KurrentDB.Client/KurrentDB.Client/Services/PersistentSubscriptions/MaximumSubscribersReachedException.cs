@@ -3,7 +3,7 @@ namespace KurrentDB.Client;
 /// <summary>
 /// The exception that is thrown when the maximum number of subscribers on a persistent subscription is exceeded.
 /// </summary>
-public class MaximumSubscribersReachedException : Exception {
+class MaximumSubscribersReachedException : Exception {
 	/// <summary>
 	/// The stream name.
 	/// </summary>

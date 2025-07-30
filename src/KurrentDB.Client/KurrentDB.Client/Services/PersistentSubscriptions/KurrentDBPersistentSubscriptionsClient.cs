@@ -8,7 +8,7 @@ namespace KurrentDB.Client;
 /// <summary>
 /// The client used to manage persistent subscriptions in the KurrentDB.
 /// </summary>
-public sealed partial class KurrentDBPersistentSubscriptionsClient : KurrentDBClientBase {
+sealed partial class KurrentDBPersistentSubscriptionsClient : KurrentDBClientBase {
 	static readonly BoundedChannelOptions ReadBoundedChannelOptions = new (capacity: 1) {
 		SingleReader                  = true,
 		SingleWriter                  = true,

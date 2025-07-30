@@ -2,4 +2,4 @@
 
 namespace KurrentDB.Client;
 
-public record ChannelInfo(ChannelBase Channel, ServerCapabilities ServerCapabilities, CallInvoker CallInvoker);
+record ChannelInfo(ChannelBase Channel, ServerCapabilities ServerCapabilities, CallInvoker CallInvoker);

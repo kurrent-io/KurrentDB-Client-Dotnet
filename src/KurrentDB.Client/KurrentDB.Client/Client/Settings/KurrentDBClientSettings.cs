@@ -10,7 +10,7 @@ namespace KurrentDB.Client;
 /// <summary>
 /// Represents the settings to use for operations made from an implementation of <see cref="KurrentDBClientBase"/>.
 /// </summary>
-public class KurrentDBClientSettings {
+class KurrentDBClientSettings {
     // public static KurrentDBClientSettingsBuilder Builder => new();
 
     /// <summary>

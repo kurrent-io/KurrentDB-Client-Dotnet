@@ -5,7 +5,7 @@ namespace KurrentDB.Client;
 /// <summary>
 /// The base class used by clients used to communicate with the KurrentDB.
 /// </summary>
-public abstract class KurrentDBClientBase : IAsyncDisposable {
+abstract class KurrentDBClientBase : IAsyncDisposable {
 	/// Constructs a new <see cref="KurrentDBClientBase"/>.
 	protected KurrentDBClientBase(KurrentDBClientSettings? settings, Dictionary<string, Func<RpcException, Exception>>? exceptionMap = null) {
 		Settings = settings ?? new();

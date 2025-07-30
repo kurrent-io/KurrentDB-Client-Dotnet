@@ -3,7 +3,7 @@ using EventStore.Client.PersistentSubscriptions;
 
 namespace KurrentDB.Client;
 
-public partial class KurrentDBPersistentSubscriptionsClient {
+partial class KurrentDBPersistentSubscriptionsClient {
 	static readonly IDictionary<string, UpdateReq.Types.ConsumerStrategy> NamedConsumerStrategyToUpdateProto
 		= new Dictionary<string, UpdateReq.Types.ConsumerStrategy> {
 			[SystemConsumerStrategies.DispatchToSingle] = UpdateReq.Types.ConsumerStrategy.DispatchToSingle,
@@ -60,18 +60,18 @@ public partial class KurrentDBPersistentSubscriptionsClient {
 	/// </summary>
 	/// <exception cref="ArgumentNullException"></exception>
 	[Obsolete("UpdateAsync is no longer supported. Use UpdateToStreamAsync instead.", false)]
-	public Task UpdateAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
-	                        TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-	                        CancellationToken cancellationToken = default) =>
+	internal Task UpdateAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
+	                          TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+	                          CancellationToken cancellationToken = default) =>
 		UpdateToStreamAsync(streamName, groupName, settings, deadline, userCredentials, cancellationToken);
 
 	/// <summary>
 	/// Updates a persistent subscription.
 	/// </summary>
 	/// <exception cref="ArgumentNullException"></exception>
-	public async Task UpdateToStreamAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
-	                                      TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-	                                      CancellationToken cancellationToken = default) {
+	internal async Task UpdateToStreamAsync(string streamName, string groupName, PersistentSubscriptionSettings settings,
+	                                        TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+	                                        CancellationToken cancellationToken = default) {
 		if (streamName is null) {
 			throw new ArgumentNullException(nameof(streamName));
 		}
@@ -153,9 +153,9 @@ public partial class KurrentDBPersistentSubscriptionsClient {
 	/// <summary>
 	/// Updates a persistent subscription to $all.
 	/// </summary>
-	public async Task UpdateToAllAsync(string groupName, PersistentSubscriptionSettings settings,
-	                                   TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-	                                   CancellationToken cancellationToken = default) =>
+	internal async Task UpdateToAllAsync(string groupName, PersistentSubscriptionSettings settings,
+	                                     TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+	                                     CancellationToken cancellationToken = default) =>
 		await UpdateToStreamAsync(SystemStreams.AllStream, groupName, settings, deadline, userCredentials,
 				cancellationToken)
 			.ConfigureAwait(false);

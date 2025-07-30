@@ -6,7 +6,7 @@ namespace KurrentDB.Client;
 /// <summary>
 /// Defines retry configuration for gRPC operations.
 /// </summary>
-public record KurrentDBClientRetrySettings {
+record KurrentDBClientRetrySettings {
 	/// <summary>
 	/// Gets or sets whether retry is enabled.
 	/// </summary>

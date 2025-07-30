@@ -3,7 +3,7 @@ namespace KurrentDB.Client;
 /// <summary>
 /// The exception that is thrown when a persistent subscription is not found.
 /// </summary>
-public class PersistentSubscriptionNotFoundException : Exception {
+class PersistentSubscriptionNotFoundException : Exception {
 	/// <summary>
 	/// The stream name.
 	/// </summary>

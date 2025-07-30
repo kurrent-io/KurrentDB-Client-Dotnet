@@ -4,7 +4,7 @@ namespace KurrentDB.Client;
 /// Exception thrown if the expected version specified on an operation
 /// does not match the version of the stream when the operation was attempted.
 /// </summary>
-public class WrongExpectedVersionException : Exception {
+class WrongExpectedVersionException : Exception {
 	/// <summary>
 	/// Constructs a new instance of <see cref="WrongExpectedVersionException" /> with the expected and actual versions if available.
 	/// </summary>

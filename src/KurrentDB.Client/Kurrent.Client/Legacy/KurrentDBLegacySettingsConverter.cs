@@ -5,7 +5,7 @@ using UserCredentials = KurrentDB.Client.UserCredentials;
 
 namespace Kurrent.Client.Legacy;
 
-public static class KurrentDBLegacySettingsConverter {
+static class KurrentDBLegacySettingsConverter {
     /// <summary>
     /// Converts the new options format to the legacy client settings.
     /// </summary>
