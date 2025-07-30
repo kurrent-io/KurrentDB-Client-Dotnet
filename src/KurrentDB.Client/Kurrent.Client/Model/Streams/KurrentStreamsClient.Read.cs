@@ -318,6 +318,9 @@ public partial class KurrentStreamsClient {
                 if (stream.IsMetastream)
                     return Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt.With("stream", stream)));
 
+                // ReSharper disable once PossiblyMistakenUseOfCancellationToken
+                // because we are checking the metadata stream on a failure path,
+                // we must use the original cancellation token
                 return await this.ReadLastStreamRecord(SystemStreams.MetastreamOf(stream), cancellationToken)
                     .MatchAsync(
                         rec => {

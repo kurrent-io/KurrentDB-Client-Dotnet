@@ -57,6 +57,9 @@
     <Protobuf Update="..\..\proto\kurrentdb\protocol\v2\streams\streams.bak.proto">
       <Generator>MSBuild:Compile</Generator>
     </Protobuf>
+    <Protobuf Update="..\..\proto\kurrentdb\protocol\v2\streams\streams.manage.proto">
+      <Generator>MSBuild:Compile</Generator>
+    </Protobuf>
   </ItemGroup>
 
   <ItemGroup>
@@ -93,18 +96,27 @@
     <Compile Remove="Kurrent\Grpc\Balancer\**" />
     <Compile Remove="Kurrent.Client\Experimental\**" />
     <Compile Remove="Kurrent.Client\PersistentSusbcriptionsBackup\**" />
+    <Compile Remove="KurrentDB.Client\Services\UserManagement\**" />
+    <Compile Remove="KurrentDB.Client\Services\ProjectionManagement\**" />
+    <Compile Remove="KurrentDB.Client\Services\Operations\**" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Remove="Kurrent\Grpc\Balancer\**" />
     <EmbeddedResource Remove="Kurrent.Client\Experimental\**" />
     <EmbeddedResource Remove="Kurrent.Client\PersistentSusbcriptionsBackup\**" />
+    <EmbeddedResource Remove="KurrentDB.Client\Services\UserManagement\**" />
+    <EmbeddedResource Remove="KurrentDB.Client\Services\ProjectionManagement\**" />
+    <EmbeddedResource Remove="KurrentDB.Client\Services\Operations\**" />
   </ItemGroup>
 
   <ItemGroup>
     <None Remove="Kurrent\Grpc\Balancer\**" />
     <None Remove="Kurrent.Client\Experimental\**" />
     <None Remove="Kurrent.Client\PersistentSusbcriptionsBackup\**" />
+    <None Remove="KurrentDB.Client\Services\UserManagement\**" />
+    <None Remove="KurrentDB.Client\Services\ProjectionManagement\**" />
+    <None Remove="KurrentDB.Client\Services\Operations\**" />
   </ItemGroup>
 
   <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">

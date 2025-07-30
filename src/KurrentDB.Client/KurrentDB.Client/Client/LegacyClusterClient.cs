@@ -1,6 +1,7 @@
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
 using System.Net;
+using System.Runtime.Serialization;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Kurrent.Client;
@@ -20,6 +21,33 @@ class LegacyClusterClient {
 	readonly CancellationTokenSource                            _cancellator;
 
 	bool _disposed;
+
+	static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
+		[Constants.Exceptions.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),
+		[Constants.Exceptions.StreamDeleted] = ex => new StreamDeletedException(
+			ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value ?? "<unknown>",
+			ex
+		),
+		[Constants.Exceptions.WrongExpectedVersion] = ex => new WrongExpectedVersionException(
+			ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!,
+			ex.Trailers.GetStreamState(Constants.Exceptions.ExpectedVersion),
+			ex.Trailers.GetStreamState(Constants.Exceptions.ActualVersion),
+			ex,
+			ex.Message
+		),
+		[Constants.Exceptions.MaximumAppendSizeExceeded] = ex => new MaximumAppendSizeExceededException(
+			ex.Trailers.GetIntValueOrDefault(Constants.Exceptions.MaximumAppendSize),
+			ex
+		),
+		[Constants.Exceptions.StreamNotFound] = ex => new StreamNotFoundException(
+			ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!,
+			ex
+		),
+		[Constants.Exceptions.MissingRequiredMetadataProperty] = ex => new RequiredMetadataPropertyMissingException(
+			ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.MissingRequiredMetadataProperty)?.Value!,
+			ex
+		),
+	};
 
 	public LegacyClusterClient(KurrentDBClientSettings settings, Dictionary<string, Func<RpcException, Exception>> exceptionMap, bool dontLoadServerCapabilities = false) {
 		_cancellator  = new CancellationTokenSource();
@@ -105,8 +133,9 @@ class LegacyClusterClient {
 	public static LegacyClusterClient CreateWithoutExceptionMapping(KurrentDBClientSettings settings) =>
 		new LegacyClusterClient(settings, [], true);
 
-	public static LegacyClusterClient CreateWithExceptionMapping(KurrentDBClientSettings settings) =>
-		new LegacyClusterClient(settings, KurrentDBClient.ExceptionMap, true);
+	public static LegacyClusterClient CreateWithExceptionMapping(KurrentDBClientSettings settings) {
+		return new(settings, ExceptionMap, true);
+	}
 
 	public string ResolverScheme { get; }
 
@@ -150,4 +179,58 @@ class LegacyClusterClient {
 		if (_disposed)
 			throw new ObjectDisposedException(nameof(LegacyClusterClient), "The legacy cluster client has already been disposed and cannot be used anymore.");
 	}
+}
+
+
+/// <summary>
+/// Exception thrown when an append exceeds the maximum size set by the server.
+/// </summary>
+class MaximumAppendSizeExceededException : Exception {
+	/// <summary>
+	/// Constructs a new <see cref="MaximumAppendSizeExceededException"/>.
+	/// </summary>
+	/// <param name="maxAppendSize"></param>
+	/// <param name="innerException"></param>
+	public MaximumAppendSizeExceededException(uint maxAppendSize, Exception? innerException = null) :
+		base($"Maximum Append Size of {maxAppendSize} Exceeded.", innerException) =>
+		MaxAppendSize = maxAppendSize;
+
+	/// <summary>
+	/// Constructs a new <see cref="MaximumAppendSizeExceededException"/>.
+	/// </summary>
+	/// <param name="maxAppendSize"></param>
+	/// <param name="innerException"></param>
+	public MaximumAppendSizeExceededException(int maxAppendSize, Exception? innerException = null) : this((uint)maxAppendSize, innerException) { }
+
+	/// <summary>
+	/// The configured maximum append size.
+	/// </summary>
+	public uint MaxAppendSize { get; }
+}
+
+/// <summary>
+/// Exception thrown if there is an attempt to operate inside a
+/// transaction which does not exist.
+/// </summary>
+class InvalidTransactionException : Exception {
+	/// <summary>
+	/// Constructs a new <see cref="InvalidTransactionException"/>.
+	/// </summary>
+	public InvalidTransactionException() { }
+
+	/// <summary>
+	/// Constructs a new <see cref="InvalidTransactionException"/>.
+	/// </summary>
+	public InvalidTransactionException(string message) : base(message) { }
+
+	/// <summary>
+	/// Constructs a new <see cref="InvalidTransactionException"/>.
+	/// </summary>
+	public InvalidTransactionException(string message, Exception innerException) : base(message, innerException) { }
+
+	/// <summary>
+	/// Constructs a new <see cref="InvalidTransactionException"/>.
+	/// </summary>
+	[Obsolete("Obsolete")]
+	protected InvalidTransactionException(SerializationInfo info, StreamingContext context) : base(info, context) { }
 }
