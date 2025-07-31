@@ -1,13 +1,13 @@
 #pragma warning disable CA1822 // Mark members as static
+// ReSharper disable CheckNamespace
 
 using Bogus;
-using Kurrent.Client.Testing.Fixtures;
 using KurrentDB.Client;
 using UserDetails = Kurrent.Client.Model.UserDetails;
 
 namespace Kurrent.Client.Tests;
 
-public partial class KurrentClientTestFixture : TestFixture {
+public partial class KurrentClientTestFixture {
 	public async ValueTask<TestUser[]> CreateTestUsers(int count = 3, bool withoutGroups = true) {
 		if (count < 1)
 			throw new ArgumentOutOfRangeException(nameof(count), "Count must be greater than zero.");
@@ -81,9 +81,7 @@ public sealed class TestUserFaker : Faker<TestUser> {
 	public TestUser WithInvalidCredentials(bool wrongLoginName = true, bool wrongPassword = true) =>
 		Instance
 			.FinishWith((f, x) => x.Credentials = new(
-					wrongLoginName ? "wrong-username" : x.LoginName,
-					wrongPassword ? "wrong-password" : x.Password
-				)
-			)
+				wrongLoginName ? "wrong-username" : x.LoginName,
+				wrongPassword ? "wrong-password" : x.Password))
 			.Generate();
 }

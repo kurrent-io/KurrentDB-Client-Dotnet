@@ -2,10 +2,10 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable ClassNeverInstantiated.Local
 
-namespace Kurrent.Client.Tests.PersistentSubscriptions;
+namespace Kurrent.Client.Tests.Projections;
 
 [Category("ProjectionManagement")]
-public class ProjectionManagementTests : KurrentClientTestFixture {
+public class ProjectionsTests : KurrentClientTestFixture {
 	[Test]
 	[Arguments("$streams")]
 	[Arguments("$stream_by_category")]
@@ -14,7 +14,7 @@ public class ProjectionManagementTests : KurrentClientTestFixture {
 	[Arguments("$by_correlation_id")]
 	public async Task get_status(string name, CancellationToken ct) {
 		// Act
-		await AutomaticClient.ProjectionManagement
+		await AutomaticClient.Projections
 			.GetStatus(name, ct)
 			.ShouldNotThrowAsync()
 			.OnFailureAsync(error => Should.NotThrow(() => error.Error.Throw()))
@@ -36,14 +36,14 @@ public class ProjectionManagementTests : KurrentClientTestFixture {
 			});
 			""";
 
-		await AutomaticClient.ProjectionManagement
+		await AutomaticClient.Projections
 			.CreateContinuous(name, query, cancellationToken: ct)
 			.ShouldNotThrowOrFailAsync();
 
 		await SeedTestMessages(name, _ => { }, cancellationToken: ct);
 
 		// Act & Assert
-		await AutomaticClient.ProjectionManagement
+		await AutomaticClient.Projections
 			.GetState<Result>(name, cancellationToken: ct)
 			.ShouldNotThrowAsync()
 			.OnFailureAsync(error => Should.NotThrow(() => error.Error.Throw()))
@@ -56,19 +56,19 @@ public class ProjectionManagementTests : KurrentClientTestFixture {
 	[Test]
 	public async Task create_one_time(CancellationToken ct) {
 		// Arrange
-		var existingProjections = await AutomaticClient.ProjectionManagement
+		var existingProjections = await AutomaticClient.Projections
 			.ListAll(ct).Value
 			.Where(p => p.Mode == "OneTime")
 			.Select(p => p.EffectiveName)
 			.ToArrayAsync(cancellationToken: ct);
 
 		// Act
-		await AutomaticClient.ProjectionManagement
+		await AutomaticClient.Projections
 			.CreateOneTime(ProjectionQuery, ct)
 			.ShouldNotThrowOrFailAsync();
 
 		// Assert
-		var currentProjections = await AutomaticClient.ProjectionManagement
+		var currentProjections = await AutomaticClient.Projections
 			.ListAll(ct).Value
 			.Where(p => p.Mode == "OneTime")
 			.Select(p => p.EffectiveName)
@@ -82,7 +82,7 @@ public class ProjectionManagementTests : KurrentClientTestFixture {
 	[Test]
 	public async Task create_continuous(CancellationToken ct) {
 		// Arrange
-		var existingProjections = await AutomaticClient.ProjectionManagement
+		var existingProjections = await AutomaticClient.Projections
 			.ListAll(ct).Value
 			.Where(p => p.Mode == "Continuous")
 			.Select(p => p.EffectiveName)
@@ -91,12 +91,12 @@ public class ProjectionManagementTests : KurrentClientTestFixture {
 		var name = NewProjectionName();
 
 		// Act
-		await AutomaticClient.ProjectionManagement
+		await AutomaticClient.Projections
 			.CreateContinuous(name, ProjectionQuery, cancellationToken: ct)
 			.ShouldNotThrowOrFailAsync();
 
 		// Assert
-		var currentProjections = await AutomaticClient.ProjectionManagement
+		var currentProjections = await AutomaticClient.Projections
 			.ListAll(ct).Value
 			.Where(p => p.Mode == "Continuous")
 			.Where(p => p.Name == name)
@@ -112,7 +112,7 @@ public class ProjectionManagementTests : KurrentClientTestFixture {
 	[Test]
 	public async Task create_transient(CancellationToken ct) {
 		// Arrange
-		var existingProjections = await AutomaticClient.ProjectionManagement
+		var existingProjections = await AutomaticClient.Projections
 			.ListAll(ct).Value
 			.Where(p => p.Mode == "Transient")
 			.Select(p => p.EffectiveName)
@@ -122,12 +122,12 @@ public class ProjectionManagementTests : KurrentClientTestFixture {
 		var name  = NewProjectionName();
 
 		// Act
-		await AutomaticClient.ProjectionManagement
+		await AutomaticClient.Projections
 			.CreateTransient(name, query, cancellationToken: ct)
 			.ShouldNotThrowOrFailAsync();
 
 		// Assert
-		var currentProjections = await AutomaticClient.ProjectionManagement
+		var currentProjections = await AutomaticClient.Projections
 			.ListAll(ct).Value
 			.Where(p => p.Mode == "Transient")
 			.Where(p => p.Name == name)
@@ -146,16 +146,16 @@ public class ProjectionManagementTests : KurrentClientTestFixture {
 		var name = NewProjectionName();
 
 		// Act
-		await AutomaticClient.ProjectionManagement
+		await AutomaticClient.Projections
 			.CreateTransient(name, ProjectionQuery, cancellationToken: ct)
 			.ShouldNotThrowOrFailAsync();
 
-		await AutomaticClient.ProjectionManagement
+		await AutomaticClient.Projections
 			.Delete(name, cancellationToken: ct)
 			.ShouldNotThrowOrFailAsync();
 
 		// Assert
-		var currentProjections = await AutomaticClient.ProjectionManagement
+		var currentProjections = await AutomaticClient.Projections
 			.ListAll(ct).Value
 			.Where(p => p.Mode == "Transient")
 			.Where(p => p.EffectiveName == name)

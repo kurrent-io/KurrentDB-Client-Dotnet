@@ -1,3 +1,4 @@
+using Kurrent.Client;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Client;

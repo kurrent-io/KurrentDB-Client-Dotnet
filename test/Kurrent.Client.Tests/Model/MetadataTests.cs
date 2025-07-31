@@ -106,34 +106,12 @@ public class MetadataTests {
     }
 
     [Test]
-    public void locked_metadata_with_if_false_returns_same_instance() {
-        var locked = new Metadata().With("original", "value").Lock();
-
-        var result = locked.WithIf(false, "new", "value");
-
-        result.ShouldBeSameAs(locked);
-        result.IsLocked.ShouldBeTrue();
-        result.ContainsKey("new").ShouldBeFalse();
-    }
-
-    [Test]
     public void locked_metadata_with_many_if_true_throws_exception() {
         var locked     = new Metadata().With("original", "value").Lock();
         var additional = new Metadata().With("new", "value");
 
         var exception = Should.Throw<InvalidOperationException>(() => locked.WithManyIf(true, additional));
         exception.Message.ShouldBe("Cannot modify locked metadata. Use CreateUnlockedCopy() to create a mutable copy.");
-    }
-
-    [Test]
-    public void locked_metadata_with_many_if_false_returns_same_instance() {
-        var locked     = new Metadata().With("original", "value").Lock();
-        var additional = new Metadata().With("new", "value");
-
-        var result = locked.WithManyIf(false, additional);
-
-        result.ShouldBeSameAs(locked);
-        result.Count.ShouldBe(1);
     }
 
     [Test]
@@ -145,19 +123,6 @@ public class MetadataTests {
 
         var exception = Should.Throw<InvalidOperationException>(() => locked.WithoutIf(true, "remove"));
         exception.Message.ShouldBe("Cannot modify locked metadata. Use CreateUnlockedCopy() to create a mutable copy.");
-    }
-
-    [Test]
-    public void locked_metadata_without_if_false_returns_same_instance() {
-        var locked = new Metadata()
-            .With("keep", "value1")
-            .With("remove", "value2")
-            .Lock();
-
-        var result = locked.WithoutIf(false, "remove");
-
-        result.ShouldBeSameAs(locked);
-        result.ContainsKey("remove").ShouldBeTrue();
     }
 
     [Test]

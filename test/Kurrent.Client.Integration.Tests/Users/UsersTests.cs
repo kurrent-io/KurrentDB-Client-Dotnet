@@ -1,12 +1,11 @@
 using Kurrent.Client.Model;
-using Kurrent.Client.Testing.TUnit;
 using Kurrent.Client.Testing.Shouldly;
 using UserDetails = Kurrent.Client.Model.UserDetails;
 
-namespace Kurrent.Client.Tests.Streams;
+namespace Kurrent.Client.Tests.Users;
 
 [Category("UserManagement")]
-public class UserManagementTests : KurrentClientTestFixture {
+public class UsersTests : KurrentClientTestFixture {
 	[Test]
 	public async Task creates_user() {
 		var user = Users.Generate();

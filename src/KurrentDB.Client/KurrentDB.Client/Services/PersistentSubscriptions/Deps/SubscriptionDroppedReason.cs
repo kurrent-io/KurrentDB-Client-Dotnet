@@ -1,9 +1,9 @@
-namespace KurrentDB.Client;
+namespace Kurrent.Client;
 
 /// <summary>
 /// Represents the reason subscription was dropped.
 /// </summary>
-enum SubscriptionDroppedReason {
+public enum SubscriptionDroppedReason {
 	/// <summary>
 	/// Subscription was dropped because the subscription was disposed.
 	/// </summary>

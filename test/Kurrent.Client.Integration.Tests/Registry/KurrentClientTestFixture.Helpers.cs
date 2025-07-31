@@ -1,6 +1,6 @@
 using Google.Protobuf;
-using Kurrent.Client.Testing.Fixtures;
 using NJsonSchema;
+// ReSharper disable CheckNamespace
 
 namespace Kurrent.Client.Tests;
 

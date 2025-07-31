@@ -130,7 +130,6 @@ public class ReadTests : KurrentClientTestFixture {
             });
     }
 
-
     [Test]
     public async Task fails_with_stream_deleted_error_when_stream_was_deleted(CancellationToken ct) {
         var simulation = await SeedGame(ct);

@@ -7,7 +7,7 @@ namespace KurrentDB.Client;
 /// <summary>
 /// An RFC-4122 compliant v4 UUID.
 /// </summary>
-readonly struct Uuid : IEquatable<Uuid> {
+public readonly struct Uuid : IEquatable<Uuid> {
 	/// <summary>
 	/// Represents the empty (00000000-0000-0000-0000-000000000000) <see cref="Uuid"/>.
 	/// </summary>

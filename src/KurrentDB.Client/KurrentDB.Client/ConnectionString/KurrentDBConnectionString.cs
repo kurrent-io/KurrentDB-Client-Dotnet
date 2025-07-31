@@ -5,7 +5,7 @@ namespace KurrentDB.Client;
 /// <summary>
 /// Represents a parsed KurrentDB connection string with all its components
 /// </summary>
-record KurrentDBConnectionString {
+public record KurrentDBConnectionString {
     const string SchemeSeparator = "://";
 
     const char UserInfoSeparator = '@';
@@ -138,13 +138,24 @@ record KurrentDBConnectionString {
 
         static (string, string) ParseUserInfo(string input) {
             var tokens = input.Split(Colon);
-            return tokens.Length == 2
-                ? (Uri.UnescapeDataString(tokens[0]), Uri.UnescapeDataString(tokens[1]))
-                : throw new InvalidUserCredentialsException(input);
+            if (tokens.Length != 2)
+                throw new InvalidUserCredentialsException(input);
+            
+            var username = Uri.UnescapeDataString(tokens[0]);
+            var password = Uri.UnescapeDataString(tokens[1]);
+            
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+                throw new InvalidUserCredentialsException(input);
+            
+            return (username, password);
         }
 
         static DnsEndPoint[] ParseHosts(string input) {
             var hosts = input.Split(Comma).Select(hostToken => {
+                    // Check for malformed host:port combinations (e.g., "host:" with trailing colon but no port)
+                    if (hostToken.EndsWith(Colon) && !hostToken.EndsWith("::")) // Allow IPv6 addresses like "::1"
+                        throw new InvalidHostException(hostToken);
+
                     // address can be in the form of "host:port" or just "host"
                     var token = hostToken.Split(Colon, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
