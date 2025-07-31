@@ -8,7 +8,7 @@ using KurrentDB.Client;
 
 namespace Kurrent.Client;
 
-public partial class KurrentProjectionManagementClient {
+public partial class KurrentProjectionsClient {
 	public async ValueTask<Result<Success, UpdateError>> Update(
 		string name, string query, bool? emitEnabled = null, CancellationToken cancellationToken = default
 	) {

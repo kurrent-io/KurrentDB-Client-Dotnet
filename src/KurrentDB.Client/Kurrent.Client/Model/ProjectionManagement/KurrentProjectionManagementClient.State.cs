@@ -13,7 +13,7 @@ using Type = System.Type;
 
 namespace Kurrent.Client;
 
-public partial class KurrentProjectionManagementClient {
+public partial class KurrentProjectionsClient {
 	static readonly JsonSerializerOptions DefaultJsonSerializerOptions = new JsonSerializerOptions();
 
 	/// <summary>

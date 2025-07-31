@@ -8,7 +8,7 @@ using KurrentDB.Client;
 
 namespace Kurrent.Client;
 
-public partial class KurrentProjectionManagementClient {
+public partial class KurrentProjectionsClient {
 	/// <summary>
 	/// Creates a one-time projection.
 	/// </summary>

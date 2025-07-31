@@ -13,7 +13,7 @@ using Success = Kurrent.Client.SchemaRegistry.Success;
 namespace Kurrent.Client;
 
 public class KurrentRegistryClient {
-	internal KurrentRegistryClient(CallInvoker invoker) => ServiceClient = new SchemaRegistryServiceClient(invoker);
+	internal KurrentRegistryClient(KurrentClient source) => ServiceClient = new SchemaRegistryServiceClient(source.LegacyCallInvoker);
 
 	SchemaRegistryServiceClient ServiceClient { get; }
 
@@ -326,7 +326,7 @@ public class KurrentRegistryClient {
 	/// <exception cref="Exception">
 	/// Throws an exception if there is an error during the compatibility check process.
 	/// </exception>
-	public async ValueTask<Result<SchemaVersionId, CheckSchemaCompatibilityError>> CheckSchemaCompatibility(
+	public ValueTask<Result<SchemaVersionId, CheckSchemaCompatibilityError>> CheckSchemaCompatibility(
 		SchemaIdentifier identifier, string schemaDefinition, SchemaDataFormat dataFormat, CancellationToken cancellationToken = default
 	) {
 		var request = identifier.IsSchemaName
@@ -336,10 +336,7 @@ public class KurrentRegistryClient {
 		request.Definition = ByteString.CopyFromUtf8(schemaDefinition);
 		request.DataFormat = (Contracts.SchemaDataFormat)dataFormat;
 
-		return await ServiceClient
-			.CheckSchemaCompatibilityAsync(request, cancellationToken: cancellationToken)
-			.ResponseAsync
-			.ToResultAsync()
+		return ServiceClient.CheckSchemaCompatibilityAsync(request, cancellationToken: cancellationToken).ResponseAsync.ToResultAsync()
 			.MatchAsync(
 				onSuccess: result => result.Success is not null
 					? Result.Success<SchemaVersionId, CheckSchemaCompatibilityError>(SchemaVersionId.From(result.Success.SchemaVersionId))

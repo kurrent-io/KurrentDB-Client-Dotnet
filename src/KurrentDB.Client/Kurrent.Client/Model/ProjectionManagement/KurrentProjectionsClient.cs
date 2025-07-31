@@ -4,10 +4,9 @@ using static EventStore.Client.Projections.Projections;
 
 namespace Kurrent.Client;
 
-public sealed partial class KurrentProjectionManagementClient {
-	internal KurrentProjectionManagementClient(KurrentClient source, KurrentClientOptions options) {
-		LegacySettings = options.ConvertToLegacySettings();
-
+public sealed partial class KurrentProjectionsClient {
+	internal KurrentProjectionsClient(KurrentClient source) {
+		LegacySettings = source.Options.ConvertToLegacySettings();
 		ServiceClient = new ProjectionsClient(source.LegacyCallInvoker);
 	}
 

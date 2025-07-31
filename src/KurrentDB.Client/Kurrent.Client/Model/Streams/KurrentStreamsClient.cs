@@ -10,15 +10,15 @@ using StreamMetadata = Kurrent.Client.Model.StreamMetadata;
 namespace Kurrent.Client;
 
 public partial class KurrentStreamsClient {
-    internal KurrentStreamsClient(KurrentClient source, CallInvoker callInvoker) {
+    internal KurrentStreamsClient(KurrentClient source) {
         source.TypeMapper.Map<StreamMetadata>("$metadata"); // metastream
         source.TypeMapper.Map<string>("$>");                // link
 
         SerializerProvider = source.SerializerProvider;
         MetadataDecoder    = source.MetadataDecoder;
 
-        ServiceClient   = new StreamsServiceClient(callInvoker);
-        ServiceClientV1 = new Streams.StreamsClient(callInvoker);
+        ServiceClient   = new StreamsServiceClient(source.LegacyCallInvoker);
+        ServiceClientV1 = new Streams.StreamsClient(source.LegacyCallInvoker);
     }
 
     StreamsServiceClient  ServiceClient   { get; }

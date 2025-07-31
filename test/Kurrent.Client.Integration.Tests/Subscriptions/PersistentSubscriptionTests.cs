@@ -24,12 +24,12 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		var recordsReceived = new List<Record>();
 
 		// Act
-		await AutomaticClient.PersistentSubscription.CreateToAll(
+		await AutomaticClient.PersistentSubscriptions.CreateToAll(
 			group, filter, settings,
 			ct
 		);
 
-		await using var subscription = await AutomaticClient.PersistentSubscription
+		await using var subscription = await AutomaticClient.PersistentSubscriptions
 			.SubscribeToAll(group, cancellationToken: ct)
 			.ShouldNotThrowOrFailAsync();
 
@@ -68,12 +68,12 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		var expectedIds = simulation.Game.GameEvents.Select(x => x.RecordId).ToList();
 
 		// Act
-		await AutomaticClient.PersistentSubscription.CreateToStream(
+		await AutomaticClient.PersistentSubscriptions.CreateToStream(
 			stream, group, settings,
 			ct
 		);
 
-		await using var subscription = await AutomaticClient.PersistentSubscription
+		await using var subscription = await AutomaticClient.PersistentSubscriptions
 			.SubscribeToStream(stream, group, cancellationToken: ct)
 			.ShouldNotThrowOrFailAsync();
 
@@ -112,11 +112,11 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		};
 
 		// Act
-		await AutomaticClient.PersistentSubscription.CreateToAll(expected.GroupName, expected.Settings, ct);
+		await AutomaticClient.PersistentSubscriptions.CreateToAll(expected.GroupName, expected.Settings, ct);
 
 		await Task.Delay(1.Seconds(), ct);
 
-		var info = await AutomaticClient.PersistentSubscription
+		var info = await AutomaticClient.PersistentSubscriptions
 			.GetInfoToAll(expected.GroupName, ct)
 			.ShouldNotThrowOrFailAsync();
 
@@ -143,11 +143,11 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		};
 
 		// Act
-		await AutomaticClient.PersistentSubscription.CreateToStream(stream, expected.GroupName, expected.Settings, ct);
+		await AutomaticClient.PersistentSubscriptions.CreateToStream(stream, expected.GroupName, expected.Settings, ct);
 
 		await Task.Delay(1.Seconds(), ct);
 
-		var info = await AutomaticClient.PersistentSubscription
+		var info = await AutomaticClient.PersistentSubscriptions
 			.GetInfoToStream(stream, expected.GroupName, ct)
 			.ShouldNotThrowOrFailAsync();
 

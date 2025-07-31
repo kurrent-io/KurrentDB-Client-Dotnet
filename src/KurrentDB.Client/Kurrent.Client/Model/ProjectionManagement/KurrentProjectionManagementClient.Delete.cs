@@ -7,7 +7,7 @@ using KurrentDB.Client;
 
 namespace Kurrent.Client;
 
-public partial class KurrentProjectionManagementClient {
+public partial class KurrentProjectionsClient {
 	/// Deletes a projection and optionally its associated streams.
 	/// <param name="name">The name of the projection to be deleted.</param>
 	/// <param name="deleteEmittedStreams">A boolean indicating whether to delete the emitted streams of the projection.</param>

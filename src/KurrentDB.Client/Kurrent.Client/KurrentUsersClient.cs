@@ -9,13 +9,10 @@ using UserDetails = Kurrent.Client.Model.UserDetails;
 
 namespace Kurrent.Client;
 
-public class KurrentUserManagementClient {
-	internal KurrentUserManagementClient(CallInvoker callInvoker, KurrentClientOptions options) {
-		Options       = options;
-		ServiceClient = new Users.UsersClient(callInvoker);
+public class KurrentUsersClient {
+	internal KurrentUsersClient(KurrentClient source) {
+		ServiceClient = new Users.UsersClient(source.LegacyCallInvoker);
 	}
-
-	internal KurrentClientOptions Options { get; }
 
 	Users.UsersClient ServiceClient { get; }
 

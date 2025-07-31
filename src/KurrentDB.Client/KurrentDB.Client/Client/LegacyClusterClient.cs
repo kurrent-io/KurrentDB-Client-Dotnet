@@ -47,6 +47,23 @@ class LegacyClusterClient {
 			ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.MissingRequiredMetadataProperty)?.Value!,
 			ex
 		),
+		[Constants.Exceptions.PersistentSubscriptionDoesNotExist] = ex => new
+			PersistentSubscriptionNotFoundException(
+				ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
+				ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.GroupName)?.Value ?? "", ex
+			),
+		[Constants.Exceptions.MaximumSubscribersReached] = ex => new
+			MaximumSubscribersReachedException(
+				ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
+				ex.Trailers.First(x => x.Key == Constants.Exceptions.GroupName).Value, ex
+			),
+		[Constants.Exceptions.PersistentSubscriptionDropped] = ex => new
+			PersistentSubscriptionDroppedByServerException(
+				ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
+				ex.Trailers.First(x => x.Key == Constants.Exceptions.GroupName).Value, ex
+			),
+		[Constants.Exceptions.ScavengeNotFound] = ex => new ScavengeNotFoundException(
+			ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.ScavengeId)?.Value)
 	};
 
 	public LegacyClusterClient(KurrentDBClientSettings settings, Dictionary<string, Func<RpcException, Exception>> exceptionMap, bool dontLoadServerCapabilities = false) {

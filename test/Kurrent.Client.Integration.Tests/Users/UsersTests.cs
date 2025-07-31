@@ -10,7 +10,7 @@ public class UsersTests : KurrentClientTestFixture {
 	public async Task creates_user() {
 		var user = Users.Generate();
 
-		await AutomaticClient.UserManagement
+		await AutomaticClient.Users
 			.CreateUser(
 				user.LoginName, user.FullName, user.Groups,
 				user.Password
@@ -18,7 +18,7 @@ public class UsersTests : KurrentClientTestFixture {
 			.ShouldNotThrowAsync()
 			.ShouldNotFailAsync();
 
-		await AutomaticClient.UserManagement
+		await AutomaticClient.Users
 			.GetUser(user.LoginName)
 			.ShouldNotThrowAsync()
 			.OnSuccessAsync(details => details
@@ -34,7 +34,7 @@ public class UsersTests : KurrentClientTestFixture {
 	public async Task get_user() {
 		var user = await CreateTestUser();
 
-		await AutomaticClient.UserManagement
+		await AutomaticClient.Users
 			.GetUser(user.LoginName)
 			.ShouldNotThrowAsync()
 			.OnSuccessAsync(details => details
@@ -50,12 +50,12 @@ public class UsersTests : KurrentClientTestFixture {
 	public async Task enable_user() {
 		var user = await CreateTestUser();
 
-		await AutomaticClient.UserManagement
+		await AutomaticClient.Users
 			.EnableUser(user.LoginName)
 			.ShouldNotThrowAsync()
 			.OnSuccessAsync(success => success.ShouldBe(Success.Instance));
 
-		await AutomaticClient.UserManagement
+		await AutomaticClient.Users
 			.GetUser(user.LoginName)
 			.ShouldNotThrowAsync()
 			.OnSuccessAsync(details => details.Disabled.ShouldBeFalse());
@@ -65,12 +65,12 @@ public class UsersTests : KurrentClientTestFixture {
 	public async Task disable_user() {
 		var user = await CreateTestUser();
 
-		await AutomaticClient.UserManagement
+		await AutomaticClient.Users
 			.DisableUser(user.LoginName)
 			.ShouldNotThrowAsync()
 			.OnSuccessAsync(success => success.ShouldBe(Success.Instance));
 
-		await AutomaticClient.UserManagement
+		await AutomaticClient.Users
 			.GetUser(user.LoginName)
 			.ShouldNotThrowAsync()
 			.OnSuccessAsync(details => details.Disabled.ShouldBeTrue());
@@ -100,7 +100,7 @@ public class UsersTests : KurrentClientTestFixture {
 			.Concat(users.Select(user => user.Details))
 			.ToArray();
 
-		var actual = await AutomaticClient.UserManagement
+		var actual = await AutomaticClient.Users
 			.ListAllAsync()
 			.Select(user => new UserDetails {
 					LoginName       = user.LoginName,
@@ -122,7 +122,7 @@ public class UsersTests : KurrentClientTestFixture {
 	public async Task reset_password() {
 		var user = await CreateTestUser();
 
-		await AutomaticClient.UserManagement
+		await AutomaticClient.Users
 			.ResetPassword(user.LoginName, "new-password")
 			.ShouldNotThrowAsync()
 			.OnSuccessAsync(success => success.ShouldBe(Success.Instance));
@@ -134,7 +134,7 @@ public class UsersTests : KurrentClientTestFixture {
 	public async Task delete_user_throws_user_not_found_when_user_does_not_exist() {
 		var user = Users.Generate();
 
-		await AutomaticClient.UserManagement
+		await AutomaticClient.Users
 			.DeleteUser(user.LoginName)
 			.ShouldNotThrowAsync()
 			.OnFailureAsync(failure => failure.Value.ShouldBeOfType<ErrorDetails.UserNotFound>());

@@ -11,7 +11,7 @@ namespace Kurrent.Client;
 /// <summary>
 /// Provides functionality to manage projections in the Kurrent system.
 /// </summary>
-public partial class KurrentProjectionManagementClient {
+public partial class KurrentProjectionsClient {
 	/// <summary>
 	/// Enables a projection.
 	/// </summary>

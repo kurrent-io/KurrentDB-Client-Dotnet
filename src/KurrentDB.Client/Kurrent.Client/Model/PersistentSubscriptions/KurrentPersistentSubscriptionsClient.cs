@@ -13,25 +13,19 @@ using static EventStore.Client.PersistentSubscriptions.PersistentSubscriptions;
 namespace Kurrent.Client;
 
 public sealed partial class KurrentPersistentSubscriptionsClient {
-	internal KurrentPersistentSubscriptionsClient(KurrentClient source, KurrentClientOptions options) {
+	internal KurrentPersistentSubscriptionsClient(KurrentClient source) {
 		Registry           = source.Registry;
 		SerializerProvider = source.SerializerProvider;
 
-		LegacySettings     = options.ConvertToLegacySettings();
-		MetadataDecoder    = options.MetadataDecoder;
+		MetadataDecoder = source.MetadataDecoder;
 
-		LegacyCallInvoker  = new KurrentDBLegacyCallInvoker(new LegacyClusterClient(LegacySettings, ExceptionMap));
-		ServiceClient      = new PersistentSubscriptionsClient(LegacyCallInvoker);
+		LegacySettings    = source.Options.ConvertToLegacySettings();
+		LegacyCallInvoker = source.LegacyCallInvoker;
+		ServiceClient     = new PersistentSubscriptionsClient(source.LegacyCallInvoker);
 
 		HttpFallback = new Lazy<HttpFallback>(() => new HttpFallback(LegacySettings));
-		Logger          = LegacySettings.LoggerFactory.CreateLogger<KurrentDBPersistentSubscriptionsClient>();
+		Logger       = source.Options.LoggerFactory.CreateLogger<KurrentDBPersistentSubscriptionsClient>();
 	}
-
-	static readonly BoundedChannelOptions ReadBoundedChannelOptions = new(capacity: 1) {
-		SingleReader                  = true,
-		SingleWriter                  = true,
-		AllowSynchronousContinuations = true
-	};
 
 	internal KurrentRegistryClient         Registry           { get; }
 	internal KurrentDBLegacyCallInvoker    LegacyCallInvoker  { get; }
@@ -42,25 +36,6 @@ public sealed partial class KurrentPersistentSubscriptionsClient {
 
 	readonly Lazy<HttpFallback> HttpFallback;
 	readonly ILogger            Logger;
-
-	static Dictionary<string, Func<RpcException, Exception>> ExceptionMap =>
-		new() {
-			[Constants.Exceptions.PersistentSubscriptionDoesNotExist] = ex => new
-				PersistentSubscriptionNotFoundException(
-					ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
-					ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.GroupName)?.Value ?? "", ex
-				),
-			[Constants.Exceptions.MaximumSubscribersReached] = ex => new
-				MaximumSubscribersReachedException(
-					ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
-					ex.Trailers.First(x => x.Key == Constants.Exceptions.GroupName).Value, ex
-				),
-			[Constants.Exceptions.PersistentSubscriptionDropped] = ex => new
-				PersistentSubscriptionDroppedByServerException(
-					ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
-					ex.Trailers.First(x => x.Key == Constants.Exceptions.GroupName).Value, ex
-				)
-		};
 
 	async ValueTask EnsureCompatibility(string streamName, CancellationToken cancellationToken) {
 		if (streamName is not SystemStreams.AllStream) return;

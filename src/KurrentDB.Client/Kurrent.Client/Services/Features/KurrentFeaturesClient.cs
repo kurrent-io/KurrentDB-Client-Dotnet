@@ -1,4 +1,3 @@
-using Grpc.Core;
 using Kurrent.Client.Features;
 using static EventStore.Client.ServerFeatures.ServerFeatures;
 
@@ -6,8 +5,8 @@ namespace Kurrent.Client;
 
 [PublicAPI]
 public class KurrentFeaturesClient {
-	internal KurrentFeaturesClient(CallInvoker invoker) =>
-		ServiceClient = new ServerFeaturesClient(invoker);
+	internal KurrentFeaturesClient(KurrentClient source) =>
+		ServiceClient = new ServerFeaturesClient(source.LegacyCallInvoker);
 
 	ServerFeaturesClient ServiceClient { get; }
 

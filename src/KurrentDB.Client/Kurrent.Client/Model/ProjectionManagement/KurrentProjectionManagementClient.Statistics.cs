@@ -9,7 +9,7 @@ using KurrentDB.Client;
 
 namespace Kurrent.Client;
 
-public partial class KurrentProjectionManagementClient {
+public partial class KurrentProjectionsClient {
 	/// <summary>
 	/// List the <see cref="ProjectionDetails"/> of all one-time projections.
 	/// </summary>

@@ -239,6 +239,12 @@ public partial class KurrentPersistentSubscriptionsClient {
 			}
 		}
 
+		static readonly BoundedChannelOptions ReadBoundedChannelOptions = new(capacity: 1) {
+			SingleReader                  = true,
+			SingleWriter                  = true,
+			AllowSynchronousContinuations = true
+		};
+
 		internal PersistentSubscriptionResult(
 			string streamName,
 			string groupName,
