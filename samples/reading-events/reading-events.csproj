@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <RootNamespace>reading_events</RootNamespace>
-    </PropertyGroup>
-    <ItemGroup>
-      <ProjectReference Include="..\..\src\KurrentDB.Client\KurrentDB.Client.csproj" />
-    </ItemGroup>
+  <PropertyGroup>
+    <RootNamespace>reading_events</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\KurrentDB.Client\KurrentDB.Client.csproj" />
+  </ItemGroup>
 </Project>

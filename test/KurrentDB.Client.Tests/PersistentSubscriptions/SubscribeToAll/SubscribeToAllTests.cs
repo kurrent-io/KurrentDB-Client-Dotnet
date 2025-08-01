@@ -369,7 +369,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 			.ToArray();
 
 		foreach (var e in events) {
-			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.Any, new[] { e });
+			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.Any, [e]);
 		}
 
 		await Fixture.Subscriptions.CreateToAllAsync(
@@ -426,7 +426,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 
 		var subscription = Fixture.Subscriptions.SubscribeToAll(group, bufferSize: bufferCount, userCredentials: TestCredentials.Root);
 		foreach (var e in events) {
-			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.Any, new[] { e });
+			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.Any, [e]);
 		}
 
 		await subscription!.Messages.OfType<PersistentSubscriptionMessage.Event>()
@@ -508,7 +508,7 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		} catch (PersistentSubscriptionDroppedByServerException) { }
 
 		foreach (var e in events) {
-			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.NoStream, new[] { e });
+			await Fixture.Streams.AppendToStreamAsync("test-" + Guid.NewGuid(), StreamState.NoStream, [e]);
 		}
 
 		await using var sub = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
