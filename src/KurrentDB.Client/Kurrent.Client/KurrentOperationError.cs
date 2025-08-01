@@ -4,7 +4,7 @@ using Google.Protobuf.Reflection;
 using Kurrent.Client.Schema.Serialization.Protobuf;
 using KurrentDB.Protocol;
 
-namespace Kurrent.Client.Model;
+namespace Kurrent.Client;
 
 /// <summary>
 /// Marks a readonly partial record struct to have error properties generated from protobuf annotations.

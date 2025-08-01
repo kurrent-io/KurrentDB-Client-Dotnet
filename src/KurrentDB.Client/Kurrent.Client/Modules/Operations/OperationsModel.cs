@@ -1,6 +1,6 @@
 using Kurrent.Variant;
 
-namespace Kurrent.Client.Model;
+namespace Kurrent.Client.Operations;
 
 #region admin
 

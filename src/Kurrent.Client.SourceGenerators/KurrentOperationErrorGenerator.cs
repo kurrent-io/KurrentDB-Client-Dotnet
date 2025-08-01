@@ -9,8 +9,8 @@ namespace Kurrent.Client.SourceGenerators;
 
 [Generator]
 public class KurrentOperationErrorGenerator : ISourceGenerator {
-    const string KurrentOperationErrorAttributeKey = "Kurrent.Client.Model.KurrentOperationErrorAttribute";
-    const string KurrentClientModelNamespace       = "Kurrent.Client.Model";
+    const string KurrentOperationErrorAttributeKey = "Kurrent.Client.KurrentOperationErrorAttribute";
+    const string KurrentClientModelNamespace       = "Kurrent.Client";
 
     class KurrentOperationErrorSyntaxReceiver : ISyntaxReceiver {
         public List<TypeDeclarationSyntax> CandidateTypes { get; } = new();

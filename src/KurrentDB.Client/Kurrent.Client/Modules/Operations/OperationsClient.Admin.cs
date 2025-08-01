@@ -5,7 +5,6 @@ using EventStore.Client;
 using EventStore.Client.Operations;
 using Grpc.Core;
 using Kurrent.Client.Legacy;
-using Kurrent.Client.Model;
 using KurrentDB.Client;
 
 namespace Kurrent.Client.Operations;

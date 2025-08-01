@@ -51,15 +51,6 @@
         GrpcServices="Client"
         Access="internal"
     />
-    <Protobuf Update="..\..\proto\kurrentdb\protocol\v2\streams\streams.read.proto">
-      <Generator>MSBuild:Compile</Generator>
-    </Protobuf>
-    <Protobuf Update="..\..\proto\kurrentdb\protocol\v2\streams\streams.bak.proto">
-      <Generator>MSBuild:Compile</Generator>
-    </Protobuf>
-    <Protobuf Update="..\..\proto\kurrentdb\protocol\v2\streams\streams.manage.proto">
-      <Generator>MSBuild:Compile</Generator>
-    </Protobuf>
   </ItemGroup>
 
   <ItemGroup>
@@ -90,7 +81,6 @@
 
   <ItemGroup>
     <Folder Include="Kurrent.Client\Modules\" />
-    <Folder Include="KurrentDB.Client\" />
   </ItemGroup>
 
   <ItemGroup>
