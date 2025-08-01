@@ -3,7 +3,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using KurrentDB.Client;
 
-namespace Kurrent.Client;
+namespace Kurrent.Client.PersistentSubscriptions;
 
 class HttpFallback : IDisposable {
 	readonly HttpClient            _httpClient;

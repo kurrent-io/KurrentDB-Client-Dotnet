@@ -1,9 +1,8 @@
 using Humanizer;
-using Kurrent.Client.PersistentSubscriptions;
 using Kurrent.Client.Streams;
 using KurrentDB.Client;
 
-namespace Kurrent.Client;
+namespace Kurrent.Client.PersistentSubscriptions;
 
 /// <summary>
 /// Represents the settings for a persistent subscription in the Kurrent client library.

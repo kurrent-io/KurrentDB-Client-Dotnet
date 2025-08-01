@@ -4,6 +4,7 @@ using KurrentDB.Client;
 using Microsoft.Extensions.Logging;
 using PersistentSubscriptionInfo = Kurrent.Client.PersistentSubscriptions.PersistentSubscriptionInfo;
 using PersistentSubscriptionMessage = Kurrent.Client.PersistentSubscriptions.PersistentSubscriptionMessage;
+using PersistentSubscriptionSettings = Kurrent.Client.PersistentSubscriptions.PersistentSubscriptionSettings;
 
 namespace Kurrent.Client.Tests.PersistentSubscriptions;
 
