@@ -1,7 +1,6 @@
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
 using System.Diagnostics;
-using Kurrent.Client.Model;
 using Kurrent.Client.Streams;
 
 namespace Kurrent.Client.Schema.Serialization.Bytes;

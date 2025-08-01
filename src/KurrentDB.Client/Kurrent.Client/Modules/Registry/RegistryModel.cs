@@ -1,9 +1,7 @@
 using System.Collections;
 using System.ComponentModel;
-using System.Runtime.InteropServices;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
-using Kurrent.Client.Model;
 using Kurrent.Client.Streams;
 using Kurrent.Variant;
 using NJsonSchema;

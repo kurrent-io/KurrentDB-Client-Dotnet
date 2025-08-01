@@ -3,7 +3,7 @@
 using Google.Protobuf.Collections;
 using EventStore.Client.PersistentSubscriptions;
 using Humanizer;
-using Kurrent.Client.Model;
+using Kurrent.Client.Streams;
 using KurrentDB.Client;
 
 namespace Kurrent.Client;

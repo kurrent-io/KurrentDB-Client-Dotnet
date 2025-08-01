@@ -1,10 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
-using Kurrent.Client.Streams;
 using Kurrent.Variant;
 using static System.Threading.Interlocked;
 
-namespace Kurrent.Client.Model;
+namespace Kurrent.Client.Streams;
 
 #region . append .
 
@@ -386,7 +385,7 @@ public record Subscription : Messages {
 
 #endregion
 
-#region . management .
+#region . manage .
 
 [PublicAPI]
 public readonly partial record struct DeleteStreamError : IVariantResultError<

@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Kurrent.Client.Model;
 using Kurrent.Client.Streams;
 using Kurrent.Client.Testing.Shouldly;
 

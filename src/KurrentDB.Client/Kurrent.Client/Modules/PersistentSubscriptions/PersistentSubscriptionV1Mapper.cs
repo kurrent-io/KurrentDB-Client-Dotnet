@@ -7,11 +7,10 @@ using EventStore.Client;
 using Kurrent.Client.Registry;
 using Kurrent.Client.Schema;
 using Kurrent.Client.Schema.Serialization;
-using Kurrent.Client.Streams;
 using KurrentDB.Client;
 using Contracts = EventStore.Client.PersistentSubscriptions;
 
-namespace Kurrent.Client.Model.PersistentSubscription;
+namespace Kurrent.Client.Streams.PersistentSubscription;
 
 /// Utility class for mapping persistent subscription events to application-level records.
 static class PersistentSubscriptionV1Mapper {

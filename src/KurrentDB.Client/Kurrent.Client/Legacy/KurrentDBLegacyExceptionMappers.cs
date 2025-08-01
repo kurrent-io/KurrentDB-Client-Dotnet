@@ -1,5 +1,4 @@
 using Grpc.Core;
-using Kurrent.Client.Model;
 using Kurrent.Client.Streams;
 using KurrentDB.Client;
 

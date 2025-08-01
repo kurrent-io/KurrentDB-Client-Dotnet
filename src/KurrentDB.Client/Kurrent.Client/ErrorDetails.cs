@@ -1,4 +1,3 @@
-using Kurrent.Client.Model;
 using static KurrentDB.Protocol.Streams.V2.ErrorDetails;
 
 namespace Kurrent.Client;

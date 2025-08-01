@@ -2,7 +2,6 @@
 
 using Google.Protobuf;
 using Grpc.Core;
-using Kurrent.Client.Model;
 using Kurrent.Client.Streams;
 using static KurrentDB.Protocol.Registry.V2.SchemaRegistryService;
 using Contracts = KurrentDB.Protocol.Registry.V2;

@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using System.Net;
 using Grpc.Core.Interceptors;
-using Kurrent.Client.Model;
 using Kurrent.Client.Schema;
 using Kurrent.Client.Streams;
 using KurrentDB.Client;

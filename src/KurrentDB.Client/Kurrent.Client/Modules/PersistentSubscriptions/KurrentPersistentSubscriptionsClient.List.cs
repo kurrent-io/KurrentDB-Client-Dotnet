@@ -4,8 +4,7 @@ using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
 using Kurrent.Client.Legacy;
-using Kurrent.Client.Model;
-using Kurrent.Client.Model.PersistentSubscriptions;
+using Kurrent.Client.Streams.PersistentSubscriptions;
 using KurrentDB.Client;
 
 namespace Kurrent.Client;

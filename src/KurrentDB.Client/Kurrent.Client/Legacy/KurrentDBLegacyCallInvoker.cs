@@ -76,10 +76,9 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
     /// </remarks>
     /// </summary>
     CallInvoker WithChannelInfoInvoker(CancellationToken cancellationToken) {
-	    if (_disposed)
-		    throw new ObjectDisposedException(nameof(KurrentDBLegacyCallInvoker));
+	    ObjectDisposedException.ThrowIf(_disposed, this);
 
-	    // using Task.Run to avoid deadlocks in synchronous contexts,
+        // using Task.Run to avoid deadlocks in synchronous contexts,
 	    // this is necessary because the legacy client may block on network operations,
 	    // and we want to ensure we don't block the calling thread.
 	    return Task.Run(

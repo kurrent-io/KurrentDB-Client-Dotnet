@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
-using Kurrent.Client.Model;
 using Kurrent.Client.Schema;
 using Kurrent.Client.Schema.Serialization;
 using Contracts = KurrentDB.Protocol.Streams.V2;

@@ -1,5 +1,5 @@
 using Humanizer;
-using Kurrent.Client.Model;
+using Kurrent.Client.Streams;
 using KurrentDB.Client;
 
 namespace Kurrent.Client;

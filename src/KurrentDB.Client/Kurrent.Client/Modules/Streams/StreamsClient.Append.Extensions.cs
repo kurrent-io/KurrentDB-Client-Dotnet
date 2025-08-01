@@ -1,10 +1,6 @@
-using Kurrent.Client.Model;
-
 namespace Kurrent.Client.Streams;
 
 public static partial class StreamsClientExtensions {
-    #region . Append .
-
     public static ValueTask<Result<AppendStreamSuccesses, AppendStreamFailures>> Append(this StreamsClient client, IEnumerable<AppendStreamRequest> requests, CancellationToken cancellationToken = default) =>
         client.Append(requests.ToAsyncEnumerable(), cancellationToken);
 
@@ -40,6 +36,4 @@ public static partial class StreamsClientExtensions {
 
     public static ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append(this StreamsClient client, StreamName stream, IEnumerable<Message> messages, CancellationToken cancellationToken) =>
         client.Append(new AppendStreamRequest(stream, ExpectedStreamState.Any, messages), cancellationToken);
-
-    #endregion
 }

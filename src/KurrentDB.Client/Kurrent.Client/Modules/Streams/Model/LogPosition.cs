@@ -3,7 +3,7 @@
 
 using System.Text.RegularExpressions;
 
-namespace Kurrent.Client.Model;
+namespace Kurrent.Client.Streams;
 
 /// <summary>
 /// Record position in the global log.

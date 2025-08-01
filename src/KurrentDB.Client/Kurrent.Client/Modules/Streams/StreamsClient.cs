@@ -1,9 +1,7 @@
 #pragma warning disable CS8509
 
-using Kurrent.Client.Model;
 using Kurrent.Client.Schema.Serialization;
 using static KurrentDB.Protocol.Streams.V2.StreamsService;
-using StreamMetadata = Kurrent.Client.Streams.StreamMetadata;
 
 namespace Kurrent.Client.Streams;
 

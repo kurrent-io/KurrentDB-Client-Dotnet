@@ -1,5 +1,3 @@
-using Kurrent.Client.Model;
-
 namespace Kurrent.Client.Streams;
 
 /// <summary>

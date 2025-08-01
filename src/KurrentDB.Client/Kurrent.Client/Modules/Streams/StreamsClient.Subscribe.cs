@@ -3,7 +3,6 @@
 using System.Threading.Channels;
 using EventStore.Client.Streams;
 using Grpc.Core;
-using Kurrent.Client.Model;
 using KurrentDB.Client;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
 

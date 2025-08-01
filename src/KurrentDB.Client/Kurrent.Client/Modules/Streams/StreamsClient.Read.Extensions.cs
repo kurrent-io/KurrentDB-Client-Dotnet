@@ -1,9 +1,6 @@
-using Kurrent.Client.Model;
-
 namespace Kurrent.Client.Streams;
 
 public static partial class StreamsClientExtensions {
-
     public static ValueTask<Result<Messages, ReadError>> ReadAll(this StreamsClient client, Func<ReadAllOptions, ReadAllOptions>? configure = null) {
         var options = new ReadAllOptions();
         options = configure?.Invoke(options) ?? options;

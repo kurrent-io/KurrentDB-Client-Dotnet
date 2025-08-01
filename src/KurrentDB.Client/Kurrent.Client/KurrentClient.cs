@@ -1,6 +1,5 @@
 using Kurrent.Client.Features;
 using Kurrent.Client.Legacy;
-using Kurrent.Client.Model;
 using Kurrent.Client.Projections;
 using Kurrent.Client.Registry;
 using Kurrent.Client.Schema;

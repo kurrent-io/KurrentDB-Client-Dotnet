@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using Kurrent.Client.Model;
 
 namespace Kurrent.Client.Streams;
 

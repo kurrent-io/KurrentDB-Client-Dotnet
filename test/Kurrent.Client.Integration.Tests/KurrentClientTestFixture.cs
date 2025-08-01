@@ -1,7 +1,6 @@
 #pragma warning disable CA1822 // Mark members as static
 
 using JetBrains.Annotations;
-using Kurrent.Client.Model;
 using Kurrent.Client.Streams;
 using Kurrent.Client.Testing;
 using Kurrent.Client.Testing.Containers.KurrentDB;

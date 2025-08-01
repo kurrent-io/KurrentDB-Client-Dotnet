@@ -1,4 +1,4 @@
-using Kurrent.Client.Model;
+using Kurrent.Client.Streams;
 using Kurrent.Client.Testing.Sample;
 
 namespace Kurrent.Client.Tests.Streams;

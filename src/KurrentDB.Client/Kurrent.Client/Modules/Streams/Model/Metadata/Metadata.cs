@@ -3,7 +3,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Kurrent.Client.Model;
 using Kurrent.Client.Streams;
 
 namespace Kurrent.Client;

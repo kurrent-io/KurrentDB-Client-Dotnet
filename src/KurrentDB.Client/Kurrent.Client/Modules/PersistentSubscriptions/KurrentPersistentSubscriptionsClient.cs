@@ -1,10 +1,7 @@
 // ReSharper disable InconsistentNaming
 
 using System.Text.Encodings.Web;
-using System.Threading.Channels;
-using Grpc.Core;
 using Kurrent.Client.Legacy;
-using Kurrent.Client.Model;
 using Kurrent.Client.Registry;
 using Kurrent.Client.Schema.Serialization;
 using Kurrent.Client.Streams;

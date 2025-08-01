@@ -1,4 +1,3 @@
-using Kurrent.Client.Model;
 using Kurrent.Client.Registry;
 
 namespace Kurrent.Client.Streams;

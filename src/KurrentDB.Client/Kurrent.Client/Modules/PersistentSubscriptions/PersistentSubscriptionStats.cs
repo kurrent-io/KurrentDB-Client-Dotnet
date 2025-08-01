@@ -1,5 +1,4 @@
-using Kurrent.Client.Model;
-using KurrentDB.Client;
+using Kurrent.Client.Streams;
 
 namespace Kurrent.Client;
 

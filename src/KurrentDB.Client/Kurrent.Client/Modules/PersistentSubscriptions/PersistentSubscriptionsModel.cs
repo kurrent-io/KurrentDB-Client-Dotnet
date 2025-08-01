@@ -1,6 +1,6 @@
 using Kurrent.Variant;
 
-namespace Kurrent.Client.Model.PersistentSubscriptions;
+namespace Kurrent.Client.Streams.PersistentSubscriptions;
 
 [PublicAPI]
 public readonly partial record struct CreateToStreamError : IVariantResultError<

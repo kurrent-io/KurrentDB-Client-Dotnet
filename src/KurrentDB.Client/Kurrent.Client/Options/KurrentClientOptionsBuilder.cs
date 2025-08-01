@@ -1,7 +1,6 @@
 #pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
 
 using Grpc.Core.Interceptors;
-using Kurrent.Client.Model;
 using Kurrent.Client.Schema;
 using Kurrent.Client.Streams;
 using Microsoft.Extensions.Logging;

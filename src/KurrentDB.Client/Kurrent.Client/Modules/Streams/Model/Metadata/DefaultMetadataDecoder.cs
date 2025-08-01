@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Kurrent.Client.Model;
 using Kurrent.Client.Registry;
 
 namespace Kurrent.Client.Streams;
