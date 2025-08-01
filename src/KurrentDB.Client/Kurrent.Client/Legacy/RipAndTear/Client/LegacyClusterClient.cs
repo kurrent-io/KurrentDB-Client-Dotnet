@@ -87,7 +87,7 @@ class LegacyClusterClient {
 		_channelInfoProvider = new SharingProvider<ReconnectionRequired, ChannelInfo>(
 			factory: async (reconnectionRequired, _) => {
 				var channel = reconnectionRequired switch {
-					ReconnectionRequired.Rediscover => await channelSelector.SelectChannelAsync(token).ConfigureAwait(false),
+					ReconnectionRequired.Rediscover               => await channelSelector.SelectChannelAsync(token).ConfigureAwait(false),
 					ReconnectionRequired.NewLeader (var endpoint) => channelSelector.SelectEndpointChannel(endpoint)
 				};
 

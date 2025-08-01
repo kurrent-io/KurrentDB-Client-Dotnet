@@ -12,7 +12,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 		};
 
 	static UpdateReq.Types.StreamOptions StreamOptionsForUpdateProto(string streamName,
-	                                                                 StreamPosition position) {
+                                                                     StreamPosition position) {
 		if (position == StreamPosition.Start) {
 			return new UpdateReq.Types.StreamOptions {
 				StreamIdentifier = streamName,

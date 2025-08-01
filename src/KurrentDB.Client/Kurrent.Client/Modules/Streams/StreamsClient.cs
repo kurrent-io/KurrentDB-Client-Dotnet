@@ -1,6 +1,7 @@
 #pragma warning disable CS8509
 
 using Kurrent.Client.Schema.Serialization;
+using static KurrentDB.Protocol.Streams.V1.LegacyStreamsService;
 using static KurrentDB.Protocol.Streams.V2.StreamsService;
 
 namespace Kurrent.Client.Streams;
@@ -13,12 +14,12 @@ public partial class StreamsClient {
         SerializerProvider = source.SerializerProvider;
         MetadataDecoder    = source.MetadataDecoder;
 
-        ServiceClient   = new StreamsServiceClient(source.LegacyCallInvoker);
-        ServiceClientV1 = new EventStore.Client.Streams.Streams.StreamsClient(source.LegacyCallInvoker);
+        ServiceClient       = new StreamsServiceClient(source.LegacyCallInvoker);
+        LegacyServiceClient = new LegacyStreamsServiceClient(source.LegacyCallInvoker);
     }
 
-    StreamsServiceClient                            ServiceClient   { get; }
-    EventStore.Client.Streams.Streams.StreamsClient ServiceClientV1 { get; }
+    StreamsServiceClient       ServiceClient       { get; }
+    LegacyStreamsServiceClient LegacyServiceClient { get; }
 
     ISchemaSerializerProvider SerializerProvider { get; }
     IMetadataDecoder          MetadataDecoder    { get; }

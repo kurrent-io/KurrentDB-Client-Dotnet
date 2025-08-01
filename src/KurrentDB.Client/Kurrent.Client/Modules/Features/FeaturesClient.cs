@@ -1,3 +1,4 @@
+using EventStore.Client;
 using Kurrent.Client.Features;
 using static EventStore.Client.ServerFeatures.ServerFeatures;
 
@@ -30,5 +31,5 @@ public class FeaturesClient {
 	}
 
 	// Custom empty request to avoid using the default one from the library.... sigh... -_-'
-	static readonly EventStore.Client.Empty CustomEmptyRequest = new();
+	static readonly Empty CustomEmptyRequest = new();
 }

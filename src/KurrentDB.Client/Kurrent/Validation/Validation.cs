@@ -8,7 +8,7 @@ namespace Kurrent.Validation;
 [PublicAPI]
 [DebuggerDisplay("{ErrorCode} | {ErrorMessage}")]
 public readonly record struct ValidationError : IResultError {
-    public static readonly ValidationError None = new();
+    public static readonly ValidationError None;
 
     /// <summary>
     /// The error code that categorizes the validation error.
@@ -48,7 +48,7 @@ public readonly record struct ValidationError : IResultError {
 [PublicAPI]
 [DebuggerDisplay("{ErrorCode} | {ErrorMessage}")]
 public readonly record struct ValidationFailure {
-    public static readonly ValidationFailure None = new();
+    public static readonly ValidationFailure None;
 
     /// <summary>
     /// The error code associated with the validation failure.

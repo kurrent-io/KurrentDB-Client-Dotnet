@@ -1,11 +1,11 @@
 #pragma warning disable CS8509
 
 using System.Threading.Channels;
-using EventStore.Client.Streams;
+using KurrentDB.Protocol.Streams.V1;
 using Grpc.Core;
 using KurrentDB.Client;
 using static Kurrent.Client.ErrorDetails;
-using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
+using static KurrentDB.Protocol.Streams.V1.ReadResp.ContentOneofCase;
 using static Kurrent.Client.Streams.StreamsClientV1Mapper;
 
 namespace Kurrent.Client.Streams;
@@ -292,7 +292,7 @@ public partial class StreamsClient {
         var cancellator   = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var stoppingToken = cancellator.Token;
 
-        var session = ServiceClientV1.Read(request, cancellationToken: stoppingToken);
+        var session = LegacyServiceClient.Read(request, cancellationToken: stoppingToken);
 
         // Check for access denied. the legacy exception mapper throws this exception...
         // we could skip it for this operation... requires refactoring the interceptor

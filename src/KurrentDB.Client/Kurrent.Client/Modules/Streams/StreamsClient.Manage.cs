@@ -12,7 +12,7 @@ public partial class StreamsClient {
         var request = StreamsClientV1Mapper.Requests.CreateDeleteRequest(stream, revision);
 
         try {
-            var resp = await ServiceClientV1
+            var resp = await LegacyServiceClient
                 .DeleteAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -53,7 +53,7 @@ public partial class StreamsClient {
         var request = StreamsClientV1Mapper.Requests.CreateTombstoneRequest(stream, revision);
 
         try {
-            var resp = await ServiceClientV1
+            var resp = await LegacyServiceClient
                 .TombstoneAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 

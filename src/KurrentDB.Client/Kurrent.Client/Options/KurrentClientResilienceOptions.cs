@@ -1,7 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
-// Added for Timeout.InfiniteTimeSpan
 using Grpc.Core;
 using Grpc.Net.Client.Configuration;
+
+// Added for Timeout.InfiniteTimeSpan
 
 namespace Kurrent.Client;
 
@@ -75,7 +76,7 @@ public record KurrentClientResilienceOptions : OptionsBase<KurrentClientResilien
     /// Specific profiles may override this.
     /// </para>
     /// </remarks>
-    public TimeSpan? Deadline { get; init; } = null;
+    public TimeSpan? Deadline { get; init; }
 
     /// <summary>
     /// Retry configuration options.

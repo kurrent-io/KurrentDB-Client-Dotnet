@@ -1,4 +1,5 @@
 using System.Collections;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json.Nodes;
@@ -226,7 +227,7 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 				var targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
 
 				// handle basic types with TypeConverter
-				var converter = System.ComponentModel.TypeDescriptor.GetConverter(targetType);
+				var converter = TypeDescriptor.GetConverter(targetType);
 				if (converter.CanConvertFrom(typeof(string)))
 					try {
 						value = (T)converter.ConvertFromInvariantString(stringValue)!;

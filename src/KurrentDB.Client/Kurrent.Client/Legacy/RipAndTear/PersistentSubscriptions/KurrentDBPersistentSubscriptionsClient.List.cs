@@ -1,8 +1,7 @@
 using EventStore.Client;
-using Grpc.Core;
 using EventStore.Client.PersistentSubscriptions;
+using Grpc.Core;
 
-#nullable enable
 namespace KurrentDB.Client;
 
 partial class KurrentDBPersistentSubscriptionsClient {
@@ -14,9 +13,9 @@ partial class KurrentDBPersistentSubscriptionsClient {
 
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
-			var req = new ListReq() {
+			var req = new ListReq {
 				Options = new ListReq.Types.Options{
-					ListForStream = new ListReq.Types.StreamOption() {
+					ListForStream = new ListReq.Types.StreamOption {
 						All = new Empty()
 					}
 				}
@@ -37,9 +36,9 @@ partial class KurrentDBPersistentSubscriptionsClient {
 
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
-			var req = new ListReq() {
+			var req = new ListReq {
 				Options = new ListReq.Types.Options {
-					ListForStream = new ListReq.Types.StreamOption() {
+					ListForStream = new ListReq.Types.StreamOption {
 						Stream = streamName
 					}
 				}
@@ -61,7 +60,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
-			var req = new ListReq() {
+			var req = new ListReq {
 				Options = new ListReq.Types.Options {
 					ListAllSubscriptions = new Empty()
 				}

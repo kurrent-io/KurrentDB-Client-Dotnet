@@ -6,7 +6,6 @@ using Kurrent.Client.Streams;
 using Kurrent.Variant;
 using NJsonSchema;
 using OneOf;
-
 using Contracts = KurrentDB.Protocol.Registry.V2;
 using Enum = System.Enum;
 
@@ -77,7 +76,7 @@ public readonly record struct SchemaDetails(
 
 public readonly record struct SchemaVersionDescriptor(SchemaVersionId VersionId, int VersionNumber) {
 	public static readonly SchemaVersionDescriptor None = new(SchemaVersionId.None, 0);
-};
+}
 
 public readonly record struct SchemaVersion(
 	SchemaVersionId VersionId,

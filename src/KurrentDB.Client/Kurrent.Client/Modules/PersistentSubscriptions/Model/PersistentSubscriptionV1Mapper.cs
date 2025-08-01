@@ -159,7 +159,7 @@ static class PersistentSubscriptionV1Mapper {
 
 			var options = filter.Scope switch {
 				ReadFilterScope.Stream => new Contracts.CreateReq.Types.AllOptions.Types.FilterOptions { StreamIdentifier = new() { Regex = filter.Expression } },
-				ReadFilterScope.Record => new Contracts.CreateReq.Types.AllOptions.Types.FilterOptions { EventType = new() { Regex = filter.Expression } }
+				ReadFilterScope.Record => new Contracts.CreateReq.Types.AllOptions.Types.FilterOptions { EventType                                         = new() { Regex = filter.Expression } }
 			};
 
 			options.Max = (uint)heartbeat.RecordsThreshold;

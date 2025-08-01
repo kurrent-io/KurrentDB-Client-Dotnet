@@ -1,5 +1,7 @@
 using Kurrent.Client.Features;
 using Kurrent.Client.Legacy;
+using Kurrent.Client.Operations;
+using Kurrent.Client.PersistentSubscriptions;
 using Kurrent.Client.Projections;
 using Kurrent.Client.Registry;
 using Kurrent.Client.Schema;
@@ -38,8 +40,8 @@ public class KurrentClient : IAsyncDisposable {
 
         Registry                = new RegistryClient(this);
         Streams                 = new StreamsClient(this);
-        Operations              = new Operations.OperationsClient(this);
-        PersistentSubscriptions = new PersistentSubscriptions.PersistentSubscriptionsClient(this);
+        Operations              = new OperationsClient(this);
+        PersistentSubscriptions = new PersistentSubscriptionsClient(this);
         Projections             = new ProjectionsClient(this);
         Users                   = new UsersClient(this);
         Features                = new FeaturesClient(this);
@@ -56,8 +58,8 @@ public class KurrentClient : IAsyncDisposable {
     public RegistryClient                                        Registry                { get; }
     public FeaturesClient                                        Features                { get; }
     public UsersClient                                           Users                   { get; }
-    public PersistentSubscriptions.PersistentSubscriptionsClient PersistentSubscriptions { get; }
-    public Operations.OperationsClient                           Operations              { get; }
+    public PersistentSubscriptionsClient PersistentSubscriptions { get; }
+    public OperationsClient                           Operations              { get; }
     public ProjectionsClient                                     Projections             { get; }
 
 	internal async Task<ServerFeatures> ForceRefresh(CancellationToken cancellationToken = default) {

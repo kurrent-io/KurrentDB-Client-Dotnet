@@ -1,9 +1,9 @@
 using System.Threading.Channels;
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
-using KurrentDB.Client.Diagnostics;
 using Grpc.Core;
 using Kurrent.Client;
+using KurrentDB.Client.Diagnostics;
 using static EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase;
 using AsyncStreamReaderExtensions = Kurrent.Client.AsyncStreamReaderExtensions;
 

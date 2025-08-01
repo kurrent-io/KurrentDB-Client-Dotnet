@@ -1,18 +1,18 @@
 // ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
 
-using EventStore.Client.Users;
 using Grpc.Core;
 using Kurrent.Client.Legacy;
 using KurrentDB.Client;
+using KurrentDB.Protocol.Users.V1;
+using static KurrentDB.Protocol.Users.V1.UsersService;
 
 namespace Kurrent.Client.Users;
 
 public class UsersClient {
-	internal UsersClient(KurrentClient source) {
-		ServiceClient = new EventStore.Client.Users.Users.UsersClient(source.LegacyCallInvoker);
-	}
+	internal UsersClient(KurrentClient source) =>
+        ServiceClient = new UsersServiceClient(source.LegacyCallInvoker);
 
-	EventStore.Client.Users.Users.UsersClient ServiceClient { get; }
+    UsersServiceClient ServiceClient { get; }
 
 	public async ValueTask<Result<Success, ChangePasswordError>> ChangePassword(
 		string loginName, string currentPassword, string newPassword, CancellationToken cancellationToken = default

@@ -2,7 +2,6 @@
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-
 using static System.Diagnostics.ActivityStatusCode;
 
 namespace KurrentDB.Diagnostics;

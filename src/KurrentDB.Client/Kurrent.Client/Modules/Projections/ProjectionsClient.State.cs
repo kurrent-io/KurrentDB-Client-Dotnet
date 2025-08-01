@@ -2,6 +2,7 @@
 // ReSharper disable SwitchStatementHandlesSomeKnownEnumValuesWithDefault
 
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using EventStore.Client.Projections;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
@@ -204,7 +205,7 @@ public partial class ProjectionsClient {
 		return response.Result;
 	}
 
-	class ValueSerializer : System.Text.Json.Serialization.JsonConverter<Value> {
+	class ValueSerializer : JsonConverter<Value> {
 		public override Value Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => throw new NotSupportedException();
 
 		public override void Write(Utf8JsonWriter writer, Value value, JsonSerializerOptions options) {

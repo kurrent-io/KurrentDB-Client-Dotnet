@@ -2,7 +2,6 @@ using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
 
-#nullable enable
 namespace KurrentDB.Client;
 
 partial class KurrentDBPersistentSubscriptionsClient {
@@ -14,7 +13,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsGetInfo) {
-			var req = new GetInfoReq() {
+			var req = new GetInfoReq {
 				Options = new GetInfoReq.Types.Options{
 					GroupName = groupName,
 					All       = new Empty()
@@ -36,7 +35,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsGetInfo) {
-			var req = new GetInfoReq() {
+			var req = new GetInfoReq {
 				Options = new GetInfoReq.Types.Options {
 					GroupName        = groupName,
 					StreamIdentifier = streamName

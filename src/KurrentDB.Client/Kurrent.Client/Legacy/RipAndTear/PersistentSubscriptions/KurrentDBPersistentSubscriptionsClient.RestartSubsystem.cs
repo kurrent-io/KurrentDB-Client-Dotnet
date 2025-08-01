@@ -1,4 +1,3 @@
-#nullable enable
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 

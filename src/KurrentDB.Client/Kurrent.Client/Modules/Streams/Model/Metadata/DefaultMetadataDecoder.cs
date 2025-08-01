@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Kurrent.Client.Registry;
+using JsonSerializer = Kurrent.Client.Schema.Serialization.Json.JsonSerializer;
 
 namespace Kurrent.Client.Streams;
 
@@ -12,7 +13,7 @@ namespace Kurrent.Client.Streams;
 /// </summary>
 [PublicAPI]
 public sealed class DefaultMetadataDecoder : MetadataDecoder {
-    static readonly Schema.Serialization.Json.JsonSerializer Serializer = new();
+    static readonly JsonSerializer Serializer = new();
 
     protected override Metadata DecodeCore(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context) =>
         Serializer.Deserialize<Metadata>(bytes) ?? new();
@@ -67,7 +68,7 @@ class MetadataJsonConverter : JsonConverter<Metadata> {
     }
 
     public override void Write(Utf8JsonWriter writer, Metadata value, JsonSerializerOptions options) =>
-        JsonSerializer.Serialize(writer, value.Dictionary, options);
+        System.Text.Json.JsonSerializer.Serialize(writer, value.Dictionary, options);
 }
 
 // /// <summary>

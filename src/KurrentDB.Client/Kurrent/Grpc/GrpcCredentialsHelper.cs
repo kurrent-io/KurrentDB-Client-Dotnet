@@ -1,3 +1,4 @@
+using System.Security;
 using Grpc.Core;
 
 namespace Kurrent.Grpc;
@@ -46,7 +47,7 @@ public static class GrpcCredentialsHelper {
 
 				clientKeyCertPair = new KeyCertificatePair(clientCertPem, clientKeyPem);
 			}
-			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException) {
+			catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or SecurityException) {
 				throw new IOException($"Error reading client certificate or key file: {ex.Message}", ex);
 			}
 		}

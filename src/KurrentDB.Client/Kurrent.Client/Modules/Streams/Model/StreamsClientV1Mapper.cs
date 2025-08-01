@@ -5,7 +5,7 @@ using Kurrent.Client.Registry;
 using Kurrent.Client.Schema;
 using Kurrent.Client.Schema.Serialization;
 using KurrentDB.Client;
-using Contracts = EventStore.Client.Streams;
+using Contracts = KurrentDB.Protocol.Streams.V1;
 
 namespace Kurrent.Client.Streams;
 

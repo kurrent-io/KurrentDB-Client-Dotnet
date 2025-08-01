@@ -47,7 +47,7 @@ public record Record(IRecordDecoder? Decoder  = null) {
 	/// <summary>
 	/// When the record was created in the database.
 	/// </summary>
-	public DateTime Timestamp { get; init; } = default;
+	public DateTime Timestamp { get; init; }
 
 	/// <summary>
 	/// The metadata associated with the record, represented as a collection of key-value pairs.

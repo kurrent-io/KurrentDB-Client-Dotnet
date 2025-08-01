@@ -1,5 +1,6 @@
 using Kurrent.Client.Schema.Serialization.Json;
 using Kurrent.Client.Streams;
+using NJsonSchema;
 using NJsonSchema.Generation;
 
 namespace Kurrent.Client.Schema;
@@ -19,7 +20,7 @@ sealed class NJsonSchemaExporter(SystemTextJsonSchemaGeneratorSettings? settings
 		if (dataFormat != SchemaDataFormat.Json)
 			throw new NotSupportedException($"Unsupported schema data format. Expected {SchemaDataFormat.Json} but got {dataFormat}.");
 
-		var schema = NJsonSchema.JsonSchema.FromType(messageType, _settings);
+		var schema = JsonSchema.FromType(messageType, _settings);
 
 		return schema.ToJson();
 	}

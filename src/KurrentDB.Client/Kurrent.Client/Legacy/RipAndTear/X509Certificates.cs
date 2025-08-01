@@ -2,6 +2,7 @@
 
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+
 #pragma warning disable SYSLIB0057
 
 namespace KurrentDB.Client;

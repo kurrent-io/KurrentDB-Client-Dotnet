@@ -34,8 +34,8 @@ public partial class StreamsClient {
             var response = await session.ResponseAsync;
 
             return response.ResultCase switch {
-                ResultOneofCase.Success => StreamsClientV2Mapper.Map((Types.Success)response.Success),
-                ResultOneofCase.Failure => StreamsClientV2Mapper.Map((Types.Failure)response.Failure),
+                ResultOneofCase.Success => response.Success.Map(),
+                ResultOneofCase.Failure => response.Failure.Map(),
             };
         }
         catch (Exception ex) {

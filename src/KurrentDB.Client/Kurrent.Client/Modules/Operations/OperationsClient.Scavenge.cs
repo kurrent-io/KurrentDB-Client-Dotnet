@@ -1,9 +1,9 @@
 // ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
 
-using EventStore.Client.Operations;
 using Grpc.Core;
 using Kurrent.Client.Legacy;
 using KurrentDB.Client;
+using KurrentDB.Protocol.Operations.V1;
 
 namespace Kurrent.Client.Operations;
 

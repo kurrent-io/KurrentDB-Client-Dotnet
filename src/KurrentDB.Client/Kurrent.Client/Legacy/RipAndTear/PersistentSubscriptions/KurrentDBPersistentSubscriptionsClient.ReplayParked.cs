@@ -1,9 +1,8 @@
-using Grpc.Core;
 using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
+using Grpc.Core;
 using NotSupportedException = System.NotSupportedException;
 
-#nullable enable
 namespace KurrentDB.Client;
 
 partial class KurrentDBPersistentSubscriptionsClient {
@@ -15,7 +14,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsReplayParked) {
-			var req = new ReplayParkedReq() {
+			var req = new ReplayParkedReq {
 				Options = new ReplayParkedReq.Types.Options{
 					GroupName = groupName,
 					All       = new Empty()
@@ -47,7 +46,7 @@ partial class KurrentDBPersistentSubscriptionsClient {
 
 		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsReplayParked) {
-			var req = new ReplayParkedReq() {
+			var req = new ReplayParkedReq {
 				Options = new ReplayParkedReq.Types.Options {
 					GroupName        = groupName,
 					StreamIdentifier = streamName

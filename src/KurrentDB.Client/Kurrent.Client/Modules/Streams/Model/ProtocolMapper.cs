@@ -139,7 +139,7 @@ static class DynamicValueMapper {
 	}
 
 	public static bool TryGetValue<T>(this DynamicValueMap source, string key, out T? value) =>
-		source.Values.TryGetValue<T>(key, out value);
+		source.Values.TryGetValue(key, out value);
 
 	public static T? GetRequiredValue<T>(this MapField<string, DynamicValue> source, string key) =>
 	 		source.TryGetValue(key, out var dynamicValue)

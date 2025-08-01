@@ -8,12 +8,12 @@ namespace Kurrent.Client.PersistentSubscriptions;
 /// Represents a persistent subscription connection.
 /// </summary>
 public class PersistentSubscription : IDisposable {
-	readonly PersistentSubscriptionsClient.PersistentSubscriptionResult _persistentSubscriptionResult;
-	readonly IAsyncEnumerator<PersistentSubscriptionMessage>                                    _enumerator;
-	readonly Func<PersistentSubscription, Record, int?, CancellationToken, Task>                _eventAppeared;
-	readonly Action<PersistentSubscription, SubscriptionDroppedReason, Exception?>              _subscriptionDropped;
-	readonly ILogger                                                                            _log;
-	readonly CancellationTokenSource                                                            _cts;
+	readonly PersistentSubscriptionsClient.PersistentSubscriptionResult            _persistentSubscriptionResult;
+	readonly IAsyncEnumerator<PersistentSubscriptionMessage>                       _enumerator;
+	readonly Func<PersistentSubscription, Record, int?, CancellationToken, Task>   _eventAppeared;
+	readonly Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> _subscriptionDropped;
+	readonly ILogger                                                               _log;
+	readonly CancellationTokenSource                                               _cts;
 
 	int _subscriptionDroppedInvoked;
 
