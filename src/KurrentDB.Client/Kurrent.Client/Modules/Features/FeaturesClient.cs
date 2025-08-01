@@ -1,15 +1,14 @@
 using EventStore.Client;
-using Kurrent.Client.Features;
-using static EventStore.Client.ServerFeatures.ServerFeatures;
+using static KurrentDB.Protocol.Users.V1.ServerFeaturesService;
 
-namespace Kurrent.Client;
+namespace Kurrent.Client.Features;
 
 [PublicAPI]
 public class FeaturesClient {
 	internal FeaturesClient(KurrentClient source) =>
-		ServiceClient = new ServerFeaturesClient(source.LegacyCallInvoker);
+		ServiceClient = new ServerFeaturesServiceClient(source.LegacyCallInvoker);
 
-	ServerFeaturesClient ServiceClient { get; }
+    ServerFeaturesServiceClient ServiceClient { get; }
 
 	/// <summary>
 	/// Gets server information including features and their enablement status.

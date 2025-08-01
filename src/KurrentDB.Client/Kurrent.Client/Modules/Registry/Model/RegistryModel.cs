@@ -19,7 +19,7 @@ public readonly record struct Schema(
 	DateTimeOffset UpdatedAt
 ) {
 	internal static Schema FromProto(Contracts.Schema schema) {
-		if (schema is null) throw new ArgumentNullException(nameof(schema));
+		ArgumentNullException.ThrowIfNull(schema);
 
 		return new Schema(
 			SchemaName.From(schema.SchemaName),

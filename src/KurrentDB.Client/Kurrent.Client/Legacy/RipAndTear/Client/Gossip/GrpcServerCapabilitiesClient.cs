@@ -1,11 +1,11 @@
-using EventStore.Client.ServerFeatures;
 using Grpc.Core;
+using static KurrentDB.Protocol.Users.V1.ServerFeaturesService;
 
 namespace KurrentDB.Client;
 
 class GrpcServerCapabilitiesClient(KurrentDBClientSettings settings) : IServerCapabilitiesClient {
     public async Task<ServerCapabilities> GetAsync(CallInvoker callInvoker, CancellationToken cancellationToken) {
-        var client = new ServerFeatures.ServerFeaturesClient(callInvoker);
+        var client = new ServerFeaturesServiceClient(callInvoker);
 
         using var call = client.GetSupportedMethodsAsync(
             new(),
