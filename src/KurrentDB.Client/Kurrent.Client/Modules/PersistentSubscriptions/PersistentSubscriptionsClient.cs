@@ -1,6 +1,7 @@
 // ReSharper disable InconsistentNaming
 
 using System.Text.Encodings.Web;
+using EventStore.Client.PersistentSubscriptions;
 using Kurrent.Client.Legacy;
 using Kurrent.Client.Registry;
 using Kurrent.Client.Schema.Serialization;
@@ -11,8 +12,8 @@ using static EventStore.Client.PersistentSubscriptions.PersistentSubscriptions;
 
 namespace Kurrent.Client;
 
-public sealed partial class KurrentPersistentSubscriptionsClient {
-	internal KurrentPersistentSubscriptionsClient(KurrentClient source) {
+public sealed partial class PersistentSubscriptionsClient {
+	internal PersistentSubscriptionsClient(KurrentClient source) {
 		Registry           = source.Registry;
 		SerializerProvider = source.SerializerProvider;
 
@@ -20,18 +21,18 @@ public sealed partial class KurrentPersistentSubscriptionsClient {
 
 		LegacySettings    = source.Options.ConvertToLegacySettings();
 		LegacyCallInvoker = source.LegacyCallInvoker;
-		ServiceClient     = new PersistentSubscriptionsClient(source.LegacyCallInvoker);
+		ServiceClient     = new PersistentSubscriptions.PersistentSubscriptionsClient(source.LegacyCallInvoker);
 
 		HttpFallback = new Lazy<HttpFallback>(() => new HttpFallback(LegacySettings));
 		Logger       = source.Options.LoggerFactory.CreateLogger<KurrentDBPersistentSubscriptionsClient>();
 	}
 
-	internal RegistryClient         Registry           { get; }
-	internal KurrentDBLegacyCallInvoker    LegacyCallInvoker  { get; }
-	internal KurrentDBClientSettings       LegacySettings     { get; }
-	internal ISchemaSerializerProvider     SerializerProvider { get; }
-	internal IMetadataDecoder              MetadataDecoder    { get; }
-	internal PersistentSubscriptionsClient ServiceClient      { get; }
+	internal RegistryClient                                        Registry           { get; }
+	internal KurrentDBLegacyCallInvoker                            LegacyCallInvoker  { get; }
+	internal KurrentDBClientSettings                               LegacySettings     { get; }
+	internal ISchemaSerializerProvider                             SerializerProvider { get; }
+	internal IMetadataDecoder                                      MetadataDecoder    { get; }
+	internal PersistentSubscriptions.PersistentSubscriptionsClient ServiceClient      { get; }
 
 	readonly Lazy<HttpFallback> HttpFallback;
 	readonly ILogger            Logger;

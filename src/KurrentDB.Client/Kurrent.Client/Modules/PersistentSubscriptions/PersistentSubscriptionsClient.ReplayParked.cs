@@ -8,7 +8,7 @@ using NotSupportedException = System.NotSupportedException;
 
 namespace Kurrent.Client;
 
-partial class KurrentPersistentSubscriptionsClient {
+partial class PersistentSubscriptionsClient {
 	/// <summary>
 	/// Retry the parked messages of the persistent subscription
 	/// </summary>

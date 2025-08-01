@@ -9,7 +9,7 @@ using KurrentDB.Client;
 
 namespace Kurrent.Client;
 
-partial class KurrentPersistentSubscriptionsClient {
+partial class PersistentSubscriptionsClient {
 	/// <summary>
 	/// Lists persistent subscriptions to $all.
 	/// </summary>

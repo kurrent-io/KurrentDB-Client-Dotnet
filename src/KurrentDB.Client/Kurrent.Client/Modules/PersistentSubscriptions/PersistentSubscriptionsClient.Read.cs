@@ -16,7 +16,7 @@ using static EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase
 
 namespace Kurrent.Client;
 
-public partial class KurrentPersistentSubscriptionsClient {
+public partial class PersistentSubscriptionsClient {
 	/// <summary>
 	/// Subscribes to a persistent subscription. Messages must be manually acknowledged
 	/// </summary>

@@ -9,7 +9,7 @@ using static Kurrent.Client.Streams.PersistentSubscription.PersistentSubscriptio
 
 namespace Kurrent.Client;
 
-partial class KurrentPersistentSubscriptionsClient {
+partial class PersistentSubscriptionsClient {
 	/// <summary>
 	/// Creates a persistent subscription to a specified stream.
 	/// </summary>

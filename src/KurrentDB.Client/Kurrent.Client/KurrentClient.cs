@@ -39,7 +39,7 @@ public class KurrentClient : IAsyncDisposable {
         Registry                = new RegistryClient(this);
         Streams                 = new StreamsClient(this);
         Operations              = new Operations.OperationsClient(this);
-        PersistentSubscriptions = new KurrentPersistentSubscriptionsClient(this);
+        PersistentSubscriptions = new PersistentSubscriptionsClient(this);
         Projections             = new ProjectionsClient(this);
         Users                   = new UsersClient(this);
         Features                = new FeaturesClient(this);
@@ -56,7 +56,7 @@ public class KurrentClient : IAsyncDisposable {
     public RegistryClient                       Registry                { get; }
     public FeaturesClient                       Features                { get; }
     public UsersClient                          Users                   { get; }
-    public KurrentPersistentSubscriptionsClient PersistentSubscriptions { get; }
+    public PersistentSubscriptionsClient PersistentSubscriptions { get; }
     public Operations.OperationsClient          Operations              { get; }
     public ProjectionsClient                    Projections             { get; }
 

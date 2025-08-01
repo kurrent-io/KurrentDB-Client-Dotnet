@@ -7,7 +7,7 @@ using KurrentDB.Client;
 
 namespace Kurrent.Client;
 
-partial class KurrentPersistentSubscriptionsClient {
+partial class PersistentSubscriptionsClient {
 	/// <summary>
 	/// Deletes a persistent subscription.
 	/// </summary>

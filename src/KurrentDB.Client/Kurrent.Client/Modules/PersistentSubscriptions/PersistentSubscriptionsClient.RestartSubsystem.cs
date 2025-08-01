@@ -6,7 +6,7 @@ using KurrentDB.Client;
 
 namespace Kurrent.Client;
 
-partial class KurrentPersistentSubscriptionsClient {
+partial class PersistentSubscriptionsClient {
 	/// <summary>
 	/// Restarts the persistent subscriptions subsystem.
 	/// </summary>

@@ -8,7 +8,7 @@ namespace Kurrent.Client;
 /// Represents a persistent subscription connection.
 /// </summary>
 public class PersistentSubscription : IDisposable {
-	readonly KurrentPersistentSubscriptionsClient.PersistentSubscriptionResult     _persistentSubscriptionResult;
+	readonly PersistentSubscriptionsClient.PersistentSubscriptionResult     _persistentSubscriptionResult;
 	readonly IAsyncEnumerator<PersistentSubscriptionMessage>                       _enumerator;
 	readonly Func<PersistentSubscription, Record, int?, CancellationToken, Task>   _eventAppeared;
 	readonly Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> _subscriptionDropped;
@@ -23,7 +23,7 @@ public class PersistentSubscription : IDisposable {
 	public string SubscriptionId { get; }
 
 	internal static async Task<PersistentSubscription> Confirm(
-		KurrentPersistentSubscriptionsClient.PersistentSubscriptionResult persistentSubscriptionResult,
+		PersistentSubscriptionsClient.PersistentSubscriptionResult persistentSubscriptionResult,
 		Func<PersistentSubscription, Record, int?, CancellationToken, Task> eventAppeared,
 		Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped, ILogger log,
 		CancellationToken cancellationToken = default) {
@@ -45,7 +45,7 @@ public class PersistentSubscription : IDisposable {
 
 	// PersistentSubscription takes responsibility for disposing the call and the disposable
 	PersistentSubscription(
-		KurrentPersistentSubscriptionsClient.PersistentSubscriptionResult persistentSubscriptionResult,
+		PersistentSubscriptionsClient.PersistentSubscriptionResult persistentSubscriptionResult,
 		IAsyncEnumerator<PersistentSubscriptionMessage> enumerator, string subscriptionId,
 		Func<PersistentSubscription, Record, int?, CancellationToken, Task> eventAppeared,
 		Action<PersistentSubscription, SubscriptionDroppedReason, Exception?> subscriptionDropped, ILogger log,

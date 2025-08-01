@@ -8,7 +8,7 @@ using static Kurrent.Client.Streams.PersistentSubscription.PersistentSubscriptio
 
 namespace Kurrent.Client;
 
-public partial class KurrentPersistentSubscriptionsClient {
+public partial class PersistentSubscriptionsClient {
 	/// <summary>
 	/// Updates a persistent subscription on a specific stream with the given group name and subscription settings.
 	/// </summary>
