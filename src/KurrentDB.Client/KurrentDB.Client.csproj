@@ -90,6 +90,7 @@
 
   <ItemGroup>
     <Folder Include="Kurrent.Client\Modules\" />
+    <Folder Include="KurrentDB.Client\" />
   </ItemGroup>
 
   <ItemGroup>

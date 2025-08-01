@@ -1,15 +1,18 @@
 using System.Collections;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 using Kurrent.Client.Model;
+using Kurrent.Client.Streams;
+using Kurrent.Variant;
 using NJsonSchema;
 using OneOf;
 
 using Contracts = KurrentDB.Protocol.Registry.V2;
 using Enum = System.Enum;
 
-namespace Kurrent.Client.SchemaRegistry;
+namespace Kurrent.Client.Registry;
 
 public readonly record struct Schema(
 	SchemaName SchemaName,
@@ -292,3 +295,34 @@ public partial class SchemaIdentifier : OneOfBase<SchemaName, SchemaVersionId>, 
 		}
 	}
 }
+
+// [StructLayout(LayoutKind.Sequential, Size = 1)]
+// public readonly struct Success {
+// 	public static readonly Success Instance = new();
+// }
+
+[PublicAPI]
+public readonly partial record struct CreateSchemaError : IVariantResultError<
+	ErrorDetails.SchemaAlreadyExists,
+	ErrorDetails.AccessDenied>;
+
+[PublicAPI]
+public readonly partial record struct GetSchemaError : IVariantResultError<
+	ErrorDetails.SchemaNotFound,
+	ErrorDetails.AccessDenied>;
+
+[PublicAPI]
+public readonly partial record struct GetSchemaVersionError : IVariantResultError<
+	ErrorDetails.SchemaNotFound,
+	ErrorDetails.AccessDenied>;
+
+[PublicAPI]
+public readonly partial record struct DeleteSchemaError : IVariantResultError<
+	ErrorDetails.SchemaNotFound,
+	ErrorDetails.AccessDenied>;
+
+[PublicAPI]
+public readonly partial record struct CheckSchemaCompatibilityError : IVariantResultError<
+	SchemaCompatibilityErrors,
+	ErrorDetails.SchemaNotFound,
+	ErrorDetails.AccessDenied>;

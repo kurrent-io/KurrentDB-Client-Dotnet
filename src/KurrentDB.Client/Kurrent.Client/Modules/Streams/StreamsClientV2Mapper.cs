@@ -6,9 +6,9 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
-using Kurrent.Client.SchemaRegistry;
-using Kurrent.Client.SchemaRegistry.Serialization;
-
+using Kurrent.Client.Schema;
+using Kurrent.Client.Schema.Serialization;
+using Kurrent.Client.Streams;
 using Contracts = KurrentDB.Protocol.Streams.V2;
 
 namespace Kurrent.Client.Model;
@@ -113,11 +113,11 @@ static class StreamsClientV2Mapper {
 
     public static AppendStreamFailure Map(this Contracts.AppendStreamFailure source) {
         return source.ErrorCase switch {
-            Contracts.AppendStreamFailure.ErrorOneofCase.StreamRevisionConflict     => new ErrorDetails.StreamRevisionConflict(meta => meta.With("Stream", source.Stream).With("ExpectedRevision", source.StreamRevisionConflict.StreamRevision)),
-            Contracts.AppendStreamFailure.ErrorOneofCase.AccessDenied               => new ErrorDetails.AccessDenied(meta => meta.With("Stream", source.Stream)),
-            Contracts.AppendStreamFailure.ErrorOneofCase.StreamDeleted              => new ErrorDetails.StreamDeleted(meta => meta.With("Stream", source.Stream)),
-            Contracts.AppendStreamFailure.ErrorOneofCase.StreamNotFound             => new ErrorDetails.StreamNotFound(meta => meta.With("Stream", source.Stream)),
-            Contracts.AppendStreamFailure.ErrorOneofCase.TransactionMaxSizeExceeded => new ErrorDetails.TransactionMaxSizeExceeded(meta => meta.With("MaxSize", source.TransactionMaxSizeExceeded.MaxSize) ),
+            Contracts.AppendStreamFailure.ErrorOneofCase.StreamRevisionConflict     => new Client.ErrorDetails.StreamRevisionConflict(meta => meta.With("Stream", source.Stream).With("ExpectedRevision", source.StreamRevisionConflict.StreamRevision)),
+            Contracts.AppendStreamFailure.ErrorOneofCase.AccessDenied               => new Client.ErrorDetails.AccessDenied(meta => meta.With("Stream", source.Stream)),
+            Contracts.AppendStreamFailure.ErrorOneofCase.StreamDeleted              => new Client.ErrorDetails.StreamDeleted(meta => meta.With("Stream", source.Stream)),
+            Contracts.AppendStreamFailure.ErrorOneofCase.StreamNotFound             => new Client.ErrorDetails.StreamNotFound(meta => meta.With("Stream", source.Stream)),
+            Contracts.AppendStreamFailure.ErrorOneofCase.TransactionMaxSizeExceeded => new Client.ErrorDetails.TransactionMaxSizeExceeded(meta => meta.With("MaxSize", source.TransactionMaxSizeExceeded.MaxSize) ),
             _                                                                       => throw new UnreachableException($"Unexpected append stream failure error category: {source.ErrorCase}")
         };
     }

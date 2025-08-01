@@ -1,5 +1,6 @@
 using Kurrent.Client.Model;
-using Kurrent.Client.SchemaRegistry;
+using Kurrent.Client.Registry;
+using Kurrent.Client.Streams;
 using Kurrent.Client.Testing.Sample;
 
 namespace Kurrent.Client.Tests.Streams;

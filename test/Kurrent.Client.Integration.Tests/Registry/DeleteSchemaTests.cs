@@ -1,6 +1,4 @@
-using Kurrent.Client.Model;
-using ErrorDetails = Kurrent.Client.SchemaRegistry.ErrorDetails;
-using Success = Kurrent.Client.SchemaRegistry.Success;
+using Kurrent.Client.Streams;
 
 namespace Kurrent.Client.Tests.Registry;
 

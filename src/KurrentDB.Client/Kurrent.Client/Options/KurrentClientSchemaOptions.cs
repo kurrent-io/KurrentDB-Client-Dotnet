@@ -1,4 +1,4 @@
-using Kurrent.Client.SchemaRegistry;
+using Kurrent.Client.Schema.NameStrategies;
 
 namespace Kurrent.Client;
 

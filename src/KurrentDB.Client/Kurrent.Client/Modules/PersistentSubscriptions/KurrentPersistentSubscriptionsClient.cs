@@ -5,7 +5,9 @@ using System.Threading.Channels;
 using Grpc.Core;
 using Kurrent.Client.Legacy;
 using Kurrent.Client.Model;
-using Kurrent.Client.SchemaRegistry.Serialization;
+using Kurrent.Client.Registry;
+using Kurrent.Client.Schema.Serialization;
+using Kurrent.Client.Streams;
 using KurrentDB.Client;
 using Microsoft.Extensions.Logging;
 using static EventStore.Client.PersistentSubscriptions.PersistentSubscriptions;
@@ -27,7 +29,7 @@ public sealed partial class KurrentPersistentSubscriptionsClient {
 		Logger       = source.Options.LoggerFactory.CreateLogger<KurrentDBPersistentSubscriptionsClient>();
 	}
 
-	internal KurrentRegistryClient         Registry           { get; }
+	internal RegistryClient         Registry           { get; }
 	internal KurrentDBLegacyCallInvoker    LegacyCallInvoker  { get; }
 	internal KurrentDBClientSettings       LegacySettings     { get; }
 	internal ISchemaSerializerProvider     SerializerProvider { get; }

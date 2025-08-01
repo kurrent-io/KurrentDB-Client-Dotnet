@@ -2,6 +2,7 @@
 
 using JetBrains.Annotations;
 using Kurrent.Client.Model;
+using Kurrent.Client.Streams;
 using Kurrent.Client.Testing;
 using Kurrent.Client.Testing.Containers.KurrentDB;
 using Kurrent.Client.Testing.Fixtures;

@@ -1,11 +1,15 @@
 using Kurrent.Client.Features;
 using Kurrent.Client.Legacy;
 using Kurrent.Client.Model;
-using Kurrent.Client.SchemaRegistry;
-using Kurrent.Client.SchemaRegistry.Serialization;
-using Kurrent.Client.SchemaRegistry.Serialization.Bytes;
-using Kurrent.Client.SchemaRegistry.Serialization.Json;
-using Kurrent.Client.SchemaRegistry.Serialization.Protobuf;
+using Kurrent.Client.Projections;
+using Kurrent.Client.Registry;
+using Kurrent.Client.Schema;
+using Kurrent.Client.Schema.Serialization;
+using Kurrent.Client.Schema.Serialization.Bytes;
+using Kurrent.Client.Schema.Serialization.Json;
+using Kurrent.Client.Schema.Serialization.Protobuf;
+using Kurrent.Client.Streams;
+using Kurrent.Client.Users;
 using KurrentDB.Client;
 
 namespace Kurrent.Client;
@@ -23,7 +27,7 @@ public class KurrentClient : IAsyncDisposable {
 	        LegacyClusterClient.CreateWithExceptionMapping(options.ConvertToLegacySettings()));
 
         var schemaManager = new SchemaManager(
-	        new KurrentRegistryClient(this),
+	        new RegistryClient(this),
 	        NJsonSchemaExporter.Instance,
 	        options.Mapper);
 
@@ -33,13 +37,13 @@ public class KurrentClient : IAsyncDisposable {
 	        new ProtobufSchemaSerializer(new() { SchemaRegistration = SchemaRegistrationOptions.AutoMap }, schemaManager)
         ]);
 
-        Registry                = new KurrentRegistryClient(this);
-        Streams                 = new KurrentStreamsClient(this);
-        Operations              = new KurrentOperationsClient(this);
+        Registry                = new RegistryClient(this);
+        Streams                 = new Streams.StreamsClient(this);
+        Operations              = new Operations.OperationsClient(this);
         PersistentSubscriptions = new KurrentPersistentSubscriptionsClient(this);
-        Projections             = new KurrentProjectionsClient(this);
-        Users                   = new KurrentUsersClient(this);
-        Features                = new KurrentFeaturesClient(this);
+        Projections             = new Projections.ProjectionsClient(this);
+        Users                   = new UsersClient(this);
+        Features                = new FeaturesClient(this);
     }
 
     internal KurrentClientOptions       Options            { get; }
@@ -49,13 +53,13 @@ public class KurrentClient : IAsyncDisposable {
     internal MessageTypeMapper TypeMapper      => Options.Mapper;
     internal IMetadataDecoder  MetadataDecoder => Options.MetadataDecoder;
 
-	public KurrentStreamsClient                 Streams                 { get; }
-	public KurrentRegistryClient                Registry                { get; }
-	public KurrentFeaturesClient                Features                { get; }
-	public KurrentUsersClient                   Users                   { get; }
-	public KurrentPersistentSubscriptionsClient PersistentSubscriptions { get; }
-	public KurrentOperationsClient              Operations              { get; }
-	public KurrentProjectionsClient             Projections             { get; }
+    public Streams.StreamsClient                Streams                 { get; }
+    public RegistryClient                       Registry                { get; }
+    public FeaturesClient                       Features                { get; }
+    public UsersClient                          Users                   { get; }
+    public KurrentPersistentSubscriptionsClient PersistentSubscriptions { get; }
+    public Operations.OperationsClient          Operations              { get; }
+    public ProjectionsClient                    Projections             { get; }
 
 	internal async Task<ServerFeatures> ForceRefresh(CancellationToken cancellationToken = default) {
 		await LegacyCallInvoker.ForceRefresh(cancellationToken).ConfigureAwait(false);

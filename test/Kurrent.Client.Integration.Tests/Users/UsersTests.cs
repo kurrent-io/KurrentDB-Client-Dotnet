@@ -1,6 +1,6 @@
 using Kurrent.Client.Model;
 using Kurrent.Client.Testing.Shouldly;
-using UserDetails = Kurrent.Client.Model.UserDetails;
+using UserDetails = Kurrent.Client.Users.UserDetails;
 
 namespace Kurrent.Client.Tests.Users;
 

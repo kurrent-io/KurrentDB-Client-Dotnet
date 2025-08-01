@@ -3,7 +3,7 @@
 
 using Bogus;
 using KurrentDB.Client;
-using UserDetails = Kurrent.Client.Model.UserDetails;
+using UserDetails = Kurrent.Client.Users.UserDetails;
 
 namespace Kurrent.Client.Tests;
 

@@ -4,8 +4,10 @@
 #pragma warning disable CS0612 // Type or member is obsolete
 
 using EventStore.Client;
-using Kurrent.Client.SchemaRegistry;
-using Kurrent.Client.SchemaRegistry.Serialization;
+using Kurrent.Client.Registry;
+using Kurrent.Client.Schema;
+using Kurrent.Client.Schema.Serialization;
+using Kurrent.Client.Streams;
 using KurrentDB.Client;
 using Contracts = EventStore.Client.PersistentSubscriptions;
 

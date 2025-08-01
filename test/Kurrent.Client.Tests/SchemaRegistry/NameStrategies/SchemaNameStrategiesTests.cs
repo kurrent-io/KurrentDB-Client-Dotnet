@@ -1,5 +1,5 @@
-using Kurrent.Client.SchemaRegistry;
-using static Kurrent.Client.SchemaRegistry.SchemaNameOutputFormat;
+using Kurrent.Client.Schema.NameStrategies;
+using static Kurrent.Client.Schema.NameStrategies.SchemaNameOutputFormat;
 
 namespace Kurrent.Client.Tests.SchemaRegistry.NameStrategies;
 

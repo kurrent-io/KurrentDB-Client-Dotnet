@@ -1,4 +1,5 @@
 using Kurrent.Client.Model;
+using Kurrent.Client.Streams;
 using Kurrent.Client.Testing.Shouldly;
 using KurrentDB.Client;
 using Microsoft.Extensions.Logging;

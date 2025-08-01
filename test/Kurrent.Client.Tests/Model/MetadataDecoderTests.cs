@@ -1,7 +1,8 @@
 using System.Text;
 using Kurrent.Client.Model;
-using Kurrent.Client.SchemaRegistry;
-using Kurrent.Client.SchemaRegistry.Serialization.Json;
+using Kurrent.Client.Registry;
+using Kurrent.Client.Schema.Serialization.Json;
+using Kurrent.Client.Streams;
 
 namespace Kurrent.Client.Tests.Model;
 

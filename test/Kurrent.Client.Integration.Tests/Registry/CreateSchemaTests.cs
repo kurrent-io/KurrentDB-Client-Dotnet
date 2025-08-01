@@ -1,6 +1,6 @@
 using Kurrent.Client.Model;
+using Kurrent.Client.Streams;
 using NJsonSchema;
-using ErrorDetails = Kurrent.Client.SchemaRegistry.ErrorDetails;
 
 namespace Kurrent.Client.Tests.Registry;
 

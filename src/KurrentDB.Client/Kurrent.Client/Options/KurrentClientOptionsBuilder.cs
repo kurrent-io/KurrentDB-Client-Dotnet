@@ -2,7 +2,8 @@
 
 using Grpc.Core.Interceptors;
 using Kurrent.Client.Model;
-using Kurrent.Client.SchemaRegistry;
+using Kurrent.Client.Schema;
+using Kurrent.Client.Streams;
 using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Client;

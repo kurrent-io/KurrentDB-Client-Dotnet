@@ -1,10 +1,8 @@
 using Grpc.Core;
-using Kurrent.Client.Model;
-using Kurrent.Client.SchemaRegistry;
+using Kurrent.Client.Registry;
 using NJsonSchema;
-using static Kurrent.Client.Model.SchemaDataFormat;
-using static Kurrent.Client.SchemaRegistry.CompatibilityMode;
-using ErrorDetails = Kurrent.Client.SchemaRegistry.ErrorDetails;
+using static Kurrent.Client.Streams.SchemaDataFormat;
+using static Kurrent.Client.Registry.CompatibilityMode;
 
 namespace Kurrent.Client.Tests.Registry;
 

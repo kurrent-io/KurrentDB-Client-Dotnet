@@ -1,11 +1,13 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Channels;
+using Kurrent.Client.Streams;
 using Kurrent.Variant;
 using static System.Threading.Interlocked;
 
 namespace Kurrent.Client.Model;
 
 #region . append .
+
 [PublicAPI]
 [method: SetsRequiredMembers]
 public record AppendStreamSuccess(string Stream, LogPosition Position, StreamRevision StreamRevision) {
