@@ -1,4 +1,4 @@
-namespace Kurrent.Client;
+namespace Kurrent.Client.PersistentSubscriptions;
 
 /// <summary>
 /// Provides the details of a persistent subscription connection.

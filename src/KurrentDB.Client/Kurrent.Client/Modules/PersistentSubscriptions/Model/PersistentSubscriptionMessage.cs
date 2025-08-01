@@ -2,7 +2,7 @@
 
 using Kurrent.Client.Streams;
 
-namespace Kurrent.Client;
+namespace Kurrent.Client.PersistentSubscriptions;
 
 /// <summary>
 /// The base record of all stream messages.

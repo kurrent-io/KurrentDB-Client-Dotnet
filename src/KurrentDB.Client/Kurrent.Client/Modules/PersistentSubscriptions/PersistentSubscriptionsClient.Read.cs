@@ -6,15 +6,13 @@ using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
 using Kurrent.Client.Legacy;
-using Kurrent.Client.Streams.PersistentSubscription;
-using Kurrent.Client.Streams.PersistentSubscriptions;
 using Kurrent.Client.Schema.Serialization;
 using Kurrent.Client.Streams;
 using KurrentDB.Client;
 using static System.Threading.Channels.Channel;
 using static EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase;
 
-namespace Kurrent.Client;
+namespace Kurrent.Client.PersistentSubscriptions;
 
 public partial class PersistentSubscriptionsClient {
 	/// <summary>
@@ -119,7 +117,7 @@ public partial class PersistentSubscriptionsClient {
 			throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
 		}
 
-		async ValueTask<PersistentSubscriptions.PersistentSubscriptionsClient> GetClient(CancellationToken ct) {
+		async ValueTask<EventStore.Client.PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient> GetClient(CancellationToken ct) {
 			if (streamName is not SystemStreams.AllStream) return ServiceClient;
 
 			await EnsureCompatibility(streamName, ct);
@@ -248,7 +246,7 @@ public partial class PersistentSubscriptionsClient {
 		internal PersistentSubscriptionResult(
 			string streamName,
 			string groupName,
-			Func<CancellationToken, ValueTask<PersistentSubscriptions.PersistentSubscriptionsClient>> getClient,
+			Func<CancellationToken, ValueTask<EventStore.Client.PersistentSubscriptions.PersistentSubscriptions.PersistentSubscriptionsClient>> getClient,
 			ReadReq request,
 			KurrentDBClientSettings settings,
 			ISchemaSerializerProvider serializationProvider,

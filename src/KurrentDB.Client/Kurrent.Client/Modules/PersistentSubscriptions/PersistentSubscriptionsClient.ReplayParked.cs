@@ -2,11 +2,10 @@ using EventStore.Client;
 using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
 using Kurrent.Client.Legacy;
-using Kurrent.Client.Streams.PersistentSubscriptions;
 using KurrentDB.Client;
 using NotSupportedException = System.NotSupportedException;
 
-namespace Kurrent.Client;
+namespace Kurrent.Client.PersistentSubscriptions;
 
 partial class PersistentSubscriptionsClient {
 	/// <summary>

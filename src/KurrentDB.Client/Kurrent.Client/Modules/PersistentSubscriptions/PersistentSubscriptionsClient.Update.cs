@@ -2,11 +2,10 @@
 
 using Grpc.Core;
 using Kurrent.Client.Legacy;
-using Kurrent.Client.Streams.PersistentSubscriptions;
 using KurrentDB.Client;
-using static Kurrent.Client.Streams.PersistentSubscription.PersistentSubscriptionV1Mapper.Requests;
+using static Kurrent.Client.PersistentSubscriptions.PersistentSubscriptionV1Mapper.Requests;
 
-namespace Kurrent.Client;
+namespace Kurrent.Client.PersistentSubscriptions;
 
 public partial class PersistentSubscriptionsClient {
 	/// <summary>

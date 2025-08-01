@@ -1,6 +1,6 @@
 using Kurrent.Client.Streams;
 
-namespace Kurrent.Client;
+namespace Kurrent.Client.PersistentSubscriptions;
 
 /// <summary>
 /// Provides the statistics of a persistent subscription.

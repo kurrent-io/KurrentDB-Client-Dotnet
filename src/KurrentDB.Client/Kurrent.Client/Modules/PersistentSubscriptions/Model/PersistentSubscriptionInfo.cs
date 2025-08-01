@@ -1,12 +1,12 @@
 ﻿// ReSharper disable InvertIf
 
-using Google.Protobuf.Collections;
 using EventStore.Client.PersistentSubscriptions;
+using Google.Protobuf.Collections;
 using Humanizer;
 using Kurrent.Client.Streams;
 using KurrentDB.Client;
 
-namespace Kurrent.Client;
+namespace Kurrent.Client.PersistentSubscriptions;
 
 /// <summary>
 /// Provides the details for a persistent subscription.
@@ -188,4 +188,3 @@ record PersistentSubscriptionConnectionInfoDto(
 record PersistentSubscriptionMeasurementInfoDto(string Key, long Value);
 
 #endregion
-

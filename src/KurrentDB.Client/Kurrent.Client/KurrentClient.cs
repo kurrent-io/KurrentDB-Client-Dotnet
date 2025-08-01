@@ -39,7 +39,7 @@ public class KurrentClient : IAsyncDisposable {
         Registry                = new RegistryClient(this);
         Streams                 = new StreamsClient(this);
         Operations              = new Operations.OperationsClient(this);
-        PersistentSubscriptions = new PersistentSubscriptionsClient(this);
+        PersistentSubscriptions = new PersistentSubscriptions.PersistentSubscriptionsClient(this);
         Projections             = new ProjectionsClient(this);
         Users                   = new UsersClient(this);
         Features                = new FeaturesClient(this);
@@ -52,13 +52,13 @@ public class KurrentClient : IAsyncDisposable {
     internal MessageTypeMapper TypeMapper      => Options.Mapper;
     internal IMetadataDecoder  MetadataDecoder => Options.MetadataDecoder;
 
-    public StreamsClient                Streams                 { get; }
-    public RegistryClient                       Registry                { get; }
-    public FeaturesClient                       Features                { get; }
-    public UsersClient                          Users                   { get; }
-    public PersistentSubscriptionsClient PersistentSubscriptions { get; }
-    public Operations.OperationsClient          Operations              { get; }
-    public ProjectionsClient                    Projections             { get; }
+    public StreamsClient                                         Streams                 { get; }
+    public RegistryClient                                        Registry                { get; }
+    public FeaturesClient                                        Features                { get; }
+    public UsersClient                                           Users                   { get; }
+    public PersistentSubscriptions.PersistentSubscriptionsClient PersistentSubscriptions { get; }
+    public Operations.OperationsClient                           Operations              { get; }
+    public ProjectionsClient                                     Projections             { get; }
 
 	internal async Task<ServerFeatures> ForceRefresh(CancellationToken cancellationToken = default) {
 		await LegacyCallInvoker.ForceRefresh(cancellationToken).ConfigureAwait(false);

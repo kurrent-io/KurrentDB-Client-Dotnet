@@ -1,4 +1,5 @@
 using Humanizer;
+using Kurrent.Client.PersistentSubscriptions;
 using Kurrent.Client.Streams;
 using KurrentDB.Client;
 
