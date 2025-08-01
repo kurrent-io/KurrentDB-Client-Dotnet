@@ -7,8 +7,7 @@ using Kurrent.Client.Model;
 using KurrentDB.Client;
 using static Kurrent.Client.ErrorDetails;
 using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
-using static Kurrent.Client.Model.StreamsClientV1Mapper;
-using StreamMetadata = Kurrent.Client.Streams.StreamMetadata;
+using static Kurrent.Client.Streams.StreamsClientV1Mapper;
 
 namespace Kurrent.Client.Streams;
 

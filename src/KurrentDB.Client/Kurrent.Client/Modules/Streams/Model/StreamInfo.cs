@@ -47,5 +47,5 @@ public record StreamInfo {
     /// </summary>
     public bool HasMetadata => Metadata != StreamMetadata.None;
 
-    public Streams.StreamsClient.StreamState State { get; init; } = Streams.StreamsClient.StreamState.NotFound;
+    public StreamsClient.StreamState State { get; init; } = StreamsClient.StreamState.NotFound;
 }

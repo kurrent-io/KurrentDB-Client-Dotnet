@@ -38,10 +38,10 @@ public class KurrentClient : IAsyncDisposable {
         ]);
 
         Registry                = new RegistryClient(this);
-        Streams                 = new Streams.StreamsClient(this);
+        Streams                 = new StreamsClient(this);
         Operations              = new Operations.OperationsClient(this);
         PersistentSubscriptions = new KurrentPersistentSubscriptionsClient(this);
-        Projections             = new Projections.ProjectionsClient(this);
+        Projections             = new ProjectionsClient(this);
         Users                   = new UsersClient(this);
         Features                = new FeaturesClient(this);
     }
@@ -53,7 +53,7 @@ public class KurrentClient : IAsyncDisposable {
     internal MessageTypeMapper TypeMapper      => Options.Mapper;
     internal IMetadataDecoder  MetadataDecoder => Options.MetadataDecoder;
 
-    public Streams.StreamsClient                Streams                 { get; }
+    public StreamsClient                Streams                 { get; }
     public RegistryClient                       Registry                { get; }
     public FeaturesClient                       Features                { get; }
     public UsersClient                          Users                   { get; }

@@ -1,16 +1,14 @@
 #pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
-// ReSharper disable CheckNamespace
-
+using Kurrent.Client.Model;
 using Kurrent.Client.Registry;
 using Kurrent.Client.Schema;
 using Kurrent.Client.Schema.Serialization;
-using Kurrent.Client.Streams;
 using KurrentDB.Client;
 using Contracts = EventStore.Client.Streams;
 
-namespace Kurrent.Client.Model;
+namespace Kurrent.Client.Streams;
 
 static class StreamsClientV1Mapper {
     static readonly Contracts.ReadReq.Types.Options.Types.ControlOption       DefaultControlOption       = new() { Compatibility = 1 };
