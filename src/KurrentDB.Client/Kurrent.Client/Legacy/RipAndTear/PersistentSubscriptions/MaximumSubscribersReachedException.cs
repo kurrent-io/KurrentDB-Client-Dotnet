@@ -4,25 +4,26 @@ namespace KurrentDB.Client;
 /// The exception that is thrown when the maximum number of subscribers on a persistent subscription is exceeded.
 /// </summary>
 class MaximumSubscribersReachedException : Exception {
-	/// <summary>
-	/// The stream name.
-	/// </summary>
-	public readonly string StreamName;
-	/// <summary>
-	/// The group name.
-	/// </summary>
-	public readonly string GroupName;
+    /// <summary>
+    /// The group name.
+    /// </summary>
+    public readonly string GroupName;
 
-	/// <summary>
-	/// Constructs a new <see cref="MaximumSubscribersReachedException"/>.
-	/// </summary>
-	/// <exception cref="ArgumentNullException"></exception>
-	public MaximumSubscribersReachedException(string streamName, string groupName, Exception? exception = null)
-		: base($"Maximum subscriptions reached for subscription group '{groupName}' on stream '{streamName}.'",
-			exception) {
-		if (streamName == null) throw new ArgumentNullException(nameof(streamName));
-		if (groupName == null) throw new ArgumentNullException(nameof(groupName));
-		StreamName = streamName;
-		GroupName  = groupName;
-	}
+    /// <summary>
+    /// The stream name.
+    /// </summary>
+    public readonly string StreamName;
+
+    /// <summary>
+    /// Constructs a new <see cref="MaximumSubscribersReachedException"/>.
+    /// </summary>
+    /// <exception cref="ArgumentNullException"></exception>
+    public MaximumSubscribersReachedException(string streamName, string groupName, Exception? exception = null)
+        : base(
+            $"Maximum subscriptions reached for subscription group '{groupName}' on stream '{streamName}.'",
+            exception
+        ) {
+        StreamName = streamName ?? throw new ArgumentNullException(nameof(streamName));
+        GroupName  = groupName ?? throw new ArgumentNullException(nameof(groupName));
+    }
 }

@@ -3,11 +3,11 @@
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using EventStore.Client.Projections;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Kurrent.Client.Legacy;
 using KurrentDB.Client;
+using KurrentDB.Protocol.Projections.V1;
 using Type = System.Type;
 
 namespace Kurrent.Client.Projections;

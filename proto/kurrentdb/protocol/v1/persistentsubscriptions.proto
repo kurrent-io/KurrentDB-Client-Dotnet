@@ -1,10 +1,14 @@
 syntax = "proto3";
+
 package event_store.client.persistent_subscriptions;
+
+option csharp_namespace = "KurrentDB.Protocol.PersistentSubscriptions.V1";
+
 option java_package = "io.kurrent.client.persistentsubscriptions";
 
 import "shared.proto";
 
-service PersistentSubscriptions {
+service PersistentSubscriptionsService {
 	rpc Create (CreateReq) returns (CreateResp);
 	rpc Update (UpdateReq) returns (UpdateResp);
 	rpc Delete (DeleteReq) returns (DeleteResp);

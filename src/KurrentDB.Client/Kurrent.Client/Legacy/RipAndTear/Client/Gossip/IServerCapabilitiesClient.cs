@@ -3,5 +3,5 @@
 namespace KurrentDB.Client;
 
 interface IServerCapabilitiesClient {
-	public Task<ServerCapabilities> GetAsync(CallInvoker callInvoker, CancellationToken cancellationToken);
+    public Task<ServerCapabilities> GetAsync(CallInvoker callInvoker, CancellationToken cancellationToken);
 }

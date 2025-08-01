@@ -144,11 +144,11 @@ public record ReadStreamOptions : ReadOptionsBase {
         ArgumentException.ThrowIfNullOrEmpty(Stream);
         ArgumentOutOfRangeException.ThrowIfLessThan(Start, StreamRevision.Min);
 
-        if (Direction == ReadDirection.Forwards && Start == StreamRevision.Max) {
+        if (Direction == ReadDirection.Forwards && Start == StreamRevision.Max)
             throw new ArgumentException(
                 "Start revision cannot be Max when reading forwards. Use ReadDirection.Backwards or specify a valid revision.",
-                nameof(Start));
-        }
+                nameof(Start)
+            );
     }
 }
 
@@ -192,7 +192,6 @@ public readonly partial record struct ReadError : IVariantResultError<
     ErrorDetails.StreamTombstoned,
     ErrorDetails.AccessDenied>;
 
-
 [PublicAPI]
 public readonly partial record struct InspectRecordError : IVariantResultError<
     ErrorDetails.LogPositionNotFound,
@@ -205,13 +204,12 @@ public readonly partial record struct ReadMessage : IVariant<Record, Heartbeat> 
 
 [PublicAPI]
 public record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
-    internal Messages(Func<Channel<ReadMessage>> channelFactory) =>
-        _lazyChannel = new Lazy<Channel<ReadMessage>>(channelFactory);
+    int _disposed;
+    int _enumeratorCreated;
 
     Lazy<Channel<ReadMessage>> _lazyChannel;
 
-    int _disposed;
-    int _enumeratorCreated;
+    internal Messages(Func<Channel<ReadMessage>> channelFactory) => _lazyChannel = new Lazy<Channel<ReadMessage>>(channelFactory);
 
     Channel<ReadMessage> Channel => _lazyChannel.Value;
 
@@ -219,6 +217,16 @@ public record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
     /// The number of messages currently queued for processing
     /// </summary>
     public int QueuedMessages => _lazyChannel.IsValueCreated ? Channel.Reader.Count : 0;
+
+    public async ValueTask DisposeAsync() {
+        if (!_lazyChannel.IsValueCreated || CompareExchange(ref _disposed, 1, 0) != 0)
+            return;
+
+        Channel.Writer.TryComplete();
+
+        if (Channel.Reader.Completion.IsFaulted)
+            await Channel.Reader.Completion;
+    }
 
     public async IAsyncEnumerator<ReadMessage> GetAsyncEnumerator(CancellationToken cancellationToken = default) {
         ObjectDisposedException.ThrowIf(CompareExchange(ref _disposed, 0, 0) == 1, nameof(Subscription));
@@ -254,16 +262,6 @@ public record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
             yield return message;
         }
     }
-
-    public async ValueTask DisposeAsync() {
-        if (!_lazyChannel.IsValueCreated || CompareExchange(ref _disposed, 1, 0) != 0)
-            return;
-
-        Channel.Writer.TryComplete();
-
-        if (Channel.Reader.Completion.IsFaulted)
-            await Channel.Reader.Completion;
-    }
 }
 
 [PublicAPI]
@@ -280,8 +278,7 @@ public record StreamSubscriptionOptions : ReadStreamOptions {
 
 [PublicAPI]
 public record Subscription : Messages {
-    internal Subscription(string subscriptionId, Func<Channel<ReadMessage>> channelFactory) : base(channelFactory) =>
-        SubscriptionId = subscriptionId;
+    internal Subscription(string subscriptionId, Func<Channel<ReadMessage>> channelFactory) : base(channelFactory) => SubscriptionId = subscriptionId;
 
     /// <summary>
     /// Gets the unique identifier associated with the subscription.
@@ -381,7 +378,6 @@ public record Subscription : Messages {
 //         return ValueTask.CompletedTask;
 //     }
 // }
-
 
 #endregion
 

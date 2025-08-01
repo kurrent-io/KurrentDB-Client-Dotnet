@@ -24,7 +24,7 @@
     <!-- Exclude all .DotSettings files from being included -->
     <DefaultItemExcludes>$(DefaultItemExcludes);**/*.DotSettings</DefaultItemExcludes>
 
-<!--    <Deterministic>true</Deterministic>-->
+    <!--    <Deterministic>true</Deterministic>-->
   </PropertyGroup>
 
   <!-- Debug Configuration Settings -->
@@ -40,22 +40,22 @@
     <DebugType>portable</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <Optimize>true</Optimize>
-<!--    <EmbedAllSources>true</EmbedAllSources>-->
+    <!--    <EmbedAllSources>true</EmbedAllSources>-->
   </PropertyGroup>
 
-<!--  &lt;!&ndash; Add Source Link support for public packages &ndash;&gt;-->
-<!--  <PropertyGroup Condition="'$(Configuration)'=='Release'">-->
-<!--    <PublishRepositoryUrl>true</PublishRepositoryUrl>-->
-<!--    <EmbedUntrackedSources>true</EmbedUntrackedSources>-->
-<!--    <IncludeSymbols>true</IncludeSymbols>-->
-<!--    <SymbolPackageFormat>snupkg</SymbolPackageFormat>-->
+  <!--  &lt;!&ndash; Add Source Link support for public packages &ndash;&gt;-->
+  <!--  <PropertyGroup Condition="'$(Configuration)'=='Release'">-->
+  <!--    <PublishRepositoryUrl>true</PublishRepositoryUrl>-->
+  <!--    <EmbedUntrackedSources>true</EmbedUntrackedSources>-->
+  <!--    <IncludeSymbols>true</IncludeSymbols>-->
+  <!--    <SymbolPackageFormat>snupkg</SymbolPackageFormat>-->
 
-<!--    &lt;!&ndash; Uncomment if you want to enable trimming &ndash;&gt;-->
-<!--    &lt;!&ndash; <PublishTrimmed>true</PublishTrimmed> &ndash;&gt;-->
+  <!--    &lt;!&ndash; Uncomment if you want to enable trimming &ndash;&gt;-->
+  <!--    &lt;!&ndash; <PublishTrimmed>true</PublishTrimmed> &ndash;&gt;-->
 
-<!--    &lt;!&ndash; Uncomment if you want AOT compilation &ndash;&gt;-->
-<!--    &lt;!&ndash; <PublishAot>true</PublishAot> &ndash;&gt;-->
-<!--  </PropertyGroup>-->
+  <!--    &lt;!&ndash; Uncomment if you want AOT compilation &ndash;&gt;-->
+  <!--    &lt;!&ndash; <PublishAot>true</PublishAot> &ndash;&gt;-->
+  <!--  </PropertyGroup>-->
 
   <!-- Deterministic builds for CI environments -->
   <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">

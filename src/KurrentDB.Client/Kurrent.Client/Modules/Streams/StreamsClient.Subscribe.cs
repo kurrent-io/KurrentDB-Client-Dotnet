@@ -1,21 +1,30 @@
 #pragma warning disable CS8509
 
 using System.Threading.Channels;
-using KurrentDB.Protocol.Streams.V1;
 using Grpc.Core;
 using KurrentDB.Client;
+using KurrentDB.Protocol.Streams.V1;
 using static KurrentDB.Protocol.Streams.V1.ReadResp.ContentOneofCase;
 
 namespace Kurrent.Client.Streams;
 
 public partial class StreamsClient {
     public ValueTask<Result<Subscription, ReadError>> Subscribe(AllSubscriptionOptions options) =>
-        SubscribeCore(StreamsClientV1Mapper.Requests.CreateSubscriptionRequest(options), options.BufferSize, options.Timeout, options.SkipDecoding, options.CancellationToken);
+        SubscribeCore(
+            StreamsClientV1Mapper.Requests.CreateSubscriptionRequest(options), options.BufferSize, options.Timeout,
+            options.SkipDecoding, options.CancellationToken
+        );
 
     public ValueTask<Result<Subscription, ReadError>> Subscribe(StreamSubscriptionOptions options) =>
-        SubscribeCore(StreamsClientV1Mapper.Requests.CreateStreamSubscriptionRequest(options), options.BufferSize, options.Timeout, options.SkipDecoding, options.CancellationToken);
+        SubscribeCore(
+            StreamsClientV1Mapper.Requests.CreateStreamSubscriptionRequest(options), options.BufferSize, options.Timeout,
+            options.SkipDecoding, options.CancellationToken
+        );
 
-    async ValueTask<Result<Subscription, ReadError>> SubscribeCore(ReadReq request, int bufferSize, TimeSpan subscriptionTimeout, bool skipDecoding, CancellationToken cancellationToken) {
+    async ValueTask<Result<Subscription, ReadError>> SubscribeCore(
+        ReadReq request, int bufferSize, TimeSpan subscriptionTimeout, bool skipDecoding,
+        CancellationToken cancellationToken
+    ) {
         // Create a linked cancellation token source for background task control
         var cancellator = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
@@ -35,12 +44,17 @@ public partial class StreamsClient {
         // why would this even happen? seems like an unreachable state...
         if (session.ResponseStream.Current.ContentCase != Confirmation)
             throw KurrentClientException.CreateUnknown(
-                nameof(Subscription), new Exception($"Expected confirmation message but got {session.ResponseStream.Current.ContentCase}"));
+                nameof(Subscription), new Exception($"Expected confirmation message but got {session.ResponseStream.Current.ContentCase}")
+            );
 
         var subscriptionId = session.ResponseStream.Current.Confirmation.SubscriptionId;
 
         // Create a factory function instead of starting immediately
-        var channelFactory = new Func<Channel<ReadMessage>>(() => StartMessageRelay(session, bufferSize, subscriptionTimeout, skipDecoding, cancellator));
+        var channelFactory = new Func<Channel<ReadMessage>>(() => StartMessageRelay(
+                session, bufferSize, subscriptionTimeout,
+                skipDecoding, cancellator
+            )
+        );
 
         // var channel = StartMessageRelay(session, bufferSize, subscriptionTimeout,  cancellator);
 
@@ -56,7 +70,10 @@ public partial class StreamsClient {
     /// <param name="skipDecoding"></param>
     /// <param name="cancellator">A cancellation token source used to signal termination of the message relay process.</param>
     /// <returns>A bounded channel that streams subscription messages.</returns>
-    Channel<ReadMessage> StartMessageRelay(AsyncServerStreamingCall<ReadResp> session, int bufferSize, TimeSpan subscriptionTimeout, bool skipDecoding, CancellationTokenSource cancellator) {
+    Channel<ReadMessage> StartMessageRelay(
+        AsyncServerStreamingCall<ReadResp> session, int bufferSize, TimeSpan subscriptionTimeout, bool skipDecoding,
+        CancellationTokenSource cancellator
+    ) {
         // create a bounded channel for backpressure control
         var channel = Channel.CreateBounded<ReadMessage>(
             new BoundedChannelOptions(bufferSize) {
@@ -75,11 +92,15 @@ public partial class StreamsClient {
                     var messages = session.ResponseStream.ReadAllAsync(stoppingToken)
                         .Where(x => x.ContentCase is Event or Checkpoint or CaughtUp or FellBehind)
                         .SelectAwait<ReadResp, ReadMessage>(async x => x.ContentCase switch {
-                            Event      => await x.Event.MapToRecord(SerializerProvider, MetadataDecoder, skipDecoding, stoppingToken).ConfigureAwait(false),
-                            Checkpoint => x.Checkpoint.MapToHeartbeat(),
-                            CaughtUp   => x.CaughtUp.MapToHeartbeat(),
-                            FellBehind => x.FellBehind.MapToHeartbeat()
-                        });
+                                Event => await x.Event.MapToRecord(
+                                    SerializerProvider, MetadataDecoder, skipDecoding,
+                                    stoppingToken
+                                ).ConfigureAwait(false),
+                                Checkpoint => x.Checkpoint.MapToHeartbeat(),
+                                CaughtUp   => x.CaughtUp.MapToHeartbeat(),
+                                FellBehind => x.FellBehind.MapToHeartbeat()
+                            }
+                        );
 
                     await foreach (var message in messages.ConfigureAwait(false)) {
                         // try to write immediately without blocking
@@ -98,13 +119,19 @@ public partial class StreamsClient {
                     // it might already have been marked for
                     // completion manually or on dispose.
                     channel.Writer.TryComplete();
-                }  catch (OperationCanceledException ex) when (ex.CancellationToken != stoppingToken) {
-                    channel.Writer.TryComplete(new TimeoutException($"Timed out after {subscriptionTimeout}. The application may not be reading messages fast enough."));
-                } catch (OperationCanceledException) {
+                }
+                catch (OperationCanceledException ex) when (ex.CancellationToken != stoppingToken) {
+                    channel.Writer.TryComplete(
+                        new TimeoutException($"Timed out after {subscriptionTimeout}. The application may not be reading messages fast enough.")
+                    );
+                }
+                catch (OperationCanceledException) {
                     channel.Writer.TryComplete();
-                } catch (Exception ex) {
+                }
+                catch (Exception ex) {
                     channel.Writer.TryComplete(ex);
-                } finally {
+                }
+                finally {
                     session.Dispose();
                     cancellator.Dispose();
                 }
@@ -396,6 +423,7 @@ public partial class StreamsClient {
 }
 
 #region . subscription processor - experimental .
+
 /// <summary>
 /// Configuration options for processor-based subscriptions.
 /// </summary>

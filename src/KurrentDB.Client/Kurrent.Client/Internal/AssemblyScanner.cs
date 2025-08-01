@@ -9,25 +9,16 @@ namespace Kurrent.Client;
 /// </summary>
 [PublicAPI]
 class AssemblyScanner {
-	/// <summary>
-	/// Provides access to a singleton instance of the <see cref="AssemblyScanner"/> class.
-	/// This instance is lazily initialized and thread-safe. It enables scanning and retrieving types
-	/// from loaded assemblies based on specified criteria.
-	/// </summary>
-	public static AssemblyScanner System => LazySystemInstance.Value;
-
-	static readonly Lazy<AssemblyScanner> LazySystemInstance = new(() => new(), LazyThreadSafetyMode.ExecutionAndPublication);
-
     static readonly string[] DefaultExcludePatterns = [
-	    // Microsoft and .NET Framework libraries
-	    "system.",              // Core .NET Framework libraries and namespaces
-        "microsoft.",           // Microsoft libraries and frameworks
-        "windows.",             // Windows-specific functionality
-        "netstandard.",         // .NET Standard libraries
-        "mscorlib.",            // Core .NET runtime library
-        "dotnet.",              // .NET Core specific libraries
-        "runtime.",             // Runtime-related libraries
-        "blazor.",              // Microsoft Blazor framework
+        // Microsoft and .NET Framework libraries
+        "system.",      // Core .NET Framework libraries and namespaces
+        "microsoft.",   // Microsoft libraries and frameworks
+        "windows.",     // Windows-specific functionality
+        "netstandard.", // .NET Standard libraries
+        "mscorlib.",    // Core .NET runtime library
+        "dotnet.",      // .NET Core specific libraries
+        "runtime.",     // Runtime-related libraries
+        "blazor.",      // Microsoft Blazor framework
 
         // Others
         "serilog.",             // Structured logging library
@@ -36,46 +27,48 @@ class AssemblyScanner {
         "newtonsoft.",          // JSON.NET serialization library
         "njsonschema.",         // JSON Schema validation
         "protobuf.",            // Protocol Buffers serialization
-	    "grpc.core.",           // gRPC communication framework
-	    "grpc.net.",            // gRPC communication framework
-	    "rabbitmq.",            // RabbitMQ client
-	    "kafka.",               // Kafka client libraries
-	    "confluent.",           // Confluent Kafka libraries
-	    "stackexchange.",       // StackExchange.Redis and other SE libraries
-	    "humanizer.",           // String manipulation and humanization
-	    "oneof.",               // Discriminated union implementation
-	    "polly.",               // Resilience and transient fault handling
-	    "dotnext.",             // .NET extensions and utilities
-	    "lrucache.",            // LRU Cache implementation
-	    "swashbuckle.",         // Swagger/OpenAPI documentation
-	    "elastic.",             // Elasticsearch client
-	    "eventuous.",           // Event sourcing and CQRS libraries
-	    "jetbrains.",           // JetBrains libraries
-	    "namotion",             // Namotion libraries
-	    "faster",               // Faster
-	    "fluentstorage.",       // FluentStorage libraries
-	    "jsonpath.",            // JSONPath libraries
-	    "jint.",                // Jint libraries
-	    "jsoncons.",            // JsonCons libraries
-	    "nodatime.",            // NodaTime libraries
-	    "scrutor.",             // Scrutor libraries
-	    "autofac.",             // Autofac IoC container
-	    "ninject.",             // Ninject IoC container
-	    "simpleinjector.",      // Simple Injector IoC container
-	    "prometheus.",          // Prometheus monitoring
-	    "applicationinsights.", // Azure Application Insights
-	    "opentelemetry.",       // OpenTelemetry observability framework
-	    "azure.",               // Microsoft Azure SDK
-	    "awssdk.",              // Amazon Web Services SDK
-	    "entityframework.",     // Entity Framework ORM
-	    "dapper.",              // Lightweight ORM
-	    "npgsql.",              // PostgreSQL data provider
-	    "sqlite.",              // SQLite data provider
-	    "pomelo.",              // MySQL provider
-	    "mongodb.",             // MongoDB client
-	    "bouncycastle.",        // Cryptography library
-	    "castle.",              // Castle Project libraries including DynamicProxy
+        "grpc.core.",           // gRPC communication framework
+        "grpc.net.",            // gRPC communication framework
+        "rabbitmq.",            // RabbitMQ client
+        "kafka.",               // Kafka client libraries
+        "confluent.",           // Confluent Kafka libraries
+        "stackexchange.",       // StackExchange.Redis and other SE libraries
+        "humanizer.",           // String manipulation and humanization
+        "oneof.",               // Discriminated union implementation
+        "polly.",               // Resilience and transient fault handling
+        "dotnext.",             // .NET extensions and utilities
+        "lrucache.",            // LRU Cache implementation
+        "swashbuckle.",         // Swagger/OpenAPI documentation
+        "elastic.",             // Elasticsearch client
+        "eventuous.",           // Event sourcing and CQRS libraries
+        "jetbrains.",           // JetBrains libraries
+        "namotion",             // Namotion libraries
+        "faster",               // Faster
+        "fluentstorage.",       // FluentStorage libraries
+        "jsonpath.",            // JSONPath libraries
+        "jint.",                // Jint libraries
+        "jsoncons.",            // JsonCons libraries
+        "nodatime.",            // NodaTime libraries
+        "scrutor.",             // Scrutor libraries
+        "autofac.",             // Autofac IoC container
+        "ninject.",             // Ninject IoC container
+        "simpleinjector.",      // Simple Injector IoC container
+        "prometheus.",          // Prometheus monitoring
+        "applicationinsights.", // Azure Application Insights
+        "opentelemetry.",       // OpenTelemetry observability framework
+        "azure.",               // Microsoft Azure SDK
+        "awssdk.",              // Amazon Web Services SDK
+        "entityframework.",     // Entity Framework ORM
+        "dapper.",              // Lightweight ORM
+        "npgsql.",              // PostgreSQL data provider
+        "sqlite.",              // SQLite data provider
+        "pomelo.",              // MySQL provider
+        "mongodb.",             // MongoDB client
+        "bouncycastle.",        // Cryptography library
+        "castle."               // Castle Project libraries including DynamicProxy
     ];
+
+    static readonly Lazy<AssemblyScanner> LazySystemInstance = new(() => new(), LazyThreadSafetyMode.ExecutionAndPublication);
 
     public AssemblyScanner(params Assembly?[] assemblies) {
         if (assemblies.Length == 0)
@@ -84,6 +77,13 @@ class AssemblyScanner {
         Assemblies = assemblies.Where(x => x is not null).Cast<Assembly>().ToArray();
         LazyTypes  = new(() => LoadAllTypes(Assemblies));
     }
+
+    /// <summary>
+    /// Provides access to a singleton instance of the <see cref="AssemblyScanner"/> class.
+    /// This instance is lazily initialized and thread-safe. It enables scanning and retrieving types
+    /// from loaded assemblies based on specified criteria.
+    /// </summary>
+    public static AssemblyScanner System => LazySystemInstance.Value;
 
     Assembly[]       Assemblies { get; }
     Lazy<List<Type>> LazyTypes  { get; }
@@ -99,8 +99,7 @@ class AssemblyScanner {
     /// </summary>
     /// <param name="filename">The name of the assembly file to evaluate for relevance.</param>
     /// <returns><c>true</c> if the assembly is considered relevant; otherwise, <c>false</c>.</returns>
-    static bool IsRelevantAssembly(string filename) =>
-	    !DefaultExcludePatterns.Any(pattern => filename.StartsWith(pattern, StringComparison.OrdinalIgnoreCase));
+    static bool IsRelevantAssembly(string filename) => !DefaultExcludePatterns.Any(pattern => filename.StartsWith(pattern, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// Loads all types from the specified assemblies, optionally including internal types.
@@ -109,9 +108,9 @@ class AssemblyScanner {
     /// <param name="includeInternalTypes">A boolean indicating whether to include internal types or only exported types. Default is <c>true</c>.</param>
     /// <returns>A <see cref="List{Type}"/> containing all distinct loaded types.</returns>
     static List<Type> LoadAllTypes(Assembly[] assemblies, bool includeInternalTypes = true) {
-	    return assemblies
-		    .AsParallel()
-		    .SelectMany(ass => GetAllTypes(ass, includeInternalTypes))
+        return assemblies
+            .AsParallel()
+            .SelectMany(ass => GetAllTypes(ass, includeInternalTypes))
             .Distinct()
             .ToList();
 
@@ -137,9 +136,9 @@ class AssemblyScanner {
     /// </param>
     /// <returns>An array of <see cref="Assembly"/> objects loaded from the specified directory.</returns>
     static Assembly[] LoadAssemblies(string directoryPath, Predicate<string>? assemblyFileNameFilter = null, Action<string, Exception>? onError = null) {
-	    var assemblies = new List<Assembly>();
+        var assemblies = new List<Assembly>();
 
-	    foreach (var assemblyFile in Directory.EnumerateFiles(directoryPath, "*.dll", SearchOption.TopDirectoryOnly)) {
+        foreach (var assemblyFile in Directory.EnumerateFiles(directoryPath, "*.dll", SearchOption.TopDirectoryOnly)) {
             if (!(assemblyFileNameFilter?.Invoke(Path.GetFileName(assemblyFile)) ?? true))
                 continue;
 
@@ -163,40 +162,38 @@ class AssemblyScanner {
 /// and instantiability of classes.
 /// </summary>
 static class AssemblyScannerExtensions {
-	/// <summary>
-	/// Filters the query to include only types that are assignable to the specified type and are instantiable classes.
-	/// </summary>
-	/// <param name="scan">The parallel query of types to filter.</param>
-	/// <param name="type">The type that the returned types must be assignable to.</param>
-	/// <returns>A <see cref="ParallelQuery{Type}"/> containing types that are assignable to the specified type and are instantiable classes.</returns>
-	internal static ParallelQuery<Type> InstancesOf(this ParallelQuery<Type> scan, Type type) =>
-		scan.Where(t => type.IsAssignableFrom(t) && t.IsInstantiableClass());
+    /// <summary>
+    /// Filters the query to include only types that are assignable to the specified type and are instantiable classes.
+    /// </summary>
+    /// <param name="scan">The parallel query of types to filter.</param>
+    /// <param name="type">The type that the returned types must be assignable to.</param>
+    /// <returns>A <see cref="ParallelQuery{Type}"/> containing types that are assignable to the specified type and are instantiable classes.</returns>
+    internal static ParallelQuery<Type> InstancesOf(this ParallelQuery<Type> scan, Type type) =>
+        scan.Where(t => type.IsAssignableFrom(t) && t.IsInstantiableClass());
 
-	/// <summary>
-	/// Filters the query to include only types that are assignable to the specified generic type and are instantiable classes.
-	/// </summary>
-	/// <param name="scan">The parallel query of types to filter.</param>
-	/// <typeparam name="T">The type that the returned types must be assignable to.</typeparam>
-	/// <returns>A <see cref="ParallelQuery{Type}"/> containing types that are assignable to the specified generic type and are instantiable classes.</returns>
-	internal static ParallelQuery<Type> InstancesOf<T>(this ParallelQuery<Type> scan) =>
-		InstancesOf(scan, typeof(T));
+    /// <summary>
+    /// Filters the query to include only types that are assignable to the specified generic type and are instantiable classes.
+    /// </summary>
+    /// <param name="scan">The parallel query of types to filter.</param>
+    /// <typeparam name="T">The type that the returned types must be assignable to.</typeparam>
+    /// <returns>A <see cref="ParallelQuery{Type}"/> containing types that are assignable to the specified generic type and are instantiable classes.</returns>
+    internal static ParallelQuery<Type> InstancesOf<T>(this ParallelQuery<Type> scan) => InstancesOf(scan, typeof(T));
 
-	/// <summary>
-	/// Filters the query to include only types that match the specified full name and are instantiable classes.
-	/// </summary>
-	/// <param name="scan">The parallel query of types to filter.</param>
-	/// <param name="name">The full name of the type to match.</param>
-	/// <returns>A <see cref="ParallelQuery{Type}"/> containing types that match the specified full name and are instantiable classes.</returns>
-	internal static ParallelQuery<Type> InstancesWithFullName(this ParallelQuery<Type> scan, string name) =>
-		scan.Where(t => t.MatchesFullName(name) && t.IsInstantiableClass());
+    /// <summary>
+    /// Filters the query to include only types that match the specified full name and are instantiable classes.
+    /// </summary>
+    /// <param name="scan">The parallel query of types to filter.</param>
+    /// <param name="name">The full name of the type to match.</param>
+    /// <returns>A <see cref="ParallelQuery{Type}"/> containing types that match the specified full name and are instantiable classes.</returns>
+    internal static ParallelQuery<Type> InstancesWithFullName(this ParallelQuery<Type> scan, string name) =>
+        scan.Where(t => t.MatchesFullName(name) && t.IsInstantiableClass());
 
-	/// <summary>
-	/// Retrieves the first type from a parallel query of types or returns a placeholder type if the query is empty.
-	/// </summary>
-	/// <param name="scan">The parallel query of <see cref="Type"/> objects to evaluate.</param>
-	/// <returns>The first <see cref="Type"/> in the query or a placeholder type if no types are found.</returns>
-	internal static Type FirstOrMissing(this ParallelQuery<Type> scan) =>
-		scan.FirstOrDefault() ?? SystemTypes.MissingType;
+    /// <summary>
+    /// Retrieves the first type from a parallel query of types or returns a placeholder type if the query is empty.
+    /// </summary>
+    /// <param name="scan">The parallel query of <see cref="Type"/> objects to evaluate.</param>
+    /// <returns>The first <see cref="Type"/> in the query or a placeholder type if no types are found.</returns>
+    internal static Type FirstOrMissing(this ParallelQuery<Type> scan) => scan.FirstOrDefault() ?? SystemTypes.MissingType;
 
     /// <summary>
     /// Filters the scanned types to include only those within the specified namespace prefix.

@@ -4,14 +4,10 @@ sequenceDiagram
     participant TypeMapper
     participant PolicyResolver
     participant SchemaRegistry
-
     Client ->> SchemaSerializer: Deserialize(data, context)
-
     Note over SchemaSerializer: Extract schema info from metadata
-
     SchemaSerializer ->> TypeMapper: GetOrResolveMessageType(schemaName)
     TypeMapper -->> SchemaSerializer: Resolved .NET type
-
     SchemaSerializer ->> PolicyResolver: Resolve policy requirements
     PolicyResolver -->> SchemaSerializer: Resolved policy
 
@@ -27,5 +23,4 @@ sequenceDiagram
     end
 
     Note over SchemaSerializer: Format-specific deserialization using Deserialize(data, resolvedType)
-
     SchemaSerializer -->> Client: Return deserialized object

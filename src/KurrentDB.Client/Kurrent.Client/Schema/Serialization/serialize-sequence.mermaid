@@ -4,9 +4,7 @@ sequenceDiagram
     participant PolicyResolver
     participant Registry
     participant Serializer
-
     Client ->> SchemaSerializer: Serialize(value, context)
-
     SchemaSerializer ->> PolicyResolver: Resolve policy requirements
     PolicyResolver -->> SchemaSerializer: Resolved policy
 
@@ -18,8 +16,6 @@ sequenceDiagram
     end
 
     SchemaSerializer ->> SchemaSerializer: Update metadata with schema info
-
     SchemaSerializer ->> Serializer: Format-specific serialization
     Serializer -->> SchemaSerializer: Serialized bytes
-
     SchemaSerializer -->> Client: Return serialized data

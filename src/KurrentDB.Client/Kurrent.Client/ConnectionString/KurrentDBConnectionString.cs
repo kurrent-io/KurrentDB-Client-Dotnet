@@ -35,11 +35,10 @@ public record KurrentDBConnectionString {
     internal const string UserCertFile         = nameof(UserCertFile);
     internal const string UserKeyFile          = nameof(UserKeyFile);
 
-    internal const string DefaultDirectScheme    = "kurrentdb";
-    internal const string DefaultDiscoveryScheme = "kurrentdb+discover";
-
-    internal static readonly string[] DiscoverySchemes = [DefaultDiscoveryScheme, "esdb+discover", "eventstore+discover"];
-    internal static readonly string[] AllSchemes       = [DefaultDirectScheme, "esdb", "eventstore", ..DiscoverySchemes];
+    internal const           string   DefaultDirectScheme    = "kurrentdb";
+    internal const           string   DefaultDiscoveryScheme = "kurrentdb+discover";
+    internal static readonly string[] DiscoverySchemes       = [DefaultDiscoveryScheme, "esdb+discover", "eventstore+discover"];
+    internal static readonly string[] AllSchemes             = [DefaultDirectScheme, "esdb", "eventstore", ..DiscoverySchemes];
 
     KurrentDBConnectionString(
         string connectionString, string scheme, (string User, string Password)? userInfo, DnsEndPoint[] hosts,
@@ -101,12 +100,11 @@ public record KurrentDBConnectionString {
         if (hosts.Length == 0)
             throw new ConnectionStringParseException("Connection string must specify at least one endpoint.");
 
-        if (hosts.Length > 1 && scheme == DefaultDirectScheme) {
+        if (hosts.Length > 1 && scheme == DefaultDirectScheme)
             throw new ConnectionStringParseException(
                 $"The '{DefaultDirectScheme}' connection scheme does not support multiple hosts. " +
                 "Use a discovery scheme like 'kurrentdb+discover' or 'esdb+discover' for multiple hosts."
             );
-        }
 
         currentIndex = hostSeparatorIndex;
 
@@ -118,7 +116,9 @@ public record KurrentDBConnectionString {
             );
 
         if (path != "" && path != "/")
-            throw new ConnectionStringParseException($"The specified path must be either an empty string or a forward slash (/) but the following path was found instead: '{path}'");
+            throw new ConnectionStringParseException(
+                $"The specified path must be either an empty string or a forward slash (/) but the following path was found instead: '{path}'"
+            );
 
         var options = new Dictionary<string, string>();
 
@@ -181,7 +181,8 @@ public record KurrentDBConnectionString {
                     return !seed.TryAdd(key, value)
                         ? throw new DuplicateKeyException(key)
                         : seed;
-                });
+                }
+            );
 
             static (string, string) ParseParameter(string input) {
                 var keyValueToken = input.Split(Equal);

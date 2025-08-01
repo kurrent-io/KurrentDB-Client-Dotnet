@@ -6,133 +6,131 @@ using KurrentDB.Client;
 namespace Kurrent.Client.PersistentSubscriptions;
 
 class HttpFallback : IDisposable {
-	readonly HttpClient            _httpClient;
-	readonly JsonSerializerOptions _jsonSettings;
-	readonly UserCredentials?      _defaultCredentials;
-	readonly string                _addressScheme;
+    readonly string                _addressScheme;
+    readonly UserCredentials?      _defaultCredentials;
+    readonly HttpClient            _httpClient;
+    readonly JsonSerializerOptions _jsonSettings;
 
-	internal HttpFallback(KurrentDBClientSettings settings) {
-		_addressScheme = settings.ConnectivitySettings.Address?.Scheme ?? (settings.ConnectivitySettings.Insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps);
-		_defaultCredentials = settings.DefaultCredentials;
+    internal HttpFallback(KurrentDBClientSettings settings) {
+        _addressScheme = settings.ConnectivitySettings.Address?.Scheme ?? (settings.ConnectivitySettings.Insecure ? Uri.UriSchemeHttp : Uri.UriSchemeHttps);
+        _defaultCredentials = settings.DefaultCredentials;
 
-		var handler = new HttpClientHandler();
-		if (!settings.ConnectivitySettings.Insecure) {
-			handler.ClientCertificateOptions = ClientCertificateOption.Manual;
+        var handler = new HttpClientHandler();
+        if (!settings.ConnectivitySettings.Insecure) {
+            handler.ClientCertificateOptions = ClientCertificateOption.Manual;
 
-			if (settings.ConnectivitySettings.ClientCertificate is not null)
-				handler.ClientCertificates.Add(settings.ConnectivitySettings.ClientCertificate);
+            if (settings.ConnectivitySettings.ClientCertificate is not null)
+                handler.ClientCertificates.Add(settings.ConnectivitySettings.ClientCertificate);
 
-			handler.ServerCertificateCustomValidationCallback = settings.ConnectivitySettings.TlsVerifyCert switch {
-				false => delegate { return true; },
-				true when settings.ConnectivitySettings.TlsCaFile is not null => (sender, certificate, chain, errors) => {
-					if (certificate is null || chain is null) return false;
+            handler.ServerCertificateCustomValidationCallback = settings.ConnectivitySettings.TlsVerifyCert switch {
+                false => delegate { return true; },
+                true when settings.ConnectivitySettings.TlsCaFile is not null => (sender, certificate, chain, errors) => {
+                    if (certificate is null || chain is null) return false;
 
-					chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
-					chain.ChainPolicy.TrustMode      = X509ChainTrustMode.CustomRootTrust;
-					chain.ChainPolicy.CustomTrustStore.Add(settings.ConnectivitySettings.TlsCaFile);
+                    chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+                    chain.ChainPolicy.TrustMode      = X509ChainTrustMode.CustomRootTrust;
+                    chain.ChainPolicy.CustomTrustStore.Add(settings.ConnectivitySettings.TlsCaFile);
 
-					return chain.Build(certificate);
-				},
-				_ => null
-			};
-		}
+                    return chain.Build(certificate);
+                },
+                _ => null
+            };
+        }
 
-		_httpClient = new HttpClient(handler);
-		if (settings.DefaultDeadline.HasValue) {
-			_httpClient.Timeout = settings.DefaultDeadline.Value;
-		}
+        _httpClient = new HttpClient(handler);
+        if (settings.DefaultDeadline.HasValue) _httpClient.Timeout = settings.DefaultDeadline.Value;
 
-		_jsonSettings = new JsonSerializerOptions {
-			PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-		};
-	}
+        _jsonSettings = new JsonSerializerOptions {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+    }
 
-	internal async Task<T> HttpGetAsync<T>(
-		string path, string target, TimeSpan? deadline, UserCredentials? userCredentials,
-		Action onNotFound, CancellationToken cancellationToken
-	) {
-		var request = CreateRequest(
-			path, HttpMethod.Get, target,
-			userCredentials
-		);
+    public void Dispose() => _httpClient.Dispose();
 
-		var httpResult = await HttpSendAsync(
-			request, onNotFound, deadline,
-			cancellationToken
-		).ConfigureAwait(false);
+    internal async Task<T> HttpGetAsync<T>(
+        string path, string target, TimeSpan? deadline, UserCredentials? userCredentials,
+        Action onNotFound, CancellationToken cancellationToken
+    ) {
+        var request = CreateRequest(
+            path, HttpMethod.Get, target,
+            userCredentials
+        );
 
-		var json = await httpResult.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+        var httpResult = await HttpSendAsync(
+            request, onNotFound, deadline,
+            cancellationToken
+        ).ConfigureAwait(false);
 
-		var result = JsonSerializer.Deserialize<T>(json, _jsonSettings);
-		if (result == null)
-			throw new InvalidOperationException("Unable to deserialize response into object of type " + typeof(T));
+        var json = await httpResult.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
-		return result;
-	}
+        var result = JsonSerializer.Deserialize<T>(json, _jsonSettings);
+        if (result == null)
+            throw new InvalidOperationException("Unable to deserialize response into object of type " + typeof(T));
 
-	internal async Task HttpPostAsync(
-		string path, string query, string target, TimeSpan? deadline,
-		UserCredentials? userCredentials, Action onNotFound, CancellationToken cancellationToken
-	) {
-		var request = CreateRequest(
-			path, query, HttpMethod.Post,
-			target, userCredentials
-		);
+        return result;
+    }
 
-		await HttpSendAsync(
-			request, onNotFound, deadline,
-			cancellationToken
-		).ConfigureAwait(false);
-	}
+    internal async Task HttpPostAsync(
+        string path, string query, string target, TimeSpan? deadline,
+        UserCredentials? userCredentials, Action onNotFound, CancellationToken cancellationToken
+    ) {
+        var request = CreateRequest(
+            path, query, HttpMethod.Post,
+            target, userCredentials
+        );
 
-	async Task<HttpResponseMessage> HttpSendAsync(HttpRequestMessage request, Action onNotFound, TimeSpan? deadline, CancellationToken cancellationToken) {
-		if (!deadline.HasValue)
-			return await HttpSendAsync(request, onNotFound, cancellationToken).ConfigureAwait(false);
+        await HttpSendAsync(
+            request, onNotFound, deadline,
+            cancellationToken
+        ).ConfigureAwait(false);
+    }
 
-		using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-		cts.CancelAfter(deadline.Value);
+    async Task<HttpResponseMessage> HttpSendAsync(HttpRequestMessage request, Action onNotFound, TimeSpan? deadline, CancellationToken cancellationToken) {
+        if (!deadline.HasValue)
+            return await HttpSendAsync(request, onNotFound, cancellationToken).ConfigureAwait(false);
 
-		return await HttpSendAsync(request, onNotFound, cts.Token).ConfigureAwait(false);
-	}
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(deadline.Value);
 
-	async Task<HttpResponseMessage> HttpSendAsync(HttpRequestMessage request, Action onNotFound, CancellationToken cancellationToken) {
-		var httpResult = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-		if (httpResult.IsSuccessStatusCode)
-			return httpResult;
+        return await HttpSendAsync(request, onNotFound, cts.Token).ConfigureAwait(false);
+    }
 
-		if (httpResult.StatusCode == HttpStatusCode.Unauthorized)
-			throw new AccessDeniedException();
+    async Task<HttpResponseMessage> HttpSendAsync(HttpRequestMessage request, Action onNotFound, CancellationToken cancellationToken) {
+        var httpResult = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
+        if (httpResult.IsSuccessStatusCode)
+            return httpResult;
 
-		if (httpResult.StatusCode == HttpStatusCode.NotFound) onNotFound();
+        if (httpResult.StatusCode == HttpStatusCode.Unauthorized)
+            throw new AccessDeniedException();
 
-		throw new Exception($"The HTTP request failed with status code: {httpResult.StatusCode}");
-	}
+        if (httpResult.StatusCode == HttpStatusCode.NotFound) onNotFound();
 
-	HttpRequestMessage CreateRequest(string path, HttpMethod method, string target, UserCredentials? credentials) =>
-		CreateRequest(
-			path, query: "", method,
-			target, credentials
-		);
+        throw new Exception($"The HTTP request failed with status code: {httpResult.StatusCode}");
+    }
 
-	HttpRequestMessage CreateRequest(
-		string path, string query, HttpMethod method, string target,
-		UserCredentials? credentials
-	) {
-		var uriBuilder = new UriBuilder($"{_addressScheme}://{target}") {
-			Path  = path,
-			Query = query
-		};
+    HttpRequestMessage CreateRequest(string path, HttpMethod method, string target, UserCredentials? credentials) =>
+        CreateRequest(
+            path, "", method,
+            target, credentials
+        );
 
-		var httpRequest = new HttpRequestMessage(method, uriBuilder.Uri);
-		httpRequest.Headers.Add("accept", "application/json");
+    HttpRequestMessage CreateRequest(
+        string path, string query, HttpMethod method, string target,
+        UserCredentials? credentials
+    ) {
+        var uriBuilder = new UriBuilder($"{_addressScheme}://{target}") {
+            Path  = path,
+            Query = query
+        };
 
-		credentials ??= _defaultCredentials;
+        var httpRequest = new HttpRequestMessage(method, uriBuilder.Uri);
+        httpRequest.Headers.Add("accept", "application/json");
 
-		if (credentials != null)
-			httpRequest.Headers.Add(Constants.Headers.Authorization, credentials.ToString());
+        credentials ??= _defaultCredentials;
 
-		return httpRequest;
-	}
+        if (credentials != null)
+            httpRequest.Headers.Add(Constants.Headers.Authorization, credentials.ToString());
 
-	public void Dispose() => _httpClient.Dispose();
+        return httpRequest;
+    }
 }

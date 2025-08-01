@@ -9,9 +9,9 @@ public static class ApplicationContext {
         var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
 
         Configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", optional: true)
-            .AddJsonFile($"appsettings.{environment}.json", optional: true)                    // Accept default naming convention
-            .AddJsonFile($"appsettings.{environment.ToLowerInvariant()}.json", optional: true) // Linux is case-sensitive
+            .AddJsonFile("appsettings.json", true)
+            .AddJsonFile($"appsettings.{environment}.json", true)                    // Accept default naming convention
+            .AddJsonFile($"appsettings.{environment.ToLowerInvariant()}.json", true) // Linux is case-sensitive
             .AddEnvironmentVariables()
             .Build();
     }

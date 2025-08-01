@@ -15,11 +15,11 @@ namespace Kurrent.Client.Streams;
 /// The unique identifier for the version of the schema.
 /// </param>
 public record RecordSchemaInfo(SchemaName SchemaName, SchemaDataFormat DataFormat, SchemaVersionId SchemaVersionId) {
-	public static readonly RecordSchemaInfo None = new(SchemaName.None, SchemaDataFormat.Unspecified, SchemaVersionId.None);
+    public static readonly RecordSchemaInfo None = new(SchemaName.None, SchemaDataFormat.Unspecified, SchemaVersionId.None);
 
-	public bool HasSchemaName      => SchemaName != SchemaName.None;
-	public bool HasDataFormat      => DataFormat != SchemaDataFormat.Unspecified;
-	public bool HasSchemaVersionId => SchemaVersionId != SchemaVersionId.None;
+    public bool HasSchemaName      => SchemaName != SchemaName.None;
+    public bool HasDataFormat      => DataFormat != SchemaDataFormat.Unspecified;
+    public bool HasSchemaVersionId => SchemaVersionId != SchemaVersionId.None;
 
-	public override string ToString() => $"{SchemaName} {DataFormat} {SchemaVersionId}";
+    public override string ToString() => $"{SchemaName} {DataFormat} {SchemaVersionId}";
 }

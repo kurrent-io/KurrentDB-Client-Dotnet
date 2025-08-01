@@ -1,10 +1,10 @@
 ﻿// ReSharper disable InvertIf
 
-using EventStore.Client.PersistentSubscriptions;
 using Google.Protobuf.Collections;
 using Humanizer;
 using Kurrent.Client.Streams;
 using KurrentDB.Client;
+using KurrentDB.Protocol.PersistentSubscriptions.V1;
 
 namespace Kurrent.Client.PersistentSubscriptions;
 

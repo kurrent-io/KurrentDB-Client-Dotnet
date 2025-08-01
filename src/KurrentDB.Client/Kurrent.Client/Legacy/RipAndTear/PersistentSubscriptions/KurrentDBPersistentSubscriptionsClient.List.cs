@@ -1,106 +1,136 @@
 using EventStore.Client;
-using EventStore.Client.PersistentSubscriptions;
 using Grpc.Core;
+using KurrentDB.Protocol.PersistentSubscriptions.V1;
 
 namespace KurrentDB.Client;
 
 partial class KurrentDBPersistentSubscriptionsClient {
-	/// <summary>
-	/// Lists persistent subscriptions to $all.
-	/// </summary>
-	internal async Task<IEnumerable<PersistentSubscriptionInfo>> ListToAllAsync(TimeSpan? deadline = null,
-	                                                                            UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+    /// <summary>
+    /// Lists persistent subscriptions to $all.
+    /// </summary>
+    internal async Task<IEnumerable<PersistentSubscriptionInfo>> ListToAllAsync(
+        TimeSpan? deadline = null,
+        UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
+    ) {
+        var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+        if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
+            var req = new ListReq {
+                Options = new ListReq.Types.Options {
+                    ListForStream = new ListReq.Types.StreamOption {
+                        All = new Empty()
+                    }
+                }
+            };
 
-		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
-			var req = new ListReq {
-				Options = new ListReq.Types.Options{
-					ListForStream = new ListReq.Types.StreamOption {
-						All = new Empty()
-					}
-				}
-			};
+            return await ListGrpcAsync(
+                    req, deadline, userCredentials,
+                    channelInfo.CallInvoker, cancellationToken
+                )
+                .ConfigureAwait(false);
+        }
 
-			return await ListGrpcAsync(req, deadline, userCredentials, channelInfo.CallInvoker, cancellationToken)
-				.ConfigureAwait(false);
-		}
+        throw new NotSupportedException("The server does not support listing the persistent subscriptions.");
+    }
 
-		throw new NotSupportedException("The server does not support listing the persistent subscriptions.");
-	}
+    /// <summary>
+    /// Lists persistent subscriptions to the specified stream.
+    /// </summary>
+    internal async Task<IEnumerable<PersistentSubscriptionInfo>> ListToStreamAsync(
+        string streamName, TimeSpan? deadline = null,
+        UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
+    ) {
+        var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+        if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
+            var req = new ListReq {
+                Options = new ListReq.Types.Options {
+                    ListForStream = new ListReq.Types.StreamOption {
+                        Stream = streamName
+                    }
+                }
+            };
 
-	/// <summary>
-	/// Lists persistent subscriptions to the specified stream.
-	/// </summary>
-	internal async Task<IEnumerable<PersistentSubscriptionInfo>> ListToStreamAsync(string streamName, TimeSpan? deadline = null,
-	                                                                               UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+            return await ListGrpcAsync(
+                    req, deadline, userCredentials,
+                    channelInfo.CallInvoker, cancellationToken
+                )
+                .ConfigureAwait(false);
+        }
 
-		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
-			var req = new ListReq {
-				Options = new ListReq.Types.Options {
-					ListForStream = new ListReq.Types.StreamOption {
-						Stream = streamName
-					}
-				}
-			};
+        return await ListHttpAsync(
+                streamName, channelInfo, deadline,
+                userCredentials, cancellationToken
+            )
+            .ConfigureAwait(false);
+    }
 
-			return await ListGrpcAsync(req, deadline, userCredentials, channelInfo.CallInvoker, cancellationToken)
-				.ConfigureAwait(false);
-		}
+    /// <summary>
+    /// Lists all persistent subscriptions.
+    /// </summary>
+    internal async Task<IEnumerable<PersistentSubscriptionInfo>> ListAllAsync(
+        TimeSpan? deadline = null,
+        UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
+    ) {
+        var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
+        if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
+            var req = new ListReq {
+                Options = new ListReq.Types.Options {
+                    ListAllSubscriptions = new Empty()
+                }
+            };
 
-		return await ListHttpAsync(streamName, channelInfo, deadline, userCredentials, cancellationToken)
-			.ConfigureAwait(false);
-	}
+            return await ListGrpcAsync(
+                    req, deadline, userCredentials,
+                    channelInfo.CallInvoker, cancellationToken
+                )
+                .ConfigureAwait(false);
+        }
 
-	/// <summary>
-	/// Lists all persistent subscriptions.
-	/// </summary>
-	internal async Task<IEnumerable<PersistentSubscriptionInfo>> ListAllAsync(TimeSpan? deadline = null,
-	                                                                          UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+        try {
+            var result = await HttpGet<IList<PersistentSubscriptionDto>>(
+                    "/subscriptions",
+                    () => throw new PersistentSubscriptionNotFoundException(string.Empty, string.Empty),
+                    channelInfo, deadline, userCredentials,
+                    cancellationToken
+                )
+                .ConfigureAwait(false);
 
-		var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-		if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsList) {
-			var req = new ListReq {
-				Options = new ListReq.Types.Options {
-					ListAllSubscriptions = new Empty()
-				}
-			};
+            return result.Select(PersistentSubscriptionInfo.From);
+        }
+        catch (AccessDeniedException ex) when (userCredentials != null) { // Required to get same gRPC behavior.
+            throw new NotAuthenticatedException(ex.Message, ex);
+        }
+    }
 
-			return await ListGrpcAsync(req, deadline, userCredentials, channelInfo.CallInvoker, cancellationToken)
-				.ConfigureAwait(false);
-		}
+    async Task<IEnumerable<PersistentSubscriptionInfo>> ListGrpcAsync(
+        ListReq req, TimeSpan? deadline,
+        UserCredentials? userCredentials, CallInvoker callInvoker, CancellationToken cancellationToken
+    ) {
+        using var call = new PersistentSubscriptionsService.PersistentSubscriptionsServiceClient(callInvoker)
+            .ListAsync(
+                req, KurrentDBCallOptions.CreateNonStreaming(
+                    Settings, deadline, userCredentials,
+                    cancellationToken
+                )
+            );
 
-		try {
-			var result = await HttpGet<IList<PersistentSubscriptionDto>>("/subscriptions",
-					onNotFound: () => throw new PersistentSubscriptionNotFoundException(string.Empty, string.Empty),
-					channelInfo, deadline, userCredentials, cancellationToken)
-				.ConfigureAwait(false);
+        var response = await call.ResponseAsync.ConfigureAwait(false);
 
-			return result.Select(PersistentSubscriptionInfo.From);
-		} catch (AccessDeniedException ex) when (userCredentials != null) { // Required to get same gRPC behavior.
-			throw new NotAuthenticatedException(ex.Message, ex);
-		}
-	}
+        return response.Subscriptions.Select(PersistentSubscriptionInfo.From);
+    }
 
-	async Task<IEnumerable<PersistentSubscriptionInfo>> ListGrpcAsync(ListReq req, TimeSpan? deadline,
-	                                                                  UserCredentials? userCredentials, CallInvoker callInvoker, CancellationToken cancellationToken) {
+    async Task<IEnumerable<PersistentSubscriptionInfo>> ListHttpAsync(
+        string streamName,
+        ChannelInfo channelInfo, TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken
+    ) {
+        var path = $"/subscriptions/{UrlEncode(streamName)}";
+        var result = await HttpGet<IList<PersistentSubscriptionDto>>(
+                path,
+                () => throw new PersistentSubscriptionNotFoundException(streamName, string.Empty),
+                channelInfo, deadline, userCredentials,
+                cancellationToken
+            )
+            .ConfigureAwait(false);
 
-		using var call = new PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
-			.ListAsync(req, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
-
-		ListResp? response = await call.ResponseAsync.ConfigureAwait(false);
-
-		return response.Subscriptions.Select(PersistentSubscriptionInfo.From);
-	}
-
-	async Task<IEnumerable<PersistentSubscriptionInfo>> ListHttpAsync(string streamName,
-	                                                                  ChannelInfo channelInfo, TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
-
-		var path = $"/subscriptions/{UrlEncode(streamName)}";
-		var result = await HttpGet<IList<PersistentSubscriptionDto>>(path,
-				onNotFound: () => throw new PersistentSubscriptionNotFoundException(streamName, string.Empty),
-				channelInfo, deadline, userCredentials, cancellationToken)
-			.ConfigureAwait(false);
-		return result.Select(PersistentSubscriptionInfo.From);
-	}
+        return result.Select(PersistentSubscriptionInfo.From);
+    }
 }

@@ -11,12 +11,50 @@ using Serilog.Extensions.Logging;
 
 namespace Kurrent.Client.Tests;
 
-
 [PublicAPI]
 public partial class KurrentClientTestFixture : TestFixture {
+    readonly Lazy<KurrentClient> _lazyAutomaticClient = new(() => CreateClient(options => options.WithSchema(KurrentClientSchemaOptions.NoValidation)));
+    readonly Lazy<KurrentClient> _lazyCorpoClient     = new(() => CreateClient(options => options.WithSchema(KurrentClientSchemaOptions.FullValidation)));
+
+    readonly Lazy<KurrentClient> _lazyLightweightClient = new(() => CreateClient());
+
+    /// <summary>
+    /// The KurrentDB test container instance used for integration tests.
+    /// </summary>
+    public static KurrentDBTestContainer? Container { get; private set; }
+
+    /// <summary>
+    /// Indicates whether the KurrentDB test container is available for use in tests.
+    /// </summary>
+    public static bool IsContainerAvailable => Container is not null;
+
+    /// <summary>
+    /// The connection string for authenticated access to the KurrentDB test container.
+    /// </summary>
+    public static string AuthenticatedConnectionString { get; private set; } = null!;
+
+    /// <summary>
+    /// The connection string for anonymous access to the KurrentDB test container.
+    /// </summary>
+    public static string AnonymousConnectionString { get; private set; } = null!;
+
+    /// <summary>
+    /// Lightweight client with automatic serde and without any schema integration configured
+    /// </summary>
+    protected KurrentClient LightweightClient => _lazyAutomaticClient.Value;
+
+    /// <summary>
+    /// Lightweight client with automatic schema registration enabled but without validation on consumption.
+    /// </summary>
+    protected KurrentClient AutomaticClient => _lazyAutomaticClient.Value;
+
+    /// <summary>
+    /// Client with full schema integration enabled, which includes schema auto registration and validation.
+    /// </summary>
+    protected KurrentClient CorpoClient => _lazyCorpoClient.Value;
+
     [Before(Assembly)]
     public static async Task AssemblySetUp(AssemblyHookContext context, CancellationToken cancellationToken) {
-
         // "TESTCONTAINER_KURRENTDB_IMAGE"
 
         var options = ApplicationContext.Configuration
@@ -50,47 +88,7 @@ public partial class KurrentClientTestFixture : TestFixture {
     }
 
     [BeforeEvery(Test)]
-    public static void TestSetUp(TestContext context) =>
-        Container?.ReportStatus();
-
-    /// <summary>
-    /// The KurrentDB test container instance used for integration tests.
-    /// </summary>
-    public static KurrentDBTestContainer? Container { get; private set; }
-
-    /// <summary>
-    /// Indicates whether the KurrentDB test container is available for use in tests.
-    /// </summary>
-    public static bool IsContainerAvailable => Container is not null;
-
-    /// <summary>
-    /// The connection string for authenticated access to the KurrentDB test container.
-    /// </summary>
-    public static string AuthenticatedConnectionString { get; private set; } = null!;
-
-    /// <summary>
-    /// The connection string for anonymous access to the KurrentDB test container.
-    /// </summary>
-    public static string AnonymousConnectionString { get; private set; } = null!;
-
-    readonly Lazy<KurrentClient> _lazyLightweightClient = new(() => CreateClient());
-    readonly Lazy<KurrentClient> _lazyAutomaticClient   = new(() => CreateClient(options => options.WithSchema(KurrentClientSchemaOptions.NoValidation)));
-    readonly Lazy<KurrentClient> _lazyCorpoClient       = new(() => CreateClient(options => options.WithSchema(KurrentClientSchemaOptions.FullValidation)));
-
-    /// <summary>
-    /// Lightweight client with automatic serde and without any schema integration configured
-    /// </summary>
-    protected KurrentClient LightweightClient => _lazyAutomaticClient.Value;
-
-    /// <summary>
-    /// Lightweight client with automatic schema registration enabled but without validation on consumption.
-    /// </summary>
-	protected KurrentClient AutomaticClient => _lazyAutomaticClient.Value;
-
-    /// <summary>
-    /// Client with full schema integration enabled, which includes schema auto registration and validation.
-    /// </summary>
-    protected KurrentClient CorpoClient => _lazyCorpoClient.Value;
+    public static void TestSetUp(TestContext context) => Container?.ReportStatus();
 
     /// <summary>
     /// Creates a new instance of <see cref="KurrentClient"/> with the specified configuration options.

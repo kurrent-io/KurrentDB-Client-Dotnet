@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-<!--    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>-->
+    <!--    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>-->
     <PackageId>KurrentDB.Client</PackageId>
     <IsPackable>true</IsPackable>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -12,10 +12,10 @@
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="12.0.0" />
     <PackageReference Include="Google.Protobuf" Version="3.31.1" />
-		<PackageReference Include="Grpc.StatusProto" Version="2.71.0" />
+    <PackageReference Include="Grpc.StatusProto" Version="2.71.0" />
     <PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0" />
     <PackageReference Include="Humanizer.Core" Version="2.14.1" />
-<!--    <PackageReference Include="LruCacheNet" Version="1.2.0" />-->
+    <!--    <PackageReference Include="LruCacheNet" Version="1.2.0" />-->
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.6" />
     <PackageReference Include="NJsonSchema" Version="11.3.2" />
     <PackageReference Include="OneOf" Version="3.0.271" />
@@ -123,55 +123,55 @@
     </ItemGroup>
   </Target>
 
-<!--  &lt;!&ndash; Include specific PackageReference dependencies in the package &ndash;&gt;-->
-<!--  <Target Name="PackSelectedPackageReferences" BeforeTargets="GenerateNuspec">-->
-<!--    <ItemGroup>-->
-<!--      &lt;!&ndash; Find all PackageReferences with Pack="true" &ndash;&gt;-->
-<!--      <PackageReferencesToInclude Include="@(PackageReference)" Condition="'%(PackageReference.Pack)' == 'true'" />-->
-<!--    </ItemGroup>-->
+  <!--  &lt;!&ndash; Include specific PackageReference dependencies in the package &ndash;&gt;-->
+  <!--  <Target Name="PackSelectedPackageReferences" BeforeTargets="GenerateNuspec">-->
+  <!--    <ItemGroup>-->
+  <!--      &lt;!&ndash; Find all PackageReferences with Pack="true" &ndash;&gt;-->
+  <!--      <PackageReferencesToInclude Include="@(PackageReference)" Condition="'%(PackageReference.Pack)' == 'true'" />-->
+  <!--    </ItemGroup>-->
 
-<!--    &lt;!&ndash; For each marked PackageReference, find its resolved assemblies &ndash;&gt;-->
-<!--    <ItemGroup>-->
-<!--      <PackageReferenceAssemblies Include="@(ReferenceCopyLocalPaths)"-->
-<!--                                  Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' AND -->
-<!--                                          '@(PackageReferencesToInclude->WithMetadataValue('Identity', '%(ReferenceCopyLocalPaths.NuGetPackageId)'))' != ''" />-->
+  <!--    &lt;!&ndash; For each marked PackageReference, find its resolved assemblies &ndash;&gt;-->
+  <!--    <ItemGroup>-->
+  <!--      <PackageReferenceAssemblies Include="@(ReferenceCopyLocalPaths)"-->
+  <!--                                  Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' AND -->
+  <!--                                          '@(PackageReferencesToInclude->WithMetadataValue('Identity', '%(ReferenceCopyLocalPaths.NuGetPackageId)'))' != ''" />-->
 
-<!--      &lt;!&ndash; Add them to the package &ndash;&gt;-->
-<!--      <_PackageFiles Include="@(PackageReferenceAssemblies)">-->
-<!--        <PackagePath>lib\$(TargetFramework)\%(Filename)%(Extension)</PackagePath>-->
-<!--        <Visible>false</Visible>-->
-<!--        <BuildAction>None</BuildAction>-->
-<!--      </_PackageFiles>-->
-<!--    </ItemGroup>-->
-<!--  </Target>-->
+  <!--      &lt;!&ndash; Add them to the package &ndash;&gt;-->
+  <!--      <_PackageFiles Include="@(PackageReferenceAssemblies)">-->
+  <!--        <PackagePath>lib\$(TargetFramework)\%(Filename)%(Extension)</PackagePath>-->
+  <!--        <Visible>false</Visible>-->
+  <!--        <BuildAction>None</BuildAction>-->
+  <!--      </_PackageFiles>-->
+  <!--    </ItemGroup>-->
+  <!--  </Target>-->
 
-<!--  -->
-<!--  <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">-->
-<!--    <ItemGroup>-->
-<!--      &lt;!&ndash; Get all files from bin folder &ndash;&gt;-->
-<!--      <AllReferencedAssemblies Include="bin\$(Configuration)\**\*.dll" />-->
-<!--      <AllReferencedAssemblies Include="bin\$(Configuration)\**\*.pdb" Condition="'$(Configuration)' == 'Debug'" />-->
+  <!--  -->
+  <!--  <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">-->
+  <!--    <ItemGroup>-->
+  <!--      &lt;!&ndash; Get all files from bin folder &ndash;&gt;-->
+  <!--      <AllReferencedAssemblies Include="bin\$(Configuration)\**\*.dll" />-->
+  <!--      <AllReferencedAssemblies Include="bin\$(Configuration)\**\*.pdb" Condition="'$(Configuration)' == 'Debug'" />-->
 
-<!--      &lt;!&ndash; Remove the main assembly &ndash;&gt;-->
-<!--      <AllReferencedAssemblies Remove="@(AllReferencedAssemblies->WithMetadataValue('FileName', '$(AssemblyName)'))" />-->
+  <!--      &lt;!&ndash; Remove the main assembly &ndash;&gt;-->
+  <!--      <AllReferencedAssemblies Remove="@(AllReferencedAssemblies->WithMetadataValue('FileName', '$(AssemblyName)'))" />-->
 
-<!--      &lt;!&ndash; Filter to only include:-->
-<!--           1. Project references-->
-<!--           2. PackageReferences marked with Pack="true" &ndash;&gt;-->
-<!--      <ReferencedAssemblies Include="@(AllReferencedAssemblies)"-->
-<!--                            Condition="'%(FileName)' == 'Whatever' OR -->
-<!--                                   Exists('$(MSBuildProjectDirectory)\PackageIncludes\%(FileName).marker')" />-->
+  <!--      &lt;!&ndash; Filter to only include:-->
+  <!--           1. Project references-->
+  <!--           2. PackageReferences marked with Pack="true" &ndash;&gt;-->
+  <!--      <ReferencedAssemblies Include="@(AllReferencedAssemblies)"-->
+  <!--                            Condition="'%(FileName)' == 'Whatever' OR -->
+  <!--                                   Exists('$(MSBuildProjectDirectory)\PackageIncludes\%(FileName).marker')" />-->
 
-<!--      &lt;!&ndash; Fallback: If we can't determine package origin, check against our marked packages &ndash;&gt;-->
-<!--      <ReferencedAssemblies Include="@(AllReferencedAssemblies)"-->
-<!--                            Condition="'%(FileName)' == 'FluentValidation'" />-->
+  <!--      &lt;!&ndash; Fallback: If we can't determine package origin, check against our marked packages &ndash;&gt;-->
+  <!--      <ReferencedAssemblies Include="@(AllReferencedAssemblies)"-->
+  <!--                            Condition="'%(FileName)' == 'FluentValidation'" />-->
 
-<!--      <_PackageFiles Include="@(ReferencedAssemblies)">-->
-<!--        <PackagePath>lib\%(RecursiveDir)%(FileName)%(Extension)</PackagePath>-->
-<!--        <Visible>false</Visible>-->
-<!--        <BuildAction>None</BuildAction>-->
-<!--      </_PackageFiles>-->
-<!--    </ItemGroup>-->
-<!--  </Target>-->
+  <!--      <_PackageFiles Include="@(ReferencedAssemblies)">-->
+  <!--        <PackagePath>lib\%(RecursiveDir)%(FileName)%(Extension)</PackagePath>-->
+  <!--        <Visible>false</Visible>-->
+  <!--        <BuildAction>None</BuildAction>-->
+  <!--      </_PackageFiles>-->
+  <!--    </ItemGroup>-->
+  <!--  </Target>-->
 
 </Project>

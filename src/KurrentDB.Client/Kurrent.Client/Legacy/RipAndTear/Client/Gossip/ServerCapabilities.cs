@@ -2,12 +2,12 @@ namespace KurrentDB.Client;
 #pragma warning disable 1591
 
 record ServerCapabilities(
-	string Version = "0.0.0",
-	bool SupportsBatchAppend = false,
-	bool SupportsPersistentSubscriptionsToAll = false,
-	bool SupportsPersistentSubscriptionsGetInfo = false,
-	bool SupportsPersistentSubscriptionsRestartSubsystem = false,
-	bool SupportsPersistentSubscriptionsReplayParked = false,
-	bool SupportsPersistentSubscriptionsList = false,
-	bool SupportsSchemaRegistry = false
+    string Version = "0.0.0",
+    bool SupportsBatchAppend = false,
+    bool SupportsPersistentSubscriptionsToAll = false,
+    bool SupportsPersistentSubscriptionsGetInfo = false,
+    bool SupportsPersistentSubscriptionsRestartSubsystem = false,
+    bool SupportsPersistentSubscriptionsReplayParked = false,
+    bool SupportsPersistentSubscriptionsList = false,
+    bool SupportsSchemaRegistry = false
 );

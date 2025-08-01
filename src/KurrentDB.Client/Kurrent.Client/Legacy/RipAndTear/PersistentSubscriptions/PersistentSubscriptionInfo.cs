@@ -1,5 +1,5 @@
-﻿using EventStore.Client.PersistentSubscriptions;
-using Google.Protobuf.Collections;
+﻿using Google.Protobuf.Collections;
+using KurrentDB.Protocol.PersistentSubscriptions.V1;
 
 namespace KurrentDB.Client;
 

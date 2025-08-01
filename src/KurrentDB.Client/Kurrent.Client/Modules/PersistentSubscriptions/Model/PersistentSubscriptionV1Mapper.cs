@@ -9,7 +9,7 @@ using Kurrent.Client.Schema;
 using Kurrent.Client.Schema.Serialization;
 using Kurrent.Client.Streams;
 using KurrentDB.Client;
-using Contracts = EventStore.Client.PersistentSubscriptions;
+using Contracts = KurrentDB.Protocol.PersistentSubscriptions.V1;
 
 namespace Kurrent.Client.PersistentSubscriptions;
 

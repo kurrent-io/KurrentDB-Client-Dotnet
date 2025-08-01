@@ -21,9 +21,9 @@
     <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-<!--    <EmbedAllSources>true</EmbedAllSources>-->
-<!--    <EmbedUntrackedSources>true</EmbedUntrackedSources>-->
-<!--    <IncludeBuildOutput>true</IncludeBuildOutput>-->
+    <!--    <EmbedAllSources>true</EmbedAllSources>-->
+    <!--    <EmbedUntrackedSources>true</EmbedUntrackedSources>-->
+    <!--    <IncludeBuildOutput>true</IncludeBuildOutput>-->
     <DebugType>full</DebugType>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 
