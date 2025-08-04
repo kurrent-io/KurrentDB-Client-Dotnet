@@ -54,13 +54,13 @@ public class KurrentClient : IAsyncDisposable {
     internal MessageTypeMapper TypeMapper      => Options.Mapper;
     internal IMetadataDecoder  MetadataDecoder => Options.MetadataDecoder;
 
-    public StreamsClient                                         Streams                 { get; }
-    public RegistryClient                                        Registry                { get; }
-    public FeaturesClient                                        Features                { get; }
-    public UsersClient                                           Users                   { get; }
+    public StreamsClient                 Streams                 { get; }
+    public RegistryClient                Registry                { get; }
+    public FeaturesClient                Features                { get; }
+    public UsersClient                   Users                   { get; }
     public PersistentSubscriptionsClient PersistentSubscriptions { get; }
-    public OperationsClient                           Operations              { get; }
-    public ProjectionsClient                                     Projections             { get; }
+    public OperationsClient              Operations              { get; }
+    public ProjectionsClient             Projections             { get; }
 
 	internal async Task<ServerFeatures> ForceRefresh(CancellationToken cancellationToken = default) {
 		await LegacyCallInvoker.ForceRefresh(cancellationToken).ConfigureAwait(false);

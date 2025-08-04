@@ -7,8 +7,6 @@ option java_package        = "io.kurrentdb.protocol.streams.v2";
 option java_multiple_files = true;
 
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/duration.proto";
-import "google/protobuf/struct.proto";
 import "google/protobuf/descriptor.proto";
 import "core.proto";
 
@@ -43,7 +41,7 @@ message ErrorDetails {
   message StreamTombstoned {
     option (error_info) = {
       code : "STREAM_TOMBSTONED",
-      severity : RECOVERABLE,
+      severity : FATAL,
       message : "The stream has been tombstoned and cannot be used anymore."
     };
 
@@ -110,6 +108,7 @@ message ErrorDetails {
     };
   }
 
+
   message LogPositionNotFound {
     option (error_info) = {
       code : "LOG_POSITION_NOT_FOUND",
@@ -148,6 +147,14 @@ message ErrorDetails {
       code : "PERSISTENT_SUBSCRIPTION_DROPPED",
       severity : RECOVERABLE,
       message : "The persistent subscription has been dropped."
+    };
+  }
+
+  message ConnectorNotFound {
+    option (error_info) = {
+      code : "CONNECTOR_NOT_FOUND",
+      severity : RECOVERABLE,
+      message : "The specified connector was not found."
     };
   }
 }

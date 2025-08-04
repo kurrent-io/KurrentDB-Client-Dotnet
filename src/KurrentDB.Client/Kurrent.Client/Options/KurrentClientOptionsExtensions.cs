@@ -3,7 +3,6 @@ using KurrentDB.Client;
 
 namespace Kurrent.Client;
 
-#pragma warning disable CS8524
 public static class KurrentClientOptionsExtensions {
     /// <summary>
     /// Converts the current options to a valid KurrentDB connection string.

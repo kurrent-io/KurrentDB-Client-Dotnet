@@ -1,7 +1,8 @@
 using Kurrent.Client.Testing.TUnit;
+using KurrentDB.Client;
 using static KurrentDB.Client.ClusterMessages.VNodeState;
 
-namespace KurrentDB.Client.Tests;
+namespace Kurrent.Client.Tests.Legacy;
 
 [Category("Legacy")]
 public class NodePreferenceComparerTests {

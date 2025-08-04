@@ -61,6 +61,16 @@ static class KurrentDBLegacyExceptionMappers {
 		    ? new(x => x.With("stream", streamName).With("group", groupName))
 		    : throw new InvalidCastException($"Expected {nameof(PersistentSubscriptionDroppedByServerException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.PersistentSubscriptionDropped)}.", ex);
 
+    public static ErrorDetails.ConnectorNotFound AsConnectorNotFoundError(this Exception ex) =>
+        ex is RpcException
+            ? new(x => x.With("reason", "Connector not found."))
+            : throw new InvalidCastException($"Expected {nameof(RpcException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.ConnectorNotFound)}.", ex);
+
+    public static ErrorDetails.ConnectorNotFound AsConnectorNotFoundError(this Exception ex, string connectorId) =>
+        ex is RpcException
+            ? new(x => x.With("connectorId", connectorId))
+            : throw new InvalidCastException($"Expected {nameof(RpcException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.ConnectorNotFound)}.", ex);
+
     public static StreamState MapToLegacyExpectedState(this ExpectedStreamState expectedState) {
         return expectedState switch {
             _ when expectedState == ExpectedStreamState.Any          => StreamState.Any,

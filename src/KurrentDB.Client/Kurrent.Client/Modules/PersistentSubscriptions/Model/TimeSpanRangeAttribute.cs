@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Kurrent.Client;
+namespace Kurrent.Client.PersistentSubscriptions;
 
 /// <summary>
 /// Validates that a TimeSpan value is within the specified range.

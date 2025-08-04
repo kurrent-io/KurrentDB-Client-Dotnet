@@ -1,7 +1,5 @@
 // ReSharper disable CheckNamespace
 
-using Kurrent;
-
 namespace Kurrent.Variant;
 
 /// <summary>

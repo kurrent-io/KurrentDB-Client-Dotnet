@@ -96,4 +96,11 @@ public static partial class ErrorDetails {
     /// </summary>
     [KurrentOperationError(typeof(KurrentDB.Protocol.Registry.V2.ErrorDetails.Types.SchemaAlreadyExists))]
     public readonly partial record struct SchemaAlreadyExists;
+
+
+    /// <summary>
+    /// Represents an error indicating that the specified connector could not be found.
+    /// </summary>
+    [KurrentOperationError(typeof(Types.ConnectorNotFound))]
+    public readonly partial record struct ConnectorNotFound;
 }
