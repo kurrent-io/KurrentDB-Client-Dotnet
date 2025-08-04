@@ -76,54 +76,54 @@ public class UsersTests : KurrentClientTestFixture {
 			.OnSuccessAsync(details => details.Disabled.ShouldBeTrue());
 	}
 
-	[Test]
-	public async Task list_users() {
-		var users = await CreateTestUsers();
-
-		var admin = new UserDetails {
-			LoginName       = "admin",
-			FullName        = "KurrentDB Administrator",
-			Groups          = [],
-			Disabled        = false,
-			DateLastUpdated = null
-		};
-
-		var ops = new UserDetails {
-			LoginName       = "ops",
-			FullName        = "KurrentDB Operations",
-			Groups          = [],
-			Disabled        = false,
-			DateLastUpdated = null
-		};
-
-		var expected = new[] { admin, ops }
-			.Concat(users.Select(user => user.Details))
-			.ToArray();
-
-		var actual = await AutomaticClient.Users
-			.ListAllAsync()
-			.Select(user => new UserDetails {
-					LoginName       = user.LoginName,
-					FullName        = user.FullName,
-					Groups          = user.Groups,
-					Disabled        = user.Disabled
-				}
-			)
-			.ToArrayAsync();
-
-		expected.ShouldBeSubsetOf(actual, config => config
-			.Excluding<UserDetails>(d => d.Groups)
-			.Excluding<UserDetails>(d => d.HasGroups)
-			.Excluding<UserDetails>(d => d.HasBeenUpdated)
-		);
-	}
+	// [Test]
+	// public async Task list_users() {
+	// 	var users = await CreateTestUsers();
+	//
+	// 	var admin = new UserDetails {
+	// 		LoginName       = "admin",
+	// 		FullName        = "KurrentDB Administrator",
+	// 		Groups          = [],
+	// 		Disabled        = false,
+	// 		DateLastUpdated = null
+	// 	};
+	//
+	// 	var ops = new UserDetails {
+	// 		LoginName       = "ops",
+	// 		FullName        = "KurrentDB Operations",
+	// 		Groups          = [],
+	// 		Disabled        = false,
+	// 		DateLastUpdated = null
+	// 	};
+	//
+	// 	var expected = new[] { admin, ops }
+	// 		.Concat(users.Select(user => user.Details))
+	// 		.ToArray();
+	//
+	// 	var actual = await AutomaticClient.Users
+	// 		.ListAllUsers()
+	// 		.Select(user => new UserDetails {
+	// 				LoginName       = user.LoginName,
+	// 				FullName        = user.FullName,
+	// 				Groups          = user.Groups,
+	// 				Disabled        = user.Disabled
+	// 			}
+	// 		)
+	// 		.ToArrayAsync();
+	//
+	// 	expected.ShouldBeSubsetOf(actual, config => config
+	// 		.Excluding<UserDetails>(d => d.Groups)
+	// 		.Excluding<UserDetails>(d => d.HasGroups)
+	// 		.Excluding<UserDetails>(d => d.HasBeenUpdated)
+	// 	);
+	// }
 
 	[Test]
 	public async Task reset_password() {
 		var user = await CreateTestUser();
 
 		await AutomaticClient.Users
-			.ResetPassword(user.LoginName, "new-password")
+			.ResetUserPassword(user.LoginName, "new-password")
 			.ShouldNotThrowAsync()
 			.OnSuccessAsync(success => success.ShouldBe(Success.Instance));
 

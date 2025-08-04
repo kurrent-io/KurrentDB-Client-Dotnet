@@ -1,3 +1,4 @@
+using Kurrent.Client.Connectors;
 using Kurrent.Client.Features;
 using Kurrent.Client.Legacy;
 using Kurrent.Client.Operations;
@@ -45,6 +46,7 @@ public class KurrentClient : IAsyncDisposable {
         Projections             = new ProjectionsClient(this);
         Users                   = new UsersClient(this);
         Features                = new FeaturesClient(this);
+        Connectors              = new ConnectorsClient(this);
     }
 
     internal KurrentClientOptions       Options            { get; }
@@ -61,6 +63,7 @@ public class KurrentClient : IAsyncDisposable {
     public PersistentSubscriptionsClient PersistentSubscriptions { get; }
     public OperationsClient              Operations              { get; }
     public ProjectionsClient             Projections             { get; }
+    public ConnectorsClient              Connectors              { get; }
 
 	internal async Task<ServerFeatures> ForceRefresh(CancellationToken cancellationToken = default) {
 		await LegacyCallInvoker.ForceRefresh(cancellationToken).ConfigureAwait(false);

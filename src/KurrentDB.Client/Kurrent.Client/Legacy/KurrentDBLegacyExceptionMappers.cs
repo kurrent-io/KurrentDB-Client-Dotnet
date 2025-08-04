@@ -71,12 +71,12 @@ static class KurrentDBLegacyExceptionMappers {
             ? new(x => x.With("connectorId", connectorId))
             : throw new InvalidCastException($"Expected {nameof(RpcException)} but got {ex.GetType().Name} while mapping to {nameof(ErrorDetails.ConnectorNotFound)}.", ex);
 
-    public static StreamState MapToLegacyExpectedState(this ExpectedStreamState expectedState) {
-        return expectedState switch {
-            _ when expectedState == ExpectedStreamState.Any          => StreamState.Any,
-            _ when expectedState == ExpectedStreamState.NoStream     => StreamState.NoStream,
-            _ when expectedState == ExpectedStreamState.StreamExists => StreamState.StreamExists,
-            _                                                        => StreamState.StreamRevision(expectedState)
-        };
-    }
+    // public static StreamState MapToLegacyExpectedState(this ExpectedStreamState expectedState) {
+    //     return expectedState switch {
+    //         _ when expectedState == ExpectedStreamState.Any          => StreamState.Any,
+    //         _ when expectedState == ExpectedStreamState.NoStream     => StreamState.NoStream,
+    //         _ when expectedState == ExpectedStreamState.StreamExists => StreamState.StreamExists,
+    //         _                                                        => StreamState.StreamRevision(expectedState)
+    //     };
+    // }
 }

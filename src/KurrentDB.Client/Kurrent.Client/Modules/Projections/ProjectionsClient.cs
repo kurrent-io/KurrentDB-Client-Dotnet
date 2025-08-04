@@ -7,7 +7,7 @@ namespace Kurrent.Client.Projections;
 public sealed partial class ProjectionsClient {
     internal ProjectionsClient(KurrentClient source) {
         LegacySettings = source.Options.ConvertToLegacySettings();
-        ServiceClient  = new ProjectionsServiceClient(source.LegacyCallInvoker);
+        ServiceClient  = new(source.LegacyCallInvoker);
     }
 
     internal KurrentDBClientSettings  LegacySettings { get; }

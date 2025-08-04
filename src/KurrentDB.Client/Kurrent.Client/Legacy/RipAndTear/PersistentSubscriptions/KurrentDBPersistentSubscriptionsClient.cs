@@ -23,18 +23,18 @@ sealed partial class KurrentDBPersistentSubscriptionsClient : KurrentDBClientBas
 	/// </summary>
 	public KurrentDBPersistentSubscriptionsClient(KurrentDBClientSettings? settings) : base(settings,
 		new Dictionary<string, Func<RpcException, Exception>> {
-			[Constants.Exceptions.PersistentSubscriptionDoesNotExist] = ex => new
+			[Constants.LegacyExceptions.PersistentSubscriptionDoesNotExist] = ex => new
 				PersistentSubscriptionNotFoundException(
-					ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
-					ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.GroupName)?.Value ?? "", ex),
-			[Constants.Exceptions.MaximumSubscribersReached] = ex => new
+					ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.StreamName).Value,
+					ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyExceptions.GroupName)?.Value ?? "", ex),
+			[Constants.LegacyExceptions.MaximumSubscribersReached] = ex => new
 				MaximumSubscribersReachedException(
-					ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
-					ex.Trailers.First(x => x.Key == Constants.Exceptions.GroupName).Value, ex),
-			[Constants.Exceptions.PersistentSubscriptionDropped] = ex => new
+					ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.StreamName).Value,
+					ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.GroupName).Value, ex),
+			[Constants.LegacyExceptions.PersistentSubscriptionDropped] = ex => new
 				PersistentSubscriptionDroppedByServerException(
-					ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
-					ex.Trailers.First(x => x.Key == Constants.Exceptions.GroupName).Value, ex)
+					ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.StreamName).Value,
+					ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.GroupName).Value, ex)
 		}) {
 		_log = Settings.LoggerFactory.CreateLogger<KurrentDBPersistentSubscriptionsClient>();
 

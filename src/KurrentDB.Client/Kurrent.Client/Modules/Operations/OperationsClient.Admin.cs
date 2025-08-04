@@ -10,14 +10,15 @@ using KurrentDB.Protocol.Operations.V1;
 namespace Kurrent.Client.Operations;
 
 public partial class OperationsClient {
-	static readonly Empty EmptyResult = new Empty();
+	static readonly Empty EmptyRequest = new Empty();
 
 	public async ValueTask<Result<Success, ShutdownError>> Shutdown(CancellationToken cancellationToken = default) {
 		try {
-			using var call = ServiceClient.ShutdownAsync(EmptyResult, cancellationToken: cancellationToken);
-			await call.ResponseAsync.ConfigureAwait(false);
+            await ServiceClient
+                .ShutdownAsync(EmptyRequest, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-			return new Result<Success, ShutdownError>();
+			return new Success();
 		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
 			return Result.Failure<Success, ShutdownError>(
 				ex switch {
@@ -33,10 +34,11 @@ public partial class OperationsClient {
 
 	public async ValueTask<Result<Success, MergeIndexesError>> MergeIndexes(CancellationToken cancellationToken = default) {
 		try {
-			using var call = ServiceClient.MergeIndexesAsync(EmptyResult, cancellationToken: cancellationToken);
-			await call.ResponseAsync.ConfigureAwait(false);
+            await ServiceClient
+                .MergeIndexesAsync(EmptyRequest, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-			return new Result<Success, MergeIndexesError>();
+            return new Success();
 		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
 			return Result.Failure<Success, MergeIndexesError>(
 				ex switch {
@@ -52,10 +54,11 @@ public partial class OperationsClient {
 
 	public async ValueTask<Result<Success, ResignNodeError>> ResignNode(CancellationToken cancellationToken = default) {
 		try {
-			using var call = ServiceClient.ResignNodeAsync(EmptyResult, cancellationToken: cancellationToken);
-			await call.ResponseAsync.ConfigureAwait(false);
+			await ServiceClient
+                .ResignNodeAsync(EmptyRequest, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-			return new Result<Success, ResignNodeError>();
+            return new Success();
 		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
 			return Result.Failure<Success, ResignNodeError>(
 				ex switch {
@@ -71,10 +74,11 @@ public partial class OperationsClient {
 
 	public async ValueTask<Result<Success, SetNodePriorityError>> SetNodePriority(int nodePriority, CancellationToken cancellationToken = default) {
 		try {
-			using var call = ServiceClient.SetNodePriorityAsync(new SetNodePriorityReq { Priority = nodePriority }, cancellationToken: cancellationToken);
-			await call.ResponseAsync.ConfigureAwait(false);
+            await ServiceClient
+                .SetNodePriorityAsync(new SetNodePriorityReq { Priority = nodePriority }, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-			return new Result<Success, SetNodePriorityError>();
+            return new Success();
 		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
 			return Result.Failure<Success, SetNodePriorityError>(
 				ex switch {
@@ -90,10 +94,11 @@ public partial class OperationsClient {
 
 	public async ValueTask<Result<Success, RestartPersistentSubscriptionsError>> RestartPersistentSubscriptions(CancellationToken cancellationToken = default) {
 		try {
-			using var call = ServiceClient.RestartPersistentSubscriptionsAsync(EmptyResult, cancellationToken: cancellationToken);
-			await call.ResponseAsync.ConfigureAwait(false);
+			await ServiceClient
+                .RestartPersistentSubscriptionsAsync(EmptyRequest, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-			return new Result<Success, RestartPersistentSubscriptionsError>();
+            return new Success();
 		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
 			return Result.Failure<Success, RestartPersistentSubscriptionsError>(
 				ex switch {

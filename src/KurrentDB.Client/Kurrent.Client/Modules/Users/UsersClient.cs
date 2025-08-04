@@ -9,209 +9,251 @@ using static KurrentDB.Protocol.Users.V1.UsersService;
 namespace Kurrent.Client.Users;
 
 public class UsersClient {
-	internal UsersClient(KurrentClient source) =>
+    internal UsersClient(KurrentClient source) =>
         ServiceClient = new UsersServiceClient(source.LegacyCallInvoker);
 
     UsersServiceClient ServiceClient { get; }
 
-	public async ValueTask<Result<Success, ChangePasswordError>> ChangePassword(
-		string loginName, string currentPassword, string newPassword, CancellationToken cancellationToken = default
-	) {
-		try {
-			await ServiceClient.ChangePasswordAsync(
-				new ChangePasswordReq {
-					Options = new() {
-						CurrentPassword = currentPassword,
-						NewPassword     = newPassword,
-						LoginName       = loginName
-					}
-				},
-				cancellationToken: cancellationToken
-			);
+    public async ValueTask<Result<Success, ChangeUserPasswordError>> ChangeUserPassword(
+        string loginName, string currentPassword, string newPassword, CancellationToken cancellationToken = default
+    ) {
+        try {
+            var request = new ChangePasswordReq {
+                Options = new() {
+                    CurrentPassword = currentPassword,
+                    NewPassword     = newPassword,
+                    LoginName       = loginName
+                }
+            };
 
-			return new Result<Success, ChangePasswordError>();
-		} catch (RpcException ex) {
-			return Result.Failure<Success, ChangePasswordError>(
-				ex.StatusCode switch {
-					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(ChangePassword), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentClientException.CreateUnknown(nameof(ChangePassword), ex);
-		}
-	}
+            // TODO SS: does the user exist? do we want to be explicit about this?
 
-	public async ValueTask<Result<Success, CreateUserError>> CreateUser(
-		string loginName, string fullName, string[] groups, string password,
-		CancellationToken cancellationToken = default
-	) {
-		try {
-			await ServiceClient
-				.CreateAsync(
-					new CreateReq {
-						Options = new() {
-							LoginName = loginName,
-							FullName  = fullName,
-							Password  = password,
-							Groups    = { groups }
-						}
-					},
-					cancellationToken: cancellationToken
-				);
+            await ServiceClient
+                .ChangePasswordAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-			return new Result<Success, CreateUserError>();
-		} catch (RpcException ex) {
-			return Result.Failure<Success, CreateUserError>(
-				ex.StatusCode switch {
-					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(CreateUser), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentClientException.CreateUnknown(nameof(CreateUser), ex);
-		}
-	}
+            return new Success();
+        }
+        catch (RpcException ex) {
+            return Result.Failure<Success, ChangeUserPasswordError>(
+                ex.StatusCode switch {
+                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+                    _                           => throw KurrentClientException.CreateUnknown(nameof(ChangeUserPassword), ex)
+                }
+            );
+        }
+        catch (Exception ex) {
+            throw KurrentClientException.CreateUnknown(nameof(ChangeUserPassword), ex);
+        }
+    }
 
-	public async ValueTask<Result<Success, DeleteUserError>> DeleteUser(string loginName, CancellationToken cancellationToken = default) {
-		try {
-			await ServiceClient.DeleteAsync(
-				new DeleteReq {
-					Options = new() {
-						LoginName = loginName
-					}
-				},
-				cancellationToken: cancellationToken
-			);
+    public async ValueTask<Result<Success, CreateUserError>> CreateUser(
+        string loginName, string fullName, string[] groups, string password,
+        CancellationToken cancellationToken = default
+    ) {
+        try {
+            var request = new CreateReq {
+                Options = new() {
+                    LoginName = loginName,
+                    FullName  = fullName,
+                    Password  = password,
+                    Groups    = { groups }
+                }
+            };
 
-			return new Result<Success, DeleteUserError>();
-		} catch (RpcException ex) {
-			return Result.Failure<Success, DeleteUserError>(
-				ex.StatusCode switch {
-					StatusCode.NotFound         => ex.AsUserNotFoundError(),
-					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(GetUser), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentClientException.CreateUnknown(nameof(DeleteUser), ex);
-		}
-	}
+            // TODO SS: does the user already exist? do we want to be explicit about this?
 
-	public async ValueTask<Result<Success, DisableUserError>> DisableUser(string loginName, CancellationToken cancellationToken = default) {
-		try {
-			await ServiceClient.DisableAsync(
-				new DisableReq {
-					Options = new() {
-						LoginName = loginName
-					}
-				}, cancellationToken: cancellationToken
-			);
+            await ServiceClient
+                .CreateAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-			return new Result<Success, DisableUserError>();
-		} catch (RpcException ex) {
-			return Result.Failure<Success, DisableUserError>(
-				ex.StatusCode switch {
-					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(DisableUser), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentClientException.CreateUnknown(nameof(DisableUser), ex);
-		}
-	}
+            return new Success();
+        }
+        catch (RpcException ex) {
+            return Result.Failure<Success, CreateUserError>(
+                ex.StatusCode switch {
+                    StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
+                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+                    _                           => throw KurrentClientException.CreateUnknown(nameof(CreateUser), ex)
+                }
+            );
+        }
+        catch (Exception ex) {
+            throw KurrentClientException.CreateUnknown(nameof(CreateUser), ex);
+        }
+    }
 
-	public async ValueTask<Result<Success, EnableUserError>> EnableUser(string loginName, CancellationToken cancellationToken = default) {
-		try {
-			await ServiceClient.EnableAsync(
-				new EnableReq {
-					Options = new() {
-						LoginName = loginName
-					}
-				},
-				cancellationToken: cancellationToken
-			);
+    public async ValueTask<Result<Success, DeleteUserError>> DeleteUser(string loginName, CancellationToken cancellationToken = default) {
+        try {
+            var request = new DeleteReq { Options = new() { LoginName = loginName } };
 
-			return new Result<Success, EnableUserError>();
-		} catch (RpcException ex) {
-			return Result.Failure<Success, EnableUserError>(
-				ex.StatusCode switch {
-					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(EnableUser), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentClientException.CreateUnknown(nameof(EnableUser), ex);
-		}
-	}
+            // TODO SS: does the user exist? do we want to be explicit about this?
 
-	public async ValueTask<Result<UserDetails, GetUserError>> GetUser(string loginName, CancellationToken cancellationToken = default) {
-		try {
-			return await ListAllCore(loginName, cancellationToken)
-				.FirstAsync(cancellationToken: cancellationToken)
-				.ConfigureAwait(false);
-		} catch (RpcException ex) {
-			return Result.Failure<UserDetails, GetUserError>(
-				ex.StatusCode switch {
-					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(GetUser), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentClientException.CreateUnknown(nameof(GetUser), ex);
-		}
-	}
+            await ServiceClient
+                .DeleteAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-	public IAsyncEnumerable<UserDetails> ListAllAsync(CancellationToken cancellationToken = default) => ListAllCore(null, cancellationToken);
+            return new Success();
+        }
+        catch (RpcException ex) {
+            return Result.Failure<Success, DeleteUserError>(
+                ex.StatusCode switch {
+                    StatusCode.NotFound         => ex.AsUserNotFoundError(),
+                    StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
+                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+                    _                           => throw KurrentClientException.CreateUnknown(nameof(GetUser), ex)
+                }
+            );
+        }
+        catch (Exception ex) {
+            throw KurrentClientException.CreateUnknown(nameof(DeleteUser), ex);
+        }
+    }
 
-	IAsyncEnumerable<UserDetails> ListAllCore(string? loginName, CancellationToken cancellationToken = default) {
-		var req = loginName is not null
-			? new DetailsReq { Options = new() { LoginName = loginName } }
-			: new DetailsReq();
+    public async ValueTask<Result<Success, DisableUserError>> DisableUser(string loginName, CancellationToken cancellationToken = default) {
+        try {
+            var request = new DisableReq { Options = new() { LoginName = loginName } };
 
-		var call = ServiceClient.Details(req, cancellationToken: cancellationToken);
+            // TODO SS: does the user exist? do we want to be explicit about this?
 
-		return call.ResponseStream
-			.ReadAllAsync(cancellationToken)
-			.Select(static dr => new UserDetails {
-					LoginName       = dr.UserDetails.LoginName,
-					FullName        = dr.UserDetails.FullName,
-					Groups          = dr.UserDetails.Groups.ToArray(),
-					Disabled        = dr.UserDetails.Disabled,
-					DateLastUpdated = dr.UserDetails.LastUpdated?.TicksSinceEpoch.FromTicksSinceEpoch()
-				}
-			);
-	}
+            await ServiceClient
+                .DisableAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-	public async ValueTask<Result<Success, ResetPasswordError>> ResetPassword(
-		string loginName, string newPassword, CancellationToken cancellationToken = default
-	) {
-		try {
-			await ServiceClient.ResetPasswordAsync(
-				new ResetPasswordReq {
-					Options = new() {
-						NewPassword = newPassword,
-						LoginName   = loginName
-					}
-				},
-				cancellationToken: cancellationToken
-			);
+            return new Success();
+        }
+        catch (RpcException ex) {
+            return Result.Failure<Success, DisableUserError>(
+                ex.StatusCode switch {
+                    StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
+                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+                    _                           => throw KurrentClientException.CreateUnknown(nameof(DisableUser), ex)
+                }
+            );
+        }
+        catch (Exception ex) {
+            throw KurrentClientException.CreateUnknown(nameof(DisableUser), ex);
+        }
+    }
 
-			return new Result<Success, ResetPasswordError>();
-		} catch (RpcException ex) {
-			return Result.Failure<Success, ResetPasswordError>(
-				ex.StatusCode switch {
-					StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-					StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-					_                           => throw KurrentClientException.CreateUnknown(nameof(ResetPassword), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentClientException.CreateUnknown(nameof(ResetPassword), ex);
-		}
-	}
+    public async ValueTask<Result<Success, EnableUserError>> EnableUser(string loginName, CancellationToken cancellationToken = default) {
+        try {
+            var request = new EnableReq { Options = new() { LoginName = loginName } };
+
+            // TODO SS: does the user exist? do we want to be explicit about this?
+
+            await ServiceClient
+                .EnableAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return new Success();
+        }
+        catch (RpcException ex) {
+            return Result.Failure<Success, EnableUserError>(
+                ex.StatusCode switch {
+                    StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
+                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+                    _                           => throw KurrentClientException.CreateUnknown(nameof(EnableUser), ex)
+                }
+            );
+        }
+        catch (Exception ex) {
+            throw KurrentClientException.CreateUnknown(nameof(EnableUser), ex);
+        }
+    }
+
+    public async ValueTask<Result<UserDetails, GetUserError>> GetUser(string loginName, CancellationToken cancellationToken = default) {
+        try {
+            var request = new DetailsReq { Options = new() { LoginName = loginName } };
+
+            using var call = ServiceClient.Details(request, cancellationToken: cancellationToken);
+
+            var user = await call.ResponseStream
+                .ReadAllAsync(cancellationToken)
+                .Select(static resp => new UserDetails {
+                    LoginName       = resp.UserDetails.LoginName,
+                    FullName        = resp.UserDetails.FullName,
+                    Groups          = resp.UserDetails.Groups.ToArray(),
+                    Disabled        = resp.UserDetails.Disabled,
+                    DateLastUpdated = resp.UserDetails.LastUpdated?.TicksSinceEpoch.FromTicksSinceEpoch()
+                })
+                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+
+            return user ?? Result.Failure<UserDetails, GetUserError>(new ErrorDetails.UserNotFound(metadata => metadata.With("logingName", loginName)));
+        }
+        catch (RpcException ex) {
+            return Result.Failure<UserDetails, GetUserError>(
+                ex.StatusCode switch {
+                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+                    _                           => throw KurrentClientException.CreateUnknown(nameof(GetUser), ex)
+                }
+            );
+        }
+        catch (Exception ex) {
+            throw KurrentClientException.CreateUnknown(nameof(GetUser), ex);
+        }
+    }
+
+    public async ValueTask<Result<List<UserDetails>, ListAllUsersError>> ListAllUsers(CancellationToken cancellationToken = default) {
+        try {
+            using var call = ServiceClient.Details(new DetailsReq(), cancellationToken: cancellationToken);
+
+            var users = await call.ResponseStream
+                .ReadAllAsync(cancellationToken)
+                .Select(static resp => new UserDetails { // TODO SS: Create a mapper for mapping user details
+                    LoginName       = resp.UserDetails.LoginName,
+                    FullName        = resp.UserDetails.FullName,
+                    Groups          = resp.UserDetails.Groups.ToArray(),
+                    Disabled        = resp.UserDetails.Disabled,
+                    DateLastUpdated = resp.UserDetails.LastUpdated?.TicksSinceEpoch.FromTicksSinceEpoch()
+                })
+                .ToListAsync(cancellationToken: cancellationToken);
+
+            return users;
+        }
+        catch (RpcException ex) {
+            return Result.Failure<List<UserDetails>, ListAllUsersError>(
+                ex.StatusCode switch {
+                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+                    _                           => throw KurrentClientException.CreateUnknown(nameof(GetUser), ex)
+                }
+            );
+        }
+        catch (Exception ex) {
+            throw KurrentClientException.CreateUnknown(nameof(ListAllUsers), ex);
+        }
+    }
+
+    public async ValueTask<Result<Success, ResetUserPasswordError>> ResetUserPassword(
+        string loginName, string newPassword, CancellationToken cancellationToken = default
+    ) {
+        try {
+            var request = new ResetPasswordReq {
+                Options = new() {
+                    NewPassword = newPassword,
+                    LoginName   = loginName
+                }
+            };
+
+            // TODO SS: does the user exist? do we want to be explicit about this?
+
+            await ServiceClient
+                .ResetPasswordAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return new Success();
+        }
+        catch (RpcException ex) {
+            return Result.Failure<Success, ResetUserPasswordError>(
+                ex.StatusCode switch {
+                    StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
+                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+                    _                           => throw KurrentClientException.CreateUnknown(nameof(ResetUserPassword), ex)
+                }
+            );
+        }
+        catch (Exception ex) {
+            throw KurrentClientException.CreateUnknown(nameof(ResetUserPassword), ex);
+        }
+    }
 }

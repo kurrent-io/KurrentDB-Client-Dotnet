@@ -20,18 +20,18 @@ public sealed partial class PersistentSubscriptionsClient {
 
 		LegacySettings    = source.Options.ConvertToLegacySettings();
 		LegacyCallInvoker = source.LegacyCallInvoker;
-		ServiceClient     = new PersistentSubscriptionsServiceClient(source.LegacyCallInvoker);
+		ServiceClient     = new(source.LegacyCallInvoker);
 
 		HttpFallback = new Lazy<HttpFallback>(() => new HttpFallback(LegacySettings));
 		Logger       = source.Options.LoggerFactory.CreateLogger<KurrentDBPersistentSubscriptionsClient>();
 	}
 
-	internal RegistryClient                                                      Registry           { get; }
-	internal KurrentDBLegacyCallInvoker                                          LegacyCallInvoker  { get; }
-	internal KurrentDBClientSettings                                             LegacySettings     { get; }
-	internal ISchemaSerializerProvider                                           SerializerProvider { get; }
-	internal IMetadataDecoder                                                    MetadataDecoder    { get; }
-	internal PersistentSubscriptionsServiceClient ServiceClient      { get; }
+    internal RegistryClient                       Registry           { get; }
+    internal KurrentDBLegacyCallInvoker           LegacyCallInvoker  { get; }
+    internal KurrentDBClientSettings              LegacySettings     { get; }
+    internal ISchemaSerializerProvider            SerializerProvider { get; }
+    internal IMetadataDecoder                     MetadataDecoder    { get; }
+    internal PersistentSubscriptionsServiceClient ServiceClient      { get; }
 
 	readonly Lazy<HttpFallback> HttpFallback;
 	readonly ILogger            Logger;

@@ -7,7 +7,7 @@ namespace KurrentDB.Client.Interceptors;
 
 class TypedExceptionInterceptor : Interceptor {
 	static readonly Dictionary<string, Func<RpcException, Exception>> DefaultExceptionMap = new() {
-		[Exceptions.AccessDenied] = ex => ex.ToAccessDeniedException(),
+		[LegacyExceptions.AccessDenied] = ex => ex.ToAccessDeniedException(),
 		// [Exceptions.NotLeader]    = ex => ex.ToNotLeaderException(),
 	};
 
@@ -123,7 +123,7 @@ static class RpcExceptionConversionExtensions {
 		new(new Status(DeadlineExceeded, exception.Status.Detail, exception.Status.DebugException));
 
 	public static bool TryMapException(this RpcException exception, Dictionary<string, Func<RpcException, Exception>> map, out Exception createdException) {
-		if (exception.Trailers.TryGetValue(Exceptions.ExceptionKey, out var key) && map.TryGetValue(key!, out var factory)) {
+		if (exception.Trailers.TryGetValue(LegacyExceptions.ExceptionKey, out var key) && map.TryGetValue(key!, out var factory)) {
 			createdException = factory.Invoke(exception);
 			return true;
 		}

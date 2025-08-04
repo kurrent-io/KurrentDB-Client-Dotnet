@@ -10,7 +10,7 @@ namespace Kurrent.Client.Registry;
 
 public class RegistryClient {
 	internal RegistryClient(KurrentClient source) =>
-		ServiceClient = new SchemaRegistryServiceClient(source.LegacyCallInvoker);
+		ServiceClient = new(source.LegacyCallInvoker);
 
 	SchemaRegistryServiceClient ServiceClient { get; }
 

@@ -1,7 +1,7 @@
 namespace KurrentDB.Client;
 
 static class Constants {
-	public static class Exceptions {
+	public static class LegacyExceptions {
 		public const string ExceptionKey = "exception";
 
 		public const string AccessDenied                    = "access-denied";

@@ -17,47 +17,47 @@ namespace KurrentDB.Client;
 /// </summary>
 class LegacyClusterClient {
     static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
-        [Constants.Exceptions.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),
-        [Constants.Exceptions.StreamDeleted] = ex => new StreamDeletedException(
-            ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value ?? "<unknown>",
+        [Constants.LegacyExceptions.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),
+        [Constants.LegacyExceptions.StreamDeleted] = ex => new StreamDeletedException(
+            ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyExceptions.StreamName)?.Value ?? "<unknown>",
             ex
         ),
-        [Constants.Exceptions.WrongExpectedVersion] = ex => new WrongExpectedVersionException(
-            ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!,
-            ex.Trailers.GetStreamState(Constants.Exceptions.ExpectedVersion),
-            ex.Trailers.GetStreamState(Constants.Exceptions.ActualVersion),
+        [Constants.LegacyExceptions.WrongExpectedVersion] = ex => new WrongExpectedVersionException(
+            ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyExceptions.StreamName)?.Value!,
+            ex.Trailers.GetStreamState(Constants.LegacyExceptions.ExpectedVersion),
+            ex.Trailers.GetStreamState(Constants.LegacyExceptions.ActualVersion),
             ex,
             ex.Message
         ),
-        [Constants.Exceptions.MaximumAppendSizeExceeded] = ex => new MaximumAppendSizeExceededException(
-            ex.Trailers.GetIntValueOrDefault(Constants.Exceptions.MaximumAppendSize),
+        [Constants.LegacyExceptions.MaximumAppendSizeExceeded] = ex => new MaximumAppendSizeExceededException(
+            ex.Trailers.GetIntValueOrDefault(Constants.LegacyExceptions.MaximumAppendSize),
             ex
         ),
-        [Constants.Exceptions.StreamNotFound] = ex => new StreamNotFoundException(
-            ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!,
+        // [Constants.Exceptions.StreamNotFound] = ex => new StreamNotFoundException(
+        //     ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!,
+        //     ex
+        // ),
+        [Constants.LegacyExceptions.MissingRequiredMetadataProperty] = ex => new RequiredMetadataPropertyMissingException(
+            ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyExceptions.MissingRequiredMetadataProperty)?.Value!,
             ex
         ),
-        [Constants.Exceptions.MissingRequiredMetadataProperty] = ex => new RequiredMetadataPropertyMissingException(
-            ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.MissingRequiredMetadataProperty)?.Value!,
-            ex
-        ),
-        [Constants.Exceptions.PersistentSubscriptionDoesNotExist] = ex => new
+        [Constants.LegacyExceptions.PersistentSubscriptionDoesNotExist] = ex => new
             PersistentSubscriptionNotFoundException(
-                ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
-                ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.GroupName)?.Value ?? "", ex
+                ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.StreamName).Value,
+                ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyExceptions.GroupName)?.Value ?? "", ex
             ),
-        [Constants.Exceptions.MaximumSubscribersReached] = ex => new
+        [Constants.LegacyExceptions.MaximumSubscribersReached] = ex => new
             MaximumSubscribersReachedException(
-                ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
-                ex.Trailers.First(x => x.Key == Constants.Exceptions.GroupName).Value, ex
+                ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.StreamName).Value,
+                ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.GroupName).Value, ex
             ),
-        [Constants.Exceptions.PersistentSubscriptionDropped] = ex => new
+        [Constants.LegacyExceptions.PersistentSubscriptionDropped] = ex => new
             PersistentSubscriptionDroppedByServerException(
-                ex.Trailers.First(x => x.Key == Constants.Exceptions.StreamName).Value,
-                ex.Trailers.First(x => x.Key == Constants.Exceptions.GroupName).Value, ex
+                ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.StreamName).Value,
+                ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.GroupName).Value, ex
             ),
-        [Constants.Exceptions.ScavengeNotFound] = ex => new ScavengeNotFoundException(
-            ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.ScavengeId)?.Value
+        [Constants.LegacyExceptions.ScavengeNotFound] = ex => new ScavengeNotFoundException(
+            ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyExceptions.ScavengeId)?.Value
         )
     };
 

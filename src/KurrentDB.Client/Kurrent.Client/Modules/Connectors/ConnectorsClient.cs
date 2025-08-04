@@ -11,7 +11,8 @@ namespace Kurrent.Client.Connectors;
 /// Client for managing connectors in KurrentDB.
 /// </summary>
 public class ConnectorsClient {
-    internal ConnectorsClient(KurrentClient source) => ServiceClient = new ConnectorsServiceClient(source.LegacyCallInvoker);
+    internal ConnectorsClient(KurrentClient source) =>
+        ServiceClient = new(source.LegacyCallInvoker);
 
     ConnectorsServiceClient ServiceClient { get; }
 
