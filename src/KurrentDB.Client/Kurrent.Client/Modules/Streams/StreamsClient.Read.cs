@@ -329,7 +329,7 @@ public partial class StreamsClient {
                             if (metadata.TruncateBefore == StreamRevision.Max)
                                 return Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.With("stream", stream)));
 
-                            throw KurrentClientException.CreateUnknown(nameof(ReadCore),
+                            throw KurrentException.CreateUnknown(nameof(ReadCore),
                                 new InvalidOperationException($"Stream {stream} was not found, but metadata does exist and the stream was not truncated. This is unexpected."));
                         },
                         err => err.Case switch {

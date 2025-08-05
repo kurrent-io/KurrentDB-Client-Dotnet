@@ -79,4 +79,4 @@ public readonly record struct MetadataDecoderContext(
 );
 
 public class MetadataDecodingException(string message, Exception? innerException = null)
-    : KurrentClientException(errorCode: "MetadataDecodingError", message, null, innerException);
+    : KurrentException(errorCode: "MetadataDecodingError", message, null, innerException);

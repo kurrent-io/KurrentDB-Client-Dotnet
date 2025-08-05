@@ -77,12 +77,12 @@ public class RegistryClient {
 						return rpcEx.StatusCode switch {
 							StatusCode.AlreadyExists    => Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(new ErrorDetails.SchemaAlreadyExists(m => m.With("stream", schemaName))),
 							StatusCode.PermissionDenied => Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(new ErrorDetails.AccessDenied()),
-							StatusCode.InvalidArgument  => throw KurrentClientException.Throw(rpcEx),
-							_                           => throw KurrentClientException.CreateUnknown(nameof(CreateSchema), rpcEx)
+							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
+							_                           => throw KurrentException.CreateUnknown(nameof(CreateSchema), rpcEx)
 						};
 					}
 
-					throw KurrentClientException.Throw(exception);
+					throw KurrentException.Throw(exception);
 				}
 			);
 	}
@@ -156,12 +156,12 @@ public class RegistryClient {
 						return rpcEx.StatusCode switch {
 							StatusCode.NotFound         => Result.Failure<Schema, GetSchemaError>(new ErrorDetails.SchemaNotFound(m => m.With("stream", schemaName))),
 							StatusCode.PermissionDenied => Result.Failure<Schema, GetSchemaError>(new ErrorDetails.AccessDenied()),
-							StatusCode.InvalidArgument  => throw KurrentClientException.Throw(rpcEx),
-							_                           => throw KurrentClientException.CreateUnknown(nameof(GetSchema), rpcEx)
+							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
+							_                           => throw KurrentException.CreateUnknown(nameof(GetSchema), rpcEx)
 						};
 					}
 
-					throw KurrentClientException.Throw(exception);
+					throw KurrentException.Throw(exception);
 				}
 			);
 	}
@@ -205,12 +205,12 @@ public class RegistryClient {
 						return rpcEx.StatusCode switch {
 							StatusCode.NotFound         => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.SchemaNotFound(m => m.With("stream", schemaName))),
 							StatusCode.PermissionDenied => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.AccessDenied()),
-							StatusCode.InvalidArgument  => throw KurrentClientException.Throw(rpcEx),
-							_                           => throw KurrentClientException.CreateUnknown(nameof(GetSchemaVersion), rpcEx)
+							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
+							_                           => throw KurrentException.CreateUnknown(nameof(GetSchemaVersion), rpcEx)
 						};
 					}
 
-					throw KurrentClientException.Throw(exception);
+					throw KurrentException.Throw(exception);
 				}
 			);
 	}
@@ -249,12 +249,12 @@ public class RegistryClient {
 						return rpcEx.StatusCode switch {
 							StatusCode.NotFound         => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.SchemaNotFound(m => m.With("schemaVersionId", schemaVersionId))),
 							StatusCode.PermissionDenied => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.AccessDenied()),
-							StatusCode.InvalidArgument  => throw KurrentClientException.Throw(rpcEx),
-							_                           => throw KurrentClientException.CreateUnknown(nameof(GetSchemaVersionById), rpcEx)
+							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
+							_                           => throw KurrentException.CreateUnknown(nameof(GetSchemaVersionById), rpcEx)
 						};
 					}
 
-					throw KurrentClientException.Throw(exception);
+					throw KurrentException.Throw(exception);
 				}
 			);
 	}
@@ -291,12 +291,12 @@ public class RegistryClient {
 						return rpcEx.StatusCode switch {
 							StatusCode.NotFound         => Result.Failure<Success, DeleteSchemaError>(new ErrorDetails.SchemaNotFound(m => m.With("schemaName", schemaName))),
 							StatusCode.PermissionDenied => Result.Failure<Success, DeleteSchemaError>(new ErrorDetails.AccessDenied()),
-							StatusCode.InvalidArgument  => throw KurrentClientException.Throw(rpcEx),
-							_                           => throw KurrentClientException.CreateUnknown(nameof(DeleteSchema), rpcEx)
+							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
+							_                           => throw KurrentException.CreateUnknown(nameof(DeleteSchema), rpcEx)
 						};
 					}
 
-					throw KurrentClientException.Throw(exception);
+					throw KurrentException.Throw(exception);
 				}
 			);
 	}
@@ -345,12 +345,12 @@ public class RegistryClient {
 								new ErrorDetails.SchemaNotFound(m => m.With(identifier.IsSchemaName ? "schemaName" : "schemaVersionId", identifier))
 							),
 							StatusCode.PermissionDenied => Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(new ErrorDetails.AccessDenied()),
-							StatusCode.InvalidArgument  => throw KurrentClientException.Throw(rpcEx),
-							_                           => throw KurrentClientException.CreateUnknown(nameof(CheckSchemaCompatibility), rpcEx)
+							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
+							_                           => throw KurrentException.CreateUnknown(nameof(CheckSchemaCompatibility), rpcEx)
 						};
 					}
 
-					throw KurrentClientException.Throw(exception);
+					throw KurrentException.Throw(exception);
 				}
 			);
 	}

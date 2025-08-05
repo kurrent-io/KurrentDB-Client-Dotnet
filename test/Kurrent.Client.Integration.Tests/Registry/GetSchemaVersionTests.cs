@@ -18,7 +18,7 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 		await AutomaticClient.Registry
 			.GetSchemaVersion(schemaName, cancellationToken: ct)
 			.ShouldNotThrowAsync()
-			.OnFailureAsync(failure => KurrentClientException.Throw(failure))
+			.OnFailureAsync(failure => KurrentException.Throw(failure))
 			.OnSuccessAsync(schemaVersion => {
 				schemaVersion.VersionId.ShouldBeGuid();
 				schemaVersion.VersionNumber.ShouldBe(1);
@@ -40,7 +40,7 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 		await AutomaticClient.Registry
 			.GetSchemaVersion(schemaName, createResult.Value.VersionNumber, cancellationToken: ct)
 			.ShouldNotThrowAsync()
-			.OnFailureAsync(failure => KurrentClientException.Throw(failure))
+			.OnFailureAsync(failure => KurrentException.Throw(failure))
 			.OnSuccessAsync(schemaVersion => {
 				schemaVersion.VersionId.ShouldBeGuid();
 				schemaVersion.VersionNumber.ShouldBe(1);
@@ -62,7 +62,7 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 		await AutomaticClient.Registry
 			.GetSchemaVersionById(createResult.Value.VersionId, cancellationToken: ct)
 			.ShouldNotThrowAsync()
-			.OnFailureAsync(failure => KurrentClientException.Throw(failure))
+			.OnFailureAsync(failure => KurrentException.Throw(failure))
 			.OnSuccessAsync(schemaVersion => {
 				schemaVersion.VersionId.ShouldBeGuid();
 				schemaVersion.VersionNumber.ShouldBe(1);
@@ -81,7 +81,7 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 		await AutomaticClient.Registry
 			.GetSchemaVersion(nonExistentSchemaName, cancellationToken: ct)
 			.ShouldNotThrowAsync()
-			.OnSuccessAsync(schemaVersion => KurrentClientException.Throw($"Expected an error, but got a schema version {schemaVersion}"))
+			.OnSuccessAsync(schemaVersion => KurrentException.Throw($"Expected an error, but got a schema version {schemaVersion}"))
 			.OnFailureAsync(failure => {
 				failure.IsSchemaNotFound.ShouldBeTrue();
 				failure.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
@@ -105,7 +105,7 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 		await AutomaticClient.Registry
 			.GetSchemaVersion(schemaName, nonExistentVersionNumber, cancellationToken: ct)
 			.ShouldNotThrowAsync()
-			.OnSuccessAsync(schemaVersion => KurrentClientException.Throw($"Expected an error, but got a schema version {schemaVersion}"))
+			.OnSuccessAsync(schemaVersion => KurrentException.Throw($"Expected an error, but got a schema version {schemaVersion}"))
 			.OnFailureAsync(failure => {
 				failure.IsSchemaNotFound.ShouldBeTrue();
 				failure.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
@@ -122,7 +122,7 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 		await AutomaticClient.Registry
 			.GetSchemaVersionById(nonExistentVersionId, cancellationToken: ct)
 			.ShouldNotThrowAsync()
-			.OnSuccessAsync(schemaVersion => KurrentClientException.Throw($"Expected an error, but got a schema version {schemaVersion}"))
+			.OnSuccessAsync(schemaVersion => KurrentException.Throw($"Expected an error, but got a schema version {schemaVersion}"))
 			.OnFailureAsync(failure => {
 				failure.IsSchemaNotFound.ShouldBeTrue();
 				failure.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));

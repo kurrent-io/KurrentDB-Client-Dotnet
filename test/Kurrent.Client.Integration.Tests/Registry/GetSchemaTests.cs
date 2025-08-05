@@ -25,7 +25,7 @@ public class GetSchemaTests : KurrentClientTestFixture {
 		await AutomaticClient.Registry
 			.GetSchema(schemaName, cancellationToken: ct)
 			.ShouldNotThrowAsync()
-			.OnFailureAsync(failure => KurrentClientException.Throw(failure))
+			.OnFailureAsync(failure => KurrentException.Throw(failure))
 			.OnSuccessAsync(schema => {
 				schema.LatestSchemaVersion.ShouldBe(createdSchemaResult.Value.VersionNumber);
 				schema.SchemaName.Value.ShouldBe(schemaName);
@@ -47,7 +47,7 @@ public class GetSchemaTests : KurrentClientTestFixture {
 		await AutomaticClient.Registry
 			.GetSchema(schemaName, cancellationToken: ct)
 			.ShouldNotThrowAsync()
-			.OnSuccessAsync(_ => KurrentClientException.Throw("Expected schema not found, but got a schema response."))
+			.OnSuccessAsync(_ => KurrentException.Throw("Expected schema not found, but got a schema response."))
 			.OnFailureAsync(failure => {
 				failure.IsSchemaNotFound.ShouldBeTrue();
 				failure.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
@@ -68,7 +68,7 @@ public class GetSchemaTests : KurrentClientTestFixture {
 		await AutomaticClient.Registry
 			.GetSchema(schemaName, cancellationToken: ct)
 			.ShouldNotThrowAsync()
-			.OnSuccessAsync(schema => KurrentClientException.Throw("Expected schema not found, but got a schema response."))
+			.OnSuccessAsync(schema => KurrentException.Throw("Expected schema not found, but got a schema response."))
 			.OnFailureAsync(failure => {
 				failure.IsSchemaNotFound.ShouldBeTrue();
 				failure.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));

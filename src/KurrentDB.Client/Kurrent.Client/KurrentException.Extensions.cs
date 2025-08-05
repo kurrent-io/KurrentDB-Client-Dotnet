@@ -6,50 +6,19 @@ using Grpc.Core;
 
 namespace Kurrent.Client;
 
-/// <summary>
-/// Exception class used to indicate errors specific to the operation and state of the Kurrent client.
-/// Provides relevant error details, including error codes, statuses, field violations, and associated metadata.
-/// </summary>
-[PublicAPI]
-public class KurrentClientException(string errorCode, string message, Metadata? metadata = null, Exception? innerException = null) : Exception(message, innerException) {
+public static class KurrentExceptionExtensions {
     /// <summary>
-    /// Gets the error code associated with this exception.
-    /// </summary>
-    public string ErrorCode { get; } = errorCode;
-
-    /// <summary>
-    /// Additional context about the error.
-    /// </summary>
-    public Metadata Metadata { get; } = metadata is not null ? new(metadata) : [];
-
-    public static KurrentClientException Wrap<T>(T exception, string? errorCode = null) where T : Exception =>
-        new KurrentClientException(errorCode ?? exception.GetType().Name, exception.Message, null, exception);
-
-    /// <summary>
-    /// Creates and throws a <see cref="KurrentClientException"/> with an error code derived from the type name of <typeparamref name="T"/>
-    /// and a message from the string representation of the <paramref name="error"/> object.
-    /// </summary>
-    /// <typeparam name="T">The type of the error object. The name of this type will be used as the error code.</typeparam>
-    /// <param name="error">The error object. Its string representation will be used as the exception message.</param>
-    /// <param name="innerException">The exception that is the cause of the current exception, or a null reference if no inner exception is specified.</param>
-    /// <returns>This method always throws an exception, so it never returns a value.</returns>
-    /// <exception cref="KurrentClientException">Always thrown by this method.</exception>
-    public static KurrentClientException Throw<T>(T error, Exception? innerException = null) where T : notnull =>
-        throw new KurrentClientException(typeof(T).Name, error.ToString()!, null, innerException);
-
-    /// <summary>
-    /// Creates and throws a <see cref="KurrentClientException"/> with comprehensive error details
+    /// Creates and throws a <see cref="KurrentException"/> with comprehensive error details
     /// extracted from the specified <paramref name="exception"/>.
     /// Supports database-relevant Google.Rpc error detail types and provides semantic error code mapping.
     /// </summary>
     /// <param name="exception">The <see cref="RpcException"/> from which the error details, status code, and metadata are obtained.</param>
     /// <returns>This method always throws an exception, so it never returns a value.</returns>
-    /// <exception cref="KurrentClientException">Always thrown by this method.</exception>
-    public static KurrentClientException Throw(RpcException exception) {
+    /// <exception cref="KurrentException">Always thrown by this method.</exception>
+    public static KurrentException Throw(this RpcException exception) {
 	    var status         = exception.GetRpcStatus();
 	    var errorDetails   = status?.UnpackDetailMessages().ToList() ?? [];
 	    var handlerResults = new List<DetailHandlerResult>();
-
 
 	    // if (exception.Trailers.Get(Exceptions.ExceptionKey) is global::Grpc.Core.Metadata.Entry {} entry && entry.Key == "") {
 		   //  createdException = factory.Invoke(exception);
@@ -79,7 +48,7 @@ public class KurrentClientException(string errorCode, string message, Metadata? 
 
 	    var errorCode = MapToSemanticErrorCode(exception.StatusCode, fieldViolations);
 
-	    throw new KurrentClientException(errorCode, exception.Status.Detail, metadata, exception);
+	    throw new KurrentException(errorCode, exception.Status.Detail, metadata, exception);
 
 	    // Self-contained handlers for the 5 database-relevant types
 	    static DetailHandlerResult HandleBadRequest(BadRequest request) => new() {
@@ -175,43 +144,6 @@ public class KurrentClientException(string errorCode, string message, Metadata? 
 		    _                                                            => statusCode.ToString().ToUpperInvariant()
 	    };
     }
-
-    static class Exceptions {
-	    public const string ExceptionKey = "exception";
-
-	    public const string AccessDenied                    = "access-denied";
-	    public const string InvalidTransaction              = "invalid-transaction";
-	    public const string StreamDeleted                   = "stream-deleted";
-	    public const string WrongExpectedVersion            = "wrong-expected-version";
-	    public const string StreamNotFound                  = "stream-not-found";
-	    public const string MaximumAppendSizeExceeded       = "maximum-append-size-exceeded";
-	    public const string MissingRequiredMetadataProperty = "missing-required-metadata-property";
-    }
-
-    /// <summary>
-    /// Creates a <see cref="KurrentClientException"/> for an unknown or unexpected error that occurred during a specific operation.
-    /// </summary>
-    /// <param name="operation">The name of the operation during which the error occurred. Cannot be null or whitespace.</param>
-    /// <param name="innerException">The exception that is the cause of the current exception.</param>
-    /// <returns>A new instance of <see cref="KurrentClientException"/> representing the unknown error.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="operation"/> is null.</exception>
-    /// <exception cref="ArgumentException"><paramref name="operation"/> is empty or consists only of white-space characters.</exception>
-    public static KurrentClientException CreateUnknown(string operation, Exception innerException) {
-        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
-        return new("Unknown", $"Unexpected behaviour detected during {operation}: {innerException.Message}", null, innerException);
-    }
-
-    /// <summary>
-    /// Creates and throws a <see cref="KurrentClientException"/> for an unknown or unexpected error that occurred during a specific operation.
-    /// </summary>
-    /// <param name="operation">The name of the operation during which the error occurred. Cannot be null or whitespace.</param>
-    /// <param name="innerException">The exception that is the cause of the current exception.</param>
-    /// <returns>This method always throws an exception, so it never returns a value.</returns>
-    /// <exception cref="KurrentClientException">Always thrown by this method.</exception>
-    /// <exception cref="ArgumentNullException"><paramref name="operation"/> is null.</exception>
-    /// <exception cref="ArgumentException"><paramref name="operation"/> is empty or consists only of white-space characters.</exception>
-    public static KurrentClientException ThrowUnknown(string operation, Exception innerException) =>
-        throw CreateUnknown(operation, innerException);
 }
 
 /// <summary>

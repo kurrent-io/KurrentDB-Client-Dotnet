@@ -66,8 +66,8 @@ public static partial class StreamsClientExtensions {
             //         : result
             //     : result;
         }
-        catch (Exception ex) when (ex is not KurrentClientException)  {
-            throw KurrentClientException.CreateUnknown(
+        catch (Exception ex) when (ex is not KurrentException)  {
+            throw KurrentException.CreateUnknown(
                 direction == ReadDirection.Forwards ? nameof(ReadFirstStreamRecord) : nameof(ReadLastStreamRecord), ex);
         }
     }

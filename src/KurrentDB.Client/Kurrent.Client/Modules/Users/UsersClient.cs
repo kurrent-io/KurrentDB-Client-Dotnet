@@ -38,12 +38,12 @@ public class UsersClient {
             return Result.Failure<Success, ChangeUserPasswordError>(
                 ex.StatusCode switch {
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(ChangeUserPassword), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(ChangeUserPassword), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(ChangeUserPassword), ex);
+            throw KurrentException.CreateUnknown(nameof(ChangeUserPassword), ex);
         }
     }
 
@@ -74,12 +74,12 @@ public class UsersClient {
                 ex.StatusCode switch {
                     StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(CreateUser), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(CreateUser), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(CreateUser), ex);
+            throw KurrentException.CreateUnknown(nameof(CreateUser), ex);
         }
     }
 
@@ -101,12 +101,12 @@ public class UsersClient {
                     StatusCode.NotFound         => ex.AsUserNotFoundError(),
                     StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(GetUser), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(GetUser), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(DeleteUser), ex);
+            throw KurrentException.CreateUnknown(nameof(DeleteUser), ex);
         }
     }
 
@@ -127,12 +127,12 @@ public class UsersClient {
                 ex.StatusCode switch {
                     StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(DisableUser), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(DisableUser), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(DisableUser), ex);
+            throw KurrentException.CreateUnknown(nameof(DisableUser), ex);
         }
     }
 
@@ -153,12 +153,12 @@ public class UsersClient {
                 ex.StatusCode switch {
                     StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(EnableUser), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(EnableUser), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(EnableUser), ex);
+            throw KurrentException.CreateUnknown(nameof(EnableUser), ex);
         }
     }
 
@@ -185,12 +185,12 @@ public class UsersClient {
             return Result.Failure<UserDetails, GetUserError>(
                 ex.StatusCode switch {
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(GetUser), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(GetUser), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(GetUser), ex);
+            throw KurrentException.CreateUnknown(nameof(GetUser), ex);
         }
     }
 
@@ -215,12 +215,12 @@ public class UsersClient {
             return Result.Failure<List<UserDetails>, ListAllUsersError>(
                 ex.StatusCode switch {
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(GetUser), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(GetUser), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(ListAllUsers), ex);
+            throw KurrentException.CreateUnknown(nameof(ListAllUsers), ex);
         }
     }
 
@@ -248,12 +248,12 @@ public class UsersClient {
                 ex.StatusCode switch {
                     StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(ResetUserPassword), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(ResetUserPassword), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(ResetUserPassword), ex);
+            throw KurrentException.CreateUnknown(nameof(ResetUserPassword), ex);
         }
     }
 }

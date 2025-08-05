@@ -10,7 +10,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/descriptor.proto";
 
-import "streams/shared.proto";
+import "streams/error_details.proto";
 import "core.proto";
 
 service StreamsReadService {
@@ -100,13 +100,13 @@ message ReadFailure {
   // The error details
   oneof error {
     // Failed because the client lacks sufficient permissions.
-    ErrorDetails.AccessDenied access_denied = 1;
+    CoreErrorDetails.AccessDenied access_denied = 1;
     // Failed because the target stream has been deleted.
-    ErrorDetails.StreamDeleted stream_deleted = 2;
+    StreamsErrorDetails.StreamDeleted stream_deleted = 2;
     // Failed because the stream has been tombstoned.
-    ErrorDetails.StreamTombstoned stream_tombstoned = 4;
+    StreamsErrorDetails.StreamTombstoned stream_tombstoned = 4;
     // Failed because the expected stream revision did not match the actual revision.
-    ErrorDetails.StreamNotFound stream_not_found = 3;
+    StreamsErrorDetails.StreamNotFound stream_not_found = 3;
   }
 }
 

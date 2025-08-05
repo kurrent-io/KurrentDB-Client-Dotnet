@@ -2,12 +2,13 @@
 
 using Grpc.Core;
 using Kurrent.Client.Legacy;
+using Kurrent.Client.Operations;
 using KurrentDB.Client;
 using KurrentDB.Protocol.Operations.V1;
 
-namespace Kurrent.Client.Operations;
+namespace Kurrent.Client.Admin;
 
-public partial class OperationsClient {
+public partial class AdminClient {
 	public async ValueTask<Result<DatabaseScavengeResult, StartScavengeError>> StartScavenge(
 		int threadCount = 1, int startFromChunk = 0, CancellationToken cancellationToken = default
 	) {
@@ -15,7 +16,7 @@ public partial class OperationsClient {
 		ArgumentOutOfRangeException.ThrowIfNegative(startFromChunk);
 
 		try {
-			using var call = ServiceClient.StartScavengeAsync(
+			using var call = OperationsServiceClient.StartScavengeAsync(
 				new StartScavengeReq {
 					Options = new StartScavengeReq.Types.Options {
 						ThreadCount    = threadCount,
@@ -40,17 +41,17 @@ public partial class OperationsClient {
 				ex switch {
 					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
 					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentClientException.CreateUnknown(nameof(StartScavenge), ex)
+					_                         => throw KurrentException.CreateUnknown(nameof(StartScavenge), ex)
 				}
 			);
 		} catch (Exception ex) {
-			throw KurrentClientException.CreateUnknown(nameof(StartScavenge), ex);
+			throw KurrentException.CreateUnknown(nameof(StartScavenge), ex);
 		}
 	}
 
 	public async ValueTask<Result<DatabaseScavengeResult, StopScavengeError>> StopScavenge(string scavengeId, CancellationToken cancellationToken = default) {
 		try {
-			var result = await ServiceClient.StopScavengeAsync(
+			var result = await OperationsServiceClient.StopScavengeAsync(
 					new StopScavengeReq {
 						Options = new StopScavengeReq.Types.Options {
 							ScavengeId = scavengeId
@@ -73,14 +74,14 @@ public partial class OperationsClient {
 				ex switch {
 					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
 					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentClientException.CreateUnknown(nameof(StopScavenge), ex)
+					_                         => throw KurrentException.CreateUnknown(nameof(StopScavenge), ex)
 				}
 			);
 		} catch (Exception ex) {
 			return Result.Failure<DatabaseScavengeResult, StopScavengeError>(
 				ex switch {
 					ScavengeNotFoundException => ex.AsScavengeNotFoundError(),
-					_                         => throw KurrentClientException.CreateUnknown(nameof(StopScavenge), ex)
+					_                         => throw KurrentException.CreateUnknown(nameof(StopScavenge), ex)
 				}
 			);
 		}

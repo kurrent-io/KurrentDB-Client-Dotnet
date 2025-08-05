@@ -56,12 +56,12 @@ public partial class PersistentSubscriptionsClient {
                     PersistentSubscriptionNotFoundException pEx        => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
                     MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
                     PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
-                    _                                                  => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+                    _                                                  => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
+            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
         }
     }
 
@@ -114,12 +114,12 @@ public partial class PersistentSubscriptionsClient {
                     PersistentSubscriptionNotFoundException pEx        => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
                     MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
                     PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
-                    _                                                  => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+                    _                                                  => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
+            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
         }
 
         async ValueTask<PersistentSubscriptionsServiceClient> GetClient(CancellationToken ct) {
@@ -155,12 +155,12 @@ public partial class PersistentSubscriptionsClient {
                     NotAuthenticatedException                          => rpcEx.AsNotAuthenticatedError(),
                     MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
                     PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
-                    _                                                  => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+                    _                                                  => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
+            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
         }
     }
 
@@ -189,12 +189,12 @@ public partial class PersistentSubscriptionsClient {
                     NotAuthenticatedException                          => rpcEx.AsNotAuthenticatedError(),
                     MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
                     PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
-                    _                                                  => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+                    _                                                  => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
+            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
         }
     }
 

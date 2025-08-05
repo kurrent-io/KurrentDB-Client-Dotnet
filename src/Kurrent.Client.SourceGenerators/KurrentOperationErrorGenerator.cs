@@ -208,7 +208,7 @@ public class KurrentOperationErrorGenerator : ISourceGenerator {
                 public Metadata Metadata { get; }
 
                 public Exception CreateException(Exception? innerException = null) =>
-                    new KurrentClientException(ErrorCode, ErrorMessage, Metadata, innerException);
+                    new KurrentException(ErrorCode, ErrorMessage, Metadata, innerException);
 
                 public override string ToString() => ErrorMessage;
             }

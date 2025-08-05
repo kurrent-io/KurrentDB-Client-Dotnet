@@ -55,11 +55,9 @@
 
   <ItemGroup>
     <!-- Source Generators: Embed as analyzer, don't propagate as dependency -->
-    <ProjectReference Include="..\Kurrent.Client.SourceGenerators\Kurrent.Client.SourceGenerators.csproj"
-                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\Kurrent.Client.SourceGenerators\Kurrent.Client.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
 
-    <ProjectReference Include="..\Variant.SourceGenerators\Variant.SourceGenerators.csproj"
-                      OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <ProjectReference Include="..\Variant.SourceGenerators\Variant.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
 
     <!-- Runtime Library: Include assembly but don't propagate as dependency -->
     <ProjectReference Include="..\Variant\Variant.csproj" PrivateAssets="all" />

@@ -7,21 +7,9 @@ option java_package        = "io.kurrentdb.protocol.streams.v2";
 option java_multiple_files = true;
 
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/descriptor.proto";
 import "core.proto";
 
-// ErrorDetails provides detailed information about specific error conditions.
-message ErrorDetails {
-    // When the user does not have sufficient permissions to perform the
-    // operation.
-    message AccessDenied {
-      option (error_info) = {
-        code : "ACCESS_DENIED",
-        severity : RECOVERABLE,
-        message : "The user does not have sufficient permissions to perform the operation."
-      };
-    }
-
+message StreamsErrorDetails {
   // When the stream has been deleted.
   message StreamDeleted {
     option (error_info) = {
@@ -42,7 +30,7 @@ message ErrorDetails {
     option (error_info) = {
       code : "STREAM_TOMBSTONED",
       severity : FATAL,
-      message : "The stream has been tombstoned and cannot be used anymore."
+      message : "The stream has been tombstoned. It has been permanently removed from the system and cannot be restored."
     };
 
     // The name of the stream that was tombstoned.
@@ -57,7 +45,7 @@ message ErrorDetails {
     option (error_info) = {
       code : "STREAM_NOT_FOUND",
       severity : RECOVERABLE,
-      message : "The specified stream was not found."
+      message : "The specified stream was not found. Please check the stream name and try again."
     };
 
     // The name of the stream that was not found.
@@ -90,71 +78,11 @@ message ErrorDetails {
     uint32 max_size = 1;
   }
 
-  // When the user is not found.
-  message UserNotFound {
-    option (error_info) = {
-      code : "USER_NOT_FOUND",
-      severity : RECOVERABLE,
-      message : "The specified user was not found."
-    };
-  }
-
-  // When the user is not authenticated.
-  message NotAuthenticated {
-    option (error_info) = {
-      code : "NOT_AUTHENTICATED",
-      severity : RECOVERABLE,
-      message : "The user is not authenticated."
-    };
-  }
-
-
   message LogPositionNotFound {
     option (error_info) = {
       code : "LOG_POSITION_NOT_FOUND",
       severity : RECOVERABLE,
       message : "The specified log position was not found."
-    };
-  }
-
-  // TODO: Should shared.proto be outside streams?
-  message ScavengeNotFound {
-    option (error_info) = {
-      code : "SCAVENGE_NOT_FOUND",
-      severity : RECOVERABLE,
-      message : "The specified scavenge was not found."
-    };
-  }
-
-  message PersistentSubscriptionNotFound {
-    option (error_info) = {
-      code : "PERSISTENT_SUBSCRIPTION_NOT_FOUND",
-      severity : RECOVERABLE,
-      message : "The specified persistent subscription was not found."
-    };
-  }
-
-  message MaximumSubscribersReached {
-    option (error_info) = {
-      code : "MAXIMUM_SUBSCRIBERS_REACHED",
-      severity : RECOVERABLE,
-      message : "The maximum number of subscribers for the stream has been reached."
-    };
-  }
-
-  message PersistentSubscriptionDropped {
-    option (error_info) = {
-      code : "PERSISTENT_SUBSCRIPTION_DROPPED",
-      severity : RECOVERABLE,
-      message : "The persistent subscription has been dropped."
-    };
-  }
-
-  message ConnectorNotFound {
-    option (error_info) = {
-      code : "CONNECTOR_NOT_FOUND",
-      severity : RECOVERABLE,
-      message : "The specified connector was not found."
     };
   }
 }

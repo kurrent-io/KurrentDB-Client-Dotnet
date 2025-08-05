@@ -1,15 +1,9 @@
 using EventStore.Client;
-using static KurrentDB.Protocol.Users.V1.ServerFeaturesService;
+using Kurrent.Client.Features;
 
-namespace Kurrent.Client.Features;
+namespace Kurrent.Client.Admin;
 
-[PublicAPI]
-public class FeaturesClient {
-	internal FeaturesClient(KurrentClient source) =>
-		ServiceClient = new ServerFeaturesServiceClient(source.LegacyCallInvoker);
-
-    ServerFeaturesServiceClient ServiceClient { get; }
-
+public partial class AdminClient {
 	/// <summary>
 	/// Gets server information including features and their enablement status.
 	/// </summary>
@@ -19,7 +13,7 @@ public class FeaturesClient {
 	/// <returns>Server information with features.</returns>
 	public async Task<ServerFeatures> GetFeatures(CancellationToken cancellationToken = default) {
 		// Get the raw methods and their features from the server
-		var response = await ServiceClient
+		var response = await FeaturesServiceClient
 			.GetSupportedMethodsAsync(CustomEmptyRequest, cancellationToken: cancellationToken)
 			.ConfigureAwait(false);
 

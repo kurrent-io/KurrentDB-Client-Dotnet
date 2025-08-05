@@ -35,12 +35,12 @@ partial class PersistentSubscriptionsClient {
                 ex switch {
                     AccessDeniedException     => rpcEx.AsAccessDeniedError(),
                     NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+                    _                         => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
+            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
         }
     }
 
@@ -71,12 +71,12 @@ partial class PersistentSubscriptionsClient {
                     AccessDeniedException                       => rpcEx.AsAccessDeniedError(),
                     NotAuthenticatedException                   => rpcEx.AsNotAuthenticatedError(),
                     PersistentSubscriptionNotFoundException pEx => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
-                    _                                           => throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex)
+                    _                                           => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(DeleteToStream), ex);
+            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
         }
     }
 

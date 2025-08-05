@@ -25,7 +25,7 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 		await AutomaticClient.Registry
 			.CheckSchemaCompatibility(createResult.Value.VersionId, v2.ToJson(), Json, ct)
 			.ShouldNotThrowAsync()
-			.OnSuccessAsync(_ => KurrentClientException.Throw("Expected compatibility check to fail, but it succeeded."))
+			.OnSuccessAsync(_ => KurrentException.Throw("Expected compatibility check to fail, but it succeeded."))
 			.OnFailureAsync(error => {
 				error.IsSchemaCompatibilityErrors.ShouldBeTrue();
 				var errors = error.AsSchemaCompatibilityErrors.Errors;
@@ -46,7 +46,7 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 		await AutomaticClient.Registry
 			.CheckSchemaCompatibility(SchemaName.From(schemaName), v1.ToJson(), Json, ct)
 			.ShouldNotThrowAsync()
-			.OnSuccessAsync(_ => KurrentClientException.Throw("Expected compatibility check to fail, but it succeeded."))
+			.OnSuccessAsync(_ => KurrentException.Throw("Expected compatibility check to fail, but it succeeded."))
 			.OnFailureAsync(failure => {
 				failure.IsSchemaNotFound.ShouldBeTrue();
 				failure.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
@@ -63,7 +63,7 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 		var result = async () => await AutomaticClient.Registry
 			.CheckSchemaCompatibility(SchemaName.From("#"), v1.ToJson(), Json, ct);
 
-		var exception = await result.ShouldThrowAsync<KurrentClientException>();
+		var exception = await result.ShouldThrowAsync<KurrentException>();
 		exception.ErrorCode.ShouldBe(nameof(StatusCode.InvalidArgument));
 
 		exception.Metadata.GetRequired<List<FieldViolation>>("FieldViolations").ShouldSatisfyAllConditions(
@@ -89,7 +89,7 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 		await AutomaticClient.Registry
 			.CheckSchemaCompatibility(SchemaName.From(schemaName), v1.ToJson(), Protobuf, ct)
 			.ShouldNotThrowAsync()
-			.OnSuccessAsync(_ => KurrentClientException.Throw("Expected compatibility check to fail, but it succeeded."))
+			.OnSuccessAsync(_ => KurrentException.Throw("Expected compatibility check to fail, but it succeeded."))
 			.OnFailureAsync(failure => {
 				failure.IsSchemaCompatibilityErrors.ShouldBeTrue();
 				var errors = failure.AsSchemaCompatibilityErrors.Errors;

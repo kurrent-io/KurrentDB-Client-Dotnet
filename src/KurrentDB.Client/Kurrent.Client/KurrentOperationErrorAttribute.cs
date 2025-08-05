@@ -28,9 +28,10 @@ public sealed class KurrentOperationErrorAttribute : Attribute {
     /// </summary>
     public KurrentOperationErrorAttribute(string typeName) : this(GetProtoMessageType(typeName)) { }
 
-    static Type GetProtoMessageType(string typeName) =>
-        Type.GetType(typeName)?.EnsureTypeIsProtoMessage()
-     ?? throw new ArgumentException($"Type '{typeName}' not found.", nameof(typeName));
+    static Type GetProtoMessageType(string typeName) {
+        return Type.GetType(typeName)?.EnsureTypeIsProtoMessage()
+            ?? throw new ArgumentException($"Type '{typeName}' not found.", nameof(typeName));
+    }
 
     /// <summary>
     /// Gets the protobuf message type that contains the error annotations.
@@ -41,9 +42,10 @@ public sealed class KurrentOperationErrorAttribute : Attribute {
 
     public (string Code, string Message, bool IsFatal) Annotations { get; }
 
-    public static KurrentOperationErrorAttribute GetAttribute(Type type) =>
-        type.GetCustomAttributes<KurrentOperationErrorAttribute>().FirstOrDefault()
-     ?? throw new InvalidOperationException($"The type {type.Name} must have a KurrentOperationError attribute.");
+    public static KurrentOperationErrorAttribute GetAttribute(Type type) {
+        return type.GetCustomAttributes<KurrentOperationErrorAttribute>().FirstOrDefault()
+            ?? throw new InvalidOperationException($"The type {type.Name} must have a KurrentOperationError attribute.");
+    }
 }
 
 static class KurrentOperationErrorAnnotations {

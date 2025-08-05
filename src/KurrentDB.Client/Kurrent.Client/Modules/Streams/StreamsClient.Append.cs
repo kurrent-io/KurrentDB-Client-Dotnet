@@ -39,7 +39,7 @@ public partial class StreamsClient {
             };
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(Append), ex);
+            throw KurrentException.CreateUnknown(nameof(Append), ex);
         }
     }
 }

@@ -33,12 +33,12 @@ partial class PersistentSubscriptionsClient {
                 ex switch {
                     AccessDeniedException     => rpcEx.AsAccessDeniedError(),
                     NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentClientException.CreateUnknown(nameof(CreateToStream), ex)
+                    _                         => throw KurrentException.CreateUnknown(nameof(CreateToStream), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(CreateToStream), ex);
+            throw KurrentException.CreateUnknown(nameof(CreateToStream), ex);
         }
     }
 
@@ -66,12 +66,12 @@ partial class PersistentSubscriptionsClient {
                 ex switch {
                     AccessDeniedException     => rpcEx.AsAccessDeniedError(),
                     NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentClientException.CreateUnknown(nameof(CreateToAll), ex)
+                    _                         => throw KurrentException.CreateUnknown(nameof(CreateToAll), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(CreateToAll), ex);
+            throw KurrentException.CreateUnknown(nameof(CreateToAll), ex);
         }
     }
 
@@ -98,12 +98,12 @@ partial class PersistentSubscriptionsClient {
                 ex switch {
                     AccessDeniedException     => rpcEx.AsAccessDeniedError(),
                     NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentClientException.CreateUnknown(nameof(CreateToAll), ex)
+                    _                         => throw KurrentException.CreateUnknown(nameof(CreateToAll), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(CreateToAll), ex);
+            throw KurrentException.CreateUnknown(nameof(CreateToAll), ex);
         }
     }
 

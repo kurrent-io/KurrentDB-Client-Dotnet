@@ -10,7 +10,7 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/descriptor.proto";
 
-import "streams/shared.proto";
+import "streams/error_details.proto";
 import "core.proto";
 
 service StreamsService {
@@ -116,15 +116,15 @@ message AppendStreamFailure {
   // The error details
   oneof error {
     // Failed because the actual stream revision didn't match the expected revision.
-    ErrorDetails.StreamRevisionConflict stream_revision_conflict = 2;
+    StreamsErrorDetails.StreamRevisionConflict stream_revision_conflict = 2;
     // Failed because the client lacks sufficient permissions.
-    ErrorDetails.AccessDenied access_denied = 3;
+    CoreErrorDetails.AccessDenied access_denied = 3;
     // Failed because the target stream has been deleted.
-    ErrorDetails.StreamDeleted stream_deleted = 4;
+    StreamsErrorDetails.StreamDeleted stream_deleted = 4;
     // Failed because the stream was not found.
-    ErrorDetails.StreamNotFound stream_not_found = 5;
+    StreamsErrorDetails.StreamNotFound stream_not_found = 5;
     // Failed because the transaction exceeded the maximum size allowed
-    ErrorDetails.TransactionMaxSizeExceeded transaction_max_size_exceeded = 6;
+    StreamsErrorDetails.TransactionMaxSizeExceeded transaction_max_size_exceeded = 6;
   }
 }
 

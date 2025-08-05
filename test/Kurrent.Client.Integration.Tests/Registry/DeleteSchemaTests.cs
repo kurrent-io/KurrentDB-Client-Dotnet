@@ -14,7 +14,7 @@ public class DeleteSchemaTests : KurrentClientTestFixture {
 		await AutomaticClient.Registry
 			.DeleteSchema(schemaName, ct)
 			.ShouldNotThrowAsync()
-			.OnSuccessAsync(_ => KurrentClientException.Throw("Expected schema not found, but got a schema response."))
+			.OnSuccessAsync(_ => KurrentException.Throw("Expected schema not found, but got a schema response."))
 			.OnFailureAsync(failure => {
 				failure.IsSchemaNotFound.ShouldBeTrue();
 				failure.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
@@ -36,7 +36,7 @@ public class DeleteSchemaTests : KurrentClientTestFixture {
 		await AutomaticClient.Registry
 			.DeleteSchema(schemaName, ct)
 			.ShouldNotThrowAsync()
-			.OnFailureAsync(failure => KurrentClientException.Throw(failure))
+			.OnFailureAsync(failure => KurrentException.Throw(failure))
 			.OnSuccessAsync(success => success.ShouldBe(Success.Instance));
 	}
 }

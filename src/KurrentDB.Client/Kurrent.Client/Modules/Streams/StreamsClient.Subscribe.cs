@@ -43,7 +43,7 @@ public partial class StreamsClient {
 
         // why would this even happen? seems like an unreachable state...
         if (session.ResponseStream.Current.ContentCase != Confirmation)
-            throw KurrentClientException.CreateUnknown(
+            throw KurrentException.CreateUnknown(
                 nameof(Subscription), new Exception($"Expected confirmation message but got {session.ResponseStream.Current.ContentCase}")
             );
 

@@ -46,11 +46,11 @@ public partial class ProjectionsClient {
 				ex switch {
 					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
 					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentClientException.CreateUnknown(nameof(GetResult), ex)
+					_                         => throw KurrentException.CreateUnknown(nameof(GetResult), ex)
 				}
 			);
 		} catch (Exception ex) {
-			throw KurrentClientException.CreateUnknown(nameof(GetResult), ex);
+			throw KurrentException.CreateUnknown(nameof(GetResult), ex);
 		}
 	}
 
@@ -87,11 +87,11 @@ public partial class ProjectionsClient {
 				ex switch {
 					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
 					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentClientException.CreateUnknown(nameof(GetResult), ex)
+					_                         => throw KurrentException.CreateUnknown(nameof(GetResult), ex)
 				}
 			);
 		} catch (Exception ex) {
-			throw KurrentClientException.CreateUnknown(nameof(GetResult), ex);
+			throw KurrentException.CreateUnknown(nameof(GetResult), ex);
 		}
 	}
 
@@ -126,11 +126,11 @@ public partial class ProjectionsClient {
 				ex switch {
 					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
 					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentClientException.CreateUnknown(nameof(GetState), ex)
+					_                         => throw KurrentException.CreateUnknown(nameof(GetState), ex)
 				}
 			);
 		} catch (Exception ex) {
-			throw KurrentClientException.CreateUnknown(nameof(GetState), ex);
+			throw KurrentException.CreateUnknown(nameof(GetState), ex);
 		}
 	}
 
@@ -163,11 +163,11 @@ public partial class ProjectionsClient {
 				ex switch {
 					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
 					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentClientException.CreateUnknown(nameof(GetState), ex)
+					_                         => throw KurrentException.CreateUnknown(nameof(GetState), ex)
 				}
 			);
 		} catch (Exception ex) {
-			throw KurrentClientException.CreateUnknown(nameof(GetState), ex);
+			throw KurrentException.CreateUnknown(nameof(GetState), ex);
 		}
 	}
 

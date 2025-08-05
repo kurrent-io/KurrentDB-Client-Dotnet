@@ -51,12 +51,12 @@ public class ConnectorsClient {
             return Result.Failure<Success, CreateConnectorError>(
                 ex.StatusCode switch {
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(CreateConnector), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(CreateConnector), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(CreateConnector), ex);
+            throw KurrentException.CreateUnknown(nameof(CreateConnector), ex);
         }
     }
 
@@ -89,12 +89,12 @@ public class ConnectorsClient {
                 ex.StatusCode switch {
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
                     StatusCode.NotFound         => ex.AsConnectorNotFoundError(connectorId),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(ReconfigureConnector), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(ReconfigureConnector), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(ReconfigureConnector), ex);
+            throw KurrentException.CreateUnknown(nameof(ReconfigureConnector), ex);
         }
     }
 
@@ -124,12 +124,12 @@ public class ConnectorsClient {
                 ex.StatusCode switch {
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
                     StatusCode.NotFound         => ex.AsConnectorNotFoundError(connectorId),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(DeleteConnector), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(DeleteConnector), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(DeleteConnector), ex);
+            throw KurrentException.CreateUnknown(nameof(DeleteConnector), ex);
         }
     }
 
@@ -164,12 +164,12 @@ public class ConnectorsClient {
                 ex.StatusCode switch {
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
                     StatusCode.NotFound         => ex.AsConnectorNotFoundError(connectorId),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(StartConnector), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(StartConnector), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(StartConnector), ex);
+            throw KurrentException.CreateUnknown(nameof(StartConnector), ex);
         }
     }
 
@@ -204,12 +204,12 @@ public class ConnectorsClient {
                 ex.StatusCode switch {
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
                     StatusCode.NotFound         => ex.AsConnectorNotFoundError(connectorId),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(ResetConnector), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(ResetConnector), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(ResetConnector), ex);
+            throw KurrentException.CreateUnknown(nameof(ResetConnector), ex);
         }
     }
 
@@ -239,12 +239,12 @@ public class ConnectorsClient {
                 ex.StatusCode switch {
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
                     StatusCode.NotFound         => ex.AsConnectorNotFoundError(connectorId),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(StopConnector), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(StopConnector), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(StopConnector), ex);
+            throw KurrentException.CreateUnknown(nameof(StopConnector), ex);
         }
     }
 
@@ -277,12 +277,12 @@ public class ConnectorsClient {
                 ex.StatusCode switch {
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
                     StatusCode.NotFound         => ex.AsConnectorNotFoundError(connectorId),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(RenameConnector), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(RenameConnector), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(RenameConnector), ex);
+            throw KurrentException.CreateUnknown(nameof(RenameConnector), ex);
         }
     }
 
@@ -341,12 +341,12 @@ public class ConnectorsClient {
             return Result.Failure<ConnectorListResult, ListConnectorsError>(
                 ex.StatusCode switch {
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(ListConnectors), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(ListConnectors), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(ListConnectors), ex);
+            throw KurrentException.CreateUnknown(nameof(ListConnectors), ex);
         }
     }
 
@@ -396,12 +396,12 @@ public class ConnectorsClient {
                 ex.StatusCode switch {
                     StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
                     StatusCode.NotFound         => ex.AsConnectorNotFoundError(connectorId),
-                    _                           => throw KurrentClientException.CreateUnknown(nameof(GetConnectorSettings), ex)
+                    _                           => throw KurrentException.CreateUnknown(nameof(GetConnectorSettings), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(GetConnectorSettings), ex);
+            throw KurrentException.CreateUnknown(nameof(GetConnectorSettings), ex);
         }
     }
 

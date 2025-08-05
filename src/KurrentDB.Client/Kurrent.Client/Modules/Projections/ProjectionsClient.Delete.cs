@@ -38,11 +38,11 @@ public partial class ProjectionsClient {
 				ex switch {
 					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
 					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentClientException.CreateUnknown(nameof(Delete), ex)
+					_                         => throw KurrentException.CreateUnknown(nameof(Delete), ex)
 				}
 			);
 		} catch (Exception ex) {
-			throw KurrentClientException.CreateUnknown(nameof(Delete), ex);
+			throw KurrentException.CreateUnknown(nameof(Delete), ex);
 		}
 	}
 }

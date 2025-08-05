@@ -42,7 +42,7 @@ public partial class StreamsClient {
             return Result.Failure<LogPosition, DeleteStreamError>(ex.AsAccessDeniedError(stream));
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(Delete), ex);
+            throw KurrentException.CreateUnknown(nameof(Delete), ex);
         }
     }
 
@@ -82,7 +82,7 @@ public partial class StreamsClient {
             return Result.Failure<LogPosition, TombstoneError>(ex.AsAccessDeniedError(stream));
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(Delete), ex);
+            throw KurrentException.CreateUnknown(nameof(Delete), ex);
         }
     }
 

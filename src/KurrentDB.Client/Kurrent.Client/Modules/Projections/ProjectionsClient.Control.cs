@@ -36,12 +36,12 @@ public partial class ProjectionsClient {
                 ex switch {
                     AccessDeniedException     => rpcEx.AsAccessDeniedError(),
                     NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentClientException.CreateUnknown(nameof(Enable), ex)
+                    _                         => throw KurrentException.CreateUnknown(nameof(Enable), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(Enable), ex);
+            throw KurrentException.CreateUnknown(nameof(Enable), ex);
         }
     }
 
@@ -72,12 +72,12 @@ public partial class ProjectionsClient {
                 ex switch {
                     AccessDeniedException     => rpcEx.AsAccessDeniedError(),
                     NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentClientException.CreateUnknown(nameof(Reset), ex)
+                    _                         => throw KurrentException.CreateUnknown(nameof(Reset), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(Reset), ex);
+            throw KurrentException.CreateUnknown(nameof(Reset), ex);
         }
     }
 
@@ -98,12 +98,12 @@ public partial class ProjectionsClient {
                 ex switch {
                     AccessDeniedException     => rpcEx.AsAccessDeniedError(),
                     NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentClientException.CreateUnknown(nameof(Abort), ex)
+                    _                         => throw KurrentException.CreateUnknown(nameof(Abort), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(Abort), ex);
+            throw KurrentException.CreateUnknown(nameof(Abort), ex);
         }
     }
 
@@ -124,12 +124,12 @@ public partial class ProjectionsClient {
                 ex switch {
                     AccessDeniedException     => rpcEx.AsAccessDeniedError(),
                     NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentClientException.CreateUnknown(nameof(Abort), ex)
+                    _                         => throw KurrentException.CreateUnknown(nameof(Abort), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(Abort), ex);
+            throw KurrentException.CreateUnknown(nameof(Abort), ex);
         }
     }
 
@@ -145,12 +145,12 @@ public partial class ProjectionsClient {
                 ex switch {
                     AccessDeniedException     => rpcEx.AsAccessDeniedError(),
                     NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentClientException.CreateUnknown(nameof(Abort), ex)
+                    _                         => throw KurrentException.CreateUnknown(nameof(Abort), ex)
                 }
             );
         }
         catch (Exception ex) {
-            throw KurrentClientException.CreateUnknown(nameof(Abort), ex);
+            throw KurrentException.CreateUnknown(nameof(Abort), ex);
         }
     }
 

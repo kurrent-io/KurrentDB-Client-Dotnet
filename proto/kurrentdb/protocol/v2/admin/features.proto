@@ -1,35 +1,19 @@
 syntax = "proto3";
 
-/**
- * KurrentDB Server Features Protocol
- *
- * This protocol defines services and messages for discovering server features
- * in a KurrentDB environment. It enables clients to adapt their behavior based
- * on server features, their enablement status, and requirements.
- */
 package kurrentdb.protocol.v2;
 
-option csharp_namespace    = "KurrentDB.Protocol.Features.V2";
-option java_package        = "io.kurrentdb.protocol.features.v2";
+option csharp_namespace    = "KurrentDB.Protocol.Admin.V2";
+option java_package        = "io.kurrentdb.protocol.admin.v2";
 option java_multiple_files = true;
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
+
+import "admin/error_details.proto";
 import "core.proto";
 
-/**
- * Service for retrieving information about the server, including features
- * and metadata.
- */
-service ServerInfoService {
-  // Retrieves server information and available features
-  rpc GetServerInfo(ServerInfoRequest) returns (ServerInfoResponse) {}
-}
-
-/**
- * Contains server version information, build details, and compatibility requirements.
- */
+// Contains server version information, build details, and compatibility requirements.
 message ServerMetadata {
   // Semantic version of the server software
   string version = 1;
