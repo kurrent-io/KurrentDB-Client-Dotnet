@@ -1,8 +1,9 @@
 using System.Threading.Channels;
 using KurrentDB.Client.Diagnostics;
-using EventStore.Client.Streams;
 using Grpc.Core;
-using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
+using KurrentDB.Protocol.Streams.V1;
+using static KurrentDB.Protocol.Streams.V1.ReadResp.ContentOneofCase;
+using static KurrentDB.Protocol.Streams.V1.Streams;
 
 namespace KurrentDB.Client {
 	public partial class KurrentDBClient {
@@ -201,7 +202,7 @@ namespace KurrentDB.Client {
 				async Task PumpMessages() {
 					try {
 						var channelInfo = await selectChannelInfo(_cts.Token).ConfigureAwait(false);
-						var client      = new Streams.StreamsClient(channelInfo.CallInvoker);
+						var client      = new StreamsClient(channelInfo.CallInvoker);
 						_call = client.Read(_request, _callOptions);
                         await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
                             StreamMessage subscriptionMessage =

@@ -1,5 +1,6 @@
 using EventStore.Client;
-using EventStore.Client.Operations;
+using KurrentDB.Protocol.Operations.V1;
+using static KurrentDB.Protocol.Operations.V1.Operations;
 
 namespace KurrentDB.Client {
 	public partial class KurrentDBOperationsClient {
@@ -17,7 +18,7 @@ namespace KurrentDB.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Operations.OperationsClient(
+			using var call = new OperationsClient(
 				channelInfo.CallInvoker).ShutdownAsync(EmptyResult,
 				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
@@ -35,7 +36,7 @@ namespace KurrentDB.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Operations.OperationsClient(
+			using var call = new OperationsClient(
 				channelInfo.CallInvoker).MergeIndexesAsync(EmptyResult,
 				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
@@ -53,7 +54,7 @@ namespace KurrentDB.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Operations.OperationsClient(
+			using var call = new OperationsClient(
 				channelInfo.CallInvoker).ResignNodeAsync(EmptyResult,
 				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
@@ -72,7 +73,7 @@ namespace KurrentDB.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Operations.OperationsClient(
+			using var call = new OperationsClient(
 				channelInfo.CallInvoker).SetNodePriorityAsync(
 				new SetNodePriorityReq {Priority = nodePriority},
 				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
@@ -91,7 +92,7 @@ namespace KurrentDB.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Operations.OperationsClient(
+			using var call = new OperationsClient(
 				channelInfo.CallInvoker).RestartPersistentSubscriptionsAsync(
 				EmptyResult,
 				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));

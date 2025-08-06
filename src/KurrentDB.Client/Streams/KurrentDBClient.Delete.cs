@@ -1,5 +1,6 @@
-using EventStore.Client.Streams;
+using KurrentDB.Protocol.Streams.V1;
 using Microsoft.Extensions.Logging;
+using static KurrentDB.Protocol.Streams.V1.Streams;
 
 namespace KurrentDB.Client {
 	public partial class KurrentDBClient {
@@ -29,7 +30,7 @@ namespace KurrentDB.Client {
 			CancellationToken cancellationToken) {
 			_log.LogDebug("Deleting stream {streamName}.", request.Options.StreamIdentifier);
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Streams.StreamsClient(
+			using var call = new StreamsClient(
 				channelInfo.CallInvoker).DeleteAsync(request,
 				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			var result = await call.ResponseAsync.ConfigureAwait(false);

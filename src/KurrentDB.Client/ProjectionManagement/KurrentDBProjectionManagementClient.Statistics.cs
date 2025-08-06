@@ -1,7 +1,8 @@
 using System.Runtime.CompilerServices;
 using EventStore.Client;
-using EventStore.Client.Projections;
 using Grpc.Core;
+using KurrentDB.Protocol.Projections.V1;
+using static KurrentDB.Protocol.Projections.V1.Projections;
 
 namespace KurrentDB.Client {
 	public partial class KurrentDBProjectionManagementClient {
@@ -72,7 +73,7 @@ namespace KurrentDB.Client {
 			CallOptions callOptions,
 			[EnumeratorCancellation] CancellationToken cancellationToken) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Projections.ProjectionsClient(
+			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).Statistics(new StatisticsReq {
 				Options = options
 			}, callOptions);

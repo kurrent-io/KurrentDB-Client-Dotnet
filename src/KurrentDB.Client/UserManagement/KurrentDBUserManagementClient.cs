@@ -1,8 +1,9 @@
 using System.Runtime.CompilerServices;
-using EventStore.Client.Users;
 using Grpc.Core;
+using KurrentDB.Protocol.Users.V1;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using static KurrentDB.Protocol.Users.V1.Users;
 
 namespace KurrentDB.Client {
 	/// <summary>
@@ -46,7 +47,7 @@ namespace KurrentDB.Client {
 			if (password == string.Empty) throw new ArgumentOutOfRangeException(nameof(password));
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Users.UsersClient(
+			using var call = new UsersClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					LoginName = loginName,
@@ -79,7 +80,7 @@ namespace KurrentDB.Client {
 			}
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Users.UsersClient(
+			using var call = new UsersClient(
 				channelInfo.CallInvoker).Details(new DetailsReq {
 				Options = new DetailsReq.Types.Options {
 					LoginName = loginName
@@ -116,7 +117,7 @@ namespace KurrentDB.Client {
 			}
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			var call = new Users.UsersClient(
+			var call = new UsersClient(
 				channelInfo.CallInvoker).DeleteAsync(new DeleteReq {
 				Options = new DeleteReq.Types.Options {
 					LoginName = loginName
@@ -146,7 +147,7 @@ namespace KurrentDB.Client {
 			}
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Users.UsersClient(
+			using var call = new UsersClient(
 				channelInfo.CallInvoker).EnableAsync(new EnableReq {
 				Options = new EnableReq.Types.Options {
 					LoginName = loginName
@@ -169,7 +170,7 @@ namespace KurrentDB.Client {
 			if (loginName == string.Empty) throw new ArgumentOutOfRangeException(nameof(loginName));
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			var call = new Users.UsersClient(
+			var call = new UsersClient(
 				channelInfo.CallInvoker).DisableAsync(new DisableReq {
 				Options = new DisableReq.Types.Options {
 					LoginName = loginName
@@ -189,7 +190,7 @@ namespace KurrentDB.Client {
 			UserCredentials? userCredentials = null,
 			[EnumeratorCancellation] CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Users.UsersClient(
+			using var call = new UsersClient(
 				channelInfo.CallInvoker).Details(new DetailsReq(),
 				KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
@@ -225,7 +226,7 @@ namespace KurrentDB.Client {
 			if (newPassword == string.Empty) throw new ArgumentOutOfRangeException(nameof(newPassword));
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Users.UsersClient(
+			using var call = new UsersClient(
 				channelInfo.CallInvoker).ChangePasswordAsync(
 				new ChangePasswordReq {
 					Options = new ChangePasswordReq.Types.Options {

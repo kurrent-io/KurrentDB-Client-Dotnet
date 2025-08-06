@@ -1,5 +1,5 @@
-using EventStore.Client.ServerFeatures;
 using Grpc.Core;
+using static KurrentDB.Protocol.Users.V1.ServerFeatures;
 
 namespace KurrentDB.Client {
 	internal class GrpcServerCapabilitiesClient : IServerCapabilitiesClient {
@@ -13,7 +13,7 @@ namespace KurrentDB.Client {
 			CallInvoker callInvoker,
 			CancellationToken cancellationToken) {
 
-			var client = new ServerFeatures.ServerFeaturesClient(callInvoker);
+			var client = new ServerFeaturesClient(callInvoker);
 			using var call = client.GetSupportedMethodsAsync(
 				new(),
 				KurrentDBCallOptions.CreateNonStreaming(

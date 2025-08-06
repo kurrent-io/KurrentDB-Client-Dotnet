@@ -1,9 +1,12 @@
+using EventStore.Client;
 using Grpc.Core;
 using KurrentDB.Client;
 using static EventStore.Client.WrongExpectedVersion.CurrentStreamRevisionOptionOneofCase;
 using static EventStore.Client.WrongExpectedVersion.ExpectedStreamPositionOptionOneofCase;
+using Position = KurrentDB.Client.Position;
+using Timeout = EventStore.Client.Timeout;
 
-namespace EventStore.Client.Streams {
+namespace KurrentDB.Protocol.Streams.V1 {
 	partial class BatchAppendResp {
 		public IWriteResult ToWriteResult() => ResultCase switch {
 			ResultOneofCase.Success => new SuccessResult(
