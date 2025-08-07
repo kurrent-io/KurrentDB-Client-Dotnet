@@ -1,13 +1,13 @@
+// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+
 using EventStore.Client;
 using Grpc.Core;
-using Kurrent.Client.Legacy;
-using KurrentDB.Client;
 using KurrentDB.Protocol.Projections.V1;
 
 namespace Kurrent.Client.Projections;
 
 public partial class ProjectionsClient {
-	public async ValueTask<Result<Success, UpdateError>> Update(
+	public async ValueTask<Result<Success, UpdateProjectionError>> UpdateProjection(
 		string name, string query, bool? emitEnabled = null, CancellationToken cancellationToken = default
 	) {
 		try {
@@ -25,21 +25,18 @@ public partial class ProjectionsClient {
 				Options = options
 			};
 
-			var resp = await ServiceClient.UpdateAsync(request, cancellationToken: cancellationToken).ConfigureAwait(false);
+			var resp = await ServiceClient
+                .UpdateAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-			return resp is not null
-				? new Result<Success, UpdateError>()
-				: Result.Failure<Success, UpdateError>(new UpdateError());
-		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-			return Result.Failure<Success, UpdateError>(
-				ex switch {
-					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentException.CreateUnknown(nameof(Delete), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentException.CreateUnknown(nameof(Delete), ex);
+			return new Success();
 		}
+        catch (RpcException rex) {
+            return Result.Failure<Success, UpdateProjectionError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
 }

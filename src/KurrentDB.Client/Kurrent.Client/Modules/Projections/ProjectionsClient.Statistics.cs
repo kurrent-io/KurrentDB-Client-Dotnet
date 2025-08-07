@@ -1,157 +1,90 @@
-using System.Runtime.CompilerServices;
+#pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
+
+// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+
 using EventStore.Client;
 using Grpc.Core;
-using Kurrent.Client.Legacy;
-using KurrentDB.Client;
 using KurrentDB.Protocol.Projections.V1;
 
 namespace Kurrent.Client.Projections;
 
 public partial class ProjectionsClient {
-	/// <summary>
-	/// List the <see cref="ProjectionDetails"/> of all one-time projections.
-	/// </summary>
-	/// <param name="cancellationToken"></param>
-	/// <returns></returns>
-	public Result<IAsyncEnumerable<ProjectionDetails>, ListOneTimeError> ListOneTime(CancellationToken cancellationToken = default) {
-		try {
-			var details = ListInternal(
-				new StatisticsReq.Types.Options {
-					OneTime = new Empty(),
-				},
-				cancellationToken
-			);
+	public async ValueTask<Result<List<ProjectionDetails>, ListProjectionsError>> ListProjections(ListProjectionsOptions options, CancellationToken cancellationToken = default) {
+        var request = new StatisticsReq {
+            Options = options.Mode switch {
+                ProjectionMode.Unspecified => new() { All        = new Empty() },
+                ProjectionMode.OneTime     => new() { OneTime    = new Empty() },
+                ProjectionMode.Continuous  => new() { Continuous = new Empty() },
+                ProjectionMode.Transient   => new() { Transient  = new Empty() }
+            }
+        };
 
-			return Result.Success<IAsyncEnumerable<ProjectionDetails>, ListOneTimeError>(details);
-		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-			return Result.Failure<IAsyncEnumerable<ProjectionDetails>, ListOneTimeError>(
-				ex switch {
-					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentException.CreateUnknown(nameof(Delete), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentException.CreateUnknown(nameof(Delete), ex);
-		}
+        try {
+            using var call = ServiceClient.Statistics(request, cancellationToken: cancellationToken);
+
+            var result = await call.ResponseStream
+                .ReadAllAsync(cancellationToken)
+                .Select(MapToProjectionDetails)
+                .ToListAsync(cancellationToken);
+
+            return result;
+        }
+        catch (RpcException rex) {
+            return Result.Failure<List<ProjectionDetails>, ListProjectionsError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
 
-	/// <summary>
-	/// List the <see cref="ProjectionDetails"/> of all continuous projections.
-	/// </summary>
-	/// <param name="cancellationToken"></param>
-	/// <returns></returns>
-	public Result<IAsyncEnumerable<ProjectionDetails>, ListContinuousError> ListContinuous(CancellationToken cancellationToken = default) {
-		try {
-			var details = ListInternal(
-				new StatisticsReq.Types.Options {
-					Continuous = new Empty()
-				},
-				cancellationToken
-			);
+	public async ValueTask<Result<ProjectionDetails, GetProjectionError>> GetProjection(string name, CancellationToken cancellationToken = default) {
+        try {
+            var request = new StatisticsReq {
+                Options =  new StatisticsReq.Types.Options {
+                    Name = name
+                }
+            };
 
-			return Result.Success<IAsyncEnumerable<ProjectionDetails>, ListContinuousError>(details);
-		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-			return Result.Failure<IAsyncEnumerable<ProjectionDetails>, ListContinuousError>(
-				ex switch {
-					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentException.CreateUnknown(nameof(Delete), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentException.CreateUnknown(nameof(Delete), ex);
-		}
+            using var call = ServiceClient.Statistics(request, cancellationToken: cancellationToken);
+
+            var result = await call.ResponseStream
+                .ReadAllAsync(cancellationToken)
+                .Select(MapToProjectionDetails)
+                .FirstAsync(cancellationToken);
+
+            return result;
+        }
+        catch (RpcException rex) {
+            return Result.Failure<ProjectionDetails, GetProjectionError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
 
-	/// <summary>
-	/// Gets the status of a projection.
-	/// </summary>
-	/// <param name="name"></param>
-	/// <param name="cancellationToken"></param>
-	/// <returns></returns>
-	public async ValueTask<Result<ProjectionDetails, GetStatusError>> GetStatus(string name, CancellationToken cancellationToken = default) {
-		try {
-			var details = await ListInternal(
-					new StatisticsReq.Types.Options {
-						Name = name
-					},
-					cancellationToken
-				)
-				.FirstOrDefaultAsync(cancellationToken).AsTask();
-
-			return Result.Success<ProjectionDetails, GetStatusError>(details ?? ProjectionDetails.None);
-		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-			return Result.Failure<ProjectionDetails, GetStatusError>(
-				ex switch {
-					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentException.CreateUnknown(nameof(GetStatus), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentException.CreateUnknown(nameof(GetStatus), ex);
-		}
-	}
-
-	/// <summary>
-	/// List the <see cref="ProjectionDetails"/> of all projections.
-	/// </summary>
-	/// <param name="cancellationToken"></param>
-	/// <returns></returns>
-	public Result<IAsyncEnumerable<ProjectionDetails>, ListAllError> ListAll(CancellationToken cancellationToken = default) {
-		try {
-			var details = ListInternal(
-				new StatisticsReq.Types.Options {
-					All = new Empty()
-				},
-				cancellationToken
-			);
-
-			return Result.Success<IAsyncEnumerable<ProjectionDetails>, ListAllError>(details);
-		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-			return Result.Failure<IAsyncEnumerable<ProjectionDetails>, ListAllError>(
-				ex switch {
-					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentException.CreateUnknown(nameof(ListAll), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentException.CreateUnknown(nameof(Delete), ex);
-		}
-	}
-
-	async IAsyncEnumerable<ProjectionDetails> ListInternal(
-		StatisticsReq.Types.Options options,
-		[EnumeratorCancellation] CancellationToken cancellationToken
-	) {
-		using var call = ServiceClient.Statistics(
-			new StatisticsReq {
-				Options = options
-			},
-			cancellationToken: cancellationToken
-		);
-
-		await foreach (var projectionDetails in call.ResponseStream.ReadAllAsync(cancellationToken)
-			               .Select(ConvertToProjectionDetails)
-			               .WithCancellation(cancellationToken)
-			               .ConfigureAwait(false)) {
-			yield return projectionDetails;
-		}
-	}
-
-	static ProjectionDetails ConvertToProjectionDetails(StatisticsResp response) {
+	static ProjectionDetails MapToProjectionDetails(StatisticsResp response) {
 		var details = response.Details;
 
 		return new ProjectionDetails(
-			details.CoreProcessingTime, details.Version, details.Epoch,
-			details.EffectiveName, details.WritesInProgress, details.ReadsInProgress,
+			details.CoreProcessingTime,
+            details.Version,
+            details.Epoch,
+			details.EffectiveName,
+            details.WritesInProgress,
+            details.ReadsInProgress,
 			details.PartitionsCached,
-			details.Status, details.StateReason, details.Name,
-			details.Mode, details.Position, details.Progress,
-			details.LastCheckpoint, details.EventsProcessedAfterRestart, details.CheckpointStatus,
-			details.BufferedEvents, details.WritePendingEventsBeforeCheckpoint,
+			details.Status,
+            details.StateReason,
+            details.Name,
+			details.Mode,
+            details.Position,
+            details.Progress,
+			details.LastCheckpoint,
+            details.EventsProcessedAfterRestart,
+            details.CheckpointStatus,
+			details.BufferedEvents,
+            details.WritePendingEventsBeforeCheckpoint,
 			details.WritePendingEventsAfterCheckpoint
 		);
 	}

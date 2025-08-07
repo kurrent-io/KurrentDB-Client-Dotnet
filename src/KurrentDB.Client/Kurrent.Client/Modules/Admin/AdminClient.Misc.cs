@@ -3,9 +3,6 @@
 
 using EventStore.Client;
 using Grpc.Core;
-using Kurrent.Client.Legacy;
-using Kurrent.Client.Operations;
-using KurrentDB.Client;
 using KurrentDB.Protocol.Operations.V1;
 
 namespace Kurrent.Client.Admin;
@@ -14,23 +11,19 @@ public partial class AdminClient {
 	static readonly Empty EmptyRequest = new Empty();
 
 	public async ValueTask<Result<Success, ShutdownError>> Shutdown(CancellationToken cancellationToken = default) {
-		try {
+        try {
             await OperationsServiceClient
                 .ShutdownAsync(EmptyRequest, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-			return new Success();
-		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-			return Result.Failure<Success, ShutdownError>(
-				ex switch {
-					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentException.CreateUnknown(nameof(Shutdown), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentException.CreateUnknown(nameof(Shutdown), ex);
-		}
+            return new Success();
+        }
+        catch (RpcException rex) {
+            return Result.Failure<Success, ShutdownError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
 
 	public async ValueTask<Result<Success, MergeIndexesError>> MergeIndexes(CancellationToken cancellationToken = default) {
@@ -40,18 +33,14 @@ public partial class AdminClient {
                 .ConfigureAwait(false);
 
             return new Success();
-		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-			return Result.Failure<Success, MergeIndexesError>(
-				ex switch {
-					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentException.CreateUnknown(nameof(MergeIndexes), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentException.CreateUnknown(nameof(Shutdown), ex);
-		}
-	}
+        }
+        catch (RpcException rex) {
+            return Result.Failure<Success, MergeIndexesError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
+    }
 
 	public async ValueTask<Result<Success, ResignNodeError>> ResignNode(CancellationToken cancellationToken = default) {
 		try {
@@ -60,37 +49,31 @@ public partial class AdminClient {
                 .ConfigureAwait(false);
 
             return new Success();
-		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-			return Result.Failure<Success, ResignNodeError>(
-				ex switch {
-					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentException.CreateUnknown(nameof(ResignNode), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentException.CreateUnknown(nameof(Shutdown), ex);
 		}
+        catch (RpcException rex) {
+            return Result.Failure<Success, ResignNodeError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
 
 	public async ValueTask<Result<Success, SetNodePriorityError>> SetNodePriority(int nodePriority, CancellationToken cancellationToken = default) {
-		try {
+		ArgumentOutOfRangeException.ThrowIfNegative(nodePriority);
+
+        try {
             await OperationsServiceClient
                 .SetNodePriorityAsync(new SetNodePriorityReq { Priority = nodePriority }, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return new Success();
-		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-			return Result.Failure<Success, SetNodePriorityError>(
-				ex switch {
-					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentException.CreateUnknown(nameof(SetNodePriority), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentException.CreateUnknown(nameof(Shutdown), ex);
 		}
+        catch (RpcException rex) {
+            return Result.Failure<Success, SetNodePriorityError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
 
 	public async ValueTask<Result<Success, RestartPersistentSubscriptionsError>> RestartPersistentSubscriptions(CancellationToken cancellationToken = default) {
@@ -100,16 +83,12 @@ public partial class AdminClient {
                 .ConfigureAwait(false);
 
             return new Success();
-		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-			return Result.Failure<Success, RestartPersistentSubscriptionsError>(
-				ex switch {
-					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentException.CreateUnknown(nameof(RestartPersistentSubscriptions), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentException.CreateUnknown(nameof(Shutdown), ex);
 		}
+        catch (RpcException rex) {
+            return Result.Failure<Success, RestartPersistentSubscriptionsError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
 }

@@ -1,5 +1,6 @@
 #pragma warning disable CS8509
 
+using Grpc.Core;
 using static KurrentDB.Protocol.Streams.V2.MultiStreamAppendResponse;
 using Contracts = KurrentDB.Protocol.Streams.V2;
 
@@ -38,8 +39,14 @@ public partial class StreamsClient {
                 ResultOneofCase.Failure => response.Failure.Map(),
             };
         }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(Append), ex);
+        catch (RpcException rex) {
+            throw;
+
+            // we have a problem here cause the error result must contain a list of failures or permission denied or others...
+            // return Result.Failure<AppendStreamSuccesses, AppendStreamFailures>(rex.StatusCode switch {
+            //     StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+            //     _                           => throw rex.WithOriginalCallStack()
+            // });
         }
     }
 }

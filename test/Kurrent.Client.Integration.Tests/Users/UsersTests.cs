@@ -137,6 +137,6 @@ public class UsersTests : KurrentClientTestFixture {
 		await AutomaticClient.Users
 			.DeleteUser(user.LoginName)
 			.ShouldNotThrowAsync()
-			.OnFailureAsync(failure => failure.Value.ShouldBeOfType<ErrorDetails.UserNotFound>());
+			.OnFailureAsync(failure => failure.Value.ShouldBeOfType<ErrorDetails.NotFound>());
 	}
 }

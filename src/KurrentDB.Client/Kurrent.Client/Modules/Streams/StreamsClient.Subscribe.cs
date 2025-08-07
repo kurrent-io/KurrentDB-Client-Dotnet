@@ -2,6 +2,7 @@
 
 using System.Threading.Channels;
 using Grpc.Core;
+using Kurrent.Client.Legacy;
 using KurrentDB.Client;
 using KurrentDB.Protocol.Streams.V1;
 using static KurrentDB.Protocol.Streams.V1.ReadResp.ContentOneofCase;
@@ -37,7 +38,7 @@ public partial class StreamsClient {
         try {
             await session.ResponseStream.MoveNext(stoppingToken).ConfigureAwait(false);
         }
-        catch (AccessDeniedException) {
+        catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.AccessDenied)) {
             return Result.Failure<Subscription, ReadError>(new ErrorDetails.AccessDenied());
         }
 

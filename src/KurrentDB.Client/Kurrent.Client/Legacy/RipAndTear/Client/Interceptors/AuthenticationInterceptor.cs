@@ -16,7 +16,6 @@ class AuthenticationInterceptor(KurrentDBClientSettings Settings) : Interceptor 
         TRequest request,
         ClientInterceptorContext<TRequest, TResponse> context,
         AsyncUnaryCallContinuation<TRequest, TResponse> continuation) {
-
         var modifiedContext = AddAuthHeaderToContext(context);
         return continuation(request, modifiedContext);
     }
@@ -27,7 +26,6 @@ class AuthenticationInterceptor(KurrentDBClientSettings Settings) : Interceptor 
     public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(
         ClientInterceptorContext<TRequest, TResponse> context,
         AsyncClientStreamingCallContinuation<TRequest, TResponse> continuation) {
-
         var modifiedContext = AddAuthHeaderToContext(context);
         return continuation(modifiedContext);
     }
@@ -39,7 +37,6 @@ class AuthenticationInterceptor(KurrentDBClientSettings Settings) : Interceptor 
         TRequest request,
         ClientInterceptorContext<TRequest, TResponse> context,
         AsyncServerStreamingCallContinuation<TRequest, TResponse> continuation) {
-
         var modifiedContext = AddAuthHeaderToContext(context);
         return continuation(request, modifiedContext);
     }
@@ -50,7 +47,6 @@ class AuthenticationInterceptor(KurrentDBClientSettings Settings) : Interceptor 
     public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(
         ClientInterceptorContext<TRequest, TResponse> context,
         AsyncDuplexStreamingCallContinuation<TRequest, TResponse> continuation) {
-
         var modifiedContext = AddAuthHeaderToContext(context);
         return continuation(modifiedContext);
     }
@@ -63,7 +59,7 @@ class AuthenticationInterceptor(KurrentDBClientSettings Settings) : Interceptor 
         if (Settings.DefaultCredentials is null)
 	        return context;
 
-        Metadata headers = context.Options.Headers ?? [];
+        var headers = context.Options.Headers ?? [];
 
         if (context.Options.Headers is null) {
             var callOptions = context.Options.WithHeaders(headers);
@@ -71,10 +67,8 @@ class AuthenticationInterceptor(KurrentDBClientSettings Settings) : Interceptor 
         }
 
         var authHeader = Settings.OperationOptions
-            .GetAuthenticationHeaderValue(Settings.DefaultCredentials, CancellationToken.None)
-            .ConfigureAwait(false)
-            .GetAwaiter()
-            .GetResult();
+            .GetAuthenticationHeaderValue(Settings.DefaultCredentials, context.Options.CancellationToken)
+            .AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
 
         headers.Add(Constants.Headers.Authorization, authHeader);
 

@@ -1,51 +1,18 @@
 // ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
 
 using Grpc.Core;
-using Kurrent.Client.Legacy;
 using KurrentDB.Client;
 using KurrentDB.Protocol.Users.V1;
-using static KurrentDB.Protocol.Users.V1.UsersService;
+using UsersServiceClient = KurrentDB.Protocol.Users.V1.Users.UsersClient;
 
 namespace Kurrent.Client.Users;
+
 
 public class UsersClient {
     internal UsersClient(KurrentClient source) =>
         ServiceClient = new UsersServiceClient(source.LegacyCallInvoker);
 
     UsersServiceClient ServiceClient { get; }
-
-    public async ValueTask<Result<Success, ChangeUserPasswordError>> ChangeUserPassword(
-        string loginName, string currentPassword, string newPassword, CancellationToken cancellationToken = default
-    ) {
-        try {
-            var request = new ChangePasswordReq {
-                Options = new() {
-                    CurrentPassword = currentPassword,
-                    NewPassword     = newPassword,
-                    LoginName       = loginName
-                }
-            };
-
-            // TODO SS: does the user exist? do we want to be explicit about this?
-
-            await ServiceClient
-                .ChangePasswordAsync(request, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-
-            return new Success();
-        }
-        catch (RpcException ex) {
-            return Result.Failure<Success, ChangeUserPasswordError>(
-                ex.StatusCode switch {
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(ChangeUserPassword), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(ChangeUserPassword), ex);
-        }
-    }
 
     public async ValueTask<Result<Success, CreateUserError>> CreateUser(
         string loginName, string fullName, string[] groups, string password,
@@ -61,25 +28,18 @@ public class UsersClient {
                 }
             };
 
-            // TODO SS: does the user already exist? do we want to be explicit about this?
-
             await ServiceClient
                 .CreateAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Success.Instance;
         }
-        catch (RpcException ex) {
-            return Result.Failure<Success, CreateUserError>(
-                ex.StatusCode switch {
-                    StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(CreateUser), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(CreateUser), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, CreateUserError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.AlreadyExists    => new ErrorDetails.AlreadyExists(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -87,26 +47,18 @@ public class UsersClient {
         try {
             var request = new DeleteReq { Options = new() { LoginName = loginName } };
 
-            // TODO SS: does the user exist? do we want to be explicit about this?
-
             await ServiceClient
                 .DeleteAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return new Success();
         }
-        catch (RpcException ex) {
-            return Result.Failure<Success, DeleteUserError>(
-                ex.StatusCode switch {
-                    StatusCode.NotFound         => ex.AsUserNotFoundError(),
-                    StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(GetUser), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(DeleteUser), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, DeleteUserError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -114,25 +66,18 @@ public class UsersClient {
         try {
             var request = new DisableReq { Options = new() { LoginName = loginName } };
 
-            // TODO SS: does the user exist? do we want to be explicit about this?
-
             await ServiceClient
                 .DisableAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return new Success();
         }
-        catch (RpcException ex) {
-            return Result.Failure<Success, DisableUserError>(
-                ex.StatusCode switch {
-                    StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(DisableUser), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(DisableUser), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, DisableUserError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -140,87 +85,45 @@ public class UsersClient {
         try {
             var request = new EnableReq { Options = new() { LoginName = loginName } };
 
-            // TODO SS: does the user exist? do we want to be explicit about this?
-
             await ServiceClient
                 .EnableAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return new Success();
         }
-        catch (RpcException ex) {
-            return Result.Failure<Success, EnableUserError>(
-                ex.StatusCode switch {
-                    StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(EnableUser), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(EnableUser), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, EnableUserError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
-    public async ValueTask<Result<UserDetails, GetUserError>> GetUser(string loginName, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<Success, ChangeUserPasswordError>> ChangeUserPassword(
+        string loginName, string currentPassword, string newPassword, CancellationToken cancellationToken = default
+    ) {
         try {
-            var request = new DetailsReq { Options = new() { LoginName = loginName } };
-
-            using var call = ServiceClient.Details(request, cancellationToken: cancellationToken);
-
-            var user = await call.ResponseStream
-                .ReadAllAsync(cancellationToken)
-                .Select(static resp => new UserDetails {
-                    LoginName       = resp.UserDetails.LoginName,
-                    FullName        = resp.UserDetails.FullName,
-                    Groups          = resp.UserDetails.Groups.ToArray(),
-                    Disabled        = resp.UserDetails.Disabled,
-                    DateLastUpdated = resp.UserDetails.LastUpdated?.TicksSinceEpoch.FromTicksSinceEpoch()
-                })
-                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
-
-            return user ?? Result.Failure<UserDetails, GetUserError>(new ErrorDetails.UserNotFound(metadata => metadata.With("logingName", loginName)));
-        }
-        catch (RpcException ex) {
-            return Result.Failure<UserDetails, GetUserError>(
-                ex.StatusCode switch {
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(GetUser), ex)
+            var request = new ChangePasswordReq {
+                Options = new() {
+                    CurrentPassword = currentPassword,
+                    NewPassword     = newPassword,
+                    LoginName       = loginName
                 }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(GetUser), ex);
-        }
-    }
+            };
 
-    public async ValueTask<Result<List<UserDetails>, ListAllUsersError>> ListAllUsers(CancellationToken cancellationToken = default) {
-        try {
-            using var call = ServiceClient.Details(new DetailsReq(), cancellationToken: cancellationToken);
+            await ServiceClient
+                .ChangePasswordAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-            var users = await call.ResponseStream
-                .ReadAllAsync(cancellationToken)
-                .Select(static resp => new UserDetails { // TODO SS: Create a mapper for mapping user details
-                    LoginName       = resp.UserDetails.LoginName,
-                    FullName        = resp.UserDetails.FullName,
-                    Groups          = resp.UserDetails.Groups.ToArray(),
-                    Disabled        = resp.UserDetails.Disabled,
-                    DateLastUpdated = resp.UserDetails.LastUpdated?.TicksSinceEpoch.FromTicksSinceEpoch()
-                })
-                .ToListAsync(cancellationToken: cancellationToken);
-
-            return users;
+            return new Success();
         }
-        catch (RpcException ex) {
-            return Result.Failure<List<UserDetails>, ListAllUsersError>(
-                ex.StatusCode switch {
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(GetUser), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(ListAllUsers), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, ChangeUserPasswordError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -243,17 +146,65 @@ public class UsersClient {
 
             return new Success();
         }
-        catch (RpcException ex) {
-            return Result.Failure<Success, ResetUserPasswordError>(
-                ex.StatusCode switch {
-                    StatusCode.Unauthenticated  => ex.AsNotAuthenticatedError(),
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(ResetUserPassword), ex)
-                }
-            );
+        catch (RpcException rex) {
+            return Result.Failure<Success, ResetUserPasswordError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(ResetUserPassword), ex);
+    }
+
+    public async ValueTask<Result<UserDetails, GetUserError>> GetUser(string loginName, CancellationToken cancellationToken = default) {
+        try {
+            var request = new DetailsReq { Options = new() { LoginName = loginName } };
+
+            using var call = ServiceClient.Details(request, cancellationToken: cancellationToken);
+
+            var user = await call.ResponseStream
+                .ReadAllAsync(cancellationToken)
+                .Select(static resp => new UserDetails {
+                    LoginName       = resp.UserDetails.LoginName,
+                    FullName        = resp.UserDetails.FullName,
+                    Groups          = resp.UserDetails.Groups.ToArray(),
+                    Disabled        = resp.UserDetails.Disabled,
+                    DateLastUpdated = resp.UserDetails.LastUpdated?.TicksSinceEpoch.FromTicksSinceEpoch()
+                })
+                .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+
+            return user ?? Result.Failure<UserDetails, GetUserError>(new ErrorDetails.NotFound());
+        }
+        catch (RpcException rex) {
+            return Result.Failure<UserDetails, GetUserError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
+    }
+
+    public async ValueTask<Result<List<UserDetails>, ListAllUsersError>> ListAllUsers(CancellationToken cancellationToken = default) {
+        try {
+            using var call = ServiceClient.Details(new DetailsReq(), cancellationToken: cancellationToken);
+
+            var users = await call.ResponseStream
+                .ReadAllAsync(cancellationToken)
+                .Select(static resp => new UserDetails { // TODO SS: Create a mapper for mapping user details
+                    LoginName       = resp.UserDetails.LoginName,
+                    FullName        = resp.UserDetails.FullName,
+                    Groups          = resp.UserDetails.Groups.ToArray(),
+                    Disabled        = resp.UserDetails.Disabled,
+                    DateLastUpdated = resp.UserDetails.LastUpdated?.TicksSinceEpoch.FromTicksSinceEpoch()
+                })
+                .ToListAsync(cancellationToken: cancellationToken);
+
+            return users;
+        }
+        catch (RpcException rex) {
+            return Result.Failure<List<UserDetails>, ListAllUsersError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 }

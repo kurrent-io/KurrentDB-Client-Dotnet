@@ -6,7 +6,7 @@ using PersistentSubscriptionInfo = Kurrent.Client.PersistentSubscriptions.Persis
 using PersistentSubscriptionMessage = Kurrent.Client.PersistentSubscriptions.PersistentSubscriptionMessage;
 using PersistentSubscriptionSettings = Kurrent.Client.PersistentSubscriptions.PersistentSubscriptionSettings;
 
-namespace Kurrent.Client.Tests.PersistentSubscriptions;
+namespace Kurrent.Client.Tests.Subscriptions;
 
 [Category("PersistentSubscriptions")]
 public class PersistentSubscriptionTests : KurrentClientTestFixture {
@@ -27,7 +27,7 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		var recordsReceived = new List<Record>();
 
 		// Act
-		await AutomaticClient.PersistentSubscriptions.CreateToAll(
+		await AutomaticClient.PersistentSubscriptions.CreateAllStreamSubscription(
 			group, filter, settings,
 			ct
 		);
@@ -71,7 +71,7 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		var expectedIds = simulation.Game.GameEvents.Select(x => x.RecordId).ToList();
 
 		// Act
-		await AutomaticClient.PersistentSubscriptions.CreateToStream(
+		await AutomaticClient.PersistentSubscriptions.CreateStreamSubscription(
 			stream, group, settings,
 			ct
 		);
@@ -115,7 +115,7 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		};
 
 		// Act
-		await AutomaticClient.PersistentSubscriptions.CreateToAll(expected.GroupName, expected.Settings, ct);
+		await AutomaticClient.PersistentSubscriptions.CreateAllStreamSubscription(expected.GroupName, ReadFilter.None, expected.Settings, ct);
 
 		await Task.Delay(1.Seconds(), ct);
 
@@ -146,7 +146,7 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		};
 
 		// Act
-		await AutomaticClient.PersistentSubscriptions.CreateToStream(stream, expected.GroupName, expected.Settings, ct);
+		await AutomaticClient.PersistentSubscriptions.CreateStreamSubscription(stream, expected.GroupName, expected.Settings, ct);
 
 		await Task.Delay(1.Seconds(), ct);
 

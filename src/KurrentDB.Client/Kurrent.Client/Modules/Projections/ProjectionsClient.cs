@@ -1,15 +1,10 @@
-using Kurrent.Client.Legacy;
-using KurrentDB.Client;
-using static KurrentDB.Protocol.Projections.V1.ProjectionsService;
+using ProjectionsServiceClient = KurrentDB.Protocol.Projections.V1.Projections.ProjectionsClient;
 
 namespace Kurrent.Client.Projections;
 
 public sealed partial class ProjectionsClient {
-    internal ProjectionsClient(KurrentClient source) {
-        LegacySettings = source.Options.ConvertToLegacySettings();
+    internal ProjectionsClient(KurrentClient source) =>
         ServiceClient  = new(source.LegacyCallInvoker);
-    }
 
-    internal KurrentDBClientSettings  LegacySettings { get; }
     internal ProjectionsServiceClient ServiceClient  { get; }
 }

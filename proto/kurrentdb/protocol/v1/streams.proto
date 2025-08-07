@@ -12,7 +12,7 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
-service LegacyStreamsService {
+service Streams {
   rpc Read (ReadReq) returns (stream ReadResp);
   rpc Append (stream AppendReq) returns (AppendResp);
   rpc Delete (DeleteReq) returns (DeleteResp);

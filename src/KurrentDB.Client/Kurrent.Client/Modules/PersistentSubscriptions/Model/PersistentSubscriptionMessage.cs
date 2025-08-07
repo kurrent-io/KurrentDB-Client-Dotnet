@@ -4,6 +4,8 @@ using Kurrent.Client.Streams;
 
 namespace Kurrent.Client.PersistentSubscriptions;
 
+public record PersistentSubscriptionRecord(Record Record, int? RetryCount = null) : Record;
+
 /// <summary>
 /// The base record of all stream messages.
 /// </summary>

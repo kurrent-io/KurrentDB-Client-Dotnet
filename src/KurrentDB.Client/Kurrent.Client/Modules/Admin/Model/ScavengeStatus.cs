@@ -1,4 +1,4 @@
-namespace Kurrent.Client.Operations;
+namespace Kurrent.Client.Admin;
 
 /// <summary>
 /// An enumeration that represents the result of a scavenge operation.

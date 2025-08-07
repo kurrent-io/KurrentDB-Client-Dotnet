@@ -1,54 +1,10 @@
 // ReSharper disable CheckNamespace
 
+using Kurrent.Client.Legacy;
+using Kurrent.Client.Streams;
 using Types = KurrentDB.Protocol.Streams.V2.StreamsErrorDetails.Types;
 
 namespace Kurrent.Client;
-
-static class LegacyExceptions {
-		public const string ExceptionKey = "exception";
-
-		public const string AccessDenied                    = "access-denied";
-		public const string InvalidTransaction              = "invalid-transaction";
-		public const string StreamDeleted                   = "stream-deleted";
-		public const string WrongExpectedVersion            = "wrong-expected-version";
-		public const string StreamNotFound                  = "stream-not-found";
-		public const string MaximumAppendSizeExceeded       = "maximum-append-size-exceeded";
-		public const string MissingRequiredMetadataProperty = "missing-required-metadata-property";
-		public const string NotLeader                       = "not-leader";
-
-		public const string PersistentSubscriptionFailed       = "persistent-subscription-failed";
-		public const string PersistentSubscriptionDoesNotExist = "persistent-subscription-does-not-exist";
-		public const string PersistentSubscriptionExists       = "persistent-subscription-exists";
-		public const string MaximumSubscribersReached          = "maximum-subscribers-reached";
-		public const string PersistentSubscriptionDropped      = "persistent-subscription-dropped";
-
-		public const string UserNotFound = "user-not-found";
-		public const string UserConflict = "user-conflict";
-
-		public const string ScavengeNotFound = "scavenge-not-found";
-	}
-
-public static partial class ErrorDetails {
-
-    public static readonly Dictionary<string, string> Map = new() {
-        [LegacyExceptions.AccessDenied]              = nameof(AccessDenied),
-        [LegacyExceptions.InvalidTransaction]        = nameof(TransactionMaxSizeExceeded),
-        [LegacyExceptions.StreamDeleted]             = nameof(StreamDeleted),
-        [LegacyExceptions.WrongExpectedVersion]      = nameof(StreamRevisionConflict),
-        [LegacyExceptions.StreamNotFound]            = nameof(StreamNotFound),
-        [LegacyExceptions.MaximumAppendSizeExceeded] = nameof(TransactionMaxSizeExceeded),
-        [LegacyExceptions.PersistentSubscriptionFailed]       = nameof(PersistentSubscriptionDropped),
-        [LegacyExceptions.PersistentSubscriptionDoesNotExist] = nameof(PersistentSubscriptionNotFound),
-        [LegacyExceptions.PersistentSubscriptionExists]       = nameof(PersistentSubscriptionDropped),
-        [LegacyExceptions.MaximumSubscribersReached]          = nameof(MaximumSubscribersReached),
-        [LegacyExceptions.UserNotFound]                       = nameof(UserNotFound),
-        [LegacyExceptions.ScavengeNotFound]                   = nameof(ScavengeNotFound),
-
-        // [LegacyExceptions.MissingRequiredMetadataProperty]    = nameof(MissingRequiredMetadataProperty),
-        // [LegacyExceptions.NotLeader]                          = nameof(NotLeader),
-        // [LegacyExceptions.UserConflict]                       = nameof(UserConflict)
-    };
-}
 
 public static partial class ErrorDetails {
     /// <summary>
@@ -86,4 +42,21 @@ public static partial class ErrorDetails {
     /// </summary>
     [KurrentOperationError(typeof(Types.LogPositionNotFound))]
     public readonly partial record struct LogPositionNotFound;
+}
+
+public static partial class ErrorDetails {
+    public static StreamRevisionConflict AsStreamRevisionConflictError(this Exception ex) {
+        return ex.MapToResultError(
+            LegacyErrorCodes.WrongExpectedVersion,
+            static rex => new StreamRevisionConflict(x => x
+                .With<StreamName>("Stream", rex.Trailers.GetValue("stream-name") ?? StreamName.None)
+                .With("ExpectedRevision", GetStreamRevision(rex.Trailers, "expected-version"))
+                .With("ActualRevision", GetStreamRevision(rex.Trailers, "actual-version"))
+            )
+        );
+
+        static StreamRevision GetStreamRevision(global::Grpc.Core.Metadata metadata, string key) =>
+            metadata.GetValue(key) is { } val && long.TryParse(val, out var revision)
+                ? StreamRevision.From(revision) : ExpectedStreamState.NoStream;
+    }
 }

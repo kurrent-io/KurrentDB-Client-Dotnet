@@ -1,10 +1,10 @@
-namespace Kurrent.Client.Operations;
+namespace Kurrent.Client.Admin;
 
 /// <summary>
 /// A structure representing the result of a scavenge operation.
 /// </summary>
-public readonly record struct DatabaseScavengeResult {
-    DatabaseScavengeResult(string scavengeId, ScavengeStatus status) {
+public readonly record struct ScavengeResult {
+    ScavengeResult(string scavengeId, ScavengeStatus status) {
         ScavengeId = scavengeId;
         Status     = status;
     }
@@ -24,7 +24,7 @@ public readonly record struct DatabaseScavengeResult {
     /// </summary>
     /// <param name="scavengeId"></param>
     /// <returns></returns>
-    public static DatabaseScavengeResult Started(string scavengeId) =>
+    public static ScavengeResult Started(string scavengeId) =>
         new(scavengeId, ScavengeStatus.Started);
 
     /// <summary>
@@ -32,7 +32,7 @@ public readonly record struct DatabaseScavengeResult {
     /// </summary>
     /// <param name="scavengeId"></param>
     /// <returns></returns>
-    public static DatabaseScavengeResult Stopped(string scavengeId) =>
+    public static ScavengeResult Stopped(string scavengeId) =>
         new(scavengeId, ScavengeStatus.Stopped);
 
     /// <summary>
@@ -40,7 +40,7 @@ public readonly record struct DatabaseScavengeResult {
     /// </summary>
     /// <param name="scavengeId"></param>
     /// <returns></returns>
-    public static DatabaseScavengeResult InProgress(string scavengeId) =>
+    public static ScavengeResult InProgress(string scavengeId) =>
         new(scavengeId, ScavengeStatus.InProgress);
 
     /// <summary>
@@ -48,6 +48,6 @@ public readonly record struct DatabaseScavengeResult {
     /// </summary>
     /// <param name="scavengeId"></param>
     /// <returns></returns>
-    public static DatabaseScavengeResult Unknown(string scavengeId) =>
+    public static ScavengeResult Unknown(string scavengeId) =>
         new(scavengeId, ScavengeStatus.Unknown);
 }

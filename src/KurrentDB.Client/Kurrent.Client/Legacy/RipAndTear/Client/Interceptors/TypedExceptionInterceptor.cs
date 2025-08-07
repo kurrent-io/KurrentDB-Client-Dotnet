@@ -1,29 +1,26 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
-using static KurrentDB.Client.Constants;
-using static Grpc.Core.StatusCode;
+using Kurrent.Client.Legacy;
 
 namespace KurrentDB.Client.Interceptors;
 
 class TypedExceptionInterceptor : Interceptor {
-	static readonly Dictionary<string, Func<RpcException, Exception>> DefaultExceptionMap = new() {
-		[LegacyExceptions.AccessDenied] = ex => ex.ToAccessDeniedException(),
-		// [Exceptions.NotLeader]    = ex => ex.ToNotLeaderException(),
-	};
+	// static readonly Dictionary<string, Func<RpcException, Exception>> DefaultExceptionMap = new() {
+	// 	[LegacyErrorCodes.AccessDenied] = ex => new RpcException(new Status(StatusCode.PermissionDenied, ex.Status.Detail, ex.Status.DebugException), ex.Trailers),
+	// };
 
 	public TypedExceptionInterceptor(Dictionary<string, Func<RpcException, Exception>> customExceptionMap) {
-		var map = new Dictionary<string, Func<RpcException, Exception>>(DefaultExceptionMap.Concat(customExceptionMap));
+		//var map = new Dictionary<string, Func<RpcException, Exception>>(customExceptionMap);
 
-		ConvertRpcException = rpcEx => {
-			if (rpcEx.TryMapException(map, out var ex))
-				 throw ex;
+		ConvertRpcException = rex => {
+			// if (rex.TryMapException(map, out var ex))
+			// 	 throw ex;
 
-			throw rpcEx.StatusCode switch {
-				Unavailable when rpcEx.Status.Detail == "Deadline Exceeded" => rpcEx.ToDeadlineExceededRpcException(),
-				Unauthenticated                                             => rpcEx.ToNotAuthenticatedException(),
-				_                                                           => rpcEx
-			};
-		};
+            if (rex is { StatusCode: StatusCode.Unavailable, Status.Detail: "Deadline Exceeded" })
+                throw new RpcException(new Status(StatusCode.DeadlineExceeded, rex.Status.Detail, rex.Status.DebugException), rex.Trailers);
+
+            throw rex;
+        };
 	}
 
 	Func<RpcException, Exception> ConvertRpcException { get; }
@@ -107,8 +104,8 @@ static class RpcExceptionConversionExtensions {
 	public static Task Apply(this Task task, Func<RpcException, Exception> convertException) =>
 		task.ContinueWith(t => t.Exception?.InnerException is RpcException ex ? throw convertException(ex) : t);
 
-	public static AccessDeniedException ToAccessDeniedException(this RpcException exception) =>
-		new(exception.Message, exception);
+	// public static AccessDeniedException ToAccessDeniedException(this RpcException exception) =>
+	// 	new(exception.Message, exception);
 
 	// public static NotLeaderException ToNotLeaderException(this RpcException exception) {
 	// 	var host = exception.Trailers.FirstOrDefault(x => x.Key == Exceptions.LeaderEndpointHost)?.Value!;
@@ -116,21 +113,26 @@ static class RpcExceptionConversionExtensions {
 	// 	return new NotLeaderException(host, port, exception);
 	// }
 
-	public static NotAuthenticatedException ToNotAuthenticatedException(this RpcException exception) =>
-		new(exception.Message, exception);
+	// public static NotAuthenticatedException ToNotAuthenticatedException(this RpcException exception) =>
+	// 	new(exception.Message, exception);
 
-	public static RpcException ToDeadlineExceededRpcException(this RpcException exception) =>
-		new(new Status(DeadlineExceeded, exception.Status.Detail, exception.Status.DebugException));
-
-	public static bool TryMapException(this RpcException exception, Dictionary<string, Func<RpcException, Exception>> map, out Exception createdException) {
-		if (exception.Trailers.TryGetValue(LegacyExceptions.ExceptionKey, out var key) && map.TryGetValue(key!, out var factory)) {
-			createdException = factory.Invoke(exception);
-			return true;
-		}
-
-		createdException = null!;
-		return false;
-	}
+	// public static RpcException ToDeadlineExceededRpcException(this RpcException exception) =>
+	// 	new(new Status(StatusCode.DeadlineExceeded, exception.Status.Detail, exception.Status.DebugException));
+ //
+ //    public static RpcException ToAccessDeniedRpcException(this RpcException exception) =>
+ //        new(new Status(StatusCode.PermissionDenied, exception.Status.Detail, exception.Status.DebugException));
+ //
+ //    const string ExceptionKey = "exception";
+ //
+	// public static bool TryMapException(this RpcException exception, Dictionary<string, Func<RpcException, Exception>> map, out Exception createdException) {
+	// 	if (GrpcMetadataExtensions.TryGetValue(exception.Trailers, ExceptionKey, out var key) && map.TryGetValue(key!, out var factory)) {
+	// 		createdException = factory.Invoke(exception);
+	// 		return true;
+	// 	}
+ //
+	// 	createdException = null!;
+	// 	return false;
+	// }
 }
 
 class ExceptionConverterStreamReader<TResponse>(IAsyncStreamReader<TResponse> reader, Func<RpcException, Exception> convertException) : IAsyncStreamReader<TResponse> {

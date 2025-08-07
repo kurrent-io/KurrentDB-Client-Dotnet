@@ -100,8 +100,8 @@ class HttpFallback : IDisposable {
         if (httpResult.IsSuccessStatusCode)
             return httpResult;
 
-        if (httpResult.StatusCode == HttpStatusCode.Unauthorized)
-            throw new AccessDeniedException();
+        // if (httpResult.StatusCode == HttpStatusCode.Unauthorized)
+        //     throw new AccessDeniedException();
 
         if (httpResult.StatusCode == HttpStatusCode.NotFound) onNotFound();
 

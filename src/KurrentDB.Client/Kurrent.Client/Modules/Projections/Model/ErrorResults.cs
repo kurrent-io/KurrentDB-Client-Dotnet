@@ -3,81 +3,60 @@ using Kurrent.Variant;
 namespace Kurrent.Client.Projections;
 
 [PublicAPI]
-public readonly partial record struct CreateOneTimeError : IVariantResultError<
+public readonly partial record struct CreateProjectionError : IVariantResultError<
     ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
-
-[PublicAPI]
-public readonly partial record struct CreateContinuousError : IVariantResultError<
-    ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
-
-[PublicAPI]
-public readonly partial record struct CreateTransientError : IVariantResultError<
-    ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
+    ErrorDetails.AlreadyExists>;
 
 [PublicAPI]
 public readonly partial record struct DeleteProjectionError : IVariantResultError<
     ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
+    ErrorDetails.NotFound>;
 
 [PublicAPI]
-public readonly partial record struct ListOneTimeError : IVariantResultError<
-    ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
+public readonly partial record struct ListProjectionsError : IVariantResultError<
+    ErrorDetails.AccessDenied>;
 
 [PublicAPI]
-public readonly partial record struct ListContinuousError : IVariantResultError<
+public readonly partial record struct GetProjectionError : IVariantResultError<
     ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
+    ErrorDetails.NotFound>;
 
 [PublicAPI]
-public readonly partial record struct ListAllError : IVariantResultError<
+public readonly partial record struct UpdateProjectionError : IVariantResultError<
     ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
+    ErrorDetails.NotFound>;
 
 [PublicAPI]
-public readonly partial record struct GetStatusError : IVariantResultError<
+public readonly partial record struct EnableProjectionError : IVariantResultError<
     ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
+    ErrorDetails.NotFound>;
 
 [PublicAPI]
-public readonly partial record struct UpdateError : IVariantResultError<
+public readonly partial record struct ResetProjectionError : IVariantResultError<
     ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
+    ErrorDetails.NotFound>;
 
 [PublicAPI]
-public readonly partial record struct EnableError : IVariantResultError<
+public readonly partial record struct AbortProjectionError : IVariantResultError<
     ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
+    ErrorDetails.NotFound>;
 
 [PublicAPI]
-public readonly partial record struct ResetError : IVariantResultError<
+public readonly partial record struct DisableProjectionError : IVariantResultError<
     ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
+    ErrorDetails.NotFound>;
 
 [PublicAPI]
-public readonly partial record struct AbortError : IVariantResultError<
+public readonly partial record struct RestartProjectionSubsystemError : IVariantResultError<
     ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
+    ErrorDetails.ProjectionsSubsystemRestartFailed>;
 
 [PublicAPI]
-public readonly partial record struct DisableError : IVariantResultError<
+public readonly partial record struct GetProjectionStateError : IVariantResultError<
     ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
+    ErrorDetails.NotFound>;
 
 [PublicAPI]
-public readonly partial record struct RestartSubsystemError : IVariantResultError<
+public readonly partial record struct GetProjectionResultError : IVariantResultError<
     ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
-
-[PublicAPI]
-public readonly partial record struct GetStateError : IVariantResultError<
-    ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
-
-[PublicAPI]
-public readonly partial record struct GetResultError : IVariantResultError<
-    ErrorDetails.AccessDenied,
-    ErrorDetails.NotAuthenticated>;
+    ErrorDetails.NotFound>;

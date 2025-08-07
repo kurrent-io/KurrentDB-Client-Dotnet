@@ -1,7 +1,7 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
+using Kurrent.Client.Legacy;
 using Microsoft.Extensions.Logging;
 using static System.Threading.Tasks.TaskContinuationOptions;
 
@@ -11,40 +11,30 @@ namespace KurrentDB.Client.Interceptors;
 /// An interceptor that detects when the leader node changes or when the service is unavailable
 /// and triggers a cluster topology refresh.
 /// </summary>
-partial class ClusterTopologyChangesInterceptor : Interceptor {
+partial class LeaderNotFoundInterceptor : Interceptor {
 	const TaskContinuationOptions ContinuationOptions = ExecuteSynchronously | OnlyOnFaulted;
 
-	public ClusterTopologyChangesInterceptor(LegacyClusterClient clusterClient, ILogger logger) {
-		Logger = logger;
+    const string ErrorCode       = "not-leader";
+    const string EndpointHostKey = "leader-endpoint-host";
+    const string EndpointPortKey = "leader-endpoint-port";
 
-		CheckForLeaderChange = task => {
-			switch (task.Exception?.InnerException) {
-				case RpcException rex when IsNotLeaderException(rex, out var newLeaderEndpoint):
-					LogLeaderChanged(Logger, newLeaderEndpoint.Host, newLeaderEndpoint.Port);
-					clusterClient.TriggerReconnect(newLeaderEndpoint);
-					break;
-			}
-		};
+    public LeaderNotFoundInterceptor(LegacyClusterClient clusterClient, ILogger logger) {
+        Logger = logger;
 
-		return;
+        CheckForLeaderChange = task => {
+            if (task.Exception?.InnerException is not RpcException rex || !rex.IsLegacyError(ErrorCode))
+                return;
 
-		static bool IsNotLeaderException(RpcException rex, [MaybeNullWhen(false)] out DnsEndPoint endpoint) {
-			const string exceptionKey           = "exception";
-			const string notLeaderExceptionType = "not-leader";
-			const string leaderEndpointHostKey  = "leader-endpoint-host";
-			const string leaderEndpointPortKey  = "leader-endpoint-port";
+            var host = rex.Trailers.GetValue(EndpointHostKey)!;
+            var port = int.Parse(rex.Trailers.GetValue(EndpointPortKey)!);
 
-			if (!rex.Trailers.TryGetValue(exceptionKey, out var value) || value != notLeaderExceptionType) {
-				endpoint = null;
-				return false;
-			}
+            var newLeaderEndpoint = new DnsEndPoint(host, port);
 
-			endpoint = new(
-				rex.Trailers.GetValue(leaderEndpointHostKey)!,
-				int.Parse(rex.Trailers.GetValue(leaderEndpointPortKey)!));
-			return true;
-		}
-	}
+            LogLeaderChanged(Logger, newLeaderEndpoint.Host, newLeaderEndpoint.Port);
+
+            clusterClient.TriggerReconnect(newLeaderEndpoint);
+        };
+    }
 
 	ILogger      Logger               { get; }
 	Action<Task> CheckForLeaderChange { get; }

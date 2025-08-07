@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package kurrentdb.protocol.v2;
+
+option csharp_namespace    = "KurrentDB.Protocol.Projections.V2";
+option java_package        = "io.kurrentdb.protocol.projections.v2";
+option java_multiple_files = true;
+
+import "core.proto";
+
+message ProjectionsErrorDetails {
+  message  ProjectionsSubsystemRestartFailed {
+    option (error_info) = {
+      code : "PROJECTIONS_SUBSYSTEM_RESTART_FAILED",
+      severity : RECOVERABLE,
+      message : "The projections subsystem failed to restart. This may indicate a configuration issue or a problem with the underlying system. Please check the logs for more details."
+    };
+  }
+}

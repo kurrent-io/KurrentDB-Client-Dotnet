@@ -1,5 +1,5 @@
 using Grpc.Core;
-using static KurrentDB.Protocol.Users.V1.ServerFeaturesService;
+using ServerFeaturesServiceClient = KurrentDB.Protocol.ServerFeatures.V1.ServerFeatures.ServerFeaturesClient;
 
 namespace KurrentDB.Client;
 

@@ -3,6 +3,7 @@
 using System.Threading.Channels;
 using KurrentDB.Protocol.Streams.V1;
 using Grpc.Core;
+using Kurrent.Client.Legacy;
 using KurrentDB.Client;
 using static Kurrent.Client.ErrorDetails;
 using static KurrentDB.Protocol.Streams.V1.ReadResp.ContentOneofCase;
@@ -314,7 +315,7 @@ public partial class StreamsClient {
                 // we get into a logical loop and boom - stack overflow
                 // this is the most absurd thing ever
                 if (stream.IsMetastream)
-                    return Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt.With("stream", stream)));
+                    return Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt.With("Stream", stream)));
 
                 // ReSharper disable once PossiblyMistakenUseOfCancellationToken
                 // because we are checking the metadata stream on a failure path,
@@ -323,34 +324,38 @@ public partial class StreamsClient {
                     .MatchAsync(
                         rec => {
                             if (rec == Record.None)
-                                return Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt.With("stream", stream)));
+                                return Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt.With("Stream", stream)));
 
                             var metadata = (StreamMetadata)rec.Value!;
                             if (metadata.TruncateBefore == StreamRevision.Max)
-                                return Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.With("stream", stream)));
+                                return Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.With("Stream", stream)));
 
-                            throw KurrentException.CreateUnknown(nameof(ReadCore),
-                                new InvalidOperationException($"Stream {stream} was not found, but metadata does exist and the stream was not truncated. This is unexpected."));
+                            throw KurrentException.CreateUnknown(
+                                nameof(ReadCore),
+                                new InvalidOperationException(
+                                    $"Stream {stream} was not found, but metadata does exist and the stream was not truncated. This is unexpected."
+                                )
+                            );
                         },
                         err => err.Case switch {
-                            ReadError.ReadErrorCase.StreamDeleted  => Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.With("stream", stream))),
-                            ReadError.ReadErrorCase.StreamNotFound => Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt.With("stream", stream))),
-                            ReadError.ReadErrorCase.AccessDenied   => Result.Failure<Messages, ReadError>(new AccessDenied(mt => mt.With("stream", stream)))
+                            ReadError.ReadErrorCase.StreamDeleted  => Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.With("Stream", stream))),
+                            ReadError.ReadErrorCase.StreamNotFound => Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt.With("Stream", stream))),
+                            ReadError.ReadErrorCase.AccessDenied   => Result.Failure<Messages, ReadError>(new AccessDenied(mt => mt.With("Stream", stream)))
                         }
                     )
                     .ConfigureAwait(false);
             }
+        }
+        catch (RpcException rex) {
+            cancellator.Dispose();
 
-        }
-        catch (AccessDeniedException) {
-            cancellator.Dispose();
-            return Result.Failure<Messages, ReadError>(new AccessDenied(mt => mt
-                .With("stream", request.Options.Stream.StreamIdentifier.StreamName.ToStringUtf8())));
-        }
-        catch (StreamDeletedException) {
-            cancellator.Dispose();
-            return Result.Failure<Messages, ReadError>(new StreamTombstoned(mt => mt
-                .With("stream", request.Options.Stream.StreamIdentifier.StreamName.ToStringUtf8())));
+            return Result.Failure<Messages, ReadError>(
+                rex.StatusCode switch {
+                    StatusCode.PermissionDenied                                                          => new AccessDenied(),
+                    StatusCode.FailedPrecondition when rex.IsLegacyError(LegacyErrorCodes.StreamDeleted) => new StreamTombstoned(),
+                    _                                                                                    => throw rex.WithOriginalCallStack()
+                }
+            );
         }
 
         // Creates a factory function instead of starting immediately
@@ -451,6 +456,6 @@ public partial class StreamsClient {
             .ConfigureAwait(false);
 
         return record ?? Result.Failure<Record, InspectRecordError>(
-            new LogPositionNotFound(mt => mt.With("position", position)));
+            new LogPositionNotFound(mt => mt.With("Position", position)));
     }
 }

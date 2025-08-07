@@ -1,45 +1,33 @@
+// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+
 using EventStore.Client;
 using Grpc.Core;
-using Kurrent.Client.Legacy;
-using KurrentDB.Client;
 
 namespace Kurrent.Client.PersistentSubscriptions;
 
 partial class PersistentSubscriptionsClient {
-    /// <summary>
-    /// Restarts the persistent subscriptions subsystem.
-    /// </summary>
-    public async ValueTask<Result<Success, RestartSubsystemError>> RestartSubsystem(CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<Success, RestartPersistentSubscriptionsSubsystemError>> RestartPersistentSubscriptionsSubsystem(CancellationToken cancellationToken = default) {
         try {
             if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsRestartSubsystem) {
                 await ServiceClient
                     .RestartSubsystemAsync(new Empty(), cancellationToken: cancellationToken)
                     .ConfigureAwait(false);
-
-                return Result.Success<Success, RestartSubsystemError>(Success.Instance);
+            }
+            else {
+                await HttpPost(
+                        "/subscriptions/restart", "",
+                        () => throw new Exception("Unexpected exception while restarting the persistent subscription subsystem."),
+                        cancellationToken)
+                    .ConfigureAwait(false);
             }
 
-            await HttpPost(
-                    "/subscriptions/restart",
-                    "",
-                    () => throw new Exception("Unexpected exception while restarting the persistent subscription subsystem."),
-                    cancellationToken
-                )
-                .ConfigureAwait(false);
-
-            return Result.Success<Success, RestartSubsystemError>(Success.Instance);
+            return Success.Instance;
         }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<Success, RestartSubsystemError>(
-                ex switch {
-                    AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, RestartPersistentSubscriptionsSubsystemError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 }

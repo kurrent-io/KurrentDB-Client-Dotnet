@@ -5,6 +5,7 @@ using System.Runtime.Serialization;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Kurrent.Client;
+using Kurrent.Client.Legacy;
 using Kurrent.Grpc.Interceptors;
 using KurrentDB.Client.Interceptors;
 using Microsoft.Extensions.Logging;
@@ -16,50 +17,53 @@ namespace KurrentDB.Client;
 /// get rid of the legacy code related with .NET48 and custom gRPC channels and discovery.
 /// </summary>
 class LegacyClusterClient {
-    static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
-        [Constants.LegacyExceptions.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),
-        [Constants.LegacyExceptions.StreamDeleted] = ex => new StreamDeletedException(
-            ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyExceptions.StreamName)?.Value ?? "<unknown>",
-            ex
-        ),
-        [Constants.LegacyExceptions.WrongExpectedVersion] = ex => new WrongExpectedVersionException(
-            ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyExceptions.StreamName)?.Value!,
-            ex.Trailers.GetStreamState(Constants.LegacyExceptions.ExpectedVersion),
-            ex.Trailers.GetStreamState(Constants.LegacyExceptions.ActualVersion),
-            ex,
-            ex.Message
-        ),
-        [Constants.LegacyExceptions.MaximumAppendSizeExceeded] = ex => new MaximumAppendSizeExceededException(
-            ex.Trailers.GetIntValueOrDefault(Constants.LegacyExceptions.MaximumAppendSize),
-            ex
-        ),
-        // [Constants.Exceptions.StreamNotFound] = ex => new StreamNotFoundException(
-        //     ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!,
-        //     ex
-        // ),
-        [Constants.LegacyExceptions.MissingRequiredMetadataProperty] = ex => new RequiredMetadataPropertyMissingException(
-            ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyExceptions.MissingRequiredMetadataProperty)?.Value!,
-            ex
-        ),
-        [Constants.LegacyExceptions.PersistentSubscriptionDoesNotExist] = ex => new
-            PersistentSubscriptionNotFoundException(
-                ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.StreamName).Value,
-                ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyExceptions.GroupName)?.Value ?? "", ex
-            ),
-        [Constants.LegacyExceptions.MaximumSubscribersReached] = ex => new
-            MaximumSubscribersReachedException(
-                ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.StreamName).Value,
-                ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.GroupName).Value, ex
-            ),
-        [Constants.LegacyExceptions.PersistentSubscriptionDropped] = ex => new
-            PersistentSubscriptionDroppedByServerException(
-                ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.StreamName).Value,
-                ex.Trailers.First(x => x.Key == Constants.LegacyExceptions.GroupName).Value, ex
-            ),
-        [Constants.LegacyExceptions.ScavengeNotFound] = ex => new ScavengeNotFoundException(
-            ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyExceptions.ScavengeId)?.Value
-        )
-    };
+    // static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
+    //     // [LegacyErrorCodes.PersistentSubscriptionDoesNotExist] = ex => new
+    //     //     PersistentSubscriptionNotFoundException(
+    //     //         ex.Trailers.First(x => x.Key == Constants.LegacyErrorCodes.StreamName).Value,
+    //     //         ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyErrorCodes.GroupName)?.Value ?? "", ex
+    //     //     ),
+    //     // [LegacyErrorCodes.MaximumSubscribersReached] = ex => new
+    //     //     MaximumSubscribersReachedException(
+    //     //         ex.Trailers.First(x => x.Key == Constants.LegacyErrorCodes.StreamName).Value,
+    //     //         ex.Trailers.First(x => x.Key == Constants.LegacyErrorCodes.GroupName).Value, ex
+    //     //     ),
+    //     // [LegacyErrorCodes.PersistentSubscriptionDropped] = ex => new
+    //     //     PersistentSubscriptionDroppedByServerException(
+    //     //         ex.Trailers.First(x => x.Key == Constants.LegacyErrorCodes.StreamName).Value,
+    //     //         ex.Trailers.First(x => x.Key == Constants.LegacyErrorCodes.GroupName).Value, ex
+    //     //     ),
+    //
+    //
+    //     // [LegacyErrorCodes.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),
+    //     // [Constants.LegacyExceptions.StreamDeleted] = ex => new StreamDeletedException(
+    //     //     ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyExceptions.StreamName)?.Value ?? "<unknown>",
+    //     //     ex
+    //     // ),
+    //     // [LegacyErrorCodes.WrongExpectedVersion] = ex => new WrongExpectedVersionException(
+    //     //     ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyErrorCodes.StreamName)?.Value!,
+    //     //     ex.Trailers.GetStreamState(Constants.LegacyErrorCodes.ExpectedVersion),
+    //     //     ex.Trailers.GetStreamState(Constants.LegacyErrorCodes.ActualVersion),
+    //     //     ex,
+    //     //     ex.Message
+    //     // ),
+    //     // [LegacyErrorCodes.MaximumAppendSizeExceeded] = ex => new MaximumAppendSizeExceededException(
+    //     //     ex.Trailers.GetIntValueOrDefault(Constants.LegacyErrorCodes.MaximumAppendSize),
+    //     //     ex
+    //     // ),
+    //     // [LegacyErrorCodes.StreamNotFound] = ex => new StreamNotFoundException(
+    //     //     ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!,
+    //     //     ex
+    //     // ),
+    //     // [LegacyErrorCodes.MissingRequiredMetadataProperty] = ex => new RequiredMetadataPropertyMissingException(
+    //     //     ex.Trailers.FirstOrDefault(x => x.Key == LegacyErrorCodes.MissingRequiredMetadataProperty)?.Value!,
+    //     //     ex
+    //     // ),
+    //
+    //     // [LegacyErrorCodes.ScavengeNotFound] = ex => new ScavengeNotFoundException(
+    //     //     ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyErrorCodes.ScavengeId)?.Value
+    //     // )
+    // };
 
     readonly CancellationTokenSource                            _cancellator;
     readonly ChannelCache                                       _channelCache;
@@ -136,8 +140,8 @@ class LegacyClusterClient {
                 }
             );
 
-            var topologyChangesInterceptor = new ClusterTopologyChangesInterceptor(
-                this, settings.LoggerFactory.CreateLogger<ClusterTopologyChangesInterceptor>()
+            var topologyChangesInterceptor = new LeaderNotFoundInterceptor(
+                this, settings.LoggerFactory.CreateLogger<LeaderNotFoundInterceptor>()
             );
 
             var authenticationInterceptor = new AuthenticationInterceptor(settings);
@@ -157,9 +161,9 @@ class LegacyClusterClient {
 
     public string ResolverScheme { get; }
 
-    public static LegacyClusterClient CreateWithoutExceptionMapping(KurrentDBClientSettings settings) => new(settings, [], true);
+    public static LegacyClusterClient Create(KurrentDBClientSettings settings) => new(settings, [], true);
 
-    public static LegacyClusterClient CreateWithExceptionMapping(KurrentDBClientSettings settings) => new(settings, ExceptionMap, true);
+    // public static LegacyClusterClient CreateWithExceptionMapping(KurrentDBClientSettings settings) => new(settings, ExceptionMap, true);
 
     public async ValueTask<ChannelInfo> Connect(CancellationToken cancellationToken = default) {
         ThrowIfDisposed();
@@ -232,29 +236,29 @@ class MaximumAppendSizeExceededException : Exception {
     public uint MaxAppendSize { get; }
 }
 
-/// <summary>
-/// Exception thrown if there is an attempt to operate inside a
-/// transaction which does not exist.
-/// </summary>
-class InvalidTransactionException : Exception {
-    /// <summary>
-    /// Constructs a new <see cref="InvalidTransactionException"/>.
-    /// </summary>
-    public InvalidTransactionException() { }
-
-    /// <summary>
-    /// Constructs a new <see cref="InvalidTransactionException"/>.
-    /// </summary>
-    public InvalidTransactionException(string message) : base(message) { }
-
-    /// <summary>
-    /// Constructs a new <see cref="InvalidTransactionException"/>.
-    /// </summary>
-    public InvalidTransactionException(string message, Exception innerException) : base(message, innerException) { }
-
-    /// <summary>
-    /// Constructs a new <see cref="InvalidTransactionException"/>.
-    /// </summary>
-    [Obsolete("Obsolete")]
-    protected InvalidTransactionException(SerializationInfo info, StreamingContext context) : base(info, context) { }
-}
+// /// <summary>
+// /// Exception thrown if there is an attempt to operate inside a
+// /// transaction which does not exist.
+// /// </summary>
+// class InvalidTransactionException : Exception {
+//     /// <summary>
+//     /// Constructs a new <see cref="InvalidTransactionException"/>.
+//     /// </summary>
+//     public InvalidTransactionException() { }
+//
+//     /// <summary>
+//     /// Constructs a new <see cref="InvalidTransactionException"/>.
+//     /// </summary>
+//     public InvalidTransactionException(string message) : base(message) { }
+//
+//     /// <summary>
+//     /// Constructs a new <see cref="InvalidTransactionException"/>.
+//     /// </summary>
+//     public InvalidTransactionException(string message, Exception innerException) : base(message, innerException) { }
+//
+//     /// <summary>
+//     /// Constructs a new <see cref="InvalidTransactionException"/>.
+//     /// </summary>
+//     [Obsolete("Obsolete")]
+//     protected InvalidTransactionException(SerializationInfo info, StreamingContext context) : base(info, context) { }
+// }

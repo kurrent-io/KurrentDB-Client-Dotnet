@@ -1,7 +1,5 @@
-// ReSharper disable InconsistentNaming
-
-using KurrentDB.Protocol.Operations.V1;
-using KurrentDB.Protocol.Users.V1;
+using OperationsServiceClient = KurrentDB.Protocol.Operations.V1.Operations.OperationsClient;
+using FeaturesServiceClient = KurrentDB.Protocol.ServerFeatures.V1.ServerFeatures.ServerFeaturesClient;
 
 namespace Kurrent.Client.Admin;
 
@@ -11,6 +9,6 @@ public partial class AdminClient {
         FeaturesServiceClient   = new(source.LegacyCallInvoker);
     }
 
-    OperationsService.OperationsServiceClient         OperationsServiceClient { get; }
-    ServerFeaturesService.ServerFeaturesServiceClient FeaturesServiceClient   { get; }
+    OperationsServiceClient OperationsServiceClient { get; }
+    FeaturesServiceClient   FeaturesServiceClient   { get; }
 }

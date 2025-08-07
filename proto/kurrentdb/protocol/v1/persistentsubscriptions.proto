@@ -8,7 +8,7 @@ option java_package = "io.kurrent.client.persistentsubscriptions";
 
 import "shared.proto";
 
-service PersistentSubscriptionsService {
+service PersistentSubscriptions {
 	rpc Create (CreateReq) returns (CreateResp);
 	rpc Update (UpdateReq) returns (UpdateResp);
 	rpc Delete (DeleteReq) returns (DeleteResp);

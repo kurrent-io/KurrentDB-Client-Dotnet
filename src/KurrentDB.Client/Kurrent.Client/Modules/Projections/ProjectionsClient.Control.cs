@@ -1,83 +1,59 @@
+// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+
 using EventStore.Client;
 using Grpc.Core;
-using Kurrent.Client.Legacy;
-using KurrentDB.Client;
 using KurrentDB.Protocol.Projections.V1;
 
 namespace Kurrent.Client.Projections;
 
-/// <summary>
-/// Provides functionality to manage projections in the Kurrent system.
-/// </summary>
 public partial class ProjectionsClient {
-    /// <summary>
-    /// Enables a projection.
-    /// </summary>
-    /// <param name="name"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    public async ValueTask<Result<Success, EnableError>> Enable(string name, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<Success, EnableProjectionError>> EnableProjection(string name, CancellationToken cancellationToken = default) {
         try {
-            using var call = ServiceClient.EnableAsync(
-                new EnableReq {
-                    Options = new EnableReq.Types.Options {
-                        Name = name
-                    }
-                },
-                cancellationToken: cancellationToken
-            );
-
-            await call.ResponseAsync.ConfigureAwait(false);
-
-            return new Result<Success, EnableError>();
-        }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<Success, EnableError>(
-                ex switch {
-                    AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentException.CreateUnknown(nameof(Enable), ex)
+            var request = new EnableReq {
+                Options = new() {
+                    Name = name
                 }
-            );
+            };
+
+           await ServiceClient
+               .EnableAsync(request , cancellationToken: cancellationToken)
+               .ConfigureAwait(false);
+
+            return new Success();
         }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(Enable), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, EnableProjectionError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
     /// <summary>
     /// Resets a projection. This will re-emit events. Streams that are written to from the projection will also be soft deleted.
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    public async ValueTask<Result<Success, ResetError>> Reset(string name, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<Success, ResetProjectionError>> ResetProjection(string name, CancellationToken cancellationToken = default) {
         try {
-            using var call = ServiceClient.ResetAsync(
-                new ResetReq {
-                    Options = new ResetReq.Types.Options {
-                        Name            = name,
-                        WriteCheckpoint = true
-                    }
+            var request = new ResetReq {
+                Options = new ResetReq.Types.Options {
+                    Name            = name,
+                    WriteCheckpoint = true
                 }
-              , cancellationToken: cancellationToken
-            );
+            };
 
-            await call.ResponseAsync.ConfigureAwait(false);
+            await ServiceClient
+                .ResetAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-            return new Result<Success, ResetError>();
+            return new Success();
         }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<Success, ResetError>(
-                ex switch {
-                    AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentException.CreateUnknown(nameof(Reset), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(Reset), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, ResetProjectionError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -87,84 +63,71 @@ public partial class ProjectionsClient {
     /// <param name="name"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public async ValueTask<Result<Success, AbortError>> Abort(string name, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<Success, AbortProjectionError>> AbortProjection(string name, CancellationToken cancellationToken = default) {
         try {
-            await DisableInternal(name, false, cancellationToken).ConfigureAwait(false);
-
-            return new Result<Success, AbortError>();
-        }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<Success, AbortError>(
-                ex switch {
-                    AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentException.CreateUnknown(nameof(Abort), ex)
+            var request = new DisableReq {
+                Options = new DisableReq.Types.Options {
+                    Name            = name,
+                    WriteCheckpoint = false
                 }
-            );
+            };
+
+            await ServiceClient
+                .DisableAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return new Success();
         }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(Abort), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, AbortProjectionError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
     /// <summary>
     /// Disables a projection. Saves the projection's checkpoint.
     /// </summary>
-    /// <param name="name"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    public async ValueTask<Result<Success, DisableError>> Disable(string name, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<Success, DisableProjectionError>> DisableProjection(string name, CancellationToken cancellationToken = default) {
         try {
-            await DisableInternal(name, true, cancellationToken).ConfigureAwait(false);
-
-            return new Result<Success, DisableError>();
-        }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<Success, DisableError>(
-                ex switch {
-                    AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentException.CreateUnknown(nameof(Abort), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(Abort), ex);
-        }
-    }
-
-    public async ValueTask<Result<Success, RestartSubsystemError>> RestartSubsystem(CancellationToken cancellationToken = default) {
-        try {
-            using var call = ServiceClient.RestartSubsystemAsync(new Empty(), cancellationToken: cancellationToken);
-            await call.ResponseAsync.ConfigureAwait(false);
-
-            return new Result<Success, RestartSubsystemError>();
-        }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<Success, RestartSubsystemError>(
-                ex switch {
-                    AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentException.CreateUnknown(nameof(Abort), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(Abort), ex);
-        }
-    }
-
-    async ValueTask DisableInternal(string name, bool writeCheckpoint, CancellationToken cancellationToken) {
-        using var call = ServiceClient.DisableAsync(
-            new DisableReq {
+            var request = new DisableReq {
                 Options = new DisableReq.Types.Options {
                     Name            = name,
-                    WriteCheckpoint = writeCheckpoint
+                    WriteCheckpoint = true
                 }
-            }
-          , cancellationToken: cancellationToken
-        );
+            };
 
-        await call.ResponseAsync.ConfigureAwait(false);
+            await ServiceClient
+                .DisableAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return new Success();
+        }
+        catch (RpcException rex) {
+            return Result.Failure<Success, DisableProjectionError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
+    }
+
+    public async ValueTask<Result<Success, RestartProjectionSubsystemError>> RestartProjectionSubsystem(CancellationToken cancellationToken = default) {
+        try {
+            await ServiceClient
+                .RestartSubsystemAsync(new Empty(), cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return new Success();
+        }
+        catch (RpcException rex) {
+            return Result.Failure<Success, RestartProjectionSubsystemError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied   => new ErrorDetails.AccessDenied(),
+                StatusCode.FailedPrecondition => new ErrorDetails.ProjectionsSubsystemRestartFailed(),
+                _                             => throw rex.WithOriginalCallStack()
+            });
+        }
     }
 }

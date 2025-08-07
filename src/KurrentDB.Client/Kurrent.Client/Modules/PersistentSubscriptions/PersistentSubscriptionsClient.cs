@@ -7,7 +7,8 @@ using Kurrent.Client.Schema.Serialization;
 using Kurrent.Client.Streams;
 using KurrentDB.Client;
 using Microsoft.Extensions.Logging;
-using static KurrentDB.Protocol.PersistentSubscriptions.V1.PersistentSubscriptionsService;
+
+using PersistentSubscriptionsServiceClient = KurrentDB.Protocol.PersistentSubscriptions.V1.PersistentSubscriptions.PersistentSubscriptionsClient;
 
 namespace Kurrent.Client.PersistentSubscriptions;
 
@@ -23,7 +24,7 @@ public sealed partial class PersistentSubscriptionsClient {
 		ServiceClient     = new(source.LegacyCallInvoker);
 
 		HttpFallback = new Lazy<HttpFallback>(() => new HttpFallback(LegacySettings));
-		Logger       = source.Options.LoggerFactory.CreateLogger<KurrentDBPersistentSubscriptionsClient>();
+		Logger       = source.Options.LoggerFactory.CreateLogger<PersistentSubscriptionsClient>();
 	}
 
     internal RegistryClient                       Registry           { get; }
@@ -39,7 +40,7 @@ public sealed partial class PersistentSubscriptionsClient {
 	async ValueTask EnsureCompatibility(string streamName, CancellationToken cancellationToken) {
 		if (streamName is not SystemStreams.AllStream) return;
 
-		await LegacyCallInvoker.ForceRefresh(cancellationToken);
+		// await LegacyCallInvoker.ForceRefresh(cancellationToken);
 
 		if (!LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll)
 			throw new NotSupportedException("The server does not support persistent subscriptions to $all.");

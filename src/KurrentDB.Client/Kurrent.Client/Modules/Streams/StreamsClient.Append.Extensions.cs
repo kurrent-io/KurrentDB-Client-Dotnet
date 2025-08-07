@@ -14,8 +14,6 @@ public static partial class StreamsClientExtensions {
     /// <summary>
     /// Appends a series of messages to a specified stream in KurrentDB.
     /// </summary>
-    /// <param name="request">The request object that specifies the stream, expected state, and messages to append.</param>
-    /// <param name="cancellationToken">A token to cancel the operation if needed.</param>
     public static async ValueTask<Result<AppendStreamSuccess, AppendStreamFailure>> Append(
         this StreamsClient client, AppendStreamRequest request, CancellationToken cancellationToken
     ) {

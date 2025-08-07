@@ -1,6 +1,9 @@
 #pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
+// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+
+using Grpc.Core;
 using Kurrent.Client.Legacy;
 using KurrentDB.Client;
 using static Kurrent.Client.ErrorDetails;
@@ -18,31 +21,31 @@ public partial class StreamsClient {
 
             return resp?.Position?.MapToLogPosition() ?? LogPosition.Unset;
         }
-        catch (WrongExpectedVersionException ex) {
+        catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.WrongExpectedVersion)) {
             // the request must be done with StreamExists expectation,
             // if the actual version is -1, it means the stream was not found
             // this was a tribal knowledge discovery in the original codebase
             // that for whatever reason I 100% think it is a bug in the server
-            return Result.Failure<LogPosition, DeleteStreamError>(
-                ex.ActualVersion == -1
-                    ? new StreamNotFound(x => x.With("stream", stream))
-                    : ex.AsStreamRevisionConflict()
-            );
+
+            var reVisionConflictError = rex.AsStreamRevisionConflictError();
+            return reVisionConflictError.Metadata.GetRequired<StreamRevision>("ActualRevision") == ExpectedStreamState.NoStream.Value
+                ? Result.Failure<LogPosition, DeleteStreamError>(new StreamNotFound(x => x.With("Stream", stream)))
+                : Result.Failure<LogPosition, DeleteStreamError>(reVisionConflictError);
         }
-        catch (StreamDeletedException ex) {
+        catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.StreamDeleted)) {
             return await GetStreamInfo(stream, cancellationToken).MatchAsync(
                 info => info.State switch {
-                    StreamState.Deleted    => Result.Failure<LogPosition, DeleteStreamError>(new StreamDeleted(x => x.With("stream", stream))),
-                    StreamState.Tombstoned => Result.Failure<LogPosition, DeleteStreamError>(new StreamTombstoned(x => x.With("stream", stream)))
+                    StreamState.Deleted    => Result.Failure<LogPosition, DeleteStreamError>(new StreamDeleted(x => x.With("Stream", stream))),
+                    StreamState.Tombstoned => Result.Failure<LogPosition, DeleteStreamError>(new StreamTombstoned(x => x.With("Stream", stream)))
                 },
                 err => Result.Failure<LogPosition, DeleteStreamError>(err.AsAccessDenied)
             );
         }
-        catch (AccessDeniedException ex) {
-            return Result.Failure<LogPosition, DeleteStreamError>(ex.AsAccessDeniedError(stream));
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(Delete), ex);
+        catch (RpcException rex) {
+            return Result.Failure<LogPosition, DeleteStreamError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -59,30 +62,31 @@ public partial class StreamsClient {
 
             return resp?.Position?.MapToLogPosition() ?? LogPosition.Unset;
         }
-        catch (WrongExpectedVersionException ex) {
+        catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.WrongExpectedVersion)) {
             // the request must be done with StreamExists expectation,
             // if the actual version is -1, it means the stream was not found
             // this was a tribal knowledge discovery in the original codebase
             // that for whatever reason I 100% think it is a bug in the server
-            return Result.Failure<LogPosition, TombstoneError>(
-                ex.ActualVersion == -1
-                    ? new StreamNotFound(x => x.With("stream", stream))
-                    : ex.AsStreamRevisionConflict());
+
+            var reVisionConflictError = rex.AsStreamRevisionConflictError();
+            return reVisionConflictError.Metadata.GetRequired<StreamRevision>("ActualRevision") == ExpectedStreamState.NoStream.Value
+                ? Result.Failure<LogPosition, TombstoneError>(new StreamNotFound(x => x.With("Stream", stream)))
+                : Result.Failure<LogPosition, TombstoneError>(reVisionConflictError);
         }
-        catch (StreamDeletedException ex) {
+        catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.StreamDeleted)) {
             return await GetStreamInfo(stream, cancellationToken).MatchAsync(
                 info => info.State switch {
-                    StreamState.Deleted    => Result.Failure<LogPosition, TombstoneError>(new StreamDeleted(x => x.With("stream", stream))),
-                    StreamState.Tombstoned => Result.Failure<LogPosition, TombstoneError>(new StreamTombstoned(x => x.With("stream", stream)))
+                    StreamState.Deleted    => Result.Failure<LogPosition, TombstoneError>(new StreamDeleted(x => x.With("Stream", stream))),
+                    StreamState.Tombstoned => Result.Failure<LogPosition, TombstoneError>(new StreamTombstoned(x => x.With("Stream", stream)))
                 },
                 err => Result.Failure<LogPosition, TombstoneError>(err.AsAccessDenied)
             );
         }
-        catch (AccessDeniedException ex) {
-            return Result.Failure<LogPosition, TombstoneError>(ex.AsAccessDeniedError(stream));
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(Delete), ex);
+        catch (RpcException rex) {
+            return Result.Failure<LogPosition, TombstoneError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -197,35 +201,4 @@ public partial class StreamsClient {
     }
 
     public enum StreamState { Active, Deleted, Tombstoned, NotFound }
-
-    // public async ValueTask<StreamState> CheckStreamState(StreamName stream, CancellationToken cancellationToken = default) {
-    //
-    //     // TODO SS: Create new specific implementation of check stream state on the server for protocol v2
-    //
-    //     var result = await GetStreamInfo(stream, cancellationToken).MatchAsync(
-    //         ok => ok.IsTombstoned
-    //             ? StreamState.Tombstoned
-    //             : ok.IsDeleted
-    //                 ? StreamState.Deleted
-    //                 : StreamState.Active,
-    //             ko => ko.Case switch {
-    //                 GetStreamInfoError.GetStreamInfoErrorCase.AccessDenied => throw new AccessDeniedException(stream, ko.AsAccessDenied),
-    //                 _                                                       => throw KurrentClientException.CreateUnknown(nameof(CheckStreamState), ko.Value)
-    //             }
-    //         )
-    //         .ConfigureAwait(false);
-    //
-    //
-    // }
-
-    // public ValueTask<Result<StreamRevision, StreamExistsError>> StreamExists(StreamName stream, CancellationToken cancellationToken = default) =>
-    //     this.ReadFirstStreamRecord(stream, cancellationToken).MatchAsync(
-    //         rec => Result.Success<StreamRevision, StreamExistsError>(rec.StreamRevision),
-    //         err => err.Value switch {
-    //             AccessDenied denied => Result.Failure<StreamRevision, StreamExistsError>(denied),
-    //             _                   => Result.Success<StreamRevision, StreamExistsError>(StreamRevision.Unset)
-    //         });
-    //
-    // public ValueTask<StreamRevision> StreamExistsAsync(StreamName stream, CancellationToken cancellationToken = default) =>
-    //     StreamExists(stream, cancellationToken).ThrowOnFailureAsync();
 }

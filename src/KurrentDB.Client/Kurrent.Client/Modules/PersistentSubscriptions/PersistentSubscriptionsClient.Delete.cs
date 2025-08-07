@@ -1,66 +1,51 @@
 using EventStore.Client;
 using Grpc.Core;
 using Kurrent.Client.Legacy;
+using Kurrent.Client.Streams;
 using KurrentDB.Client;
 using KurrentDB.Protocol.PersistentSubscriptions.V1;
 
 namespace Kurrent.Client.PersistentSubscriptions;
 
 partial class PersistentSubscriptionsClient {
-	/// <summary>
-	/// Deletes a persistent subscription.
-	/// </summary>
-	public async ValueTask<Result<Success, DeleteToStreamError>> DeleteToStream(
-		string streamName, string groupName, CancellationToken cancellationToken = default
-	) {
-		try {
-			await EnsureCompatibility(streamName, cancellationToken);
+    /// <summary>
+    /// Deletes a persistent subscription.
+    /// </summary>
+    public async ValueTask<Result<Success, DeleteSubscription>> DeleteSubscription(StreamName stream, string groupName, CancellationToken cancellationToken = default) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(groupName);
 
-			var deleteOptions = new DeleteReq.Types.Options {
-				GroupName = groupName
-			};
+        try {
+            await EnsureCompatibility(stream, cancellationToken);
 
-			if (streamName is SystemStreams.AllStream)
-				deleteOptions.All = new Empty();
-			else
-				deleteOptions.StreamIdentifier = streamName;
+            var request = new DeleteReq {
+                Options = new DeleteReq.Types.Options {
+                    GroupName = groupName
+                }
+            };
 
-			var call = ServiceClient.DeleteAsync(new DeleteReq { Options = deleteOptions }, cancellationToken: cancellationToken);
+            if (stream.IsAllStream)
+                request.Options.All = new Empty();
+            else
+                request.Options.StreamIdentifier = stream.Value;
 
-			await call.ResponseAsync.ConfigureAwait(false);
+            await ServiceClient
+                .DeleteAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-			return new Result<Success, DeleteToStreamError>();
-		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-			return Result.Failure<Success, DeleteToStreamError>(
-				ex switch {
-					AccessDeniedException                        => rpcEx.AsAccessDeniedError(),
-					NotAuthenticatedException                    => rpcEx.AsNotAuthenticatedError(),
-					PersistentSubscriptionNotFoundException psEx => rpcEx.AsPersistentSubscriptionNotFoundError(psEx.StreamName, psEx.GroupName),
-					_                                            => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
-		}
-	}
+            return new Success();
+        }
+        catch (RpcException rex) {
+            return Result.Failure<Success, DeleteSubscription>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
+    }
 
-	/// <summary>
-	/// Deletes a persistent subscription to $all.
-	/// </summary>
-	public async ValueTask<Result<Success, DeleteToAllError>> DeleteToAll(string groupName, CancellationToken cancellationToken = default) {
-		try {
-			await DeleteToStream(SystemStreams.AllStream, groupName, cancellationToken).ConfigureAwait(false);
-			return new Result<Success, DeleteToAllError>();
-		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-			return Result.Failure<Success, DeleteToAllError>(
-				ex switch {
-					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
-		}
-	}
+	public ValueTask<Result<Success, DeleteSubscription>> DeleteStreamSubscription(StreamName stream, string groupName, CancellationToken cancellationToken = default) =>
+        DeleteSubscription(stream, groupName, cancellationToken);
+
+	public ValueTask<Result<Success, DeleteSubscription>> DeleteAllStreamSubscription(string groupName, CancellationToken cancellationToken = default) =>
+        DeleteSubscription(SystemStreams.AllStream, groupName, cancellationToken);
 }

@@ -1,6 +1,7 @@
+// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+
 using EventStore.Client;
 using Grpc.Core;
-using Kurrent.Client.Legacy;
 using KurrentDB.Client;
 using KurrentDB.Protocol.PersistentSubscriptions.V1;
 using NotSupportedException = System.NotSupportedException;
@@ -14,6 +15,8 @@ partial class PersistentSubscriptionsClient {
     public async ValueTask<Result<Success, ReplayParkedMessagesToAllError>> ReplayParkedMessagesToAll(
         string groupName, long? stopAt = null, CancellationToken cancellationToken = default
     ) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(groupName);
+
         try {
             if (!LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll)
                 throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
@@ -28,27 +31,19 @@ partial class PersistentSubscriptionsClient {
 
                 await ReplayParkedGrpc(request, stopAt, cancellationToken).ConfigureAwait(false);
 
-                return Result.Success<Success, ReplayParkedMessagesToAllError>(Success.Instance);
+                return Success.Instance;
             }
 
-            await ReplayParkedHttp(
-                SystemStreams.AllStream, groupName, stopAt,
-                cancellationToken
-            ).ConfigureAwait(false);
+            await ReplayParkedHttp(SystemStreams.AllStream, groupName, stopAt, cancellationToken)
+                .ConfigureAwait(false);
 
-            return Result.Success<Success, ReplayParkedMessagesToAllError>(Success.Instance);
+            return Success.Instance;
         }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<Success, ReplayParkedMessagesToAllError>(
-                ex switch {
-                    AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, ReplayParkedMessagesToAllError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -80,18 +75,12 @@ partial class PersistentSubscriptionsClient {
 
             return Result.Success<Success, ReplayParkedMessagesToStreamError>(Success.Instance);
         }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<Success, ReplayParkedMessagesToStreamError>(
-                ex switch {
-                    AccessDeniedException                       => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException                   => rpcEx.AsNotAuthenticatedError(),
-                    PersistentSubscriptionNotFoundException pEx => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
-                    _                                           => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, ReplayParkedMessagesToStreamError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 

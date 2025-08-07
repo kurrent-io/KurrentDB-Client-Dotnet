@@ -8,7 +8,7 @@ option java_package = "io.kurrent.client.operations";
 
 import "shared.proto";
 
-service OperationsService {
+service Operations {
 	rpc StartScavenge (StartScavengeReq) returns (ScavengeResp);
 	rpc StopScavenge (StopScavengeReq) returns (ScavengeResp);
 	rpc Shutdown (Empty) returns (Empty);

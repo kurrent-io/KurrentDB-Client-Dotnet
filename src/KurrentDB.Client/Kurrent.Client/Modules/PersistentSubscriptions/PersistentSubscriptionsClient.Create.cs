@@ -1,7 +1,6 @@
-// ReSharper disable InconsistentNaming
+// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
 
 using Grpc.Core;
-using Kurrent.Client.Legacy;
 using Kurrent.Client.Streams;
 using KurrentDB.Client;
 using static Kurrent.Client.PersistentSubscriptions.PersistentSubscriptionV1Mapper.Requests;
@@ -12,115 +11,59 @@ partial class PersistentSubscriptionsClient {
     /// <summary>
     /// Creates a persistent subscription to a specified stream.
     /// </summary>
-    /// <param name="streamName">The name of the stream to subscribe to.</param>
-    /// <param name="groupName">The name of the subscription group.</param>
-    /// <param name="settings">The settings for the persistent subscription.</param>
-    /// <param name="cancellationToken">A cancellation token used to observe cancellation requests.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async ValueTask<Result<Success, CreateToStreamError>> CreateToStream(
-        string streamName, string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
+    public async ValueTask<Result<Success, CreateStreamSubscriptionError>> CreateStreamSubscription(
+        StreamName stream, string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
     ) {
-        try {
-            await CreateInternal(
-                streamName, groupName, settings,
-                ReadFilter.None, cancellationToken
-            ).ConfigureAwait(false);
+        ArgumentException.ThrowIfNullOrWhiteSpace(groupName);
 
-            return new Result<Success, CreateToStreamError>();
-        }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<Success, CreateToStreamError>(
-                ex switch {
-                    AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentException.CreateUnknown(nameof(CreateToStream), ex)
-                }
+        try {
+            await EnsureCompatibility(stream, cancellationToken);
+
+            var request = CreateSubscriptionRequest(
+                stream, groupName, settings,
+                HeartbeatOptions.Default, ReadFilter.None
             );
+
+            await ServiceClient
+                .CreateAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return new Success();
         }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(CreateToStream), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, CreateStreamSubscriptionError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.AlreadyExists    => new ErrorDetails.AlreadyExists(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
     /// <summary>
     /// Creates a persistent subscription to the $all stream with a specified filter.
     /// </summary>
-    /// <param name="groupName">The name of the subscription group.</param>
-    /// <param name="filter">The read filter specifying scope and type for the subscription.</param>
-    /// <param name="settings">The settings for the persistent subscription.</param>
-    /// <param name="cancellationToken">A cancellation token used to observe cancellation requests.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async ValueTask<Result<Success, CreateToAllError>> CreateToAll(
+    public async ValueTask<Result<Success, CreateAllStreamSubscriptionError>> CreateAllStreamSubscription(
         string groupName, ReadFilter filter, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
     ) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(groupName);
+
         try {
-            await CreateInternal(
+            var request = CreateSubscriptionRequest(
                 SystemStreams.AllStream, groupName, settings,
-                filter, cancellationToken
-            ).ConfigureAwait(false);
-
-            return new Result<Success, CreateToAllError>();
-        }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<Success, CreateToAllError>(
-                ex switch {
-                    AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentException.CreateUnknown(nameof(CreateToAll), ex)
-                }
+                HeartbeatOptions.Default, filter
             );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(CreateToAll), ex);
-        }
-    }
 
-    /// <summary>
-    /// Creates a persistent subscription to the $all stream.
-    /// </summary>
-    /// <param name="groupName">The name of the subscription group.</param>
-    /// <param name="settings">The settings for the persistent subscription.</param>
-    /// <param name="cancellationToken">A cancellation token used to observe cancellation requests.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async ValueTask<Result<Success, CreateToAllError>> CreateToAll(
-        string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
-    ) {
-        try {
-            await CreateInternal(
-                SystemStreams.AllStream, groupName, settings,
-                ReadFilter.None, cancellationToken
-            ).ConfigureAwait(false);
+            await ServiceClient
+                .CreateAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-            return new Result<Success, CreateToAllError>();
+            return new Success();
         }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<Success, CreateToAllError>(
-                ex switch {
-                    AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentException.CreateUnknown(nameof(CreateToAll), ex)
-                }
-            );
+        catch (RpcException rex) {
+            return Result.Failure<Success, CreateAllStreamSubscriptionError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(CreateToAll), ex);
-        }
-    }
-
-    async ValueTask CreateInternal(
-        string streamName,
-        string groupName,
-        PersistentSubscriptionSettings settings,
-        ReadFilter filter,
-        CancellationToken cancellationToken
-    ) {
-        await EnsureCompatibility(streamName, cancellationToken);
-        var request = CreateSubscriptionRequest(
-            streamName, groupName, settings,
-            HeartbeatOptions.Default, filter
-        );
-
-        using var call = ServiceClient.CreateAsync(request, cancellationToken: cancellationToken);
-        await call.ResponseAsync.ConfigureAwait(false);
     }
 }

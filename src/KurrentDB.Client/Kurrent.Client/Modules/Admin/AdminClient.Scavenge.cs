@@ -1,89 +1,73 @@
-// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+#pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
 
 using Grpc.Core;
-using Kurrent.Client.Legacy;
-using Kurrent.Client.Operations;
-using KurrentDB.Client;
 using KurrentDB.Protocol.Operations.V1;
 
 namespace Kurrent.Client.Admin;
 
 public partial class AdminClient {
-	public async ValueTask<Result<DatabaseScavengeResult, StartScavengeError>> StartScavenge(
+	public async ValueTask<Result<ScavengeResult, StartScavengeError>> StartScavenge(
 		int threadCount = 1, int startFromChunk = 0, CancellationToken cancellationToken = default
 	) {
 		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(threadCount);
 		ArgumentOutOfRangeException.ThrowIfNegative(startFromChunk);
 
 		try {
-			using var call = OperationsServiceClient.StartScavengeAsync(
-				new StartScavengeReq {
-					Options = new StartScavengeReq.Types.Options {
-						ThreadCount    = threadCount,
-						StartFromChunk = startFromChunk
-					}
-				},
-				cancellationToken: cancellationToken
-			);
+            var request = new StartScavengeReq {
+                Options = new StartScavengeReq.Types.Options {
+                    ThreadCount    = threadCount,
+                    StartFromChunk = startFromChunk
+                }
+            };
 
-			var result = await call.ResponseAsync.ConfigureAwait(false);
+            var response = await OperationsServiceClient
+                .StartScavengeAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-			var scavengeResult = result.ScavengeResult switch {
-				ScavengeResp.Types.ScavengeResult.Started    => DatabaseScavengeResult.Started(result.ScavengeId),
-				ScavengeResp.Types.ScavengeResult.Stopped    => DatabaseScavengeResult.Stopped(result.ScavengeId),
-				ScavengeResp.Types.ScavengeResult.InProgress => DatabaseScavengeResult.InProgress(result.ScavengeId),
-				_                                            => DatabaseScavengeResult.Unknown(result.ScavengeId)
+			var result = response.ScavengeResult switch {
+				ScavengeResp.Types.ScavengeResult.Started    => ScavengeResult.Started(response.ScavengeId),
+				ScavengeResp.Types.ScavengeResult.Stopped    => ScavengeResult.Stopped(response.ScavengeId),   // TODO SS: what?! why would it return STOPPED on START?
+				ScavengeResp.Types.ScavengeResult.InProgress => ScavengeResult.InProgress(response.ScavengeId)
 			};
 
-			return Result.Success<DatabaseScavengeResult, StartScavengeError>(scavengeResult);
-		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-			return Result.Failure<DatabaseScavengeResult, StartScavengeError>(
-				ex switch {
-					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentException.CreateUnknown(nameof(StartScavenge), ex)
-				}
-			);
-		} catch (Exception ex) {
-			throw KurrentException.CreateUnknown(nameof(StartScavenge), ex);
+			return result;
 		}
+        catch (RpcException rex) {
+            return Result.Failure<ScavengeResult, StartScavengeError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
 
-	public async ValueTask<Result<DatabaseScavengeResult, StopScavengeError>> StopScavenge(string scavengeId, CancellationToken cancellationToken = default) {
-		try {
-			var result = await OperationsServiceClient.StopScavengeAsync(
-					new StopScavengeReq {
-						Options = new StopScavengeReq.Types.Options {
-							ScavengeId = scavengeId
-						}
-					}
-				  , cancellationToken: cancellationToken
-				)
-				.ResponseAsync.ConfigureAwait(false);
+	public async ValueTask<Result<ScavengeResult, StopScavengeError>> StopScavenge(string scavengeId, CancellationToken cancellationToken = default) {
+		ArgumentException.ThrowIfNullOrWhiteSpace(scavengeId);
 
-			var scavengeResult = result.ScavengeResult switch {
-				ScavengeResp.Types.ScavengeResult.Started    => DatabaseScavengeResult.Started(result.ScavengeId),
-				ScavengeResp.Types.ScavengeResult.Stopped    => DatabaseScavengeResult.Stopped(result.ScavengeId),
-				ScavengeResp.Types.ScavengeResult.InProgress => DatabaseScavengeResult.InProgress(result.ScavengeId),
-				_                                            => DatabaseScavengeResult.Unknown(result.ScavengeId)
+        try {
+            var request = new StopScavengeReq {
+                Options = new StopScavengeReq.Types.Options {
+                    ScavengeId = scavengeId
+                }
+            };
+
+			var response = await OperationsServiceClient
+                .StopScavengeAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+			var result = response.ScavengeResult switch {
+				ScavengeResp.Types.ScavengeResult.Started    => ScavengeResult.Started(response.ScavengeId), // TODO SS: what?! why would it return STARTED ON STOP?
+				ScavengeResp.Types.ScavengeResult.Stopped    => ScavengeResult.Stopped(response.ScavengeId),
+				ScavengeResp.Types.ScavengeResult.InProgress => ScavengeResult.InProgress(response.ScavengeId)
 			};
 
-			return Result.Success<DatabaseScavengeResult, StopScavengeError>(scavengeResult);
-		} catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-			return Result.Failure<DatabaseScavengeResult, StopScavengeError>(
-				ex switch {
-					AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-					NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-					_                         => throw KurrentException.CreateUnknown(nameof(StopScavenge), ex)
-				}
-			);
-		} catch (Exception ex) {
-			return Result.Failure<DatabaseScavengeResult, StopScavengeError>(
-				ex switch {
-					ScavengeNotFoundException => ex.AsScavengeNotFoundError(),
-					_                         => throw KurrentException.CreateUnknown(nameof(StopScavenge), ex)
-				}
-			);
+			return result;
 		}
+        catch (RpcException rex) {
+            return Result.Failure<ScavengeResult, StopScavengeError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
 }

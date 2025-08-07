@@ -50,13 +50,10 @@ public class ConnectorsClient {
         catch (RpcException ex) {
             return Result.Failure<Success, CreateConnectorError>(
                 ex.StatusCode switch {
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
                     _                           => throw KurrentException.CreateUnknown(nameof(CreateConnector), ex)
                 }
             );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(CreateConnector), ex);
         }
     }
 
@@ -87,8 +84,8 @@ public class ConnectorsClient {
         catch (RpcException ex) {
             return Result.Failure<Success, ReconfigureConnectorError>(
                 ex.StatusCode switch {
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    StatusCode.NotFound         => ex.AsConnectorNotFoundError(connectorId),
+                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
                     _                           => throw KurrentException.CreateUnknown(nameof(ReconfigureConnector), ex)
                 }
             );
@@ -122,8 +119,8 @@ public class ConnectorsClient {
         catch (RpcException ex) {
             return Result.Failure<Success, DeleteConnectorError>(
                 ex.StatusCode switch {
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    StatusCode.NotFound         => ex.AsConnectorNotFoundError(connectorId),
+                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
                     _                           => throw KurrentException.CreateUnknown(nameof(DeleteConnector), ex)
                 }
             );
@@ -162,8 +159,8 @@ public class ConnectorsClient {
         catch (RpcException ex) {
             return Result.Failure<Success, StartConnectorError>(
                 ex.StatusCode switch {
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    StatusCode.NotFound         => ex.AsConnectorNotFoundError(connectorId),
+                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
                     _                           => throw KurrentException.CreateUnknown(nameof(StartConnector), ex)
                 }
             );
@@ -202,8 +199,8 @@ public class ConnectorsClient {
         catch (RpcException ex) {
             return Result.Failure<Success, ResetConnectorError>(
                 ex.StatusCode switch {
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    StatusCode.NotFound         => ex.AsConnectorNotFoundError(connectorId),
+                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
                     _                           => throw KurrentException.CreateUnknown(nameof(ResetConnector), ex)
                 }
             );
@@ -237,8 +234,8 @@ public class ConnectorsClient {
         catch (RpcException ex) {
             return Result.Failure<Success, StopConnectorError>(
                 ex.StatusCode switch {
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    StatusCode.NotFound         => ex.AsConnectorNotFoundError(connectorId),
+                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
                     _                           => throw KurrentException.CreateUnknown(nameof(StopConnector), ex)
                 }
             );
@@ -275,8 +272,8 @@ public class ConnectorsClient {
         catch (RpcException ex) {
             return Result.Failure<Success, RenameConnectorError>(
                 ex.StatusCode switch {
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    StatusCode.NotFound         => ex.AsConnectorNotFoundError(connectorId),
+                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
                     _                           => throw KurrentException.CreateUnknown(nameof(RenameConnector), ex)
                 }
             );
@@ -340,7 +337,7 @@ public class ConnectorsClient {
         catch (RpcException ex) {
             return Result.Failure<ConnectorListResult, ListConnectorsError>(
                 ex.StatusCode switch {
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
+                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
                     _                           => throw KurrentException.CreateUnknown(nameof(ListConnectors), ex)
                 }
             );
@@ -381,7 +378,7 @@ public class ConnectorsClient {
                 GetConnectorSettingsResponse.ResultOneofCase.Failure => Result.Failure<ConnectorSettingsResult, GetConnectorSettingsError>(
                     response.Failure.ErrorCase switch {
                         GetConnectorSettingsFailure.ErrorOneofCase.AccessDenied => new ErrorDetails.AccessDenied(),
-                        GetConnectorSettingsFailure.ErrorOneofCase.ConnectorNotFound => new ErrorDetails.ConnectorNotFound(x => x.With(
+                        GetConnectorSettingsFailure.ErrorOneofCase.ConnectorNotFound => new ErrorDetails.NotFound(x => x.With(
                                 "connectorId", connectorId
                             )
                         ),
@@ -394,8 +391,8 @@ public class ConnectorsClient {
         catch (RpcException ex) {
             return Result.Failure<ConnectorSettingsResult, GetConnectorSettingsError>(
                 ex.StatusCode switch {
-                    StatusCode.PermissionDenied => ex.AsAccessDeniedError(),
-                    StatusCode.NotFound         => ex.AsConnectorNotFoundError(connectorId),
+                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
                     _                           => throw KurrentException.CreateUnknown(nameof(GetConnectorSettings), ex)
                 }
             );

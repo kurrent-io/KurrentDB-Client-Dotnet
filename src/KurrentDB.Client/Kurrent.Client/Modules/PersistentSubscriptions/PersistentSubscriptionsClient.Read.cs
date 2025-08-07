@@ -4,13 +4,11 @@
 using System.Threading.Channels;
 using EventStore.Client;
 using Grpc.Core;
-using Kurrent.Client.Legacy;
 using Kurrent.Client.Schema.Serialization;
 using Kurrent.Client.Streams;
 using KurrentDB.Client;
 using KurrentDB.Protocol.PersistentSubscriptions.V1;
 using static System.Threading.Channels.Channel;
-using static KurrentDB.Protocol.PersistentSubscriptions.V1.PersistentSubscriptionsService;
 using static KurrentDB.Protocol.PersistentSubscriptions.V1.ReadResp.ContentOneofCase;
 
 namespace Kurrent.Client.PersistentSubscriptions;
@@ -51,17 +49,14 @@ public partial class PersistentSubscriptionsClient {
         catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
             return Result.Failure<PersistentSubscription, SubscribeToStreamError>(
                 ex switch {
-                    AccessDeniedException                              => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException                          => rpcEx.AsNotAuthenticatedError(),
-                    PersistentSubscriptionNotFoundException pEx        => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
-                    MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
-                    PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
-                    _                                                  => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
+                    // AccessDeniedException                              => rpcEx.AsAccessDeniedError(),
+                    //
+                    // PersistentSubscriptionNotFoundException pEx        => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
+                    // MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
+                    // PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
+                    // _                                                  => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
                 }
             );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
         }
     }
 
@@ -109,20 +104,17 @@ public partial class PersistentSubscriptionsClient {
         catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
             return Result.Failure<PersistentSubscriptionResult, SubscribeToStreamError>(
                 ex switch {
-                    AccessDeniedException                              => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException                          => rpcEx.AsNotAuthenticatedError(),
-                    PersistentSubscriptionNotFoundException pEx        => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
-                    MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
-                    PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
-                    _                                                  => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
+                    // AccessDeniedException                              => rpcEx.AsAccessDeniedError(),
+                    //
+                    // PersistentSubscriptionNotFoundException pEx        => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
+                    // MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
+                    // PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
+                    // _                                                  => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
                 }
             );
         }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
-        }
 
-        async ValueTask<PersistentSubscriptionsServiceClient> GetClient(CancellationToken ct) {
+        async ValueTask<KurrentDB.Protocol.PersistentSubscriptions.V1.PersistentSubscriptions.PersistentSubscriptionsClient> GetClient(CancellationToken ct) {
             if (streamName is not SystemStreams.AllStream) return ServiceClient;
 
             await EnsureCompatibility(streamName, ct);
@@ -151,16 +143,13 @@ public partial class PersistentSubscriptionsClient {
         catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
             return Result.Failure<PersistentSubscription, SubscribeToAllError>(
                 ex switch {
-                    AccessDeniedException                              => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException                          => rpcEx.AsNotAuthenticatedError(),
-                    MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
-                    PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
-                    _                                                  => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
+                    // AccessDeniedException                              => rpcEx.AsAccessDeniedError(),
+                    //
+                    // MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
+                    // PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
+                    // _                                                  => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
                 }
             );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
         }
     }
 
@@ -185,16 +174,12 @@ public partial class PersistentSubscriptionsClient {
         catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
             return Result.Failure<PersistentSubscriptionResult, SubscribeToAllError>(
                 ex switch {
-                    AccessDeniedException                              => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException                          => rpcEx.AsNotAuthenticatedError(),
-                    MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
-                    PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
-                    _                                                  => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
+                    // AccessDeniedException                              => rpcEx.AsAccessDeniedError(),
+                    // MaximumSubscribersReachedException pEx             => rpcEx.AsMaximumSubscribersReachedError(pEx.StreamName, pEx.GroupName),
+                    // PersistentSubscriptionDroppedByServerException pEx => rpcEx.AsPersistentSubscriptionDroppedError(pEx.StreamName, pEx.GroupName),
+                    // _                                                  => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
                 }
             );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
         }
     }
 
@@ -221,7 +206,7 @@ public partial class PersistentSubscriptionsClient {
         internal PersistentSubscriptionResult(
             string streamName,
             string groupName,
-            Func<CancellationToken, ValueTask<PersistentSubscriptionsServiceClient>> getClient,
+            Func<CancellationToken, ValueTask<KurrentDB.Protocol.PersistentSubscriptions.V1.PersistentSubscriptions.PersistentSubscriptionsClient>> getClient,
             ReadReq request,
             KurrentDBClientSettings settings,
             ISchemaSerializerProvider serializationProvider,

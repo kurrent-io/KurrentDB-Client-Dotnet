@@ -2,13 +2,13 @@ syntax = "proto3";
 
 package event_store.client.server_features;
 
-option csharp_namespace = "KurrentDB.Protocol.Users.V1";
+option csharp_namespace = "KurrentDB.Protocol.ServerFeatures.V1";
 
 option java_package = "io.kurrent.client.serverfeatures";
 
 import "shared.proto";
 
-service ServerFeaturesService {
+service ServerFeatures {
 	rpc GetSupportedMethods (event_store.client.Empty) returns (SupportedMethods);
 }
 

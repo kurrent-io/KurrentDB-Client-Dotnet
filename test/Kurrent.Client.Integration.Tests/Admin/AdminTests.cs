@@ -1,9 +1,9 @@
 // ReSharper disable InconsistentNaming
 
-namespace Kurrent.Client.Tests.Operations;
+namespace Kurrent.Client.Tests.Admin;
 
 [Skip("Ignore this because it interferes with other tests")]
-public class OperationTests : KurrentClientTestFixture {
+public class AdminTests : KurrentClientTestFixture {
 	[Test]
 	public async Task merge_indexes() =>
 		await AutomaticClient.Admin.MergeIndexes()
@@ -36,10 +36,7 @@ public class OperationTests : KurrentClientTestFixture {
 
 	[Test]
 	public async Task stop_scavenge() =>
-		await AutomaticClient.Admin.StopScavenge("wwd")
-			.ShouldNotThrowAsync()
-			.ShouldFailAsync(error => {
-					error.AsScavengeNotFound.ErrorMessage.ShouldContain("The specified scavenge was not found.");
-				}
-			);
+        await AutomaticClient.Admin.StopScavenge("wwd")
+            .ShouldNotThrowAsync()
+            .ShouldFailAsync(failure => failure.Value.ShouldBeOfType<ErrorDetails.NotFound>());
 }

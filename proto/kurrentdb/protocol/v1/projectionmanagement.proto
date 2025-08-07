@@ -9,7 +9,7 @@ option java_package = "io.kurrent.client.projections";
 import "google/protobuf/struct.proto";
 import "shared.proto";
 
-service ProjectionsService {
+service Projections {
 	rpc Create (CreateReq) returns (CreateResp);
 	rpc Update (UpdateReq) returns (UpdateResp);
 	rpc Delete (DeleteReq) returns (DeleteResp);

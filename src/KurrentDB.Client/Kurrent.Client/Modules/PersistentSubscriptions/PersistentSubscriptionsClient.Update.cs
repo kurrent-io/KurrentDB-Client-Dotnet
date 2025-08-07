@@ -1,77 +1,33 @@
-// ReSharper disable InconsistentNaming
+// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
 
 using Grpc.Core;
-using Kurrent.Client.Legacy;
-using KurrentDB.Client;
+using Kurrent.Client.Streams;
 using static Kurrent.Client.PersistentSubscriptions.PersistentSubscriptionV1Mapper.Requests;
 
 namespace Kurrent.Client.PersistentSubscriptions;
 
 public partial class PersistentSubscriptionsClient {
-    /// <summary>
-    /// Updates a persistent subscription on a specific stream with the given group name and subscription settings.
-    /// </summary>
-    /// <param name="streamName">The name of the stream to which the persistent subscription applies.</param>
-    /// <param name="groupName">The name of the subscriber group for the persistent subscription.</param>
-    /// <param name="settings">The settings for configuring the persistent subscription.</param>
-    /// <param name="cancellationToken">An optional token to cancel the asynchronous operation.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async ValueTask<Result<Success, UpdateToStreamError>> UpdateToStream(
-        string streamName, string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
+
+    public async ValueTask<Result<Success, UpdateSubscriptionError>> UpdateSubscription(
+        StreamName stream, string group, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
     ) {
         try {
-            await EnsureCompatibility(streamName, cancellationToken);
-            var request = UpdateSubscriptionRequest(streamName, groupName, settings);
+            await EnsureCompatibility(stream, cancellationToken);
 
-            using var call = ServiceClient.UpdateAsync(request, cancellationToken: cancellationToken);
-            await call.ResponseAsync.ConfigureAwait(false);
+            var request = UpdateSubscriptionRequest(stream, group, settings);
 
-            return Result.Success<Success, UpdateToStreamError>(Success.Instance);
-        }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<Success, UpdateToStreamError>(
-                ex switch {
-                    AccessDeniedException                       => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException                   => rpcEx.AsNotAuthenticatedError(),
-                    PersistentSubscriptionNotFoundException pEx => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
-                    _                                           => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
-        }
-    }
+            await ServiceClient
+                .UpdateAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-    /// <summary>
-    /// Updates a persistent subscription on the global "$all" stream with the specified group name and subscription settings.
-    /// </summary>
-    /// <param name="groupName">The name of the subscriber group for the persistent subscription.</param>
-    /// <param name="settings">The settings for configuring the persistent subscription.</param>
-    /// <param name="cancellationToken">An optional token to cancel the asynchronous operation.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async ValueTask<Result<Success, UpdateToAllError>> UpdateToAll(
-        string groupName, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
-    ) {
-        try {
-            await UpdateToStream(
-                SystemStreams.AllStream, groupName, settings,
-                cancellationToken
-            ).ConfigureAwait(false);
-
-            return Result.Success<Success, UpdateToAllError>(Success.Instance);
+            return Success.Instance;
         }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<Success, UpdateToAllError>(
-                ex switch {
-                    AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, UpdateSubscriptionError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 }

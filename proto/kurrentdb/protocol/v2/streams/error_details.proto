@@ -65,6 +65,21 @@ message StreamsErrorDetails {
     int64 stream_revision = 1;
   }
 
+
+  message MaxAppendEventSizeExceeded {
+    option (error_info) = {
+      code : "MAX_APPEND_EVENT_SIZE_EXCEEDED",
+      severity : FATAL,
+      message : "The size of the event being appended exceeds the maximum allowed size."
+    };
+
+    // The record ID of the event that exceeded the size limit.
+    optional string record_id = 2;
+
+    // The maximum allowed size of a single record that can be appended to a stream in bytes.
+    optional uint32 max_size = 1;
+  }
+
   // When the transaction exceeds the maximum size allowed
   // (its bigger than the configured chunk size).
   message TransactionMaxSizeExceeded {

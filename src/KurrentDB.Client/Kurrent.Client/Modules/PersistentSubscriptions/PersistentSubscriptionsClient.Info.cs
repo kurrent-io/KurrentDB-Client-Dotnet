@@ -28,19 +28,14 @@ partial class PersistentSubscriptionsClient {
 
             var info = await GetInfoGrpc(req, cancellationToken).ConfigureAwait(false);
 
-            return Result.Success<PersistentSubscriptionInfo, GetInfoToAllError>(info);
+            return info;
         }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<PersistentSubscriptionInfo, GetInfoToAllError>(
-                ex switch {
-                    AccessDeniedException     => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException => rpcEx.AsNotAuthenticatedError(),
-                    _                         => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
+        catch (RpcException rex) {
+            return Result.Failure<PersistentSubscriptionInfo, GetInfoToAllError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -65,18 +60,12 @@ partial class PersistentSubscriptionsClient {
             return await GetInfoHttp(streamName, groupName, cancellationToken)
                 .ConfigureAwait(false);
         }
-        catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
-            return Result.Failure<PersistentSubscriptionInfo, GetInfoToStreamError>(
-                ex switch {
-                    AccessDeniedException                       => rpcEx.AsAccessDeniedError(),
-                    NotAuthenticatedException                   => rpcEx.AsNotAuthenticatedError(),
-                    PersistentSubscriptionNotFoundException pEx => rpcEx.AsPersistentSubscriptionNotFoundError(pEx.StreamName, pEx.GroupName),
-                    _                                           => throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(DeleteToStream), ex);
+        catch (RpcException rex) {
+            return Result.Failure<PersistentSubscriptionInfo, GetInfoToStreamError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 

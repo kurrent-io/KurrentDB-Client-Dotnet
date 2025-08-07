@@ -2,7 +2,6 @@ using Kurrent.Client.Admin;
 using Kurrent.Client.Connectors;
 using Kurrent.Client.Features;
 using Kurrent.Client.Legacy;
-using Kurrent.Client.Operations;
 using Kurrent.Client.PersistentSubscriptions;
 using Kurrent.Client.Projections;
 using Kurrent.Client.Registry;
@@ -27,7 +26,7 @@ public class KurrentClient : IAsyncDisposable {
 	    Options = options;
 
         LegacyCallInvoker = new KurrentDBLegacyCallInvoker(
-	        LegacyClusterClient.CreateWithExceptionMapping(options.ConvertToLegacySettings()));
+	        LegacyClusterClient.Create(options.ConvertToLegacySettings()));
 
         var schemaManager = new SchemaManager(
 	        new RegistryClient(this),
@@ -60,7 +59,7 @@ public class KurrentClient : IAsyncDisposable {
     public RegistryClient                Registry                { get; }
     public UsersClient                   Users                   { get; }
     public PersistentSubscriptionsClient PersistentSubscriptions { get; }
-    public AdminClient              Admin                   { get; }
+    public AdminClient                   Admin                   { get; }
     public ProjectionsClient             Projections             { get; }
     public ConnectorsClient              Connectors              { get; }
 

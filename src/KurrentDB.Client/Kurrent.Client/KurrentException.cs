@@ -43,7 +43,13 @@ public class KurrentException(string errorCode, string message, Metadata? metada
     /// <exception cref="ArgumentException"><paramref name="operation"/> is empty or consists only of white-space characters.</exception>
     public static KurrentException CreateUnknown(string operation, Exception innerException) {
         ArgumentException.ThrowIfNullOrWhiteSpace(operation);
-        return new("Unknown", $"Unexpected behaviour detected during {operation}: {innerException.Message}", null, innerException);
+        return new("Unknown", $"Unexpected behaviour detected during {operation}: {innerException.Message}", new Metadata().With("Operation", operation), innerException);
+    }
+
+    public static KurrentException CreateUnknown(string operation, string message) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
+        ArgumentException.ThrowIfNullOrWhiteSpace(message);
+        return new("Unknown", $"Unexpected behaviour detected during {operation}: {message}", new Metadata().With("Operation", operation));
     }
 
     /// <summary>
@@ -57,4 +63,7 @@ public class KurrentException(string errorCode, string message, Metadata? metada
     /// <exception cref="ArgumentException"><paramref name="operation"/> is empty or consists only of white-space characters.</exception>
     public static KurrentException ThrowUnknown(string operation, Exception innerException) =>
         throw CreateUnknown(operation, innerException);
+
+    public static KurrentException ThrowUnknown(string operation, string message) =>
+        throw CreateUnknown(operation, message);
 }

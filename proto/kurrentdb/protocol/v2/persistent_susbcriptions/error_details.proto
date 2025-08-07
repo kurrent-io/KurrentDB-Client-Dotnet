@@ -9,15 +9,19 @@ option java_multiple_files = true;
 import "core.proto";
 
 message PersistentSubscriptionsErrorDetails {
-  message PersistentSubscriptionNotFound {
+  message PersistentSubscriptionFailed {
     option (error_info) = {
-      code : "PERSISTENT_SUBSCRIPTION_NOT_FOUND",
+      code : "PERSISTENT_SUBSCRIPTION_FAILED",
       severity : RECOVERABLE,
-      message : "The specified persistent subscription was not found. Please check the subscription name and try again."
+      message : "The specified persistent subscription failed. This may indicate a configuration issue or a problem with the underlying system. Please check the logs for more details."
     };
+
+    optional string stream = 1;
+    optional string group  = 2;
+    optional string reason = 3;
   }
 
-  message MaximumSubscribersReached {
+  message PersistentSubscriptionMaximumSubscribersReached {
     option (error_info) = {
       code : "MAXIMUM_SUBSCRIBERS_REACHED",
       severity : RECOVERABLE,
@@ -31,5 +35,8 @@ message PersistentSubscriptionsErrorDetails {
       severity : RECOVERABLE,
       message : "The persistent subscription has been dropped. This can happen due to various reasons such as network issues, server overload, or manual intervention. Please check the subscription status and try again."
     };
+
+    optional string stream = 1;
+    optional string group  = 2;
   }
 }
