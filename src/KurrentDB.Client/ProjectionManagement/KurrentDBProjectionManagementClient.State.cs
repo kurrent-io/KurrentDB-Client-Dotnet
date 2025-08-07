@@ -1,6 +1,7 @@
 using System.Text.Json;
-using EventStore.Client.Projections;
 using Google.Protobuf.WellKnownTypes;
+using KurrentDB.Protocol.Projections.V1;
+using static KurrentDB.Protocol.Projections.V1.Projections;
 using Type = System.Type;
 
 namespace KurrentDB.Client {
@@ -70,7 +71,7 @@ namespace KurrentDB.Client {
 		private async ValueTask<Value> GetResultInternalAsync(string name, string? partition,
 			TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Projections.ProjectionsClient(
+			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).ResultAsync(new ResultReq {
 				Options = new ResultReq.Types.Options {
 					Name = name,
@@ -145,7 +146,7 @@ namespace KurrentDB.Client {
 		private async ValueTask<Value> GetStateInternalAsync(string name, string? partition, TimeSpan? deadline,
 			UserCredentials? userCredentials, CancellationToken cancellationToken) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Projections.ProjectionsClient(
+			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).StateAsync(new StateReq {
 				Options = new StateReq.Types.Options {
 					Name = name,
