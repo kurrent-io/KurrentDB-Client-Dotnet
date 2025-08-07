@@ -1,7 +1,5 @@
 // ReSharper disable CheckNamespace
 
-using Grpc.Core;
-using KurrentDB.Client;
 using static KurrentDB.Protocol.PersistentSubscriptions.V2.PersistentSubscriptionsErrorDetails;
 
 namespace Kurrent.Client;

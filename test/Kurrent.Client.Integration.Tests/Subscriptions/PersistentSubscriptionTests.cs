@@ -1,8 +1,8 @@
+using Kurrent.Client.PersistentSubscriptions;
 using Kurrent.Client.Streams;
 using Kurrent.Client.Testing.Shouldly;
 using KurrentDB.Client;
 using Microsoft.Extensions.Logging;
-using PersistentSubscriptionInfo = Kurrent.Client.PersistentSubscriptions.PersistentSubscriptionInfo;
 using PersistentSubscriptionMessage = Kurrent.Client.PersistentSubscriptions.PersistentSubscriptionMessage;
 using PersistentSubscriptionSettings = Kurrent.Client.PersistentSubscriptions.PersistentSubscriptionSettings;
 
@@ -108,7 +108,7 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 			StartFrom = LogPosition.Earliest
 		};
 
-		var expected = new PersistentSubscriptionInfo {
+		var expected = new PersistentSubscriptionDetails {
 			GroupName   = NewGroupName(),
 			EventSource = SystemStreams.AllStream,
 			Settings    = settings
@@ -120,15 +120,15 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		await Task.Delay(1.Seconds(), ct);
 
 		var info = await AutomaticClient.PersistentSubscriptions
-			.GetInfoToAll(expected.GroupName, ct)
+			.GetPersistentAllStreamSubscription(expected.GroupName, ct)
 			.ShouldNotThrowOrFailAsync();
 
 		// Assert
 		info.ShouldNotBeNull().ShouldBeEquivalentTo(
 			expected, config => config
-				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Connections)
-				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Stats)
-				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Status)
+				.Excluding<PersistentSubscriptionDetails>(subscriptionInfo => subscriptionInfo.Connections)
+				.Excluding<PersistentSubscriptionDetails>(subscriptionInfo => subscriptionInfo.Stats)
+				.Excluding<PersistentSubscriptionDetails>(subscriptionInfo => subscriptionInfo.Status)
 		);
 	}
 
@@ -139,7 +139,7 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 
 		var settings = new PersistentSubscriptionSettings { StartFrom = LogPosition.Earliest };
 
-		var expected = new PersistentSubscriptionInfo {
+		var expected = new PersistentSubscriptionDetails {
 			GroupName   = NewGroupName(),
 			EventSource = stream,
 			Settings    = settings
@@ -151,15 +151,15 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		await Task.Delay(1.Seconds(), ct);
 
 		var info = await AutomaticClient.PersistentSubscriptions
-			.GetInfoToStream(stream, expected.GroupName, ct)
+			.GetPersistentStreamSubscription(stream, expected.GroupName, ct)
 			.ShouldNotThrowOrFailAsync();
 
 		// Assert
 		info.ShouldNotBeNull().ShouldBeEquivalentTo(
 			expected, config => config
-				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Connections)
-				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Stats)
-				.Excluding<PersistentSubscriptionInfo>(subscriptionInfo => subscriptionInfo.Status)
+				.Excluding<PersistentSubscriptionDetails>(subscriptionInfo => subscriptionInfo.Connections)
+				.Excluding<PersistentSubscriptionDetails>(subscriptionInfo => subscriptionInfo.Stats)
+				.Excluding<PersistentSubscriptionDetails>(subscriptionInfo => subscriptionInfo.Status)
 		);
 	}
 

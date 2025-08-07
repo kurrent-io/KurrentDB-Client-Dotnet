@@ -1,6 +1,5 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
-using Kurrent.Client.Legacy;
 
 namespace KurrentDB.Client.Interceptors;
 

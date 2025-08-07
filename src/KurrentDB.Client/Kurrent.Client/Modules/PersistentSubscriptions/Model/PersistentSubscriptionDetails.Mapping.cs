@@ -11,15 +11,8 @@ namespace Kurrent.Client.PersistentSubscriptions;
 /// <summary>
 /// Provides the details for a persistent subscription.
 /// </summary>
-public record PersistentSubscriptionInfo {
-	public string                                            EventSource { get; init; } = null!;
-	public string                                            GroupName   { get; init; } = null!;
-	public string                                            Status      { get; init; } = null!;
-	public IEnumerable<PersistentSubscriptionConnectionInfo> Connections { get; init; } = null!;
-	public PersistentSubscriptionStats                       Stats       { get; init; } = null!;
-	public PersistentSubscriptionSettings?                   Settings    { get; init; }
-
-	internal static PersistentSubscriptionInfo From(SubscriptionInfo info) {
+public partial record PersistentSubscriptionDetails {
+	internal static PersistentSubscriptionDetails From(SubscriptionInfo info) {
 		var startFrom = info.EventSource is SystemStreams.AllStream
 			? LogPosition.From(info.StartFrom)
 			: long.TryParse(info.StartFrom, out var streamPosition)
@@ -38,7 +31,7 @@ public record PersistentSubscriptionInfo {
 				? LogPosition.From((long)knownPosition)
 				: LogPosition.Unset;
 
-		return new PersistentSubscriptionInfo {
+		return new PersistentSubscriptionDetails {
 			EventSource = info.EventSource,
 			GroupName   = info.GroupName,
 			Status      = info.Status,
@@ -74,7 +67,7 @@ public record PersistentSubscriptionInfo {
 		};
 	}
 
-	internal static PersistentSubscriptionInfo From(PersistentSubscriptionDto info) {
+	internal static PersistentSubscriptionDetails From(PersistentSubscriptionDto info) {
 		PersistentSubscriptionSettings? settings = null;
 
 		if (info.Config is not null)

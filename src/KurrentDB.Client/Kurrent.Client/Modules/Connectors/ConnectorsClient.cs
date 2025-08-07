@@ -1,6 +1,5 @@
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
-using Kurrent.Client.Legacy;
 using Kurrent.Client.Streams;
 using KurrentDB.Protocol.Connectors.V2;
 using static KurrentDB.Protocol.Connectors.V2.ConnectorsService;

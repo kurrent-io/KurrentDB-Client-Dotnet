@@ -19,16 +19,16 @@ static class PersistentSubscriptionV1Mapper {
 
 	static readonly Dictionary<string, Contracts.CreateReq.Types.ConsumerStrategy> CreateConsumerStrategies
 		= new() {
-			[SystemConsumerStrategies.DispatchToSingle] = Contracts.CreateReq.Types.ConsumerStrategy.DispatchToSingle,
-			[SystemConsumerStrategies.RoundRobin]       = Contracts.CreateReq.Types.ConsumerStrategy.RoundRobin,
-			[SystemConsumerStrategies.Pinned]           = Contracts.CreateReq.Types.ConsumerStrategy.Pinned
+			[PersistentSubscriptionType.DispatchToSingle] = Contracts.CreateReq.Types.ConsumerStrategy.DispatchToSingle,
+			[PersistentSubscriptionType.RoundRobin]       = Contracts.CreateReq.Types.ConsumerStrategy.RoundRobin,
+			[PersistentSubscriptionType.Pinned]           = Contracts.CreateReq.Types.ConsumerStrategy.Pinned
 		};
 
 	static readonly Dictionary<string, Contracts.UpdateReq.Types.ConsumerStrategy> UpdateConsumerStrategies
 		= new() {
-			[SystemConsumerStrategies.DispatchToSingle] = Contracts.UpdateReq.Types.ConsumerStrategy.DispatchToSingle,
-			[SystemConsumerStrategies.RoundRobin]       = Contracts.UpdateReq.Types.ConsumerStrategy.RoundRobin,
-			[SystemConsumerStrategies.Pinned]           = Contracts.UpdateReq.Types.ConsumerStrategy.Pinned
+			[PersistentSubscriptionType.DispatchToSingle] = Contracts.UpdateReq.Types.ConsumerStrategy.DispatchToSingle,
+			[PersistentSubscriptionType.RoundRobin]       = Contracts.UpdateReq.Types.ConsumerStrategy.RoundRobin,
+			[PersistentSubscriptionType.Pinned]           = Contracts.UpdateReq.Types.ConsumerStrategy.Pinned
 		};
 
 	public static class Requests {

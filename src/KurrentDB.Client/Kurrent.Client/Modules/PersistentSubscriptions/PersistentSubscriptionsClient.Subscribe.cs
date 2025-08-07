@@ -17,9 +17,6 @@ public partial class PersistentSubscriptionsClient {
     /// <summary>
     /// Subscribes to a persistent subscription. Messages must be manually acknowledged
     /// </summary>
-    /// <exception cref="ArgumentNullException"></exception>
-    /// <exception cref="ArgumentException"></exception>
-    /// <exception cref="ArgumentOutOfRangeException"></exception>
     public async ValueTask<Result<PersistentSubscription, SubscribeToStreamError>> SubscribeToStream(
         string streamName,
         string groupName,
@@ -44,7 +41,7 @@ public partial class PersistentSubscriptionsClient {
                 )
                 .ConfigureAwait(false);
 
-            return Result.Success<PersistentSubscription, SubscribeToStreamError>(subscription);
+            return subscription;
         }
         catch (Exception ex) when (ex.InnerException is RpcException rpcEx) {
             return Result.Failure<PersistentSubscription, SubscribeToStreamError>(
@@ -63,11 +60,6 @@ public partial class PersistentSubscriptionsClient {
     /// <summary>
     /// Subscribes to a persistent subscription. Messages must be manually acknowledged.
     /// </summary>
-    /// <param name="streamName">The name of the stream to read events from.</param>
-    /// <param name="groupName">The name of the persistent subscription group.</param>
-    /// <param name="bufferSize">The size of the buffer.</param>
-    /// <param name="cancellationToken">The optional <see cref="System.Threading.CancellationToken"/>.</param>
-    /// <returns></returns>
     public async ValueTask<Result<PersistentSubscriptionResult, SubscribeToStreamError>> SubscribeToStream(
         string streamName, string groupName, int bufferSize = 10, CancellationToken cancellationToken = default
     ) {
@@ -95,7 +87,7 @@ public partial class PersistentSubscriptionsClient {
                 Result.Success<PersistentSubscriptionResult, SubscribeToStreamError>(
                     new PersistentSubscriptionResult(
                         streamName, groupName, GetClient,
-                        request, LegacySettings, SerializerProvider,
+                        request, SerializerProvider,
                         MetadataDecoder, cancellationToken
                     )
                 )
@@ -116,8 +108,6 @@ public partial class PersistentSubscriptionsClient {
 
         async ValueTask<KurrentDB.Protocol.PersistentSubscriptions.V1.PersistentSubscriptions.PersistentSubscriptionsClient> GetClient(CancellationToken ct) {
             if (streamName is not SystemStreams.AllStream) return ServiceClient;
-
-            await EnsureCompatibility(streamName, ct);
             return ServiceClient;
         }
     }
@@ -208,7 +198,6 @@ public partial class PersistentSubscriptionsClient {
             string groupName,
             Func<CancellationToken, ValueTask<KurrentDB.Protocol.PersistentSubscriptions.V1.PersistentSubscriptions.PersistentSubscriptionsClient>> getClient,
             ReadReq request,
-            KurrentDBClientSettings settings,
             ISchemaSerializerProvider serializationProvider,
             IMetadataDecoder metadataDecoder,
             CancellationToken cancellationToken

@@ -1,4 +1,4 @@
-namespace Kurrent.Client;
+namespace Kurrent.Client.PersistentSubscriptions;
 
 /// <summary>
 /// Represents the reason subscription was dropped.

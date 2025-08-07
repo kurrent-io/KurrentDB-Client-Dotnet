@@ -1,6 +1,5 @@
 using Humanizer;
 using Kurrent.Client.Streams;
-using KurrentDB.Client;
 
 namespace Kurrent.Client.PersistentSubscriptions;
 
@@ -71,7 +70,7 @@ public sealed record PersistentSubscriptionSettings {
     public int MaxSubscriberCount { get; init; }
 
     /// <summary>
-    /// The strategy to use for distributing events to client consumers. See <see cref="SystemConsumerStrategies"/> for system supported strategies.
+    /// The strategy to use for distributing events to client consumers. See <see cref="PersistentSubscriptionType"/> for system supported strategies.
     /// </summary>
-    public string ConsumerStrategyName { get; init; } = SystemConsumerStrategies.RoundRobin;
+    public string ConsumerStrategyName { get; init; } = PersistentSubscriptionType.RoundRobin;
 }

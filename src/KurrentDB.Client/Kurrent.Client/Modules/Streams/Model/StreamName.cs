@@ -24,15 +24,19 @@ public readonly record struct StreamName {
     public override string ToString() => Value;
 
     /// <summary>
+    /// Throws an <see cref="ArgumentException"/> if the value is invalid (i.e., null, empty, or whitespace).
+    /// </summary>
+    public void ThrowIfInvalid() => ArgumentException.ThrowIfNullOrWhiteSpace(Value);
+
+    /// <summary>
     /// Creates a <see cref="StreamName"/> from a string value.
     /// </summary>
-    /// <param name="stream">The string value to create the stream name from. Cannot be null, empty, or whitespace.</param>
+    /// <param name="value">The string value to create the stream name from. Cannot be null, empty, or whitespace.</param>
     /// <returns>A new <see cref="StreamName"/> instance.</returns>
-    /// <exception cref="ArgumentException">Thrown if <paramref name="stream"/> is null, empty, or consists only of white-space characters.</exception>
-    public static StreamName From(string stream) {
-        return string.IsNullOrWhiteSpace(stream)
-            ? throw new ArgumentException($"Stream '{stream}' is not valid.", nameof(stream))
-            : new(stream);
+    /// <exception cref="ArgumentException">Thrown if <paramref name="value"/> is null, empty, or consists only of white-space characters.</exception>
+    public static StreamName From(string value) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(value);
+        return new(value);
     }
 
     public StreamName Metastream => new($"$${Value}");
@@ -47,22 +51,22 @@ public readonly record struct StreamName {
     /// <summary>
     /// A stream containing all events in the KurrentDB transaction file.
     /// </summary>
-    const string AllStream = "$all";
+    public const string AllStream = "$all";
 
     /// <summary>
     /// A stream containing links pointing to each stream in the KurrentDB.
     /// </summary>
-    const string StreamsStream = "$streams";
+    public const string StreamsStream = "$streams";
 
     /// <summary>
     /// A stream containing system settings.
     /// </summary>
-    const string SettingsStream = "$settings";
+    public const string SettingsStream = "$settings";
 
     /// <summary>
     /// A stream containing statistics.
     /// </summary>
-    const string StatsStreamPrefix = "$stats";
+    public const string StatsStreamPrefix = "$stats";
 
     /// <summary>
     ///

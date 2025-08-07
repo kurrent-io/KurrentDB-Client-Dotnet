@@ -3,7 +3,8 @@ using Google.Protobuf;
 
 namespace EventStore.Client;
 
-#pragma warning disable 1591
+// This is pure insanity and we are counting the days to implement V2 of the protocol
+// where this will be a string and not a byte array, bringing peace to the world.
 partial class StreamIdentifier {
 	string? _cached;
 

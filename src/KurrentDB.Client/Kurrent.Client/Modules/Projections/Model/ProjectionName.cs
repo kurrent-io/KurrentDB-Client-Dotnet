@@ -10,6 +10,8 @@ public readonly record struct ProjectionName {
 
     public override string ToString() => Value;
 
+    public void ThrowIfInvalid() => ArgumentException.ThrowIfNullOrWhiteSpace(Value);
+
     public static ProjectionName From(string value) {
         ArgumentException.ThrowIfNullOrWhiteSpace(value);
         return new(value);

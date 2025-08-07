@@ -1,7 +1,5 @@
 // ReSharper disable CheckNamespace
 
-using Types = KurrentDB.Protocol.Admin.V2.AdminErrorDetails.Types;
-
 namespace Kurrent.Client;
 
 public static partial class ErrorDetails {

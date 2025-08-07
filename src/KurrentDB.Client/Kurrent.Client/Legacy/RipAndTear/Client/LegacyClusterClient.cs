@@ -1,11 +1,9 @@
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
 using System.Net;
-using System.Runtime.Serialization;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Kurrent.Client;
-using Kurrent.Client.Legacy;
 using Kurrent.Grpc.Interceptors;
 using KurrentDB.Client.Interceptors;
 using Microsoft.Extensions.Logging;
