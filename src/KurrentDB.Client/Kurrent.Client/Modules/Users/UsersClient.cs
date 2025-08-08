@@ -15,7 +15,7 @@ public class UsersClient {
     UsersServiceClient ServiceClient { get; }
 
     public async ValueTask<Result<Success, CreateUserError>> CreateUser(
-        string loginName, string fullName, string[] groups, string password,
+        LoginName loginName, string fullName, string[] groups, string password,
         CancellationToken cancellationToken = default
     ) {
         try {
@@ -43,7 +43,7 @@ public class UsersClient {
         }
     }
 
-    public async ValueTask<Result<Success, DeleteUserError>> DeleteUser(string loginName, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<Success, DeleteUserError>> DeleteUser(LoginName loginName, CancellationToken cancellationToken = default) {
         try {
             var request = new DeleteReq { Options = new() { LoginName = loginName } };
 
@@ -62,7 +62,7 @@ public class UsersClient {
         }
     }
 
-    public async ValueTask<Result<Success, DisableUserError>> DisableUser(string loginName, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<Success, DisableUserError>> DisableUser(LoginName loginName, CancellationToken cancellationToken = default) {
         try {
             var request = new DisableReq { Options = new() { LoginName = loginName } };
 
@@ -81,7 +81,7 @@ public class UsersClient {
         }
     }
 
-    public async ValueTask<Result<Success, EnableUserError>> EnableUser(string loginName, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<Success, EnableUserError>> EnableUser(LoginName loginName, CancellationToken cancellationToken = default) {
         try {
             var request = new EnableReq { Options = new() { LoginName = loginName } };
 
@@ -101,7 +101,7 @@ public class UsersClient {
     }
 
     public async ValueTask<Result<Success, ChangeUserPasswordError>> ChangeUserPassword(
-        string loginName, string currentPassword, string newPassword, CancellationToken cancellationToken = default
+        LoginName loginName, string currentPassword, string newPassword, CancellationToken cancellationToken = default
     ) {
         try {
             var request = new ChangePasswordReq {
@@ -128,7 +128,7 @@ public class UsersClient {
     }
 
     public async ValueTask<Result<Success, ResetUserPasswordError>> ResetUserPassword(
-        string loginName, string newPassword, CancellationToken cancellationToken = default
+        LoginName loginName, string newPassword, CancellationToken cancellationToken = default
     ) {
         try {
             var request = new ResetPasswordReq {
@@ -155,7 +155,7 @@ public class UsersClient {
         }
     }
 
-    public async ValueTask<Result<UserDetails, GetUserError>> GetUser(string loginName, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<UserDetails, GetUserError>> GetUser(LoginName loginName, CancellationToken cancellationToken = default) {
         try {
             var request = new DetailsReq { Options = new() { LoginName = loginName } };
 

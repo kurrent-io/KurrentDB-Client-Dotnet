@@ -41,7 +41,7 @@ static class PersistentSubscriptionV1Mapper {
 			};
 
 			StreamOptionsMapper.MapToCreateOptions(options, streamName, settings.StartFrom, filter, heartbeat);
-			LegacyBackwardCompatibility.ApplyToCreateOptions(options, streamName, settings.StartFrom, settings.ConsumerStrategyName);
+			LegacyBackwardCompatibility.ApplyToCreateOptions(options, streamName, settings.StartFrom, settings.SubscriptionType);
 
 			return new Contracts.CreateReq { Options = options };
 		}
@@ -55,7 +55,7 @@ static class PersistentSubscriptionV1Mapper {
 			};
 
 			StreamOptionsMapper.MapToUpdateOptions(options, streamName, settings.StartFrom);
-			LegacyBackwardCompatibility.ApplyToUpdateOptions(options, streamName, settings.StartFrom, settings.ConsumerStrategyName);
+			LegacyBackwardCompatibility.ApplyToUpdateOptions(options, streamName, settings.StartFrom, settings.SubscriptionType);
 
 			return new Contracts.UpdateReq { Options = options };
 		}

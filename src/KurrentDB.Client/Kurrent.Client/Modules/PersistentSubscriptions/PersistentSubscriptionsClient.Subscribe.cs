@@ -255,6 +255,13 @@ public partial class PersistentSubscriptionsClient {
 
                     Channel.Writer.TryComplete();
                 }
+                // catch (RpcException rex) {
+                //     return Result.Failure<Success, CreateProjectionError>(rex.StatusCode switch {
+                //         StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                //         StatusCode.AlreadyExists    => new ErrorDetails.AlreadyExists(),
+                //         _                           => throw rex.WithOriginalCallStack()
+                //     });
+                // }
                 catch (Exception ex) {
                     if (ex is PersistentSubscriptionNotFoundException) {
                         await Channel.Writer
@@ -381,20 +388,20 @@ public partial class PersistentSubscriptionsClient {
         /// <summary>
         /// Acknowledge that a message has failed processing (this will tell the server it has not been processed).
         /// </summary>
-        /// <param name="action">The <see cref="PersistentSubscriptionNakEventAction"/> to take.</param>
+        /// <param name="action">The <see cref="PersistentSubscriptionNakAction"/> to take.</param>
         /// <param name="reason">A reason given.</param>
         /// <param name="eventIds">The <see cref="Guid"/> of the <see cref="Record" />s to nak. There should not be more than 2000 to nak at a time.</param>
         /// <exception cref="ArgumentException">The number of eventIds exceeded the limit of 2000.</exception>
-        public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Guid[] eventIds) => NackInternal(eventIds, action, reason);
+        public Task Nack(PersistentSubscriptionNakAction action, string reason, params Guid[] eventIds) => NackInternal(eventIds, action, reason);
 
         /// <summary>
         /// Acknowledge that a message has failed processing (this will tell the server it has not been processed).
         /// </summary>
-        /// <param name="action">The <see cref="PersistentSubscriptionNakEventAction"/> to take.</param>
+        /// <param name="action">The <see cref="PersistentSubscriptionNakAction"/> to take.</param>
         /// <param name="reason">A reason given.</param>
         /// <param name="records">The <see cref="Record" />s to nak. There should not be more than 2000 to nak at a time.</param>
         /// <exception cref="ArgumentException">The number of resolvedEvents exceeded the limit of 2000.</exception>
-        public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Record[] records) =>
+        public Task Nack(PersistentSubscriptionNakAction action, string reason, params Record[] records) =>
             Nack(action, reason, Array.ConvertAll(records, record => record.Id));
 
         Task AckInternal(params Guid[] eventIds) {
@@ -417,7 +424,7 @@ public partial class PersistentSubscriptionsClient {
                 );
         }
 
-        Task NackInternal(Guid[] eventIds, PersistentSubscriptionNakEventAction action, string reason) {
+        Task NackInternal(Guid[] eventIds, PersistentSubscriptionNakAction action, string reason) {
             if (eventIds.Length > MaxEventIdLength)
                 throw new ArgumentException(
                     $"The number of eventIds exceeds the maximum length of {MaxEventIdLength}.",
@@ -433,10 +440,10 @@ public partial class PersistentSubscriptionsClient {
                                 Array.ConvertAll(eventIds, id => Uuid.FromGuid(id).ToDto())
                             },
                             Action = action switch {
-                                PersistentSubscriptionNakEventAction.Park  => ReadReq.Types.Nack.Types.Action.Park,
-                                PersistentSubscriptionNakEventAction.Retry => ReadReq.Types.Nack.Types.Action.Retry,
-                                PersistentSubscriptionNakEventAction.Skip  => ReadReq.Types.Nack.Types.Action.Skip,
-                                PersistentSubscriptionNakEventAction.Stop  => ReadReq.Types.Nack.Types.Action.Stop,
+                                PersistentSubscriptionNakAction.Park  => ReadReq.Types.Nack.Types.Action.Park,
+                                PersistentSubscriptionNakAction.Retry => ReadReq.Types.Nack.Types.Action.Retry,
+                                PersistentSubscriptionNakAction.Skip  => ReadReq.Types.Nack.Types.Action.Skip,
+                                PersistentSubscriptionNakAction.Stop  => ReadReq.Types.Nack.Types.Action.Stop,
                                 _                                          => ReadReq.Types.Nack.Types.Action.Unknown
                             },
                             Reason = reason

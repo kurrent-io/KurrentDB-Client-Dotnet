@@ -54,10 +54,10 @@ public record PersistentSubscriptionStats {
     /// <summary>
     /// The <see cref="LogPosition"/> of the last checkpoint. This will be null if there are no checkpoints.
     /// </summary>
-    public LogPosition LastCheckpointedEventPosition { get; init; }
+    public LogPosition LastCheckpointedEventPosition { get; init; } = LogPosition.Unset;
 
     /// <summary>
     /// The <see cref="LogPosition"/> of the last known event. This will be undefined if no events have been received yet.
     /// </summary>
-    public LogPosition LastKnownEventPosition { get; init; }
+    public LogPosition LastKnownEventPosition { get; init; } = LogPosition.Unset;
 }

@@ -7,7 +7,7 @@ public record UserDetails {
     /// <summary>
     /// The user's login name.
     /// </summary>
-    public required string LoginName { get; init; }
+    public required LoginName LoginName { get; init; }
 
     /// <summary>
     /// The full name of the user.

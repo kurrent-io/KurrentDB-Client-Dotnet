@@ -27,10 +27,8 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		var recordsReceived = new List<Record>();
 
 		// Act
-		await AutomaticClient.PersistentSubscriptions.CreateAllStreamSubscription(
-			group, filter, settings,
-			ct
-		);
+		await AutomaticClient.PersistentSubscriptions
+            .CreateSubscription(group, StreamName.AllStream, filter, settings, ct);
 
 		await using var subscription = await AutomaticClient.PersistentSubscriptions
 			.SubscribeToAll(group, cancellationToken: ct)
@@ -71,8 +69,8 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		var expectedIds = simulation.Game.GameEvents.Select(x => x.RecordId).ToList();
 
 		// Act
-		await AutomaticClient.PersistentSubscriptions.CreateStreamSubscription(
-			stream, group, settings,
+		await AutomaticClient.PersistentSubscriptions.CreateSubscription(
+			group, stream, ReadFilter.None, settings,
 			ct
 		);
 
@@ -109,18 +107,18 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		};
 
 		var expected = new PersistentSubscriptionDetails {
-			GroupName   = NewGroupName(),
-			EventSource = SystemStreams.AllStream,
+			Group   = NewGroupName(),
+			Source = SystemStreams.AllStream,
 			Settings    = settings
 		};
 
 		// Act
-		await AutomaticClient.PersistentSubscriptions.CreateAllStreamSubscription(expected.GroupName, ReadFilter.None, expected.Settings, ct);
+		await AutomaticClient.PersistentSubscriptions.CreateAllStreamSubscription(expected.Group, ReadFilter.None, expected.Settings, ct);
 
 		await Task.Delay(1.Seconds(), ct);
 
 		var info = await AutomaticClient.PersistentSubscriptions
-			.GetPersistentAllStreamSubscription(expected.GroupName, ct)
+			.GetPersistentAllStreamSubscription(expected.Group, ct)
 			.ShouldNotThrowOrFailAsync();
 
 		// Assert
@@ -140,18 +138,18 @@ public class PersistentSubscriptionTests : KurrentClientTestFixture {
 		var settings = new PersistentSubscriptionSettings { StartFrom = LogPosition.Earliest };
 
 		var expected = new PersistentSubscriptionDetails {
-			GroupName   = NewGroupName(),
-			EventSource = stream,
+			Group   = NewGroupName(),
+			Source = stream,
 			Settings    = settings
 		};
 
 		// Act
-		await AutomaticClient.PersistentSubscriptions.CreateStreamSubscription(stream, expected.GroupName, expected.Settings, ct);
+		await AutomaticClient.PersistentSubscriptions.CreateStreamSubscription(stream, expected.Group, expected.Settings, ct);
 
 		await Task.Delay(1.Seconds(), ct);
 
 		var info = await AutomaticClient.PersistentSubscriptions
-			.GetPersistentStreamSubscription(stream, expected.GroupName, ct)
+			.GetPersistentStreamSubscription(stream, expected.Group, ct)
 			.ShouldNotThrowOrFailAsync();
 
 		// Assert

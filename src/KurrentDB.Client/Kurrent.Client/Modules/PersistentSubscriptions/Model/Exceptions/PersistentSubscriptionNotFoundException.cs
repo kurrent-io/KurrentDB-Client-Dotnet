@@ -1,4 +1,4 @@
-namespace KurrentDB.Client;
+namespace Kurrent.Client.PersistentSubscriptions;
 
 /// <summary>
 /// The exception that is thrown when a persistent subscription is not found.

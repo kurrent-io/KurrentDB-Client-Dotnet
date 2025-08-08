@@ -103,20 +103,20 @@ public class PersistentSubscription : IDisposable {
     /// <summary>
     /// Acknowledge that a message has failed processing (this will tell the server it has not been processed).
     /// </summary>
-    /// <param name="action">The <see cref="PersistentSubscriptionNakEventAction"/> to take.</param>
+    /// <param name="action">The <see cref="PersistentSubscriptionNakAction"/> to take.</param>
     /// <param name="reason">A reason given.</param>
     /// <param name="eventIds">The <see cref="Uuid"/> of the <see cref="ResolvedEvent" />s to nak. There should not be more than 2000 to nak at a time.</param>
     /// <exception cref="ArgumentException">The number of eventIds exceeded the limit of 2000.</exception>
-    public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Guid[] eventIds) => NackInternal(eventIds, action, reason);
+    public Task Nack(PersistentSubscriptionNakAction action, string reason, params Guid[] eventIds) => NackInternal(eventIds, action, reason);
 
     /// <summary>
     /// Acknowledge that a message has failed processing (this will tell the server it has not been processed).
     /// </summary>
-    /// <param name="action">The <see cref="PersistentSubscriptionNakEventAction"/> to take.</param>
+    /// <param name="action">The <see cref="PersistentSubscriptionNakAction"/> to take.</param>
     /// <param name="reason">A reason given.</param>
     /// <param name="records">The <see cref="ResolvedEvent" />s to nak. There should not be more than 2000 to nak at a time.</param>
     /// <exception cref="ArgumentException">The number of resolvedEvents exceeded the limit of 2000.</exception>
-    public Task Nack(PersistentSubscriptionNakEventAction action, string reason, params Record[] records) =>
+    public Task Nack(PersistentSubscriptionNakAction action, string reason, params Record[] records) =>
         Nack(action, reason, Array.ConvertAll(records, record => record.Id));
 
     async Task Subscribe() {
@@ -213,5 +213,5 @@ public class PersistentSubscription : IDisposable {
 
     Task AckInternal(params Guid[] ids) => _persistentSubscriptionResult.Ack(ids);
 
-    Task NackInternal(Guid[] ids, PersistentSubscriptionNakEventAction action, string reason) => _persistentSubscriptionResult.Nack(action, reason, ids);
+    Task NackInternal(Guid[] ids, PersistentSubscriptionNakAction action, string reason) => _persistentSubscriptionResult.Nack(action, reason, ids);
 }

@@ -47,24 +47,5 @@ public record PersistentSubscriptionConnectionInfo {
     /// <summary>
     /// Timing measurements for the connection. Can be enabled with the ExtraStatistics setting.
     /// </summary>
-    public required IDictionary<string, long> ExtraStatistics { get; init; }
-
-    internal static IEnumerable<PersistentSubscriptionConnectionInfo> CreateFrom(IEnumerable<PersistentSubscriptionConnectionInfoDto> connections) =>
-        connections.Select(CreateFrom);
-
-    static PersistentSubscriptionConnectionInfo CreateFrom(PersistentSubscriptionConnectionInfoDto connection) =>
-        new() {
-            From                      = connection.From,
-            Username                  = connection.Username,
-            ConnectionName            = connection.ConnectionName,
-            AverageItemsPerSecond     = (int)connection.AverageItemsPerSecond,
-            TotalItems                = connection.TotalItems,
-            CountSinceLastMeasurement = connection.CountSinceLastMeasurement,
-            AvailableSlots            = connection.AvailableSlots,
-            InFlightMessages          = connection.InFlightMessages,
-            ExtraStatistics           = CreateFrom(connection.ExtraStatistics)
-        };
-
-    static Dictionary<string, long> CreateFrom(IEnumerable<PersistentSubscriptionMeasurementInfoDto> extraStatistics) =>
-        extraStatistics.ToDictionary(k => k.Key, v => v.Value);
+    public required IReadOnlyDictionary<string, long> ExtraStatistics { get; init; }
 }

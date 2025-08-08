@@ -72,5 +72,5 @@ public sealed record PersistentSubscriptionSettings {
     /// <summary>
     /// The strategy to use for distributing events to client consumers. See <see cref="PersistentSubscriptionType"/> for system supported strategies.
     /// </summary>
-    public string ConsumerStrategyName { get; init; } = PersistentSubscriptionType.RoundRobin;
+    public string SubscriptionType { get; init; } = PersistentSubscriptionType.RoundRobin;
 }
