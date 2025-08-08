@@ -21,7 +21,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			await DBUsers.CreateUserWithRetry(
 				TestCredentials.TestUser1.Username!,
 				nameof(TestCredentials.TestUser1),
-				Array.Empty<string>(),
+				[],
 				TestCredentials.TestUser1.Password!,
 				TestCredentials.Root
 			).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
@@ -29,7 +29,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			await DBUsers.CreateUserWithRetry(
 				TestCredentials.TestUser2.Username!,
 				nameof(TestCredentials.TestUser2),
-				Array.Empty<string>(),
+				[],
 				TestCredentials.TestUser2.Password!,
 				TestCredentials.Root
 			).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));
@@ -37,7 +37,7 @@ public class SecurityFixture : KurrentDBTemporaryFixture {
 			await DBUsers.CreateUserWithRetry(
 				TestCredentials.TestAdmin.Username!,
 				nameof(TestCredentials.TestAdmin),
-				new[] { SystemRoles.Admins },
+				[SystemRoles.Admins],
 				TestCredentials.TestAdmin.Password!,
 				TestCredentials.Root
 			).WithTimeout(TimeSpan.FromMilliseconds(TimeoutMs));

@@ -651,7 +651,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 			.ToArray();
 
 		foreach (var e in events)
-			await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, new[] { e });
+			await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, [e]);
 
 		await Fixture.Subscriptions.CreateToStreamAsync(
 			stream,
@@ -694,7 +694,7 @@ public class SubscribeToStreamObsoleteTests(ITestOutputHelper output, KurrentDBP
 		TaskCompletionSource<bool> eventsReceived = new();
 
 		foreach (var e in events)
-			await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, new[] { e });
+			await Fixture.Streams.AppendToStreamAsync(stream, StreamState.Any, [e]);
 
 		await Fixture.Subscriptions.CreateToStreamAsync(
 			stream,

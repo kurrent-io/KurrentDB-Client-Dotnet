@@ -1,5 +1,3 @@
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Tests;
 
 static class EventDataComparer {

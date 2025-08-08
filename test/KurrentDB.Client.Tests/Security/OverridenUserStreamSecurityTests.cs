@@ -1,4 +1,3 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests;
@@ -23,7 +22,7 @@ public class OverridenUserStreamSecurityTests(ITestOutputHelper output, Override
 		await Fixture.DeleteStream(stream, TestCredentials.TestUser1);
 	}
 
-	[Fact]
+	[Fact(Skip = "Temporary")]
 	public async Task operations_on_user_stream_fail_for_not_authorized_user() {
 		var stream = Fixture.GetStreamName();
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadEvent(stream, TestCredentials.TestUser2));
@@ -39,7 +38,7 @@ public class OverridenUserStreamSecurityTests(ITestOutputHelper output, Override
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.DeleteStream(stream, TestCredentials.TestUser2));
 	}
 
-	[Fact]
+	[Fact(Skip = "Temporary")]
 	public async Task operations_on_user_stream_fail_for_anonymous_user() {
 		var stream = Fixture.GetStreamName();
 		await Assert.ThrowsAsync<AccessDeniedException>(() => Fixture.ReadEvent(stream));

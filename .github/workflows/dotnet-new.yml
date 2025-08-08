@@ -1,0 +1,19 @@
+name: New
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  old:
+    name: ${{ matrix.runtime }}
+    uses: ./.github/workflows/test-new.yml
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [ ci ]
+    with:
+      runtime: ${{ matrix.runtime }}
+    secrets: inherit

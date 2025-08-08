@@ -1,0 +1,520 @@
+# Comprehensive Testing Standards v1.0
+
+Last updated: 2025-06-09
+
+> **Usage**: Reference this guide when setting up testing frameworks, writing test cases, or establishing testing patterns for new projects.
+
+## Testing Framework and Tools
+
+### Primary Testing Stack
+
+#### Core Testing Framework
+- **TUnit** for unit testing (https://tunit.dev/docs/intro)
+  - Modern, fast testing framework with excellent async support
+  - Source generator-based for better performance
+  - Strong community and active development
+
+#### Assertion Library
+- **Shouldly** for assertions (https://docs.shouldly.org/)
+  - Readable, expressive assertion syntax
+  - Excellent error messages with context
+  - Natural language assertions improve test readability
+
+#### Mocking Framework
+- **FakeItEasy** for mocking (https://fakeiteasy.github.io/docs/8.3.0/)
+  - Simple, intuitive API for creating test doubles
+  - Excellent integration with dependency injection
+  - Clear syntax for setup and verification
+
+### Example Test Setup
+
+```csharp
+using TUnit.Core;
+using Shouldly;
+using FakeItEasy;
+
+public class EventStreamTests {
+    IEventRepository _repository;
+    ILogger<EventStream> _logger;
+    EventStream _eventStream;
+
+    [Before(Test)]
+    public void Setup() {
+        _repository = A.Fake<IEventRepository>();
+        _logger = A.Fake<ILogger<EventStream>>();
+        _eventStream = new EventStream(_repository, _logger);
+    }
+}
+```
+
+## Testing Coverage Requirements
+
+### Coverage Expectations
+- **Unit tests** for all public methods and properties
+- **Integration tests** for key system interactions
+- **Edge cases and error conditions** thoroughly tested
+- **Performance tests** for critical paths
+- **Contract tests** for external API interactions
+
+### What to Test
+```csharp
+// Public API methods
+[Test]
+public async Task append_event_returns_success_when_valid_event_provided() {
+    // Test implementation
+}
+
+// Edge cases
+[Test]
+public async Task throws_argument_exception_when_event_data_is_null() {
+    // Test implementation
+}
+
+// Error conditions
+[Test]
+public async Task returns_failure_when_repository_throws_exception() {
+    // Test implementation
+}
+
+// State changes
+[Test]
+public async Task updates_stream_position_after_successful_append() {
+    // Test implementation
+}
+```
+
+## Test Structure and Organization
+
+### Test Project Organization
+
+#### Directory Structure
+```
+test/
+??? UnitTests/
+?   ??? Domain/
+?   ??? Services/
+?   ??? Infrastructure/
+??? IntegrationTests/
+?   ??? Database/
+?   ??? Api/
+?   ??? External/
+??? PerformanceTests/
+??? TestUtilities/
+    ??? Builders/
+    ??? Fixtures/
+    ??? Helpers/
+```
+
+#### Test Class Organization
+- **Mirror source project structure** in test projects
+- **Group tests by component or feature** they test
+- **Separate unit tests from integration tests**
+- **Use shared test fixtures** for common setup
+
+### Test Method Structure
+
+#### Arrange-Act-Assert Pattern
+```csharp
+[Test]
+public async Task append_event_updates_stream_position_when_event_is_valid() {
+    // Arrange
+    var streamId  = "test-stream";
+    var eventData = new EventData("test-event", "payload");
+    var expectedPosition = 5;
+    
+    A.CallTo(() => _repository.AppendAsync(streamId, eventData))
+     .Returns(Task.FromResult(expectedPosition));
+
+    // Act
+    var result = await _eventStream.AppendAsync(streamId, eventData);
+
+    // Assert
+    result.Position.ShouldBe(expectedPosition);
+    A.CallTo(() => _repository.AppendAsync(streamId, eventData))
+     .MustHaveHappenedOnceExactly();
+}
+```
+
+#### Test Focus Guidelines
+- **One behavior per test** - Each test should verify a single behavior
+- **Minimal setup** - Only arrange what's necessary for the specific test
+- **Clear assertions** - Make expectations explicit and verifiable
+
+## Test Naming Convention
+
+### Naming Pattern
+Always use **snake_case** with pattern: `[what_happens]_[when_condition]`
+
+#### Exception Testing
+```csharp
+[Test]
+public async Task throws_argument_exception_when_stream_id_is_empty() {
+    // Test for ArgumentException when streamId is null or empty
+}
+
+[Test]
+public async Task throws_invalid_operation_exception_when_stream_is_readonly() {
+    // Test for InvalidOperationException in specific state
+}
+```
+
+#### Return Value Testing
+```csharp
+[Test]
+public async Task returns_true_when_all_validations_pass() {
+    // Test successful validation scenario
+}
+
+[Test]
+public async Task returns_empty_list_when_no_events_found() {
+    // Test empty result scenario
+}
+```
+
+#### State Change Testing
+```csharp
+[Test]
+public async Task updates_connection_state_to_connected_when_handshake_completes() {
+    // Test state transition
+}
+
+[Test]
+public async Task sets_last_accessed_timestamp_when_event_is_read() {
+    // Test property update
+}
+```
+
+#### Collection Testing
+```csharp
+[Test]
+public async Task adds_event_to_stream_when_append_succeeds() {
+    // Specific about collection operation
+}
+
+[Test]
+public async Task removes_expired_events_from_cache_when_cleanup_runs() {
+    // Clear about what's removed and why
+}
+```
+
+### Parameterized Test Naming
+```csharp
+[Test]
+[Arguments("", "empty string")]
+[Arguments(null, "null value")]
+[Arguments("  ", "whitespace only")]
+public async Task throws_argument_exception_when_stream_id_is_invalid(string streamId, string scenario) {
+    // Include parameter variation in test name through Arguments description
+}
+```
+
+## Testing Best Practices
+
+### Unit Testing Principles
+
+#### Isolation and Independence
+```csharp
+[Test]
+public async Task processes_events_independently_of_external_dependencies() {
+    // Arrange - Mock all external dependencies
+    var mockRepository = A.Fake<IEventRepository>();
+    var mockLogger = A.Fake<ILogger<EventProcessor>>();
+    var processor = new EventProcessor(mockRepository, mockLogger);
+
+    // Act & Assert - Test only the unit under test
+    var result = await processor.ProcessAsync(eventData);
+    result.ShouldBe(expected);
+}
+```
+
+#### Deterministic Tests
+```csharp
+[Test]
+public async Task generates_consistent_event_id_for_same_input() {
+    // Use fixed inputs, avoid DateTime.Now, Random, etc.
+    var fixedTimestamp = new DateTime(2024, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+    var eventData = new EventData("test", fixedTimestamp);
+    
+    var id1 = EventIdGenerator.Generate(eventData);
+    var id2 = EventIdGenerator.Generate(eventData);
+    
+    id1.ShouldBe(id2); // Deterministic result
+}
+```
+
+### Integration Testing Strategies
+
+#### Database Integration Tests
+```csharp
+public class EventRepositoryIntegrationTests {
+    ITestDatabase _database;
+    EventRepository _repository;
+
+    [Before(Test)]
+    public async Task Setup() {
+        _database = await TestDatabase.CreateAsync();
+        _repository = new EventRepository(_database.ConnectionString);
+    }
+
+    [After(Test)]
+    public async Task Cleanup() {
+        await _database.CleanupAsync();
+        await _database.DisposeAsync();
+    }
+
+    [Test]
+    public async Task stores_and_retrieves_event_with_all_metadata() {
+        // Test actual database interaction
+        var originalEvent = CreateTestEvent();
+        
+        await _repository.SaveAsync(originalEvent);
+        var retrievedEvent = await _repository.GetAsync(originalEvent.Id);
+        
+        retrievedEvent.ShouldNotBeNull();
+        retrievedEvent.Data.ShouldBe(originalEvent.Data);
+        retrievedEvent.Metadata.ShouldBe(originalEvent.Metadata);
+    }
+}
+```
+
+#### API Integration Tests
+```csharp
+public class EventApiIntegrationTests {
+    TestServer _server;
+    HttpClient _client;
+
+    [Before(Test)]
+    public async Task Setup() {
+        _server = new TestServerBuilder()
+            .WithInMemoryDatabase()
+            .WithTestAuthentication()
+            .Build();
+        _client = _server.CreateClient();
+    }
+
+    [Test]
+    public async Task post_event_returns_created_with_location_header() {
+        // Test full HTTP pipeline
+        var eventPayload = new { Type = "test", Data = "payload" };
+        
+        var response = await _client.PostAsJsonAsync("/events", eventPayload);
+        
+        response.StatusCode.ShouldBe(HttpStatusCode.Created);
+        response.Headers.Location.ShouldNotBeNull();
+    }
+}
+```
+
+### Performance Testing
+
+#### Benchmark Tests with BenchmarkDotNet
+```csharp
+[MemoryDiagnoser]
+[SimpleJob(RuntimeMoniker.Net80)]
+public class EventProcessingBenchmarks {
+    readonly List<EventData> _events;
+
+    [GlobalSetup]
+    public void Setup() {
+        _events = GenerateTestEvents(1000);
+    }
+
+    [Benchmark]
+    public async Task ProcessEventsSequentially() {
+        foreach (var @event in _events) {
+            await ProcessEventAsync(@event);
+        }
+    }
+
+    [Benchmark]
+    public async Task ProcessEventsInParallel() {
+        await Task.WhenAll(_events.Select(ProcessEventAsync));
+    }
+}
+```
+
+#### Load Testing Patterns
+```csharp
+[Test]
+public async Task handles_concurrent_event_appends_without_data_corruption() {
+    const int concurrentOperations = 100;
+    var tasks = new List<Task<AppendResult>>();
+
+    // Arrange - Create multiple concurrent operations
+    for (int i = 0; i < concurrentOperations; i++) {
+        var eventData = CreateUniqueEvent(i);
+        tasks.Add(_eventStream.AppendAsync("test-stream", eventData));
+    }
+
+    // Act - Execute concurrently
+    var results = await Task.WhenAll(tasks);
+
+    // Assert - Verify no data corruption
+    results.ShouldAllBe(r => r.IsSuccess);
+    results.Select(r => r.Position).ShouldBeUnique();
+}
+```
+
+## Advanced Testing Patterns
+
+### Test Data Builders
+```csharp
+public class EventDataBuilder {
+    string _type = "default-event";
+    string _data = "{}";
+    DateTime _timestamp = DateTime.UtcNow;
+    Dictionary<string, string> _metadata = new();
+
+    public EventDataBuilder WithType(string type) {
+        _type = type;
+        return this;
+    }
+
+    public EventDataBuilder WithData(string data) {
+        _data = data;
+        return this;
+    }
+
+    public EventDataBuilder WithMetadata(string key, string value) {
+        _metadata[key] = value;
+        return this;
+    }
+
+    public EventData Build() => new(_type, _data, _timestamp, _metadata);
+}
+
+// Usage in tests:
+var eventData = new EventDataBuilder()
+    .WithType("order-created")
+    .WithData("""{"orderId": "123", "amount": 99.99}""")
+    .Build();
+```
+
+### Custom Shouldly Extensions
+```csharp
+public static class EventAssertions {
+    public static void ShouldBeValidEvent(this EventData eventData) {
+        eventData.ShouldNotBeNull();
+        eventData.Type.ShouldNotBeNullOrWhiteSpace();
+        eventData.Data.ShouldNotBeNull();
+        eventData.Timestamp.ShouldBeGreaterThan(DateTime.MinValue);
+    }
+
+    public static void ShouldHaveMetadata(this EventData eventData, string key, string expectedValue) {
+        eventData.Metadata.ShouldContainKey(key);
+        eventData.Metadata[key].ShouldBe(expectedValue);
+    }
+}
+
+// Usage:
+result.Event.ShouldBeValidEvent();
+result.Event.ShouldHaveMetadata("correlation-id", "abc-123");
+```
+
+### Fixture Management
+```csharp
+public class EventStreamTestFixture {
+    protected IEventRepository Repository { get; private set; }
+    protected ILogger<EventStream> Logger { get; private set; }
+    protected EventStream EventStream { get; private set; }
+
+    [Before(Test)]
+    public virtual void SetupFixture() {
+        Repository = A.Fake<IEventRepository>();
+        Logger = A.Fake<ILogger<EventStream>>();
+        EventStream = new EventStream(Repository, Logger);
+    }
+
+    protected void SetupSuccessfulAppend(string streamId, int expectedPosition) {
+        A.CallTo(() => Repository.AppendAsync(streamId, A<EventData>._))
+         .Returns(Task.FromResult(expectedPosition));
+    }
+}
+
+// Inherit from fixture:
+public class EventStreamAppendTests : EventStreamTestFixture {
+    [Test]
+    public async Task append_event_succeeds_with_valid_data() {
+        SetupSuccessfulAppend("test-stream", 1);
+        // Test implementation
+    }
+}
+```
+
+## Testing Anti-Patterns to Avoid
+
+### Common Mistakes
+```csharp
+// ? DON'T: Test implementation details
+[Test]
+public async Task calls_repository_save_method() {
+    await _service.ProcessAsync(data);
+    A.CallTo(() => _repository.Save(A<object>._)).MustHaveHappened();
+}
+
+// ? DO: Test behavior and outcomes
+[Test]
+public async Task saves_processed_data_when_processing_succeeds() {
+    var result = await _service.ProcessAsync(data);
+    result.ShouldBe(ProcessingResult.Success);
+}
+
+// ? DON'T: Multiple assertions testing different behaviors
+[Test]
+public async Task process_data_works_correctly() {
+    var result = await _service.ProcessAsync(data);
+    result.ShouldNotBeNull(); // Testing return value
+    result.IsValid.ShouldBeTrue(); // Testing validation
+    _logger.LoggedMessages.ShouldContain("Processing started"); // Testing logging
+}
+
+// ? DO: One behavior per test
+[Test]
+public async Task returns_valid_result_when_processing_succeeds() {
+    var result = await _service.ProcessAsync(data);
+    result.IsValid.ShouldBeTrue();
+}
+
+// ? DON'T: Brittle tests that depend on specific order
+[Test]
+public async Task processes_events_in_specific_order() {
+    // This assumes implementation details about ordering
+}
+
+// ? DO: Test the contract, not the implementation
+[Test]
+public async Task processes_all_provided_events() {
+    var events = CreateTestEvents(3);
+    await _processor.ProcessAsync(events);
+    // Verify all events were processed, not the order
+}
+```
+
+## Test Reporting and Metrics
+
+### Coverage Reporting
+```xml
+<!-- In test project file -->
+<PropertyGroup>
+  <CollectCoverage>true</CollectCoverage>
+  <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+  <CoverletOutput>./coverage/</CoverletOutput>
+</PropertyGroup>
+```
+
+### Test Categories and Traits
+```csharp
+[Test]
+[Category("Integration")]
+[Property("Database", "Required")]
+public async Task integration_test_with_database() {
+    // Integration test implementation
+}
+
+[Test]
+[Category("Performance")]
+[Property("Timeout", "5000")]
+public async Task performance_test_completes_within_threshold() {
+    // Performance test implementation
+}
+```
