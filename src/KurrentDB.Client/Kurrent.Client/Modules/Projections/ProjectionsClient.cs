@@ -1,4 +1,9 @@
-using EventStore.Client;
+#pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
+
+// ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
+
+using System.Text.Json;
+using Google.Protobuf;
 using Grpc.Core;
 using KurrentDB.Protocol.Projections.V1;
 using ProjectionsServiceClient = KurrentDB.Protocol.Projections.V1.Projections.ProjectionsClient;
@@ -11,27 +16,28 @@ public sealed partial class ProjectionsClient {
 
     internal ProjectionsServiceClient ServiceClient  { get; }
 
-    public async ValueTask<Result<Success, CreateProjectionError>> CreateProjection(ProjectionSettings settings, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<Success, CreateProjectionError>> CreateProjection(ProjectionName name, ProjectionQuery query, ProjectionSettings settings, CancellationToken cancellationToken = default) {
+        name.ThrowIfNone();
+        query.ThrowIfInvalid();
         settings.ThrowIfInvalid();
 
         try {
-            var request = new CreateReq { Options = new() { Query = settings.Query } };
-
-            if (settings.Mode == ProjectionMode.OneTime)
-                request.Options.OneTime = new Empty();
-            else if (settings.Mode == ProjectionMode.Transient)
-                request.Options = new() { Transient = new() { Name = settings.Name } };
-            else if (settings.Mode == ProjectionMode.Continuous)
-                request.Options.Continuous = new() {
-                    Name                = settings.Name,
-                    TrackEmittedStreams = settings.TrackEmittedStreams
-                };
+            var request = new CreateReq {
+                Options = new() {
+                    Continuous = new() {
+                        Name                = name,
+                        EmitEnabled         = settings.EmitEnabled,
+                        TrackEmittedStreams = settings.TrackEmittedStreams
+                    },
+                    Query = query
+                }
+            };
 
             await ServiceClient
                 .CreateAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Success.Instance;
         }
         catch (RpcException rex) {
             return Result.Failure<Success, CreateProjectionError>(rex.StatusCode switch {
@@ -42,33 +48,24 @@ public sealed partial class ProjectionsClient {
         }
     }
 
-    // update projection makes no sense because each type has different options.
-    public async ValueTask<Result<Success, UpdateProjectionError>> UpdateProjection(
-        ProjectionName name, ProjectionQuery query, bool? emitEnabled = null, CancellationToken cancellationToken = default
-    ) {
+    public async ValueTask<Result<Success, RenameProjectionError>> RenameProjection(ProjectionName name, CancellationToken cancellationToken = default) {
+        name.ThrowIfNone();
+
         try {
-            var options = new UpdateReq.Types.Options {
-                Name  = name,
-                Query = query
-            };
-
-            if (emitEnabled.HasValue)
-                options.EmitEnabled = emitEnabled.Value;
-            else
-                options.NoEmitOptions = new Empty();
-
             var request = new UpdateReq {
-                Options = options
+                Options = new() {
+                    Name = name
+                }
             };
 
-            var resp = await ServiceClient
+            await ServiceClient
                 .UpdateAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Success.Instance;
         }
         catch (RpcException rex) {
-            return Result.Failure<Success, UpdateProjectionError>(rex.StatusCode switch {
+            return Result.Failure<Success, RenameProjectionError>(rex.StatusCode switch {
                 StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
                 StatusCode.NotFound         => new ErrorDetails.NotFound(),
                 _                           => throw rex.WithOriginalCallStack()
@@ -76,20 +73,46 @@ public sealed partial class ProjectionsClient {
         }
     }
 
-    public async ValueTask<Result<Success, DeleteProjectionError>> DeleteProjection(
-        ProjectionName name,
-        bool deleteEmittedStreams = false,
-        bool deleteStateStream = false,
-        bool deleteCheckpointStream = false,
-        CancellationToken cancellationToken = default
-    ) {
+    public async ValueTask<Result<Success, UpdateProjectionQueryError>> UpdateProjectionQuery(ProjectionName name, ProjectionQuery query, CancellationToken cancellationToken = default) {
+        name.ThrowIfNone();
+        query.ThrowIfInvalid();
+
+        try {
+            var request = new UpdateReq {
+                Options = new() {
+                    Name          = name,
+                    Query         = query,
+                    NoEmitOptions = new()
+                }
+            };
+
+            await ServiceClient
+                .UpdateAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return Success.Instance;
+        }
+        catch (RpcException rex) {
+            return Result.Failure<Success, UpdateProjectionQueryError>(
+                rex.StatusCode switch {
+                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                    _                           => throw rex.WithOriginalCallStack()
+                }
+            );
+        }
+    }
+
+    public async ValueTask<Result<Success, DeleteProjectionError>> DeleteProjection(ProjectionName name, DeleteProjectionOptions options, CancellationToken cancellationToken = default) {
+        name.ThrowIfNone();
+
         try {
             var request = new DeleteReq {
                 Options = new() {
                     Name                   = name,
-                    DeleteCheckpointStream = deleteCheckpointStream,
-                    DeleteEmittedStreams   = deleteEmittedStreams,
-                    DeleteStateStream      = deleteStateStream,
+                    DeleteStateStream      = options.DeleteStateStream,
+                    DeleteCheckpointStream = options.DeleteCheckpointStream,
+                    DeleteEmittedStreams   = options.DeleteCheckpointStream,
                 }
             };
 
@@ -97,7 +120,7 @@ public sealed partial class ProjectionsClient {
                 .DeleteAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Success.Instance;
         }
         catch (RpcException rex) {
             return Result.Failure<Success, DeleteProjectionError>(rex.StatusCode switch {
@@ -108,7 +131,9 @@ public sealed partial class ProjectionsClient {
         }
     }
 
-      public async ValueTask<Result<Success, EnableProjectionError>> EnableProjection(string name, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<Success, EnableProjectionError>> EnableProjection(ProjectionName name, CancellationToken cancellationToken = default) {
+        name.ThrowIfNone();
+
         try {
             var request = new EnableReq {
                 Options = new() {
@@ -116,18 +141,20 @@ public sealed partial class ProjectionsClient {
                 }
             };
 
-           await ServiceClient
-               .EnableAsync(request , cancellationToken: cancellationToken)
-               .ConfigureAwait(false);
+            await ServiceClient
+                .EnableAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
             return new Success();
         }
         catch (RpcException rex) {
-            return Result.Failure<Success, EnableProjectionError>(rex.StatusCode switch {
-                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                StatusCode.NotFound         => new ErrorDetails.NotFound(),
-                _                           => throw rex.WithOriginalCallStack()
-            });
+            return Result.Failure<Success, EnableProjectionError>(
+                rex.StatusCode switch {
+                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                    _                           => throw rex.WithOriginalCallStack()
+                }
+            );
         }
     }
 
@@ -135,9 +162,11 @@ public sealed partial class ProjectionsClient {
     /// Resets a projection. This will re-emit events. Streams that are written to from the projection will also be soft deleted.
     /// </summary>
     public async ValueTask<Result<Success, ResetProjectionError>> ResetProjection(ProjectionName name, CancellationToken cancellationToken = default) {
+        name.ThrowIfNone();
+
         try {
             var request = new ResetReq {
-                Options = new ResetReq.Types.Options {
+                Options = new() {
                     Name            = name,
                     WriteCheckpoint = true
                 }
@@ -165,9 +194,11 @@ public sealed partial class ProjectionsClient {
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     public async ValueTask<Result<Success, AbortProjectionError>> AbortProjection(ProjectionName name, CancellationToken cancellationToken = default) {
+        name.ThrowIfNone();
+
         try {
             var request = new DisableReq {
-                Options = new DisableReq.Types.Options {
+                Options = new() {
                     Name            = name,
                     WriteCheckpoint = false
                 }
@@ -192,9 +223,11 @@ public sealed partial class ProjectionsClient {
     /// Disables a projection. Saves the projection's checkpoint.
     /// </summary>
     public async ValueTask<Result<Success, DisableProjectionError>> DisableProjection(ProjectionName name, CancellationToken cancellationToken = default) {
+        name.ThrowIfNone();
+
         try {
             var request = new DisableReq {
-                Options = new DisableReq.Types.Options {
+                Options = new() {
                     Name            = name,
                     WriteCheckpoint = true
                 }
@@ -218,7 +251,7 @@ public sealed partial class ProjectionsClient {
     public async ValueTask<Result<Success, RestartProjectionSubsystemError>> RestartProjectionSubsystem(CancellationToken cancellationToken = default) {
         try {
             await ServiceClient
-                .RestartSubsystemAsync(new Empty(), cancellationToken: cancellationToken)
+                .RestartSubsystemAsync(new(), cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
             return new Success();
@@ -235,7 +268,7 @@ public sealed partial class ProjectionsClient {
     public async ValueTask<Result<ProjectionDetails, GetProjectionError>> GetProjection(ProjectionName name, CancellationToken cancellationToken = default) {
         try {
             var request = new StatisticsReq {
-                Options =  new StatisticsReq.Types.Options {
+                Options =  new() {
                     Name = name
                 }
             };
@@ -244,7 +277,7 @@ public sealed partial class ProjectionsClient {
 
             var result = await call.ResponseStream
                 .ReadAllAsync(cancellationToken)
-                .Select(MapToProjectionDetails)
+                .Select(static rsp => rsp.MapToProjectionDetails())
                 .FirstAsync(cancellationToken);
 
             return result;
@@ -261,10 +294,10 @@ public sealed partial class ProjectionsClient {
 	public async ValueTask<Result<List<ProjectionDetails>, ListProjectionsError>> ListProjections(ListProjectionsOptions options, CancellationToken cancellationToken = default) {
         var request = new StatisticsReq {
             Options = options.Mode switch {
-                ProjectionMode.Unspecified => new() { All        = new Empty() },
-                ProjectionMode.OneTime     => new() { OneTime    = new Empty() },
-                ProjectionMode.Continuous  => new() { Continuous = new Empty() },
-                ProjectionMode.Transient   => new() { Transient  = new Empty() }
+                ProjectionMode.Unspecified => new() { All        = new() },
+                ProjectionMode.OneTime     => new() { OneTime    = new() },
+                ProjectionMode.Continuous  => new() { Continuous = new() },
+                ProjectionMode.Transient   => new() { Transient  = new() }
             }
         };
 
@@ -273,7 +306,7 @@ public sealed partial class ProjectionsClient {
 
             var result = await call.ResponseStream
                 .ReadAllAsync(cancellationToken)
-                .Select(MapToProjectionDetails)
+                .Select(static rsp => rsp.MapToProjectionDetails())
                 .ToListAsync(cancellationToken);
 
             return result;
@@ -286,29 +319,79 @@ public sealed partial class ProjectionsClient {
         }
 	}
 
-	static ProjectionDetails MapToProjectionDetails(StatisticsResp response) {
-		var details = response.Details;
+     public async ValueTask<Result<T, GetProjectionResultError>> GetResult<T>(
+        ProjectionName name,
+        ProjectionPartition partition,
+        JsonSerializerOptions serializerOptions,
+        CancellationToken cancellationToken = default
+    ) where T : notnull {
+        name.ThrowIfNone();
 
-		return new ProjectionDetails(
-			details.CoreProcessingTime,
-            details.Version,
-            details.Epoch,
-			details.EffectiveName,
-            details.WritesInProgress,
-            details.ReadsInProgress,
-			details.PartitionsCached,
-			details.Status,
-            details.StateReason,
-            details.Name,
-			details.Mode,
-            details.Position,
-            details.Progress,
-			details.LastCheckpoint,
-            details.EventsProcessedAfterRestart,
-            details.CheckpointStatus,
-			details.BufferedEvents,
-            details.WritePendingEventsBeforeCheckpoint,
-			details.WritePendingEventsAfterCheckpoint
-		);
-	}
+        try {
+            var request = new ResultReq {
+                Options = new() {
+                    Name      = name,
+                    Partition = partition
+                }
+            };
+
+            var response = await ServiceClient
+                .ResultAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            var json = JsonFormatter.Default.Format(response.Result);
+
+            var result = JsonSerializer.Deserialize<T>(json, serializerOptions)
+                      ?? throw new JsonException($"Failed to deserialize projection result for '{name}' with partition '{partition}'");
+
+            return result;
+        }
+        catch (RpcException rex) {
+            return Result.Failure<T, GetProjectionResultError>(
+                rex.StatusCode switch {
+                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                    _                           => throw rex.WithOriginalCallStack()
+                }
+            );
+        }
+    }
+
+    public async ValueTask<Result<T, GetProjectionStateError>> GetState<T>(
+        ProjectionName name,
+        ProjectionPartition partition,
+        JsonSerializerOptions serializerOptions,
+        CancellationToken cancellationToken = default
+    ) where T : notnull {
+        name.ThrowIfNone();
+
+        try {
+            var request = new StateReq {
+                Options = new() {
+                    Name      = name,
+                    Partition = partition
+                }
+            };
+
+            var response = await ServiceClient
+                .StateAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            var json = JsonFormatter.Default.Format(response.State);
+
+            var result = JsonSerializer.Deserialize<T>(json, serializerOptions)
+                      ?? throw new JsonException($"Failed to deserialize projection state for '{name}' with partition '{partition}'");
+
+            return result;
+        }
+        catch (RpcException rex) {
+            return Result.Failure<T, GetProjectionStateError>(
+                rex.StatusCode switch {
+                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                    _                           => throw rex.WithOriginalCallStack()
+                }
+            );
+        }
+    }
 }

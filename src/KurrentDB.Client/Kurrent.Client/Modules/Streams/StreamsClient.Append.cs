@@ -1,6 +1,7 @@
 #pragma warning disable CS8509
 
 using Grpc.Core;
+using Kurrent.Variant;
 using static KurrentDB.Protocol.Streams.V2.MultiStreamAppendResponse;
 using Contracts = KurrentDB.Protocol.Streams.V2;
 

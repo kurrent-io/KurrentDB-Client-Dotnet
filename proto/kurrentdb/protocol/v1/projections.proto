@@ -37,8 +37,9 @@ message CreateReq {
 			string name = 1;
 		}
 		message Continuous {
-			string name = 1;
-			bool track_emitted_streams = 2;
+      string name = 1;
+      bool emit_enabled = 2;
+      bool track_emitted_streams = 3;
 		}
 	}
 }

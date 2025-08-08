@@ -39,7 +39,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
 			""";
 
 		await AutomaticClient.Projections
-			.CreateContinuousProjection(name, query, cancellationToken: ct)
+			.CreateProjection(name, query, ProjectionSettings.Default, cancellationToken: ct)
 			.ShouldNotThrowOrFailAsync();
 
 		await SeedTestMessages(name, _ => { }, cancellationToken: ct);

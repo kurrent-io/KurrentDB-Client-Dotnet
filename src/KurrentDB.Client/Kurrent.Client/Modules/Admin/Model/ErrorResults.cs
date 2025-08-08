@@ -3,7 +3,7 @@ using Kurrent.Variant;
 namespace Kurrent.Client.Admin;
 
 [PublicAPI]
-public readonly partial record struct ShutdownError : IVariantResultError<
+public readonly partial record struct ShutdownServerError : IVariantResultError<
     ErrorDetails.AccessDenied>;
 
 [PublicAPI]

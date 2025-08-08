@@ -13,9 +13,9 @@ message StreamsErrorDetails {
   // When the stream has been deleted.
   message StreamDeleted {
     option (error_info) = {
-      code : "STREAM_DELETED",
-      severity : RECOVERABLE,
-      message : "The stream has been soft deleted. It will not be visible in the stream list, until it is restored by appending to it again."
+      code: "STREAM_DELETED",
+      severity: RECOVERABLE,
+      message: "The stream has been soft deleted. It will not be visible in the stream list, until it is restored by appending to it again."
     };
 
     // The name of the stream that was deleted.
@@ -28,9 +28,9 @@ message StreamsErrorDetails {
   // When the stream has been tombstoned.
   message StreamTombstoned {
     option (error_info) = {
-      code : "STREAM_TOMBSTONED",
-      severity : FATAL,
-      message : "The stream has been tombstoned. It has been permanently removed from the system and cannot be restored."
+      code: "STREAM_TOMBSTONED",
+      severity: FATAL,
+      message: "The stream has been tombstoned. It has been permanently removed from the system and cannot be restored."
     };
 
     // The name of the stream that was tombstoned.
@@ -43,9 +43,9 @@ message StreamsErrorDetails {
   // When the stream is not found.
   message StreamNotFound {
     option (error_info) = {
-      code : "STREAM_NOT_FOUND",
-      severity : RECOVERABLE,
-      message : "The specified stream was not found. Please check the stream name and try again."
+      code: "STREAM_NOT_FOUND",
+      severity: RECOVERABLE,
+      message: "The specified stream was not found. Please check the stream name and try again."
     };
 
     // The name of the stream that was not found.
@@ -56,21 +56,20 @@ message StreamsErrorDetails {
   // revision.
   message StreamRevisionConflict {
     option (error_info) = {
-      code : "REVISION_CONFLICT",
-      severity : RECOVERABLE,
-      message : "The actual stream revision does not match the expected revision."
+      code: "REVISION_CONFLICT",
+      severity: RECOVERABLE,
+      message: "The actual stream revision does not match the expected revision."
     };
 
     // The actual revision of the stream.
     int64 stream_revision = 1;
   }
 
-
   message MaxAppendEventSizeExceeded {
     option (error_info) = {
-      code : "MAX_APPEND_EVENT_SIZE_EXCEEDED",
-      severity : FATAL,
-      message : "The size of the event being appended exceeds the maximum allowed size."
+      code: "MAX_APPEND_EVENT_SIZE_EXCEEDED",
+      severity: FATAL,
+      message: "The size of the event being appended exceeds the maximum allowed size."
     };
 
     // The record ID of the event that exceeded the size limit.
@@ -84,9 +83,9 @@ message StreamsErrorDetails {
   // (its bigger than the configured chunk size).
   message TransactionMaxSizeExceeded {
     option (error_info) = {
-      code : "TRANSACTION_MAX_SIZE_EXCEEDED",
-      severity : FATAL,
-      message : "The transaction exceeds the maximum size allowed."
+      code: "TRANSACTION_MAX_SIZE_EXCEEDED",
+      severity: FATAL,
+      message: "The transaction exceeds the maximum size allowed."
     };
 
     // The maximum allowed size of the transaction.
@@ -95,9 +94,9 @@ message StreamsErrorDetails {
 
   message LogPositionNotFound {
     option (error_info) = {
-      code : "LOG_POSITION_NOT_FOUND",
-      severity : RECOVERABLE,
-      message : "The specified log position was not found."
+      code: "LOG_POSITION_NOT_FOUND",
+      severity: RECOVERABLE,
+      message: "The specified log position was not found."
     };
   }
 }

@@ -16,7 +16,7 @@ public class AdminTests : KurrentClientTestFixture {
 
 	[Test]
 	public async Task shutdown() =>
-		await AutomaticClient.Admin.Shutdown()
+		await AutomaticClient.Admin.ShutdownServer()
 			.ShouldNotThrowOrFailAsync();
 
 	[Test]

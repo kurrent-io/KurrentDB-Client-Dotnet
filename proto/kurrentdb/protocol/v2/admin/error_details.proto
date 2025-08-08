@@ -9,11 +9,11 @@ option java_multiple_files = true;
 import "core.proto";
 
 message AdminErrorDetails {
-  message ScavengeNotFound {
-    option (error_info) = {
-      code : "SCAVENGE_NOT_FOUND",
-      severity : RECOVERABLE,
-      message : "The specified scavenge was not found. It may have been deleted or never existed."
-    };
-  }
+//  message ScavengeNotFound {
+//    option (error_info) = {
+//      code: "SCAVENGE_NOT_FOUND",
+//      severity: RECOVERABLE,
+//      message: "The specified scavenge was not found. It may have been deleted or never existed."
+//    };
+//  }
 }

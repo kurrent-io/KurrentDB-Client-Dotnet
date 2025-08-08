@@ -14,7 +14,7 @@ public partial class AdminClient {
 	public async Task<ServerFeatures> GetFeatures(CancellationToken cancellationToken = default) {
 		// Get the raw methods and their features from the server
 		var response = await FeaturesServiceClient
-			.GetSupportedMethodsAsync(CustomEmptyRequest, cancellationToken: cancellationToken)
+			.GetSupportedMethodsAsync(EmptyRequest, cancellationToken: cancellationToken)
 			.ConfigureAwait(false);
 
 		// In the future, we can expand this to include other server information
@@ -22,7 +22,4 @@ public partial class AdminClient {
 			Version  = response.EventStoreServerVersion
 		};
 	}
-
-	// Custom empty request to avoid using the default one from the library.... sigh... -_-'
-	static readonly Empty CustomEmptyRequest = new();
 }

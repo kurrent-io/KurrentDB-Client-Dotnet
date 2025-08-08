@@ -92,53 +92,53 @@ message CoreErrorDetails {
   // When the user does not have sufficient permissions to perform the operation.
   message AccessDenied {
     option (error_info) = {
-      code : "ACCESS_DENIED",
-      severity : RECOVERABLE,
-      message : "The user does not have sufficient permissions to perform the operation. Please check your permissions and try again."
+      code: "ACCESS_DENIED",
+      severity: RECOVERABLE,
+      message: "The user does not have sufficient permissions to perform the operation. Please check your permissions and try again."
     };
   }
 
   // When the operation takes too long to complete and times out.
   message DeadlineExceeded {
     option (error_info) = {
-      code : "DEADLINE_EXCEEDED",
-      severity : RECOVERABLE,
-      message : "The operation has timed out and exceeded the deadline. Please try again later."
+      code: "DEADLINE_EXCEEDED",
+      severity: RECOVERABLE,
+      message: "The operation has timed out and exceeded the deadline. Please try again later."
     };
   }
 
   // When the user is not authenticated.
   message Unauthenticated {
     option (error_info) = {
-      code : "UNAUTHENTICATED",
-      severity : RECOVERABLE,
-      message : "The user is not authenticated. Please provide valid authentication credentials."
+      code: "UNAUTHENTICATED",
+      severity: RECOVERABLE,
+      message: "The user is not authenticated. Please provide valid authentication credentials."
     };
   }
 
   // When an entity is not found.
   message NotFound {
     option (error_info) = {
-      code : "NOT_FOUND",
-      severity : RECOVERABLE,
-      message : "The specified entity was not found. Please check its identifier and try again."
+      code: "NOT_FOUND",
+      severity: RECOVERABLE,
+      message: "The specified entity was not found. Please check its identifier and try again."
     };
   }
 
-  message AlreadyExists{
+  message AlreadyExists {
     option (error_info) = {
-      code : "ALREADY_EXISTS",
-      severity : RECOVERABLE,
-      message : "The specified entity already exists."
+      code: "ALREADY_EXISTS",
+      severity: RECOVERABLE,
+      message: "The specified entity already exists."
     };
   }
 
   // For internal usage
-  message Unknown{
+  message Unknown {
     option (error_info) = {
-      code : "UNKNOWN",
-      severity : RECOVERABLE,
-      message : "An unknown error occurred."
+      code: "UNKNOWN",
+      severity: RECOVERABLE,
+      message: "An unknown error occurred."
     };
   }
 }

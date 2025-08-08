@@ -13,16 +13,12 @@ public readonly partial record struct DeleteProjectionError : IVariantResultErro
     ErrorDetails.NotFound>;
 
 [PublicAPI]
-public readonly partial record struct ListProjectionsError : IVariantResultError<
-    ErrorDetails.AccessDenied>;
-
-[PublicAPI]
-public readonly partial record struct GetProjectionError : IVariantResultError<
+public readonly partial record struct RenameProjectionError : IVariantResultError<
     ErrorDetails.AccessDenied,
     ErrorDetails.NotFound>;
 
 [PublicAPI]
-public readonly partial record struct UpdateProjectionError : IVariantResultError<
+public readonly partial record struct UpdateProjectionQueryError : IVariantResultError<
     ErrorDetails.AccessDenied,
     ErrorDetails.NotFound>;
 
@@ -47,11 +43,6 @@ public readonly partial record struct DisableProjectionError : IVariantResultErr
     ErrorDetails.NotFound>;
 
 [PublicAPI]
-public readonly partial record struct RestartProjectionSubsystemError : IVariantResultError<
-    ErrorDetails.AccessDenied,
-    ErrorDetails.ProjectionsSubsystemRestartFailed>;
-
-[PublicAPI]
 public readonly partial record struct GetProjectionStateError : IVariantResultError<
     ErrorDetails.AccessDenied,
     ErrorDetails.NotFound>;
@@ -60,3 +51,17 @@ public readonly partial record struct GetProjectionStateError : IVariantResultEr
 public readonly partial record struct GetProjectionResultError : IVariantResultError<
     ErrorDetails.AccessDenied,
     ErrorDetails.NotFound>;
+
+[PublicAPI]
+public readonly partial record struct GetProjectionError : IVariantResultError<
+    ErrorDetails.AccessDenied,
+    ErrorDetails.NotFound>;
+
+[PublicAPI]
+public readonly partial record struct ListProjectionsError : IVariantResultError<
+    ErrorDetails.AccessDenied>;
+
+[PublicAPI]
+public readonly partial record struct RestartProjectionSubsystemError : IVariantResultError<
+    ErrorDetails.AccessDenied,
+    ErrorDetails.ProjectionsSubsystemRestartFailed>;

@@ -12,9 +12,9 @@ import "core.proto";
 message ConnectorsErrorDetails {
   message ConnectorNotFound {
     option (error_info) = {
-      code : "CONNECTOR_NOT_FOUND",
-      severity : RECOVERABLE,
-      message : "The specified connector could not be found. Please check the connector identifier and try again."
+      code: "CONNECTOR_NOT_FOUND",
+      severity: RECOVERABLE,
+      message: "The specified connector could not be found. Please check the connector identifier and try again."
     };
   }
 }

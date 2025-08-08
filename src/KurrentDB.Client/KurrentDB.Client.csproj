@@ -51,9 +51,6 @@
         GrpcServices="Client"
         Access="internal"
     />
-    <Protobuf Update="..\..\proto\kurrentdb\protocol\v2\projections\error_details.proto">
-      <Generator>MSBuild:Compile</Generator>
-    </Protobuf>
   </ItemGroup>
 
   <ItemGroup>

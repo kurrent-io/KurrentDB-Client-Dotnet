@@ -9,11 +9,11 @@ option java_multiple_files = true;
 import "core.proto";
 
 message ProjectionsErrorDetails {
-  message  ProjectionsSubsystemRestartFailed {
+  message ProjectionsSubsystemRestartFailed {
     option (error_info) = {
-      code : "PROJECTIONS_SUBSYSTEM_RESTART_FAILED",
-      severity : RECOVERABLE,
-      message : "The projections subsystem failed to restart. This may indicate a configuration issue or a problem with the underlying system. Please check the logs for more details."
+      code: "PROJECTIONS_SUBSYSTEM_RESTART_FAILED",
+      severity: RECOVERABLE,
+      message: "The projections subsystem failed to restart. This may indicate a configuration issue or a problem with the underlying system. Please check the logs for more details."
     };
   }
 }

@@ -169,8 +169,8 @@ message HeartbeatOptions {
   // This is the maximum time to wait before sending a heartbeat.
   // If the period is set to 0, heartbeats will not be sent based on time.
   // If the period is set to a non-zero value, heartbeats will be sent
-  optional google.protobuf.Duration period = 2; // 30 seconds
-  optional int32 records_threshold = 3; // 500
+  optional google.protobuf.Duration period            = 2;  // 30 seconds
+  optional int32                    records_threshold = 3;  // 500
 }
 
 // The type of heartbeat sent by the server to indicate the status of the read operation.

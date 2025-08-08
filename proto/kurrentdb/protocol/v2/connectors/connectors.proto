@@ -21,7 +21,7 @@ service ConnectorsService {
 
   rpc Delete(DeleteConnector) returns (google.protobuf.Empty);
 
-  rpc Start(StartConnector) returns (google.protobuf.Empty) ;
+  rpc Start(StartConnector) returns (google.protobuf.Empty);
 
   rpc Reset(ResetConnector) returns (google.protobuf.Empty);
 
@@ -38,8 +38,8 @@ message CreateConnector {
   string                      connector_id = 1;
   google.protobuf.StringValue name         = 2;
   google.protobuf.Struct      settings     = 3;
-  //map<string, google.protobuf.StringValue> settings     = 4;
-  //map<string, DynamicValue> settings = 5;
+  // map<string, google.protobuf.StringValue> settings     = 4;
+  // map<string, DynamicValue> settings = 5;
 }
 
 message ReconfigureConnector {
@@ -52,13 +52,12 @@ message DeleteConnector {
 }
 
 message StartConnector {
-  string                              connector_id   = 1;
+  string   connector_id                              = 1;
   optional google.protobuf.Int64Value start_position = 2;
-
 }
 
 message ResetConnector {
-  string                              connector_id   = 1;
+  string   connector_id                              = 1;
   optional google.protobuf.Int64Value start_position = 2;
 }
 
@@ -186,9 +185,9 @@ message ConnectorStatus {
   repeated uint64   positions      = 6;
 }
 
-//message StartFromPosition {
-//  google.protobuf.UInt64Value log_position = 1;
-//}
+// message StartFromPosition {
+//   google.protobuf.UInt64Value log_position = 1;
+// }
 
 message Error {
   // Standardized string to programmatically identify the error.

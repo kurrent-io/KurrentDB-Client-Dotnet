@@ -13,11 +13,11 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 service Streams {
-  rpc Read (ReadReq) returns (stream ReadResp);
-  rpc Append (stream AppendReq) returns (AppendResp);
-  rpc Delete (DeleteReq) returns (DeleteResp);
-  rpc Tombstone (TombstoneReq) returns (TombstoneResp);
-  rpc BatchAppend (stream BatchAppendReq) returns (stream BatchAppendResp);
+  rpc Read(ReadReq) returns (stream ReadResp);
+  rpc Append(stream AppendReq) returns (AppendResp);
+  rpc Delete(DeleteReq) returns (DeleteResp);
+  rpc Tombstone(TombstoneReq) returns (TombstoneResp);
+  rpc BatchAppend(stream BatchAppendReq) returns (stream BatchAppendResp);
 }
 
 message ReadReq {
@@ -60,8 +60,7 @@ message ReadReq {
         event_store.client.Empty end = 3;
       }
     }
-    message SubscriptionOptions {
-    }
+    message SubscriptionOptions {}
     message Position {
       uint64 commit_position = 1;
       uint64 prepare_position = 2;
@@ -88,9 +87,7 @@ message ReadReq {
         event_store.client.Empty string = 2;
       }
     }
-    message ControlOption {
-      uint32 compatibility = 1;
-    }
+    message ControlOption { uint32 compatibility = 1; }
   }
 }
 
@@ -123,7 +120,8 @@ message ReadResp {
     optional Position position = 3;
   }
 
-  // The $all or stream subscription has fallen back into catchup mode and is no longer live.
+  // The $all or stream subscription has fallen back into catchup mode and is no
+  // longer live.
   message FellBehind {
     // Current time in the server when the subscription fell behind
     google.protobuf.Timestamp timestamp = 1;
@@ -158,9 +156,7 @@ message ReadResp {
       bytes data = 8;
     }
   }
-  message SubscriptionConfirmation {
-    string subscription_id = 1;
-  }
+  message SubscriptionConfirmation { string subscription_id = 1; }
   message Checkpoint {
     uint64 commit_position = 1;
     uint64 prepare_position = 2;
@@ -244,7 +240,6 @@ message AppendResp {
       event_store.client.Empty expected_stream_exists = 10;
       event_store.client.Empty expected_no_stream = 11;
     }
-
   }
 }
 
