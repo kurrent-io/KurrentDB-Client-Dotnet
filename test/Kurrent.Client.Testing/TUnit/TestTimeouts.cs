@@ -6,4 +6,6 @@ public static class TestTimeouts {
     public class FiveSecondsAttribute() : TimeoutAttribute(5000);
 
     public class TenSecondsAttribute() : TimeoutAttribute(10000);
+
+    public class SixtySecondsAttribute() : TimeoutAttribute(60000);
 }

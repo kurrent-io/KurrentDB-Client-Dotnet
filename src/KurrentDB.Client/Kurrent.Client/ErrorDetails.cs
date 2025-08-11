@@ -16,6 +16,9 @@ public static partial class ErrorDetails {
     [KurrentOperationError(typeof(Types.AlreadyExists))]
     public readonly partial record struct AlreadyExists;
 
+    [KurrentOperationError(typeof(Types.FailedPrecondition))]
+    public readonly partial record struct FailedPrecondition;
+
     [KurrentOperationError(typeof(Types.Unknown))]
     public readonly partial record struct Unknown;
 }

@@ -6,5 +6,5 @@ public record DeleteProjectionOptions {
 
     public bool DeleteStateStream      { get; init; } = true;
     public bool DeleteCheckpointStream { get; init; } = true;
-    public bool DeleteEmittedStreams   { get; init; }
+    public bool DeleteEmittedStreams   { get; init; } = true;
 }

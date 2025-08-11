@@ -3,6 +3,7 @@
 // ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
 
 using System.Text.Json;
+using EventStore.Client;
 using Google.Protobuf;
 using Grpc.Core;
 using KurrentDB.Protocol.Projections.V1;
@@ -12,9 +13,9 @@ namespace Kurrent.Client.Projections;
 
 public sealed partial class ProjectionsClient {
     internal ProjectionsClient(KurrentClient source) =>
-        ServiceClient  = new(source.LegacyCallInvoker);
+        ServiceClient = new(source.LegacyCallInvoker);
 
-    internal ProjectionsServiceClient ServiceClient  { get; }
+    ProjectionsServiceClient ServiceClient { get; }
 
     public async ValueTask<Result<Success, CreateProjectionError>> CreateProjection(ProjectionName name, ProjectionQuery query, ProjectionSettings settings, CancellationToken cancellationToken = default) {
         name.ThrowIfNone();
@@ -41,68 +42,39 @@ public sealed partial class ProjectionsClient {
         }
         catch (RpcException rex) {
             return Result.Failure<Success, CreateProjectionError>(rex.StatusCode switch {
-                StatusCode.PermissionDenied                                               => new ErrorDetails.AccessDenied(),
-                StatusCode.AlreadyExists                                                  => new ErrorDetails.AlreadyExists(),
-                StatusCode.Unknown when rex.Message.Contains("Projection already exists") => new ErrorDetails.AlreadyExists(),
-                _                                                                         => throw rex.WithOriginalCallStack()
+                StatusCode.PermissionDenied                                    => new ErrorDetails.AccessDenied(),
+                StatusCode.Unknown when rex.Status.Detail.Contains("Conflict") => new ErrorDetails.AlreadyExists(),
+                _                                                              => throw rex.WithOriginalCallStack()
             });
         }
     }
 
-    public async ValueTask<Result<Success, RenameProjectionError>> RenameProjection(ProjectionName name, CancellationToken cancellationToken = default) {
-        name.ThrowIfNone();
-
-        try {
-            var request = new UpdateReq {
-                Options = new() {
-                    Name = name
-                }
-            };
-
-            await ServiceClient
-                .UpdateAsync(request, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-
-            return Success.Instance;
-        }
-        catch (RpcException rex) {
-            return Result.Failure<Success, RenameProjectionError>(rex.StatusCode switch {
-                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                StatusCode.NotFound         => new ErrorDetails.NotFound(),
-                _                           => throw rex.WithOriginalCallStack()
-            });
-        }
-    }
-
-    public async ValueTask<Result<Success, UpdateProjectionQueryError>> UpdateProjectionQuery(ProjectionName name, ProjectionQuery query, CancellationToken cancellationToken = default) {
-        name.ThrowIfNone();
-        query.ThrowIfInvalid();
-
-        try {
-            var request = new UpdateReq {
-                Options = new() {
-                    Name          = name,
-                    Query         = query,
-                    NoEmitOptions = new()
-                }
-            };
-
-            await ServiceClient
-                .UpdateAsync(request, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-
-            return Success.Instance;
-        }
-        catch (RpcException rex) {
-            return Result.Failure<Success, UpdateProjectionQueryError>(
-                rex.StatusCode switch {
-                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
-                    _                           => throw rex.WithOriginalCallStack()
-                }
-            );
-        }
-    }
+    // public async ValueTask<Result<Success, RenameProjectionError>> RenameProjection(ProjectionName name, CancellationToken cancellationToken = default) {
+    //     name.ThrowIfNone();
+    //
+    //     try {
+    //         var request = new UpdateReq {
+    //             Options = new() {
+    //                 Name = name, // lol I cant even.... I know but the brain didnt even.... jfc....
+    //                 NoEmitOptions = new Empty()
+    //             }
+    //         };
+    //
+    //         await ServiceClient
+    //             .UpdateAsync(request, cancellationToken: cancellationToken)
+    //             .ConfigureAwait(false);
+    //
+    //         return Success.Instance;
+    //     }
+    //     catch (RpcException rex) {
+    //         return Result.Failure<Success, RenameProjectionError>(rex.StatusCode switch {
+    //             StatusCode.PermissionDenied                                                  => new ErrorDetails.AccessDenied(),
+    //             StatusCode.NotFound                                                          => new ErrorDetails.NotFound(),
+    //             StatusCode.Unknown when rex.Status.Detail.Contains("Operation is not valid") => new ErrorDetails.FailedPrecondition(),
+    //             _                                                                            => throw rex.WithOriginalCallStack()
+    //         });
+    //     }
+    // }
 
     public async ValueTask<Result<Success, DeleteProjectionError>> DeleteProjection(ProjectionName name, DeleteProjectionOptions options, CancellationToken cancellationToken = default) {
         name.ThrowIfNone();
@@ -125,9 +97,10 @@ public sealed partial class ProjectionsClient {
         }
         catch (RpcException rex) {
             return Result.Failure<Success, DeleteProjectionError>(rex.StatusCode switch {
-                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                StatusCode.NotFound         => new ErrorDetails.NotFound(),
-                _                           => throw rex.WithOriginalCallStack()
+                StatusCode.PermissionDenied                                           => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound                                                   => new ErrorDetails.NotFound(),
+                StatusCode.Unknown when rex.Status.Detail.Contains("OperationFailed") => new ErrorDetails.FailedPrecondition(),
+                _                                                                     => throw rex.WithOriginalCallStack()
             });
         }
     }
@@ -146,7 +119,7 @@ public sealed partial class ProjectionsClient {
                 .EnableAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Success.Instance;
         }
         catch (RpcException rex) {
             return Result.Failure<Success, EnableProjectionError>(
@@ -156,6 +129,35 @@ public sealed partial class ProjectionsClient {
                     _                           => throw rex.WithOriginalCallStack()
                 }
             );
+        }
+    }
+
+    /// <summary>
+    /// Disables a projection. Saves the projection's checkpoint.
+    /// </summary>
+    public async ValueTask<Result<Success, DisableProjectionError>> DisableProjection(ProjectionName name, CancellationToken cancellationToken = default) {
+        name.ThrowIfNone();
+
+        try {
+            var request = new DisableReq {
+                Options = new() {
+                    Name            = name,
+                    WriteCheckpoint = true
+                }
+            };
+
+            await ServiceClient
+                .DisableAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return Success.Instance;
+        }
+        catch (RpcException rex) {
+            return Result.Failure<Success, DisableProjectionError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -177,7 +179,7 @@ public sealed partial class ProjectionsClient {
                 .ResetAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Success.Instance;
         }
         catch (RpcException rex) {
             return Result.Failure<Success, ResetProjectionError>(rex.StatusCode switch {
@@ -209,7 +211,7 @@ public sealed partial class ProjectionsClient {
                 .DisableAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Success.Instance;
         }
         catch (RpcException rex) {
             return Result.Failure<Success, AbortProjectionError>(rex.StatusCode switch {
@@ -220,53 +222,9 @@ public sealed partial class ProjectionsClient {
         }
     }
 
-    /// <summary>
-    /// Disables a projection. Saves the projection's checkpoint.
-    /// </summary>
-    public async ValueTask<Result<Success, DisableProjectionError>> DisableProjection(ProjectionName name, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<ProjectionDetails, GetProjectionError>> GetProjection(ProjectionName name, CancellationToken cancellationToken = default) {
         name.ThrowIfNone();
 
-        try {
-            var request = new DisableReq {
-                Options = new() {
-                    Name            = name,
-                    WriteCheckpoint = true
-                }
-            };
-
-            await ServiceClient
-                .DisableAsync(request, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-
-            return new Success();
-        }
-        catch (RpcException rex) {
-            return Result.Failure<Success, DisableProjectionError>(rex.StatusCode switch {
-                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                StatusCode.NotFound         => new ErrorDetails.NotFound(),
-                _                           => throw rex.WithOriginalCallStack()
-            });
-        }
-    }
-
-    public async ValueTask<Result<Success, RestartProjectionSubsystemError>> RestartProjectionSubsystem(CancellationToken cancellationToken = default) {
-        try {
-            await ServiceClient
-                .RestartSubsystemAsync(new(), cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-
-            return new Success();
-        }
-        catch (RpcException rex) {
-            return Result.Failure<Success, RestartProjectionSubsystemError>(rex.StatusCode switch {
-                StatusCode.PermissionDenied   => new ErrorDetails.AccessDenied(),
-                StatusCode.FailedPrecondition => new ErrorDetails.ProjectionsSubsystemRestartFailed(),
-                _                             => throw rex.WithOriginalCallStack()
-            });
-        }
-    }
-
-    public async ValueTask<Result<ProjectionDetails, GetProjectionError>> GetProjection(ProjectionName name, CancellationToken cancellationToken = default) {
         try {
             var request = new StatisticsReq {
                 Options =  new() {
@@ -278,8 +236,9 @@ public sealed partial class ProjectionsClient {
 
             var result = await call.ResponseStream
                 .ReadAllAsync(cancellationToken)
-                .Select(static rsp => rsp.MapToProjectionDetails())
-                .FirstAsync(cancellationToken);
+                .Select(static rsp => rsp.MapProjectionDetails(includeStatistics: true))
+                .FirstAsync(cancellationToken)
+                .ConfigureAwait(false);
 
             return result;
         }
@@ -305,12 +264,11 @@ public sealed partial class ProjectionsClient {
         try {
             using var call = ServiceClient.Statistics(request, cancellationToken: cancellationToken);
 
-            var result = await call.ResponseStream
+            return await call.ResponseStream
                 .ReadAllAsync(cancellationToken)
-                .Select(static rsp => rsp.MapToProjectionDetails())
-                .ToListAsync(cancellationToken);
-
-            return result;
+                .Select(rsp => rsp.MapProjectionDetails(options.IncludeStatistics))
+                .ToListAsync(cancellationToken)
+                .ConfigureAwait(false);
         }
         catch (RpcException rex) {
             return Result.Failure<List<ProjectionDetails>, ListProjectionsError>(rex.StatusCode switch {
@@ -320,7 +278,7 @@ public sealed partial class ProjectionsClient {
         }
 	}
 
-     public async ValueTask<Result<T, GetProjectionResultError>> GetProjectionResult<T>(
+    public async ValueTask<Result<T, GetProjectionResultError>> GetProjectionResult<T>(
         ProjectionName name,
         ProjectionPartition partition,
         JsonSerializerOptions serializerOptions,
@@ -393,6 +351,23 @@ public sealed partial class ProjectionsClient {
                     _                           => throw rex.WithOriginalCallStack()
                 }
             );
+        }
+    }
+
+    public async ValueTask<Result<Success, RestartProjectionSubsystemError>> RestartProjectionSubsystem(CancellationToken cancellationToken = default) {
+        try {
+            await ServiceClient
+                .RestartSubsystemAsync(new(), cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return Success.Instance;
+        }
+        catch (RpcException rex) {
+            return Result.Failure<Success, RestartProjectionSubsystemError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied   => new ErrorDetails.AccessDenied(),
+                StatusCode.FailedPrecondition => new ErrorDetails.ProjectionsSubsystemRestartFailed(),
+                _                             => throw rex.WithOriginalCallStack()
+            });
         }
     }
 }

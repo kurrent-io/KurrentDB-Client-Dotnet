@@ -10,17 +10,8 @@ public readonly partial record struct CreateProjectionError : IVariantResultErro
 [PublicAPI]
 public readonly partial record struct DeleteProjectionError : IVariantResultError<
     ErrorDetails.AccessDenied,
-    ErrorDetails.NotFound>;
-
-[PublicAPI]
-public readonly partial record struct RenameProjectionError : IVariantResultError<
-    ErrorDetails.AccessDenied,
-    ErrorDetails.NotFound>;
-
-[PublicAPI]
-public readonly partial record struct UpdateProjectionQueryError : IVariantResultError<
-    ErrorDetails.AccessDenied,
-    ErrorDetails.NotFound>;
+    ErrorDetails.NotFound,
+    ErrorDetails.FailedPrecondition>;
 
 [PublicAPI]
 public readonly partial record struct EnableProjectionError : IVariantResultError<

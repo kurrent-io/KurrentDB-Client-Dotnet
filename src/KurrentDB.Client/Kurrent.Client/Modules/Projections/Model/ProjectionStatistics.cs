@@ -9,19 +9,9 @@ public sealed record ProjectionStatistics {
     public long CoreProcessingTime { get; init; }
 
     /// <summary>
-    /// Version of the projection. This is incremented when the projection is edited or reset.
-    /// </summary>
-    public long Version { get; init; }
-
-    /// <summary>
     /// Projection's epoch. This is incremented when the projection is reset.
     /// </summary>
     public long Epoch { get; init; }
-
-    /// <summary>
-    /// Effective name of the projection.
-    /// </summary>
-    public string EffectiveName { get; init; } = string.Empty;
 
     /// <summary>
     /// Number of write operations in progress at the time of collecting the stats.
@@ -39,29 +29,9 @@ public sealed record ProjectionStatistics {
     public int PartitionsCached { get; init; }
 
     /// <summary>
-    /// Current status of the projection.
-    /// </summary>
-    public string Status { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Reason for the projection's current status. This will usually be set if the projection has faulted for some reason.
-    /// </summary>
-    public string StateReason { get; init; } = string.Empty;
-
-    // /// <summary>
-    // /// Name of the projection.
-    // /// </summary>
-    // public ProjectionName Name { get; init; } = string.Empty;
-    //
-    // /// <summary>
-    // /// Mode that the projection is running in (Transient, Continuous, or OneTime).
-    // /// </summary>
-    // public ProjectionMode Mode { get; init; }
-
-    /// <summary>
     /// Position of the projection. What this position looks like is determined by the type of selector the projection uses.
     /// </summary>
-    public string Position { get; init; } = string.Empty;
+    public string Position { get; init; } = "";
 
     /// <summary>
     /// Percent completion for the projection.
@@ -71,7 +41,7 @@ public sealed record ProjectionStatistics {
     /// <summary>
     /// Last checkpoint written by this projection. Like the Position, its shape is determined by the type of selector the projection uses.
     /// </summary>
-    public string LastCheckpoint { get; init; } = string.Empty;
+    public string LastCheckpoint { get; init; } = "";
 
     /// <summary>
     /// Number of events the projection has processed since the last restart of KurrentDB or the projections subsystem.
@@ -81,7 +51,7 @@ public sealed record ProjectionStatistics {
     /// <summary>
     /// Status of the checkpoint writer for the projection.
     /// </summary>
-    public string CheckpointStatus { get; init; } = string.Empty;
+    public string CheckpointStatus { get; init; } = "";
 
     /// <summary>
     /// Number of events that have been buffered by the projection.
@@ -101,21 +71,15 @@ public sealed record ProjectionStatistics {
     /// <summary>Represents an empty or uninitialized projection details instance.</summary>
     public static readonly ProjectionStatistics None = new() {
         CoreProcessingTime                  = 0,
-        // Version                             = 0,
         Epoch                               = 0,
-        // EffectiveName                       = string.Empty,
         WritesInProgress                    = 0,
         ReadsInProgress                     = 0,
         PartitionsCached                    = 0,
-        // Status                              = string.Empty,
-        // StateReason                         = string.Empty,
-        // Name                                = string.Empty,
-        // Mode                                = ProjectionMode.Unspecified,
-        Position                            = string.Empty,
+        Position                            = "",
         Progress                            = 0.0f,
-        LastCheckpoint                      = string.Empty,
+        LastCheckpoint                      = "",
         RecordsProcessedAfterRestart        = 0,
-        CheckpointStatus                    = string.Empty,
+        CheckpointStatus                    = "",
         BufferedRecords                     = 0,
         WritePendingRecordsBeforeCheckpoint = 0,
         WritePendingRecordsAfterCheckpoint  = 0
