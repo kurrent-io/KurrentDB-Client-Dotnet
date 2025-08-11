@@ -232,10 +232,10 @@ public partial class StreamsClient {
     //
     //     try {
     //         if (await session.ReadState == ReadState.StreamNotFound)
-    //             return new ReadError(new StreamNotFound(x => x.With("stream", options.Stream)));
+    //             return new ReadError(new StreamNotFound(x => x.WithStreamName(options.Stream)));
     //     }
     //     catch (AccessDeniedException) {
-    //         return new ReadError(new ErrorDetails.AccessDenied(x => x.With("stream", options.Stream)));
+    //         return new ReadError(new ErrorDetails.AccessDenied(x => x.WithStreamName(options.Stream)));
     //     }
     //     catch (Exception ex) when (ex is not KurrentClientException) {
     //         throw KurrentClientException.CreateUnknown(nameof(ReadStream), ex);
@@ -315,7 +315,7 @@ public partial class StreamsClient {
                 // we get into a logical loop and boom - stack overflow
                 // this is the most absurd thing ever
                 if (stream.IsMetastream)
-                    return Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt.With("Stream", stream)));
+                    return Result.Failure<Messages, ReadError>(new NotFound(mt => mt.WithStreamName(stream)));
 
                 // ReSharper disable once PossiblyMistakenUseOfCancellationToken
                 // because we are checking the metadata stream on a failure path,
@@ -324,11 +324,11 @@ public partial class StreamsClient {
                     .MatchAsync(
                         rec => {
                             if (rec == Record.None)
-                                return Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt.With("Stream", stream)));
+                                return Result.Failure<Messages, ReadError>(new NotFound(mt => mt.WithStreamName(stream)));
 
                             var metadata = (StreamMetadata)rec.Value!;
                             if (metadata.TruncateBefore == StreamRevision.Max)
-                                return Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.With("Stream", stream)));
+                                return Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.WithStreamName(stream)));
 
                             throw KurrentException.CreateUnknown(
                                 nameof(ReadCore),
@@ -338,9 +338,9 @@ public partial class StreamsClient {
                             );
                         },
                         err => err.Case switch {
-                            ReadError.ReadErrorCase.StreamDeleted  => Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.With("Stream", stream))),
-                            ReadError.ReadErrorCase.StreamNotFound => Result.Failure<Messages, ReadError>(new StreamNotFound(mt => mt.With("Stream", stream))),
-                            ReadError.ReadErrorCase.AccessDenied   => Result.Failure<Messages, ReadError>(new AccessDenied(mt => mt.With("Stream", stream)))
+                            ReadError.ReadErrorCase.StreamDeleted => Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.WithStreamName(stream))),
+                            ReadError.ReadErrorCase.NotFound      => Result.Failure<Messages, ReadError>(new NotFound(mt => mt.WithStreamName(stream))),
+                            ReadError.ReadErrorCase.AccessDenied  => Result.Failure<Messages, ReadError>(new AccessDenied(mt => mt.WithStreamName(stream)))
                         }
                     )
                     .ConfigureAwait(false);

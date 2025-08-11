@@ -75,7 +75,7 @@ public class RegistryClient {
 				onFailure: exception => {
 					if (exception is RpcException rpcEx) {
 						return rpcEx.StatusCode switch {
-							StatusCode.AlreadyExists    => Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(new ErrorDetails.SchemaAlreadyExists(m => m.With("stream", schemaName))),
+							StatusCode.AlreadyExists    => Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(new ErrorDetails.SchemaAlreadyExists(m => m.With("Schema", schemaName))),
 							StatusCode.PermissionDenied => Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(new ErrorDetails.AccessDenied()),
 							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
 							_                           => throw KurrentException.CreateUnknown(nameof(CreateSchema), rpcEx)
@@ -154,7 +154,7 @@ public class RegistryClient {
 				onFailure: exception => {
 					if (exception is RpcException rpcEx) {
 						return rpcEx.StatusCode switch {
-							StatusCode.NotFound         => Result.Failure<Schema, GetSchemaError>(new ErrorDetails.SchemaNotFound(m => m.With("stream", schemaName))),
+							StatusCode.NotFound         => Result.Failure<Schema, GetSchemaError>(new ErrorDetails.SchemaNotFound(m => m.With("Schema", schemaName))),
 							StatusCode.PermissionDenied => Result.Failure<Schema, GetSchemaError>(new ErrorDetails.AccessDenied()),
 							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
 							_                           => throw KurrentException.CreateUnknown(nameof(GetSchema), rpcEx)
@@ -203,7 +203,7 @@ public class RegistryClient {
 				onFailure: exception => {
 					if (exception is RpcException rpcEx) {
 						return rpcEx.StatusCode switch {
-							StatusCode.NotFound         => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.SchemaNotFound(m => m.With("stream", schemaName))),
+							StatusCode.NotFound         => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.SchemaNotFound(m => m.With("Schema", schemaName))),
 							StatusCode.PermissionDenied => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.AccessDenied()),
 							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
 							_                           => throw KurrentException.CreateUnknown(nameof(GetSchemaVersion), rpcEx)

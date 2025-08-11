@@ -1,4 +1,5 @@
 #pragma warning disable CA1822 // Mark members as static
+// ReSharper disable InconsistentNaming
 
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -13,13 +14,17 @@ using GameWon = TicTacToe.GameWon;
 namespace Kurrent.Client.Tests;
 
 public partial class KurrentClientTestFixture {
+    public string NewShortID() => Guid.NewGuid().ToString().Substring(24, 12);
+
+    public string NewShortTestID([CallerMemberName] string category = "") => $"{category}-{NewShortID()}";
+
     /// <summary>
     /// Creates a unique stream name for KurrentDB operations, combining the given category with the last part of a randomly generated guid.
     /// </summary>
     /// <param name="category">The category associated with the stream name.</param>
     /// <returns>A StreamName instance containing the generated stream name.</returns>
-    public StreamName CreateStreamName(string category) =>
-        StreamName.From($"{category}-{Guid.NewGuid().ToString().Substring(24, 12)}");
+    public StreamName NewStreamName([CallerMemberName] string category = "") =>
+        StreamName.From($"{category}-{NewShortID()}");
 
     /// <summary>
     /// Creates a unique stream name for KurrentDB operations, combining the given category with the last part of a randomly generated guid.
@@ -28,8 +33,8 @@ public partial class KurrentClientTestFixture {
     /// The game for which the stream name is being created. This will be used to generate a stream name specific to the game type.
     /// </param>
     /// <returns>A StreamName instance containing the generated stream name.</returns>
-    public StreamName CreateGameStreamName(GamesAvailable game) =>
-        CreateStreamName(game.ToString());
+    public StreamName NewGameStreamName(GamesAvailable game) =>
+        NewStreamName(game.ToString());
 
     public async ValueTask<(LogPosition Position, StreamRevision Revision, List<Message> Messages)> SeedTestMessages(
         string streamName,
@@ -172,11 +177,11 @@ public partial class KurrentClientTestFixture {
         (Guid GameId, StreamName Stream, List<object> GameEvents) SimulatedGame() {
             if (game == GamesAvailable.TicTacToe) {
                 var (id, events, _) = TicTacToeSimulator.SimulateGame();
-                simulatedGame       = (id, CreateGameStreamName(game), events);
+                simulatedGame       = (id, NewGameStreamName(game), events);
             }
             else if (game == GamesAvailable.RockPaperScissors) {
                 var (id, events, _) = RockPaperScissorsSimulator.SimulateGame();
-                simulatedGame       = (id, CreateGameStreamName(game), events);
+                simulatedGame       = (id, NewGameStreamName(game), events);
             }
             else
                 throw new UnreachableException($"The game '{game}' is not recognized or supported.");

@@ -29,14 +29,14 @@ public partial class StreamsClient {
 
             var reVisionConflictError = rex.AsStreamRevisionConflictError();
             return reVisionConflictError.Metadata.GetRequired<StreamRevision>("ActualRevision") == ExpectedStreamState.NoStream.Value
-                ? Result.Failure<LogPosition, DeleteStreamError>(new StreamNotFound(x => x.With("Stream", stream)))
+                ? Result.Failure<LogPosition, DeleteStreamError>(new NotFound(x => x.WithStreamName(stream)))
                 : Result.Failure<LogPosition, DeleteStreamError>(reVisionConflictError);
         }
         catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.StreamDeleted)) {
             return await GetStreamInfo(stream, cancellationToken).MatchAsync(
                 info => info.State switch {
-                    StreamState.Deleted    => Result.Failure<LogPosition, DeleteStreamError>(new StreamDeleted(x => x.With("Stream", stream))),
-                    StreamState.Tombstoned => Result.Failure<LogPosition, DeleteStreamError>(new StreamTombstoned(x => x.With("Stream", stream)))
+                    StreamState.Deleted    => Result.Failure<LogPosition, DeleteStreamError>(new StreamDeleted(x => x.WithStreamName(stream))),
+                    StreamState.Tombstoned => Result.Failure<LogPosition, DeleteStreamError>(new StreamTombstoned(x => x.WithStreamName(stream)))
                 },
                 err => Result.Failure<LogPosition, DeleteStreamError>(err.AsAccessDenied)
             );
@@ -70,14 +70,14 @@ public partial class StreamsClient {
 
             var reVisionConflictError = rex.AsStreamRevisionConflictError();
             return reVisionConflictError.Metadata.GetRequired<StreamRevision>("ActualRevision") == ExpectedStreamState.NoStream.Value
-                ? Result.Failure<LogPosition, TombstoneError>(new StreamNotFound(x => x.With("Stream", stream)))
+                ? Result.Failure<LogPosition, TombstoneError>(new NotFound(x => x.WithStreamName(stream)))
                 : Result.Failure<LogPosition, TombstoneError>(reVisionConflictError);
         }
         catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.StreamDeleted)) {
             return await GetStreamInfo(stream, cancellationToken).MatchAsync(
                 info => info.State switch {
-                    StreamState.Deleted    => Result.Failure<LogPosition, TombstoneError>(new StreamDeleted(x => x.With("Stream", stream))),
-                    StreamState.Tombstoned => Result.Failure<LogPosition, TombstoneError>(new StreamTombstoned(x => x.With("Stream", stream)))
+                    StreamState.Deleted    => Result.Failure<LogPosition, TombstoneError>(new StreamDeleted(x => x.WithStreamName(stream))),
+                    StreamState.Tombstoned => Result.Failure<LogPosition, TombstoneError>(new StreamTombstoned(x => x.WithStreamName(stream)))
                 },
                 err => Result.Failure<LogPosition, TombstoneError>(err.AsAccessDenied)
             );
@@ -122,7 +122,7 @@ public partial class StreamsClient {
                 err => err.Case switch {
                     ReadError.ReadErrorCase.StreamDeleted    => new StreamInfo { IsDeleted = true, IsTombstoned = true, State = StreamState.Tombstoned },
                     ReadError.ReadErrorCase.StreamTombstoned => new StreamInfo { IsDeleted = true, IsTombstoned = true, State = StreamState.Tombstoned },
-                    ReadError.ReadErrorCase.StreamNotFound   => new StreamInfo(),
+                    ReadError.ReadErrorCase.NotFound         => new StreamInfo(),
                     ReadError.ReadErrorCase.AccessDenied     => Result.Failure<StreamInfo, GetStreamInfoError>(err.AsAccessDenied)
                 }
             )
@@ -145,7 +145,7 @@ public partial class StreamsClient {
                 err => err.Case switch {
                     ReadError.ReadErrorCase.StreamDeleted    => result.Value with { IsDeleted = true, State = StreamState.Deleted },
                     ReadError.ReadErrorCase.StreamTombstoned => result,
-                    ReadError.ReadErrorCase.StreamNotFound   => result,
+                    ReadError.ReadErrorCase.NotFound         => result,
                     ReadError.ReadErrorCase.AccessDenied     => Result.Failure<StreamInfo, GetStreamInfoError>(err.AsAccessDenied)
                 }
             )

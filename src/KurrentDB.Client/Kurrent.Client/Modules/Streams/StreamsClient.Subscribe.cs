@@ -252,10 +252,10 @@ public partial class StreamsClient {
     //     //
     //     // try {
     //     //     if (await session..ReadState == ReadState.StreamNotFound)
-    //     //         return new ReadError(new StreamNotFound(x => x.With("stream", stream)));
+    //     //         return new ReadError(new StreamNotFound(x => x.WithStreamName(stream)));
     //     // }
     //     // catch (AccessDeniedException) {
-    //     //     return new ReadError(new AccessDenied(x => x.With("stream", stream)));
+    //     //     return new ReadError(new AccessDenied(x => x.WithStreamName(stream)));
     //     // }
     //     // catch (Exception ex) when (ex is not KurrentClientException) {
     //     //     throw KurrentClientException.CreateUnknown(nameof(ReadStream), ex);

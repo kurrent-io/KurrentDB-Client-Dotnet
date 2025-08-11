@@ -41,9 +41,10 @@ public sealed partial class ProjectionsClient {
         }
         catch (RpcException rex) {
             return Result.Failure<Success, CreateProjectionError>(rex.StatusCode switch {
-                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                StatusCode.AlreadyExists    => new ErrorDetails.AlreadyExists(),
-                _                           => throw rex.WithOriginalCallStack()
+                StatusCode.PermissionDenied                                               => new ErrorDetails.AccessDenied(),
+                StatusCode.AlreadyExists                                                  => new ErrorDetails.AlreadyExists(),
+                StatusCode.Unknown when rex.Message.Contains("Projection already exists") => new ErrorDetails.AlreadyExists(),
+                _                                                                         => throw rex.WithOriginalCallStack()
             });
         }
     }
@@ -319,7 +320,7 @@ public sealed partial class ProjectionsClient {
         }
 	}
 
-     public async ValueTask<Result<T, GetProjectionResultError>> GetResult<T>(
+     public async ValueTask<Result<T, GetProjectionResultError>> GetProjectionResult<T>(
         ProjectionName name,
         ProjectionPartition partition,
         JsonSerializerOptions serializerOptions,
@@ -357,7 +358,7 @@ public sealed partial class ProjectionsClient {
         }
     }
 
-    public async ValueTask<Result<T, GetProjectionStateError>> GetState<T>(
+    public async ValueTask<Result<T, GetProjectionStateError>> GetProjectionState<T>(
         ProjectionName name,
         ProjectionPartition partition,
         JsonSerializerOptions serializerOptions,

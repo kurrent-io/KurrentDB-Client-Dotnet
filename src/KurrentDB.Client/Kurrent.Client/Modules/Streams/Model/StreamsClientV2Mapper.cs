@@ -112,8 +112,7 @@ static class StreamsClientV2Mapper {
         return source.ErrorCase switch {
             Contracts.AppendStreamFailure.ErrorOneofCase.StreamRevisionConflict     => new ErrorDetails.StreamRevisionConflict(meta => meta.With("Stream", source.Stream).With("ExpectedRevision", source.StreamRevisionConflict.StreamRevision)),
             Contracts.AppendStreamFailure.ErrorOneofCase.AccessDenied               => new ErrorDetails.AccessDenied(meta => meta.With("Stream", source.Stream)),
-            Contracts.AppendStreamFailure.ErrorOneofCase.StreamDeleted              => new ErrorDetails.StreamDeleted(meta => meta.With("Stream", source.Stream)),
-            Contracts.AppendStreamFailure.ErrorOneofCase.StreamNotFound             => new ErrorDetails.StreamNotFound(meta => meta.With("Stream", source.Stream)),
+            Contracts.AppendStreamFailure.ErrorOneofCase.StreamDeleted              => new ErrorDetails.StreamTombstoned(meta => meta.With("Stream", source.Stream)),
             Contracts.AppendStreamFailure.ErrorOneofCase.TransactionMaxSizeExceeded => new ErrorDetails.TransactionMaxSizeExceeded(meta => meta.With("MaxSize", source.TransactionMaxSizeExceeded.MaxSize) ),
             _                                                                       => throw new UnreachableException($"Unexpected append stream failure error category: {source.ErrorCase}")
         };

@@ -3,177 +3,247 @@
 // ReSharper disable ClassNeverInstantiated.Local
 
 using Kurrent.Client.Projections;
+using Kurrent.Client.Testing.TUnit;
 
 namespace Kurrent.Client.Tests.Projections;
 
-[Category("ProjectionManagement")]
+[Category("Projections")]
 public class ProjectionsTests : KurrentClientTestFixture {
-	[Test]
-	[Arguments("$streams")]
-	[Arguments("$stream_by_category")]
-	[Arguments("$by_category")]
-	[Arguments("$by_event_type")]
-	[Arguments("$by_correlation_id")]
-	public async Task get_status(string name, CancellationToken ct) {
-		// Act
-		await AutomaticClient.Projections
-			.GetProjection(name, ct)
-			.ShouldNotThrowAsync()
-			.OnFailureAsync(error => Should.NotThrow(() => error.Error.Throw()))
-			.OnSuccessAsync(details => {
-				details.ShouldNotBeNull();
-				details.Name.ShouldBe(name);
-			});
-	}
+    static readonly string TestQuery = "fromAll().when({ $init: function (state, ev) { return {}; } });";
 
-	[Test]
-	public async Task get_state(CancellationToken ct) {
-		// Arrange
-		var name = NewProjectionName();
-
-		var query = $$"""
-			fromStream('{{name}}').when({
-				"$init": function() {return { Count: 0 }; },
-				"$any": function(s, e) { s.Count++; return s; }
-			});
-			""";
+	[Test, TestTimeouts.FiveSeconds]
+	public async Task creates_projection(CancellationToken ct) {
+        ProjectionName projection = NewShortTestID();
 
 		await AutomaticClient.Projections
-			.CreateProjection(name, query, ProjectionSettings.Default, cancellationToken: ct)
+			.CreateProjection(projection, TestQuery, ProjectionSettings.Default, ct)
 			.ShouldNotThrowOrFailAsync();
 
-		await SeedTestMessages(name, _ => { }, cancellationToken: ct);
+        var details = await AutomaticClient.Projections.GetProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
 
-		// Act & Assert
-		await AutomaticClient.Projections
-			.GetState<Result>(name, cancellationToken: ct)
-			.ShouldNotThrowAsync()
-			.OnFailureAsync(error => Should.NotThrow(() => error.Error.Throw()))
-			.OnSuccessAsync(result => {
-				result.ShouldNotBeNull();
-				result.Count.ShouldBeGreaterThan(0);
-			});
+        details.Mode.ShouldBe(ProjectionMode.Continuous);
 	}
-	//
-	// [Test]
-	// public async Task create_one_time(CancellationToken ct) {
-	// 	// Arrange
-	// 	var existingProjections = await AutomaticClient.Projections
-	// 		.ListAll(ct).Value
-	// 		.Where(p => p.Mode == "OneTime")
-	// 		.Select(p => p.EffectiveName)
-	// 		.ToArrayAsync(cancellationToken: ct);
-	//
-	// 	// Act
-	// 	await AutomaticClient.Projections
-	// 		.CreateOneTimeProjection(ProjectionQuery, ct)
-	// 		.ShouldNotThrowOrFailAsync();
-	//
-	// 	// Assert
-	// 	var currentProjections = await AutomaticClient.Projections
-	// 		.ListAll(ct).Value
-	// 		.Where(p => p.Mode == "OneTime")
-	// 		.Select(p => p.EffectiveName)
-	// 		.ToArrayAsync(cancellationToken: ct);
-	//
-	// 	currentProjections
-	// 		.Except(existingProjections)
-	// 		.ShouldHaveSingleItem();
-	// }
-	//
-	// [Test]
-	// public async Task create_continuous(CancellationToken ct) {
-	// 	// Arrange
-	// 	var existingProjections = await AutomaticClient.Projections
-	// 		.ListAll(ct).Value
-	// 		.Where(p => p.Mode == "Continuous")
-	// 		.Select(p => p.EffectiveName)
-	// 		.ToArrayAsync(cancellationToken: ct);
-	//
-	// 	var name = NewProjectionName();
-	//
-	// 	// Act
-	// 	await AutomaticClient.Projections
-	// 		.CreateContinuousProjection(name, ProjectionQuery, cancellationToken: ct)
-	// 		.ShouldNotThrowOrFailAsync();
-	//
-	// 	// Assert
-	// 	var currentProjections = await AutomaticClient.Projections
-	// 		.ListAll(ct).Value
-	// 		.Where(p => p.Mode == "Continuous")
-	// 		.Where(p => p.Name == name)
-	// 		.Select(p => p.EffectiveName)
-	// 		.ToArrayAsync(cancellationToken: ct);
-	//
-	// 	currentProjections
-	// 		.Except(existingProjections)
-	// 		.ShouldHaveSingleItem()
-	// 		.ShouldBe(name);
-	// }
-	//
-	// [Test]
-	// public async Task create_transient(CancellationToken ct) {
-	// 	// Arrange
-	// 	var existingProjections = await AutomaticClient.Projections
-	// 		.ListAll(ct).Value
-	// 		.Where(p => p.Mode == "Transient")
-	// 		.Select(p => p.EffectiveName)
-	// 		.ToArrayAsync(cancellationToken: ct);
-	//
-	// 	var query = "fromAll().when({$init: function (state, ev) {return {};}});";
-	// 	var name  = NewProjectionName();
-	//
-	// 	// Act
-	// 	await AutomaticClient.Projections
-	// 		.CreateTransientProjection(name, query, cancellationToken: ct)
-	// 		.ShouldNotThrowOrFailAsync();
-	//
-	// 	// Assert
-	// 	var currentProjections = await AutomaticClient.Projections
-	// 		.ListAll(ct).Value
-	// 		.Where(p => p.Mode == "Transient")
-	// 		.Where(p => p.Name == name)
-	// 		.Select(p => p.EffectiveName)
-	// 		.ToArrayAsync(cancellationToken: ct);
-	//
-	// 	currentProjections
-	// 		.Except(existingProjections)
-	// 		.ShouldHaveSingleItem()
-	// 		.ShouldBe(name);
-	// }
 
-	// [Test]
-	// public async Task delete_projection(CancellationToken ct) {
-	// 	// Arrange
-	// 	var name = NewProjectionName();
-	//
-	// 	// Act
-	// 	await AutomaticClient.Projections
-	// 		.CreateTransientProjection(name, ProjectionQuery, cancellationToken: ct)
-	// 		.ShouldNotThrowOrFailAsync();
-	//
-	// 	await AutomaticClient.Projections
-	// 		.DeleteProjection(name, cancellationToken: ct)
-	// 		.ShouldNotThrowOrFailAsync();
-	//
-	// 	// Assert
-	// 	var currentProjections = await AutomaticClient.Projections
-	// 		.ListProjections(new ListProjectionsOptions()).Value
-	// 		.Where(p => p.Mode == "Transient")
-	// 		.Where(p => p.EffectiveName == name)
-	// 		.Select(p => p.EffectiveName)
-	// 		.ToArrayAsync(cancellationToken: ct);
-	//
-	// 	currentProjections.ShouldBeEmpty();
-	// }
+    [Test, TestTimeouts.FiveSeconds]
+    public async Task creates_projection_that_tracks_emitted_streams(CancellationToken ct) {
+        ProjectionName projection = NewShortTestID();
 
-	#region helpers
+        var settings = new ProjectionSettings {
+            EmitEnabled         = true,
+            TrackEmittedStreams = true
+        };
 
-	static string NewProjectionName() => Guid.NewGuid().ToString("N");
+        await AutomaticClient.Projections
+            .CreateProjection(projection, TestQuery, settings, ct)
+            .ShouldNotThrowOrFailAsync();
 
-	static readonly string ProjectionQuery = "fromAll().when({$init: function (state, ev) {return {};}});";
+        var details = await AutomaticClient.Projections.GetProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
 
-	record Result(int Count);
+        details.Mode.ShouldBe(ProjectionMode.Continuous);
+    }
 
-	#endregion
+    [Test, TestTimeouts.FiveSeconds]
+    public async Task enables_projection(CancellationToken ct) {
+        ProjectionName projection = NewShortTestID();
+
+        await AutomaticClient.Projections
+            .EnableProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        var details = await AutomaticClient.Projections.GetProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        details.ShouldNotBeNull(); // assert status? wth?
+    }
+
+    [Test, TestTimeouts.FiveSeconds]
+    public async Task disables_projection(CancellationToken ct) {
+        ProjectionName projection = NewShortTestID();
+
+        await AutomaticClient.Projections
+            .CreateProjection(projection, TestQuery, ProjectionSettings.Default, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Projections
+            .EnableProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Projections
+            .DisableProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        var details = await AutomaticClient.Projections.GetProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        details.ShouldNotBeNull(); // assert status? wth?
+    }
+
+    [Test, TestTimeouts.FiveSeconds]
+    public async Task resets_projection(CancellationToken ct) {
+        ProjectionName projection = NewShortTestID();
+
+        await AutomaticClient.Projections
+            .CreateProjection(projection, TestQuery, ProjectionSettings.Default, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Projections
+            .EnableProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Projections
+            .ResetProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        var details = await AutomaticClient.Projections
+            .GetProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        details.ShouldNotBeNull(); // assert status? wth?
+    }
+
+    [Test, TestTimeouts.FiveSeconds]
+    public async Task aborts_projection(CancellationToken ct) {
+        ProjectionName projection = NewShortTestID();
+
+        await AutomaticClient.Projections
+            .CreateProjection(projection, TestQuery, ProjectionSettings.Default, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Projections
+            .EnableProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Projections
+            .AbortProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        var details = await AutomaticClient.Projections.GetProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        details.ShouldNotBeNull(); // assert status? wth?
+    }
+
+    [Test, TestTimeouts.FiveSeconds]
+    public async Task gets_projection(CancellationToken ct) {
+        ProjectionName projection = NewShortTestID();
+
+        await AutomaticClient.Projections
+            .CreateProjection(projection, TestQuery, ProjectionSettings.Default, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        var details = await AutomaticClient.Projections.GetProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        details.ShouldNotBeNull();
+    }
+
+
+    public class SystemProjectionsCases : TestCaseGenerator<ProjectionName> {
+        protected override IEnumerable<ProjectionName> Data() {
+            yield return "$streams";
+            yield return "$stream_by_category";
+            yield return "$by_category";
+            yield return "$by_event_type";
+            yield return "$by_correlation_id";
+        }
+    }
+
+    [Test, TestTimeouts.FiveSeconds, SystemProjectionsCases]
+    public async Task gets_system_projections(ProjectionName projection, CancellationToken ct) {
+        await AutomaticClient.Projections
+            .CreateProjection(projection, TestQuery, ProjectionSettings.Default, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        var details = await AutomaticClient.Projections.GetProjection(projection, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        details.ShouldNotBeNull();
+    }
+
+    [Test, TestTimeouts.FiveSeconds]
+    public async Task lists_projections(CancellationToken ct) {
+        await AutomaticClient.Projections
+            .CreateProjection(NewShortTestID(), TestQuery, ProjectionSettings.Default, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Projections
+            .CreateProjection(NewShortTestID(), TestQuery, ProjectionSettings.Default, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        var result = await AutomaticClient.Projections.ListProjections(ListProjectionsOptions.Default, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        result.Count.ShouldBeGreaterThanOrEqualTo(2);
+    }
+
+    [Test, TestTimeouts.FiveSeconds]
+	public async Task deletes_projection(CancellationToken ct) {
+        ProjectionName projection = NewShortTestID();
+
+        await AutomaticClient.Projections
+            .CreateProjection(projection, TestQuery, ProjectionSettings.Default, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Projections.DeleteProjection(projection, DeleteProjectionOptions.Default, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        var result = await AutomaticClient.Projections.GetProjection(projection, ct);
+
+        result.IsFailure.ShouldBeTrue();
+        result.Error.Value.ShouldBeOfType<ErrorDetails.NotFound>();
+        result.Error.ShouldBeAssignableTo<ErrorDetails.NotFound>();
+    }
+
+    [Test, TestTimeouts.FiveSeconds]
+    public async Task fails_to_create_projection_with_already_existing_name(CancellationToken ct) {
+        ProjectionName projection = NewShortTestID();
+
+        await AutomaticClient.Projections
+            .CreateProjection(projection, TestQuery, ProjectionSettings.Default, ct)
+            .ShouldNotThrowOrFailAsync();
+
+        await AutomaticClient.Projections
+            .CreateProjection(projection, TestQuery, ProjectionSettings.Default, ct)
+            .ShouldFailAsync(error => {
+                error.Error.ShouldBeAssignableTo<ErrorDetails.AlreadyExists>();
+            });
+    }
+
+    [Test, TestTimeouts.FiveSeconds]
+    public async Task fails_to_enable_non_existing_projection(CancellationToken ct) {
+        await AutomaticClient.Projections
+            .EnableProjection(NewShortTestID(), ct)
+            .ShouldFailAsync(error => {
+                error.Error.ShouldBeAssignableTo<ErrorDetails.NotFound>();
+            });
+    }
+
+    [Test, TestTimeouts.FiveSeconds]
+    public async Task fails_to_disable_non_existing_projection(CancellationToken ct) {
+        await AutomaticClient.Projections
+            .DisableProjection(NewShortTestID(), ct)
+            .ShouldFailAsync(error => {
+                error.Error.ShouldBeAssignableTo<ErrorDetails.NotFound>();
+            });
+    }
+
+    [Test, TestTimeouts.FiveSeconds]
+    public async Task fails_to_abort_non_existing_projection(CancellationToken ct) {
+        await AutomaticClient.Projections
+            .AbortProjection(NewShortTestID(), ct)
+            .ShouldFailAsync(error => {
+                error.Error.ShouldBeAssignableTo<ErrorDetails.NotFound>();
+            });
+    }
+
+    [Test, TestTimeouts.FiveSeconds]
+    public async Task fails_to_get_non_existing_projection(CancellationToken ct) {
+        await AutomaticClient.Projections
+            .GetProjection(NewShortTestID(), ct)
+            .ShouldFailAsync(error => {
+                error.Error.ShouldBeAssignableTo<ErrorDetails.NotFound>();
+            });
+    }
 }

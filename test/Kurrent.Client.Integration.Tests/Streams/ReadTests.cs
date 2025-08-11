@@ -169,7 +169,7 @@ public class ReadTests : KurrentClientTestFixture {
         await AutomaticClient.Streams
             .ReadStream(game.Stream, ct)
             .ShouldFailAsync(error =>
-                error.Case.ShouldBe(ReadError.ReadErrorCase.StreamNotFound)
+                error.Case.ShouldBe(ReadError.ReadErrorCase.NotFound)
             );
     }
 }

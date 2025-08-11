@@ -16,14 +16,6 @@ public record AppendStreamSuccess(string Stream, LogPosition Position, StreamRev
 }
 
 [PublicAPI]
-public readonly partial record struct AppendStreamFailure : IVariantResultError<
-    ErrorDetails.StreamNotFound,
-    ErrorDetails.StreamDeleted,
-    ErrorDetails.AccessDenied,
-    ErrorDetails.TransactionMaxSizeExceeded,
-    ErrorDetails.StreamRevisionConflict>;
-
-[PublicAPI]
 [method: SetsRequiredMembers]
 public record AppendStreamRequest(string Stream, ExpectedStreamState ExpectedState, IEnumerable<Message> Messages) {
     public required string               Stream        { get; init; } = Stream;
@@ -109,7 +101,6 @@ public record ReadAllOptions : ReadOptionsBase {
 
     public override void EnsureValid() {
         base.EnsureValid();
-
         ArgumentOutOfRangeException.ThrowIfLessThan(Start, LogPosition.Earliest);
     }
 
@@ -184,18 +175,6 @@ public abstract record ReadOptionsBase {
         ArgumentOutOfRangeException.ThrowIfLessThan(Limit, 1);
     }
 }
-
-[PublicAPI]
-public readonly partial record struct ReadError : IVariantResultError<
-    ErrorDetails.StreamNotFound,
-    ErrorDetails.StreamDeleted,
-    ErrorDetails.StreamTombstoned,
-    ErrorDetails.AccessDenied>;
-
-[PublicAPI]
-public readonly partial record struct InspectRecordError : IVariantResultError<
-    ErrorDetails.LogPositionNotFound,
-    ErrorDetails.AccessDenied>;
 
 [PublicAPI]
 public readonly partial record struct ReadMessage : IVariant<Record, Heartbeat> {
@@ -378,45 +357,5 @@ public record Subscription : Messages {
 //         return ValueTask.CompletedTask;
 //     }
 // }
-
-#endregion
-
-#region . manage .
-
-[PublicAPI]
-public readonly partial record struct DeleteStreamError : IVariantResultError<
-    ErrorDetails.StreamNotFound,
-    ErrorDetails.StreamDeleted,
-    ErrorDetails.StreamTombstoned,
-    ErrorDetails.AccessDenied,
-    ErrorDetails.StreamRevisionConflict>;
-
-[PublicAPI]
-public readonly partial record struct TombstoneError : IVariantResultError<
-    ErrorDetails.StreamNotFound,
-    ErrorDetails.StreamDeleted,
-    ErrorDetails.StreamTombstoned,
-    ErrorDetails.AccessDenied,
-    ErrorDetails.StreamRevisionConflict>;
-
-[PublicAPI]
-public readonly partial record struct GetStreamInfoError : IVariantResultError<
-    ErrorDetails.AccessDenied>;
-
-[PublicAPI]
-public readonly partial record struct SetStreamMetadataError : IVariantResultError<
-    ErrorDetails.StreamNotFound,
-    ErrorDetails.StreamDeleted,
-    ErrorDetails.StreamTombstoned,
-    ErrorDetails.AccessDenied,
-    ErrorDetails.StreamRevisionConflict>;
-
-[PublicAPI]
-public readonly partial record struct TruncateStreamError : IVariantResultError<
-    ErrorDetails.StreamNotFound,
-    ErrorDetails.StreamDeleted,
-    ErrorDetails.StreamTombstoned,
-    ErrorDetails.AccessDenied,
-    ErrorDetails.StreamRevisionConflict>;
 
 #endregion

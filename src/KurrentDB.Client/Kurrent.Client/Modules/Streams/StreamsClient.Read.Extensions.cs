@@ -43,7 +43,7 @@ public static partial class StreamsClientExtensions {
                 .MatchAsync(
                     async messages => {
                         var rec = await messages.Select(x => x.AsRecord).FirstOrDefaultAsync(cancellationToken);
-                        return rec ?? Result.Failure<Record, ReadError>(new ErrorDetails.StreamNotFound(x => x.With("stream", stream)));
+                        return rec ?? Result.Failure<Record, ReadError>(new ErrorDetails.NotFound(x => x.WithStreamName(stream)));
                     },
                     async err => await Result.FailureTask<Record, ReadError>(err)
                 )
@@ -54,7 +54,7 @@ public static partial class StreamsClientExtensions {
             //     .MatchAsync(
             //         async messages => {
             //             var rec = await messages.Select(x => x.AsRecord).FirstOrDefaultAsync(cancellationToken);
-            //             return rec ?? Result.Failure<Record, ReadError>(new ErrorDetails.StreamNotFound(x => x.With("stream", stream)));
+            //             return rec ?? Result.Failure<Record, ReadError>(new ErrorDetails.StreamNotFound(x => x.WithStreamName(stream)));
             //         },
             //         async err => Result.Failure<Record, ReadError>(err))
             //     //.MapAsync(async messages => await messages.Select(x => x.AsRecord).FirstOrDefaultAsync(cancellationToken) ?? Record.None)
