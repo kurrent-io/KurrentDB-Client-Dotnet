@@ -1,9 +1,11 @@
+// ReSharper disable ConvertIfStatementToSwitchStatement
 // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 using System.Diagnostics;
 using KurrentDB.Diagnostics;
 using KurrentDB.Diagnostics.Telemetry;
-using KurrentDB.Diagnostics.Tracing;
+using KurrentDB.Protocol.Streams.V2;
+using static KurrentDB.Diagnostics.Tracing.TracingConstants;
 
 namespace KurrentDB.Client.Diagnostics;
 
@@ -54,8 +56,67 @@ static class ActivitySourceExtensions {
 				userCredentials?.Username ?? settings.DefaultCredentials?.Username
 			);
 
-		StartActivity(source, TracingConstants.Operations.Subscribe, ActivityKind.Consumer, tags, parentContext)
+		StartActivity(source, Operations.Subscribe, ActivityKind.Consumer, tags, parentContext)
 			?.Dispose();
+	}
+
+	public static async IAsyncEnumerable<(Activity? Activity, AppendStreamRequest Request)> InstrumentAppendOperations(
+		this ActivitySource source,
+		IAsyncEnumerable<AppendStreamRequest> requests,
+		Func<AppendStreamRequest, ActivityTagsCollection> createTags
+	) {
+		var currentActivity = Activity.Current;
+		var startTime = DateTime.UtcNow;
+
+		try {
+			Activity.Current = null;
+
+			await foreach (var request in requests) {
+				Activity? activity = null;
+
+				if (source.HasListeners()) {
+					activity = StartActivity(source, Operations.Append, ActivityKind.Client, createTags(request), currentActivity?.Context);
+					activity?.SetStartTime(startTime);
+				}
+
+				yield return (activity, request);
+			}
+		}
+		finally {
+			Activity.Current = currentActivity;
+		}
+	}
+
+	public static async ValueTask CompleteAppendInstrumentation(
+		this ActivitySource source,
+		IAsyncEnumerable<(Activity? Activity, AppendStreamRequest Request)> observables,
+		MultiStreamAppendResponse response
+	) {
+		if (source.HasNoActiveListeners())
+			return;
+
+		var endTime    = DateTime.UtcNow;
+		var resultCase = response.ResultCase;
+		var failures   = response.ResultCase is MultiStreamAppendResponse.ResultOneofCase.Failure ? response.Failure.Map() : [];
+
+		var activities = await observables
+			.Where(tr => tr.Activity is not null)
+			.Select(tr => tr.Activity!)
+			.ToListAsync();
+
+		foreach (var activity in activities) {
+			activity.SetEndTime(endTime);
+
+			if (resultCase is MultiStreamAppendResponse.ResultOneofCase.Success)
+				activity.StatusOk();
+
+			else if (resultCase is MultiStreamAppendResponse.ResultOneofCase.Failure) {
+				activity.SetStatus(ActivityStatusCode.Error);
+				failures.ForEach(error => activity.AddException(error));
+			}
+
+			activity.Dispose();
+		}
 	}
 
 	static Activity? StartActivity(
@@ -67,7 +128,7 @@ static class ActivitySourceExtensions {
 			return null;
 
 		(tags ??= new ActivityTagsCollection())
-			.WithRequiredTag(TelemetryTags.Database.System, "kurrent")
+			.WithRequiredTag(TelemetryTags.Database.System, KurrentDBClientDiagnostics.InstrumentationName)
 			.WithRequiredTag(TelemetryTags.Database.Operation, operationName);
 
 		return source
