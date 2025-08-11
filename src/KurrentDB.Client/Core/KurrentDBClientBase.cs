@@ -63,6 +63,7 @@ namespace KurrentDB.Client {
 			var invoker = channel.CreateCallInvoker()
 				.Intercept(new TypedExceptionInterceptor(_exceptionMap))
 				.Intercept(new ConnectionNameInterceptor(ConnectionName))
+				.Intercept(new RequiresLeaderInterceptor("MultiStreamAppendSession"))
 				.Intercept(new ReportLeaderInterceptor(onReconnectionRequired));
 
 			if (Settings.Interceptors is not null) {

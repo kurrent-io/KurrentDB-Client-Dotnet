@@ -121,8 +121,6 @@ message AppendStreamFailure {
     CoreErrorDetails.AccessDenied access_denied = 3;
     // Failed because the target stream has been deleted.
     StreamsErrorDetails.StreamDeleted stream_deleted = 4;
-    // Failed because the stream was not found.
-    StreamsErrorDetails.StreamNotFound stream_not_found = 5;
     // Failed because the transaction exceeded the maximum size allowed
     StreamsErrorDetails.TransactionMaxSizeExceeded transaction_max_size_exceeded = 6;
   }
