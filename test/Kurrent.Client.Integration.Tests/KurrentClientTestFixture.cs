@@ -5,6 +5,8 @@ using Kurrent.Client.Streams;
 using Kurrent.Client.Testing;
 using Kurrent.Client.Testing.Containers.KurrentDB;
 using Kurrent.Client.Testing.Fixtures;
+using Kurrent.Client.Testing.Logging;
+using Kurrent.Client.Testing.OpenTelemetry;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Extensions.Logging;
@@ -13,9 +15,8 @@ namespace Kurrent.Client.Tests;
 
 [PublicAPI]
 public partial class KurrentClientTestFixture : TestFixture {
-    readonly Lazy<KurrentClient> _lazyAutomaticClient = new(() => CreateClient(options => options.WithSchema(KurrentClientSchemaOptions.NoValidation)));
-    readonly Lazy<KurrentClient> _lazyCorpoClient     = new(() => CreateClient(options => options.WithSchema(KurrentClientSchemaOptions.FullValidation)));
-
+    readonly Lazy<KurrentClient> _lazyAutomaticClient   = new(() => CreateClient(options => options.WithSchema(KurrentClientSchemaOptions.NoValidation)));
+    readonly Lazy<KurrentClient> _lazyCorpoClient       = new(() => CreateClient(options => options.WithSchema(KurrentClientSchemaOptions.FullValidation)));
     readonly Lazy<KurrentClient> _lazyLightweightClient = new(() => CreateClient());
 
     /// <summary>
@@ -55,6 +56,8 @@ public partial class KurrentClientTestFixture : TestFixture {
 
     [Before(Assembly)]
     public static async Task AssemblySetUp(AssemblyHookContext context, CancellationToken cancellationToken) {
+        TestingToolkitAutoWireUp.AssemblySetUp();
+
         // "TESTCONTAINER_KURRENTDB_IMAGE"
 
         var options = ApplicationContext.Configuration
@@ -85,6 +88,8 @@ public partial class KurrentClientTestFixture : TestFixture {
         }
 
         await Container.DisposeAsync().ConfigureAwait(false);
+
+        await TestingToolkitAutoWireUp.AssemblyCleanUp().ConfigureAwait(false);
     }
 
     [BeforeEvery(Test)]

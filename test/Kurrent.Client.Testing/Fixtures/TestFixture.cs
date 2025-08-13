@@ -54,14 +54,14 @@ public class TestFixture : ITestStartEventReceiver, ITestEndEventReceiver, ITest
     /// </summary>
     protected IServiceProvider ServiceProvider { get; private set; } = null!;
 
-    public async ValueTask OnTestStart(BeforeTestContext beforeTestContext) {
+    public async ValueTask OnTestStart(TestContext testContext) {
         await TestingToolkitAutoWireUp
-	        .TestSetUp(beforeTestContext.TestContext)
+	        .TestSetUp(testContext)
 	        .ConfigureAwait(false);
 
         TestContext.Current!.AddAsyncLocalValues();
 
-        FixtureName  = beforeTestContext.TestContext.TestDetails.TestClass.Name;
+        FixtureName  = testContext.TestDetails.ClassType.Name;
         TimeProvider = new FakeTimeProvider(DateTimeOffset.UtcNow);
 
         var services = new ServiceCollection()
@@ -83,7 +83,7 @@ public class TestFixture : ITestStartEventReceiver, ITestEndEventReceiver, ITest
         LoggerFactory = ServiceProvider.GetRequiredService<ILoggerFactory>();
     }
 
-    public async ValueTask OnTestEnd(AfterTestContext afterTestContext)  {
+    public async ValueTask OnTestEnd(TestContext testContext)  {
         try {
             await OnCleanUp();
         }
@@ -100,7 +100,7 @@ public class TestFixture : ITestStartEventReceiver, ITestEndEventReceiver, ITest
         }
 
         await TestingToolkitAutoWireUp
-	        .TestCleanUp(afterTestContext)
+	        .TestCleanUp(testContext)
 	        .ConfigureAwait(false);
     }
 

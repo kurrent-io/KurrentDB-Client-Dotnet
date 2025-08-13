@@ -1,5 +1,6 @@
 using System.Net;
 using Grpc.Core;
+using Grpc.Net.Client;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Client;
@@ -20,10 +21,10 @@ class GossipChannelSelector : IChannelSelector {
 		_nodeSelector = new(_settings.ConnectivitySettings.NodePreference);
 	}
 
-	public ChannelBase SelectEndpointChannel(DnsEndPoint endPoint) =>
+	public (GrpcChannel Channel, GrpcChannelOptions Options) SelectEndpointChannel(DnsEndPoint endPoint) =>
 		_channels.CreateChannel(endPoint);
 
-	public async Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken) {
+	public async Task<(GrpcChannel Channel, GrpcChannelOptions Options)> SelectChannelAsync(CancellationToken cancellationToken) {
 		var endPoint = await DiscoverAsync(cancellationToken).ConfigureAwait(false);
 		_log.LogInformation("Successfully discovered candidate at {endPoint}.", endPoint);
 		return _channels.CreateChannel(endPoint);

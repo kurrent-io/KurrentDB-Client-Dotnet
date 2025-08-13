@@ -8,18 +8,21 @@ namespace Kurrent.Client.Admin;
 
 public partial class AdminClient {
     internal AdminClient(KurrentClient source) {
-        OperationsServiceClient = new(source.LegacyCallInvoker);
-        FeaturesServiceClient   = new(source.LegacyCallInvoker);
+        Source                = source;
+        AdminServiceClient    = new(source.LegacyCallInvoker);
+        FeaturesServiceClient = new(source.LegacyCallInvoker);
     }
 
-    OperationsServiceClient OperationsServiceClient { get; }
-    FeaturesServiceClient   FeaturesServiceClient   { get; }
+    KurrentClient Source { get; }
+
+    OperationsServiceClient AdminServiceClient    { get; }
+    FeaturesServiceClient   FeaturesServiceClient { get; }
 
     static readonly Empty EmptyRequest = new Empty();
 
 	public async ValueTask<Result<Success, ShutdownServerError>> ShutdownServer(CancellationToken cancellationToken = default) {
         try {
-            await OperationsServiceClient
+            await AdminServiceClient
                 .ShutdownAsync(EmptyRequest, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -33,25 +36,10 @@ public partial class AdminClient {
         }
 	}
 
-	public async ValueTask<Result<Success, MergeIndexesError>> MergeIndexes(CancellationToken cancellationToken = default) {
-		try {
-            await OperationsServiceClient
-                .MergeIndexesAsync(EmptyRequest, cancellationToken: cancellationToken)
-                .ConfigureAwait(false);
-
-            return new Success();
-        }
-        catch (RpcException rex) {
-            return Result.Failure<Success, MergeIndexesError>(rex.StatusCode switch {
-                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                _                           => throw rex.WithOriginalCallStack()
-            });
-        }
-    }
 
 	public async ValueTask<Result<Success, ResignNodeError>> ResignNode(CancellationToken cancellationToken = default) {
 		try {
-			await OperationsServiceClient
+			await AdminServiceClient
                 .ResignNodeAsync(EmptyRequest, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -69,7 +57,7 @@ public partial class AdminClient {
 		ArgumentOutOfRangeException.ThrowIfNegative(nodePriority);
 
         try {
-            await OperationsServiceClient
+            await AdminServiceClient
                 .SetNodePriorityAsync(new SetNodePriorityReq { Priority = nodePriority }, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -83,9 +71,25 @@ public partial class AdminClient {
         }
 	}
 
+    public async ValueTask<Result<Success, MergeIndexesError>> MergeIndexes(CancellationToken cancellationToken = default) {
+        try {
+            await AdminServiceClient
+                .MergeIndexesAsync(EmptyRequest, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
+
+            return new Success();
+        }
+        catch (RpcException rex) {
+            return Result.Failure<Success, MergeIndexesError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
+    }
+
 	public async ValueTask<Result<Success, RestartPersistentSubscriptionsError>> RestartPersistentSubscriptions(CancellationToken cancellationToken = default) {
 		try {
-			await OperationsServiceClient
+			await AdminServiceClient
                 .RestartPersistentSubscriptionsAsync(EmptyRequest, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 

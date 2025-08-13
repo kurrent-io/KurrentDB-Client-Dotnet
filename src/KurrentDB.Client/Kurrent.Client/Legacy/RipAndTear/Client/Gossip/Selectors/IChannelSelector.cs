@@ -1,12 +1,13 @@
 using System.Net;
 using Grpc.Core;
+using Grpc.Net.Client;
 
 namespace KurrentDB.Client;
 
 interface IChannelSelector {
 	// Let the channel selector pick an endpoint.
-	Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken);
+	Task<(GrpcChannel Channel, GrpcChannelOptions Options)> SelectChannelAsync(CancellationToken cancellationToken);
 
 	// Get a channel for the specified endpoint
-	ChannelBase SelectEndpointChannel(DnsEndPoint endPoint);
+    (GrpcChannel Channel, GrpcChannelOptions Options) SelectEndpointChannel(DnsEndPoint endPoint);
 }

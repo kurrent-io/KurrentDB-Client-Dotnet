@@ -19,4 +19,6 @@ public readonly record struct ProjectionName {
 
     public static implicit operator ProjectionName(string _) => From(_);
     public static implicit operator string(ProjectionName _) => _.ToString();
+
+    public bool IsSystemProjection => Value.StartsWith('$');
 }

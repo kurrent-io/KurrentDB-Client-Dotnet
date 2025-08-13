@@ -20,7 +20,7 @@ public partial class AdminClient {
                 }
             };
 
-            var response = await OperationsServiceClient
+            var response = await AdminServiceClient
                 .StartScavengeAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
@@ -50,7 +50,7 @@ public partial class AdminClient {
                 }
             };
 
-			var response = await OperationsServiceClient
+			var response = await AdminServiceClient
                 .StopScavengeAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 

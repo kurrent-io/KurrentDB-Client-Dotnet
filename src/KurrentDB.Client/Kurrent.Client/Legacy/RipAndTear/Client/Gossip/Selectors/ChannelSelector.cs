@@ -1,5 +1,6 @@
 using System.Net;
 using Grpc.Core;
+using Grpc.Net.Client;
 
 namespace KurrentDB.Client;
 
@@ -8,9 +9,9 @@ class ChannelSelector(KurrentDBClientSettings settings, ChannelCache channelCach
 		? new SingleNodeChannelSelector(settings, channelCache)
 		: new GossipChannelSelector(settings, channelCache, new GrpcGossipClient(settings));
 
-	public Task<ChannelBase> SelectChannelAsync(CancellationToken cancellationToken) =>
+	public Task<(GrpcChannel Channel, GrpcChannelOptions Options)> SelectChannelAsync(CancellationToken cancellationToken) =>
 		_inner.SelectChannelAsync(cancellationToken);
 
-	public ChannelBase SelectEndpointChannel(DnsEndPoint endPoint) =>
+	public (GrpcChannel Channel, GrpcChannelOptions Options) SelectEndpointChannel(DnsEndPoint endPoint) =>
 		_inner.SelectEndpointChannel(endPoint);
 }

@@ -1,8 +1,8 @@
-using KurrentDB.Protocol.Projections.V1;
-
 namespace Kurrent.Client.Projections;
 
 public sealed record ProjectionStatistics {
+    public static readonly ProjectionStatistics None = new();
+
     /// <summary>
     /// Amount of time this projection has spent processing events.
     /// </summary>
@@ -11,7 +11,7 @@ public sealed record ProjectionStatistics {
     /// <summary>
     /// Projection's epoch. This is incremented when the projection is reset.
     /// </summary>
-    public long Epoch { get; init; }
+    public long Epoch { get; init; } = -1;
 
     /// <summary>
     /// Number of write operations in progress at the time of collecting the stats.
@@ -31,7 +31,7 @@ public sealed record ProjectionStatistics {
     /// <summary>
     /// Position of the projection. What this position looks like is determined by the type of selector the projection uses.
     /// </summary>
-    public string Position { get; init; } = "";
+    public string Position { get; init; } = "C:0/P:-1";
 
     /// <summary>
     /// Percent completion for the projection.
@@ -41,7 +41,7 @@ public sealed record ProjectionStatistics {
     /// <summary>
     /// Last checkpoint written by this projection. Like the Position, its shape is determined by the type of selector the projection uses.
     /// </summary>
-    public string LastCheckpoint { get; init; } = "";
+    public string LastCheckpoint { get; init; } = "C:0/P:-1";
 
     /// <summary>
     /// Number of events the projection has processed since the last restart of KurrentDB or the projections subsystem.
@@ -51,7 +51,7 @@ public sealed record ProjectionStatistics {
     /// <summary>
     /// Status of the checkpoint writer for the projection.
     /// </summary>
-    public string CheckpointStatus { get; init; } = "";
+    public ProjectionCheckpointStatus CheckpointStatus { get; init; } = ProjectionCheckpointStatus.Unspecified;
 
     /// <summary>
     /// Number of events that have been buffered by the projection.
@@ -68,20 +68,4 @@ public sealed record ProjectionStatistics {
     /// </summary>
     public int WritePendingRecordsAfterCheckpoint { get; init; }
 
-    /// <summary>Represents an empty or uninitialized projection details instance.</summary>
-    public static readonly ProjectionStatistics None = new() {
-        CoreProcessingTime                  = 0,
-        Epoch                               = 0,
-        WritesInProgress                    = 0,
-        ReadsInProgress                     = 0,
-        PartitionsCached                    = 0,
-        Position                            = "",
-        Progress                            = 0.0f,
-        LastCheckpoint                      = "",
-        RecordsProcessedAfterRestart        = 0,
-        CheckpointStatus                    = "",
-        BufferedRecords                     = 0,
-        WritePendingRecordsBeforeCheckpoint = 0,
-        WritePendingRecordsAfterCheckpoint  = 0
-    };
 }

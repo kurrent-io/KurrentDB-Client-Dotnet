@@ -15,54 +15,6 @@ namespace KurrentDB.Client;
 /// get rid of the legacy code related with .NET48 and custom gRPC channels and discovery.
 /// </summary>
 class LegacyClusterClient {
-    // static readonly Dictionary<string, Func<RpcException, Exception>> ExceptionMap = new() {
-    //     // [LegacyErrorCodes.PersistentSubscriptionDoesNotExist] = ex => new
-    //     //     PersistentSubscriptionNotFoundException(
-    //     //         ex.Trailers.First(x => x.Key == Constants.LegacyErrorCodes.StreamName).Value,
-    //     //         ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyErrorCodes.GroupName)?.Value ?? "", ex
-    //     //     ),
-    //     // [LegacyErrorCodes.MaximumSubscribersReached] = ex => new
-    //     //     MaximumSubscribersReachedException(
-    //     //         ex.Trailers.First(x => x.Key == Constants.LegacyErrorCodes.StreamName).Value,
-    //     //         ex.Trailers.First(x => x.Key == Constants.LegacyErrorCodes.GroupName).Value, ex
-    //     //     ),
-    //     // [LegacyErrorCodes.PersistentSubscriptionDropped] = ex => new
-    //     //     PersistentSubscriptionDroppedByServerException(
-    //     //         ex.Trailers.First(x => x.Key == Constants.LegacyErrorCodes.StreamName).Value,
-    //     //         ex.Trailers.First(x => x.Key == Constants.LegacyErrorCodes.GroupName).Value, ex
-    //     //     ),
-    //
-    //
-    //     // [LegacyErrorCodes.InvalidTransaction] = ex => new InvalidTransactionException(ex.Message, ex),
-    //     // [Constants.LegacyExceptions.StreamDeleted] = ex => new StreamDeletedException(
-    //     //     ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyExceptions.StreamName)?.Value ?? "<unknown>",
-    //     //     ex
-    //     // ),
-    //     // [LegacyErrorCodes.WrongExpectedVersion] = ex => new WrongExpectedVersionException(
-    //     //     ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyErrorCodes.StreamName)?.Value!,
-    //     //     ex.Trailers.GetStreamState(Constants.LegacyErrorCodes.ExpectedVersion),
-    //     //     ex.Trailers.GetStreamState(Constants.LegacyErrorCodes.ActualVersion),
-    //     //     ex,
-    //     //     ex.Message
-    //     // ),
-    //     // [LegacyErrorCodes.MaximumAppendSizeExceeded] = ex => new MaximumAppendSizeExceededException(
-    //     //     ex.Trailers.GetIntValueOrDefault(Constants.LegacyErrorCodes.MaximumAppendSize),
-    //     //     ex
-    //     // ),
-    //     // [LegacyErrorCodes.StreamNotFound] = ex => new StreamNotFoundException(
-    //     //     ex.Trailers.FirstOrDefault(x => x.Key == Constants.Exceptions.StreamName)?.Value!,
-    //     //     ex
-    //     // ),
-    //     // [LegacyErrorCodes.MissingRequiredMetadataProperty] = ex => new RequiredMetadataPropertyMissingException(
-    //     //     ex.Trailers.FirstOrDefault(x => x.Key == LegacyErrorCodes.MissingRequiredMetadataProperty)?.Value!,
-    //     //     ex
-    //     // ),
-    //
-    //     // [LegacyErrorCodes.ScavengeNotFound] = ex => new ScavengeNotFoundException(
-    //     //     ex.Trailers.FirstOrDefault(x => x.Key == Constants.LegacyErrorCodes.ScavengeId)?.Value
-    //     // )
-    // };
-
     readonly CancellationTokenSource                            _cancellator;
     readonly ChannelCache                                       _channelCache;
     readonly SharingProvider<ReconnectionRequired, ChannelInfo> _channelInfoProvider;
@@ -91,15 +43,15 @@ class LegacyClusterClient {
 
         _channelInfoProvider = new SharingProvider<ReconnectionRequired, ChannelInfo>(
             async (reconnectionRequired, _) => {
-                var channel = reconnectionRequired switch {
+                var channelInfo = reconnectionRequired switch {
                     ReconnectionRequired.Rediscover               => await channelSelector.SelectChannelAsync(token).ConfigureAwait(false),
                     ReconnectionRequired.NewLeader (var endpoint) => channelSelector.SelectEndpointChannel(endpoint)
                 };
 
-                var invoker = channel.CreateCallInvoker().Intercept(ConfigureInterceptors());
+                var invoker = channelInfo.Channel.CreateCallInvoker().Intercept(ConfigureInterceptors());
 
                 if (dontLoadServerCapabilities)
-                    return new(channel, new ServerCapabilities(), invoker);
+                    return new(channelInfo.Channel, channelInfo.Options, new ServerCapabilities(), invoker);
 
                 ServerCapabilities capabilities = new();
 
@@ -112,7 +64,7 @@ class LegacyClusterClient {
                     logger.LogWarning(ex, "Failed to get server capabilities. This may lead to unexpected behavior.");
                 }
 
-                return new(channel, capabilities, invoker);
+                return new(channelInfo.Channel, channelInfo.Options, capabilities, invoker);
             },
             settings.ConnectivitySettings.DiscoveryInterval,
             ReconnectionRequired.Rediscover.Instance,
@@ -170,11 +122,13 @@ class LegacyClusterClient {
 
     public async ValueTask<ChannelInfo> ForceReconnect(DnsEndPoint? leaderEndpoint = null) {
         ThrowIfDisposed();
+
         ReconnectionRequired reconnectionRequired = leaderEndpoint is not null
             ? new ReconnectionRequired.NewLeader(leaderEndpoint)
             : ReconnectionRequired.Rediscover.Instance;
 
         _channelInfoProvider.Reset(reconnectionRequired);
+
         return await _channelInfoProvider.CurrentAsync.ConfigureAwait(false);
     }
 

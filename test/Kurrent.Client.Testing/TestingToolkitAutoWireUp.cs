@@ -9,19 +9,40 @@ namespace Kurrent.Client.Testing;
 public class TestingToolkitAutoWireUp {
     public static Faker Faker { get; } = new Faker();
 
-    [BeforeEvery(Assembly)]
-    public static void AssemblySetUp(AssemblyHookContext context) {
+    // Behaviour broke after moving to TUnit v0.55*
+    // This should execute before [Before] but it does not. Not anymore.
+    // [BeforeEvery(Assembly)]
+    // public static void AssemblySetUp(AssemblyHookContext context) {
+    //     new OtelServiceMetadata("TestingToolkit") {
+    //         ServiceVersion   = "1.0.0",
+    //         ServiceNamespace = "Kurrent.Client.Testing",
+    //     }.UpdateEnvironmentVariables();
+    //
+    //     ApplicationContext.Initialize();
+    //     Logging.Logging.Initialize(ApplicationContext.Configuration);
+    // }
+
+    // [AfterEvery(Assembly)]
+    // public static async Task AssemblyCleanUp(AssemblyHookContext context) {
+    //     await Logging.Logging.CloseAndFlushAsync().ConfigureAwait(false);
+    // }
+
+    static int _inititalized;
+
+    public static void AssemblySetUp() {
+        if (Interlocked.CompareExchange(ref _inititalized, 1, 0) != 0)
+            return; // Already initialized
+
         new OtelServiceMetadata("TestingToolkit") {
-            ServiceVersion    = "1.0.0",
-            ServiceNamespace  = "Kurrent.Client.Testing",
+            ServiceVersion   = "1.0.0",
+            ServiceNamespace = "Kurrent.Client.Testing",
         }.UpdateEnvironmentVariables();
 
         ApplicationContext.Initialize();
         Logging.Logging.Initialize(ApplicationContext.Configuration);
     }
 
-    [AfterEvery(Assembly)]
-    public static async Task AssemblyCleanUp(AssemblyHookContext context) {
+    public static async Task AssemblyCleanUp() {
         await Logging.Logging.CloseAndFlushAsync().ConfigureAwait(false);
     }
 
@@ -40,9 +61,9 @@ public class TestingToolkitAutoWireUp {
         context.SetLogger(logger);
 
         context.SetOtelServiceMetadata(
-            new(context.TestDetails.TestClass.Name) {
+            new(context.TestDetails.ClassType.Name) {
                 ServiceInstanceId = testUid.ToString(),
-                ServiceNamespace  = context.TestDetails.TestClass.Namespace
+                ServiceNamespace  = context.TestDetails.ClassType.Namespace
             }
         );
 
@@ -52,12 +73,18 @@ public class TestingToolkitAutoWireUp {
     }
 
     public static Task TestCleanUp(TestContext context, CancellationToken ct = default) {
-        Log.Verbose(
-            "#### Test {TestName} finished in {Elapsed} after {Attempt} attempt(s)",
-            GetTestMethodName(context.TestDetails.TestId),
-            (TimeProvider.System.GetUtcNow() - context.TestStart.GetValueOrDefault()).Humanize(precision: 2),
-            context.TestDetails.CurrentRepeatAttempt + 1
+        // Log.Verbose(
+        //     "#### Test {TestName} finished in {Elapsed} after {Attempt} attempt(s)",
+        //     GetTestMethodName(context.TestDetails.TestId),
+        //     (TimeProvider.System.GetUtcNow() - context.TestStart.GetValueOrDefault()).Humanize(precision: 2),
+        //     context.TestDetails.CurrentRepeatAttempt + 1
+        //
+        // );
 
+        Log.Verbose(
+            "#### Test {TestName} finished in {Elapsed}",
+            GetTestMethodName(context.TestDetails.TestId),
+            ((context.TestEnd ?? TimeProvider.System.GetUtcNow()) - context.TestStart).Humanize(precision: 2)
         );
 
 		return Task.CompletedTask;

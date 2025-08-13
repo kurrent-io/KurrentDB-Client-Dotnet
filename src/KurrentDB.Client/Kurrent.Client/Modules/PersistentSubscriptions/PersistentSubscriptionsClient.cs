@@ -16,24 +16,11 @@ using static Kurrent.Client.PersistentSubscriptions.PersistentSubscriptionV1Mapp
 
 namespace Kurrent.Client.PersistentSubscriptions;
 
-public sealed partial class PersistentSubscriptionsClient {
-    internal PersistentSubscriptionsClient(KurrentClient source) {
-        Registry           = source.Registry;
-        SerializerProvider = source.SerializerProvider;
-        MetadataDecoder    = source.MetadataDecoder;
-        LegacyCallInvoker  = source.LegacyCallInvoker;
-        ServiceClient      = new(source.LegacyCallInvoker);
-        Logger             = source.Options.LoggerFactory.CreateLogger<PersistentSubscriptionsClient>();
-    }
+public sealed partial class PersistentSubscriptionsClient : SubClientBase {
+    internal PersistentSubscriptionsClient(KurrentClient client) : base(client) =>
+        ServiceClient = new(client.LegacyCallInvoker);
 
-    internal RegistryClient                       Registry           { get; }
-    internal KurrentDBLegacyCallInvoker           LegacyCallInvoker  { get; }
-    internal ISchemaSerializerProvider            SerializerProvider { get; }
-    internal IMetadataDecoder                     MetadataDecoder    { get; }
-    internal PersistentSubscriptionsServiceClient ServiceClient      { get; }
-
-    readonly ILogger Logger;
-
+    PersistentSubscriptionsServiceClient ServiceClient { get; }
 
     public async ValueTask<Result<Success, CreateSubscriptionError>> CreateSubscription(
         SubscriptionGroupName group, StreamName stream, ReadFilter filter, PersistentSubscriptionSettings settings, CancellationToken cancellationToken = default
@@ -41,7 +28,7 @@ public sealed partial class PersistentSubscriptionsClient {
         group.ThrowIfInvalid();
         stream.ThrowIfInvalid();
 
-        if (stream.IsAllStream && !LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll)
+        if (stream.IsAllStream && !ServerCapabilities.SupportsPersistentSubscriptionsToAll)
             throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
 
         if (!stream.IsAllStream && filter != ReadFilter.None)
@@ -75,7 +62,7 @@ public sealed partial class PersistentSubscriptionsClient {
         group.ThrowIfInvalid();
         stream.ThrowIfInvalid();
 
-        if (stream.IsAllStream && !LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll)
+        if (stream.IsAllStream && !ServerCapabilities.SupportsPersistentSubscriptionsToAll)
             throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
 
         try {
@@ -100,7 +87,7 @@ public sealed partial class PersistentSubscriptionsClient {
         group.ThrowIfInvalid();
         stream.ThrowIfInvalid();
 
-        if (stream.IsAllStream && !LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll)
+        if (stream.IsAllStream && !ServerCapabilities.SupportsPersistentSubscriptionsToAll)
             throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
 
         try {
@@ -136,7 +123,7 @@ public sealed partial class PersistentSubscriptionsClient {
         group.ThrowIfInvalid();
         stream.ThrowIfInvalid();
 
-        if (stream.IsAllStream && !LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsToAll)
+        if (stream.IsAllStream && !ServerCapabilities.SupportsPersistentSubscriptionsToAll)
             throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
 
         try {
@@ -173,7 +160,7 @@ public sealed partial class PersistentSubscriptionsClient {
     /// </summary>
     public async ValueTask<Result<List<PersistentSubscriptionDetails>, ListSubscriptionsError>> ListSubscriptions(ListPersistentSubscriptionsOptions options, CancellationToken cancellationToken = default) {
         try {
-            if (options.Stream.IsAllStream && LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsList)
+            if (options.Stream.IsAllStream && ServerCapabilities.SupportsPersistentSubscriptionsList)
                 throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
 
             var request = new ListReq { Options = new() };
@@ -211,7 +198,7 @@ public sealed partial class PersistentSubscriptionsClient {
         group.ThrowIfInvalid();
         stream.ThrowIfInvalid();
 
-        if (stream.IsAllStream && LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsList)
+        if (stream.IsAllStream && ServerCapabilities.SupportsPersistentSubscriptionsList)
             throw new NotSupportedException("The server does not support persistent subscriptions to $all.");
 
         try {
@@ -248,7 +235,7 @@ public sealed partial class PersistentSubscriptionsClient {
 
     public async ValueTask<Result<Success, RestartPersistentSubscriptionsSubsystemError>> RestartPersistentSubscriptionsSubsystem(CancellationToken cancellationToken = default) {
         try {
-            if (LegacyCallInvoker.ServerCapabilities.SupportsPersistentSubscriptionsRestartSubsystem)
+            if (ServerCapabilities.SupportsPersistentSubscriptionsRestartSubsystem)
                 throw new NotSupportedException("The server does not support restarting the persistent subscriptions subsystem.");
 
             await ServiceClient

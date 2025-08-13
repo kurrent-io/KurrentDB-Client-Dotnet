@@ -15,10 +15,15 @@
     <PackageReference Include="Grpc.StatusProto" Version="2.71.0" />
     <PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0" />
     <PackageReference Include="Humanizer.Core" Version="2.14.1" />
+    <PackageReference Include="Jint" Version="4.4.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.8.0" />
     <!--    <PackageReference Include="LruCacheNet" Version="1.2.0" />-->
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.8" />
     <PackageReference Include="NJsonSchema" Version="11.4.0" />
     <PackageReference Include="OneOf" Version="3.0.271" />
+  
+    <PackageReference Include="Refit" Version="8.0.0" />
     <PackageReference Include="System.Linq.Async" Version="6.0.3"
                       Condition="'$(TargetFramework)' != 'net8.0' OR '$(TargetFramework)' != 'net9.0'" />
     <PackageReference Include="OpenTelemetry.Api" Version="1.12.0" />
@@ -31,6 +36,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    
+    <PackageReference Include="Polly" Version="8.6.2" />
+    <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />
   </ItemGroup>
 
   <ItemGroup>

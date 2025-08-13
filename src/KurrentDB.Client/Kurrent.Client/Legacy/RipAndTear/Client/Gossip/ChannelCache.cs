@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Grpc.Core;
 using Grpc.Net.Client;
+using Kurrent.Client.Legacy;
 
 namespace KurrentDB.Client;
 
@@ -8,10 +9,11 @@ namespace KurrentDB.Client;
 // Deals with the disposal difference between grpc.net and grpc.core
 // Thread safe.
 class ChannelCache(KurrentDBClientSettings settings) : IAsyncDisposable {
-    readonly Dictionary<DnsEndPoint, GrpcChannel> _channels = new(DnsEndPointEqualityComparer.Instance);
-    readonly object                               _lock     = new();
-    readonly Random                               _random   = new(0);
-    bool                                          _disposed;
+    readonly Dictionary<DnsEndPoint, (GrpcChannel Channel, GrpcChannelOptions Options)> _channels = new(DnsEndPointEqualityComparer.Instance);
+
+    readonly object _lock   = new();
+    readonly Random _random = new(0);
+    bool            _disposed;
 
     public async ValueTask DisposeAsync() {
         GrpcChannel[] channelsToDispose;
@@ -22,7 +24,7 @@ class ChannelCache(KurrentDBClientSettings settings) : IAsyncDisposable {
 
             _disposed = true;
 
-            channelsToDispose = _channels.Values.ToArray();
+            channelsToDispose = _channels.Values.Select(x => x.Channel).ToArray();
 
             _channels.Clear();
         }
@@ -30,15 +32,16 @@ class ChannelCache(KurrentDBClientSettings settings) : IAsyncDisposable {
         await DisposeChannelsAsync(channelsToDispose).ConfigureAwait(false);
     }
 
-    public GrpcChannel CreateChannel(DnsEndPoint endPoint) {
+    public (GrpcChannel Channel, GrpcChannelOptions Options) CreateChannel(DnsEndPoint endPoint) {
         lock (_lock) {
             ThrowIfDisposed();
 
-            if (_channels.TryGetValue(endPoint, out var channel)) return channel;
+            if (_channels.TryGetValue(endPoint, out var channelInfo))
+                return channelInfo;
 
-            channel = settings.CreateChannel(endPoint);
+            var channel = settings.CreateChannel(endPoint, out var options);
 
-            return _channels[endPoint] = channel;
+            return _channels[endPoint] = (channel, options);
         }
     }
 
@@ -48,6 +51,7 @@ class ChannelCache(KurrentDBClientSettings settings) : IAsyncDisposable {
 
             return _channels
                 .OrderBy(_ => _random.Next())
+                .Select(kvp => new KeyValuePair<DnsEndPoint, GrpcChannel>(kvp.Key, kvp.Value.Channel))
                 .ToArray();
         }
     }
@@ -64,7 +68,7 @@ class ChannelCache(KurrentDBClientSettings settings) : IAsyncDisposable {
             // Remove entries not in the new set (single pass)
             foreach (var kvp in _channels.Where(kvp => !endPointSet.Contains(kvp.Key))) {
                 _channels.Remove(kvp.Key);
-                channelsToDispose.Add(kvp.Value);
+                channelsToDispose.Add(kvp.Value.Channel);
             }
 
             // Dispose removed channels

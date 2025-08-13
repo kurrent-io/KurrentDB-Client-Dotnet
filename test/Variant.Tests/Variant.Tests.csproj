@@ -13,7 +13,7 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="4.8.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.8.0" />
     <PackageReference Include="Shouldly" Version="4.3.0" />
-    <PackageReference Include="TUnit" Version="0.25.21" />
+    <PackageReference Include="TUnit" Version="0.55.6" />
   </ItemGroup>
 
   <ItemGroup>

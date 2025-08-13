@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using Grpc.Core;
+using Grpc.Net.Client;
 using KurrentDB.Client;
 
 namespace Kurrent.Client.Legacy;
@@ -17,8 +19,9 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
 	readonly SemaphoreSlim       _stateLock = new(1, 1);
 	readonly LegacyClusterClient _legacyClient;
 	readonly bool                _disposeClient;
-	volatile ServerCapabilities  _currentCapabilities;
-	volatile string              _currentChannelTarget;
+
+	volatile ServerCapabilities _currentCapabilities;
+    volatile GrpcChannelOptions _currentChannelOptions;
 
     bool _disposed;
 
@@ -32,34 +35,52 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
     /// Optional; indicates whether the legacy client should be disposed when this invoker is disposed.
     /// </param>
     internal KurrentDBLegacyCallInvoker(LegacyClusterClient legacyClient, bool disposeClient = true) {
-	    _legacyClient         = legacyClient;
-	    _disposeClient        = disposeClient;
-	    _currentCapabilities  = null!;
-	    _currentChannelTarget = null!;
+	    _legacyClient          = legacyClient;
+	    _disposeClient         = disposeClient;
+	    _currentCapabilities   = null!;
+        _currentChannelOptions = null!;
     }
 
     /// <summary>
     /// Gets the current server capabilities from the connected node.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown when server capabilities are not yet initialized.</exception>
-    public ServerCapabilities ServerCapabilities => _currentCapabilities ?? throw new InvalidOperationException(
-        "Server capabilities are not initialized. Ensure the client is connected before accessing this property."
-    );
+    public ServerCapabilities ServerCapabilities {
+        [SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract")]
+        get {
+            if (_currentCapabilities is not null)
+                return _currentCapabilities;
+
+            WithChannelInfoInvoker(CancellationToken.None);
+
+            return _currentCapabilities ?? throw new InvalidOperationException(
+                "Ensure the client is connected before accessing server capabilities.");
+        }
+    }
 
     /// <summary>
-    /// Gets the current channel target from the connected node.
+    /// Gets the current channel options used for gRPC calls.
+    /// This includes the HTTP client and other options necessary for making gRPC calls.
     /// </summary>
     /// <exception cref="InvalidOperationException">Thrown when server capabilities are not yet initialized.</exception>
-    public string ChannelTarget => _currentChannelTarget ?? throw new InvalidOperationException(
-	    "Channel target is not initialized. Ensure the client is connected before accessing this property."
-    );
+    public GrpcChannelOptions ChannelOptions {
+        [SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract")]
+        get {
+            if (_currentChannelOptions is not null)
+                return _currentChannelOptions;
+
+            WithChannelInfoInvoker(CancellationToken.None);
+
+            return _currentChannelOptions ?? throw new InvalidOperationException(
+                "Ensure the client is connected before accessing channel options.");
+        }
+    }
 
     /// <summary>
     /// Forces a refresh of the internal channel info and server capabilities by attempting to reconnect to the cluster.
     /// </summary>
     public async Task ForceRefresh(CancellationToken cancellationToken) {
-	    if (_disposed)
-		    throw new ObjectDisposedException(nameof(KurrentDBLegacyCallInvoker));
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
 	    // must be called for every gRPC operation as per requirements
 	    var channelInfo = await _legacyClient.ForceReconnect().ConfigureAwait(false);
@@ -98,19 +119,17 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
     }
 
     /// <summary>
-    ///  Updates the server capabilities in a thread-safe manner.
+    ///  Updates the server capabilities and other properties in a thread-safe manner.
     /// </summary>
     async Task UpdateChannelInfo(ChannelInfo channelInfo, CancellationToken cancellationToken = default) {
-	    var capabilities = channelInfo.ServerCapabilities;
-	    var target       = channelInfo.Channel.Target;
-
-	    if (capabilities == _currentCapabilities) return;
+        var options      = channelInfo.Options;
+        var capabilities = channelInfo.ServerCapabilities;
 
 	    // update capabilities in a thread-safe manner
 	    await _stateLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 	    try {
-		    _currentCapabilities  = capabilities;
-		    _currentChannelTarget = target;
+            _currentChannelOptions = options;
+		    _currentCapabilities   = capabilities;
 	    } finally {
 		    _stateLock.Release();
 	    }

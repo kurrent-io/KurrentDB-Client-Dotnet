@@ -13,6 +13,7 @@ using Kurrent.Client.Schema.Serialization.Protobuf;
 using Kurrent.Client.Streams;
 using Kurrent.Client.Users;
 using KurrentDB.Client;
+using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Client;
 
@@ -48,12 +49,9 @@ public class KurrentClient : IAsyncDisposable {
         Connectors              = new ConnectorsClient(this);
     }
 
-    internal KurrentClientOptions       Options            { get; }
-    internal KurrentDBLegacyCallInvoker LegacyCallInvoker  { get; }
-    internal ISchemaSerializerProvider  SerializerProvider { get; }
-
-    internal MessageTypeMapper TypeMapper      => Options.Mapper;
-    internal IMetadataDecoder  MetadataDecoder => Options.MetadataDecoder;
+    internal KurrentClientOptions       Options               { get; }
+    internal KurrentDBLegacyCallInvoker LegacyCallInvoker     { get; }
+    internal ISchemaSerializerProvider  SerializerProvider    { get; }
 
     public StreamsClient                 Streams                 { get; }
     public RegistryClient                Registry                { get; }
@@ -63,13 +61,13 @@ public class KurrentClient : IAsyncDisposable {
     public ProjectionsClient             Projections             { get; }
     public ConnectorsClient              Connectors              { get; }
 
-	internal async Task<ServerFeatures> ForceRefresh(CancellationToken cancellationToken = default) {
-		await LegacyCallInvoker.ForceRefresh(cancellationToken).ConfigureAwait(false);
-
-		return new ServerFeatures {
-			Version = LegacyCallInvoker.ServerCapabilities.Version
-		};
-	}
+	// internal async Task<ServerFeatures> ForceRefresh(CancellationToken cancellationToken = default) {
+	// 	await LegacyCallInvoker.ForceRefresh(cancellationToken).ConfigureAwait(false);
+	//
+	// 	return new ServerFeatures {
+	// 		Version = LegacyCallInvoker.ServerCapabilities.Version
+	// 	};
+	// }
 
 	public ValueTask DisposeAsync() =>
 		LegacyCallInvoker.DisposeAsync();

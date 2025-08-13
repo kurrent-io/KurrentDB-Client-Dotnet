@@ -1,6 +1,6 @@
 namespace Kurrent.Client.Testing.TUnit;
 
-public static class TestTimeouts {
+public static class TimeoutAfter {
     public class OneSecondAttribute() : TimeoutAttribute(1000);
 
     public class FiveSecondsAttribute() : TimeoutAttribute(5000);
