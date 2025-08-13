@@ -1,5 +1,6 @@
 // ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
 
+using System.Buffers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -44,7 +45,7 @@ public class MetadataJsonConverter : JsonConverter<Dictionary<string, object?>> 
 				return doubleValue;
 
 #if NET48
-			return Encoding.UTF8.GetString(reader.ValueSpan.ToArray());
+			return Encoding.UTF8.GetString(reader.ValueSequence.ToArray());
 #else
 			return Encoding.UTF8.GetString(reader.ValueSpan);
 #endif

@@ -27,8 +27,8 @@ static class StreamsClientMapper {
 				metadata = JsonSerializer.Deserialize<Dictionary<string, object?>>(source.Metadata) ?? new();
 			} catch (Exception ex) {
 				throw new ArgumentException(
-					$"Event metadata must be valid JSON that can be deserialized to Dictionary<string, object?>. This limitation will be removed in the next major release"
-				   +
+					$"Event metadata must be valid JSON with property values limited to: null, boolean, number, string, Guid, DateTime, TimeSpan, or Base64-encoded byte arrays. " +
+					$"Complex objects and arrays are not supported. This limitation will be removed in the next major release. " +
 					$"Deserialization failed: {ex.Message}",
 					nameof(source),
 					ex
