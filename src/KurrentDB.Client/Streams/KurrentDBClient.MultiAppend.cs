@@ -19,35 +19,6 @@ using JsonSerializer = KurrentDB.Client.Schema.Serialization.Json.JsonSerializer
 
 namespace KurrentDB.Client;
 
-[PublicAPI]
-public record AppendStreamRequest(string Stream, StreamState ExpectedState, IEnumerable<EventData> Messages);
-
-[PublicAPI]
-public abstract class MultiAppendWriteResult {
-	public abstract bool IsSuccess { get; }
-	public          bool IsFailure => !IsSuccess;
-}
-
-[PublicAPI]
-public sealed class MultiAppendSuccess : MultiAppendWriteResult {
-	public override bool                  IsSuccess => true;
-	public          AppendStreamSuccesses Successes { get; }
-
-	internal MultiAppendSuccess(AppendStreamSuccesses successes) {
-		Successes = successes;
-	}
-}
-
-[PublicAPI]
-public sealed class MultiAppendFailure : MultiAppendWriteResult {
-	public override bool                 IsSuccess => false;
-	public          AppendStreamFailures Failures  { get; }
-
-	internal MultiAppendFailure(AppendStreamFailures failures) {
-		Failures = failures;
-	}
-}
-
 public partial class KurrentDBClient {
 	/// <summary>
 	/// Appends events to multiple streams asynchronously, ensuring the specified state of each stream is respected.
@@ -59,8 +30,7 @@ public partial class KurrentDBClient {
 	/// <para>
 	/// On success, returns <see cref="MultiAppendSuccess"/> containing the successful append results.
 	/// On failure, returns <see cref="MultiAppendFailure"/> containing a collection of exceptions that may include:
-	/// <see cref="WrongExpectedVersionException"/>, <see cref="AccessDeniedException"/>, <see cref="StreamDeletedException"/>,
-	/// <see cref="StreamNotFoundException"/>, or <see cref="TransactionMaxSizeExceededException"/>.
+	/// <see cref="WrongExpectedVersionException"/>, <see cref="AccessDeniedException"/>, <see cref="StreamDeletedException"/>,  or <see cref="TransactionMaxSizeExceededException"/>.
 	/// </para>
 	/// </returns>
 	/// <exception cref="InvalidOperationException">Thrown if the server does not support multi-stream append functionality (requires server version 25.1 or higher).</exception>
@@ -115,94 +85,4 @@ public partial class KurrentDBClient {
 				.WithClientSettingsServerTags(Settings)
 				.WithOptionalTag(TelemetryTags.Database.User, Settings.DefaultCredentials?.Username);
 	}
-}
-
-static class Mapper {
-	internal static JsonSerializer JsonSerializer { get; } = new();
-
-	public static async IAsyncEnumerable<Contracts.AppendRecord> Map(this IEnumerable<EventData> source, Activity? activity = null) {
-		foreach (var message in source)
-			yield return await message
-				.Map(activity)
-				.ConfigureAwait(false);
-	}
-
-	public static ValueTask<Contracts.AppendRecord> Map(this EventData source, Activity? activity = null) {
-		Dictionary<string, object?> metadata;
-
-		if (source.Metadata.IsEmpty) {
-			metadata = new();
-		} else {
-			try {
-				metadata = JsonSerializer.Deserialize<Dictionary<string, object?>>(source.Metadata) ?? new();
-			} catch (Exception ex) {
-				throw new ArgumentException(
-					$"Event metadata must be valid JSON that can be deserialized to Dictionary<string, object?>. This limitation will be removed in the next major release" +
-					$"Deserialization failed: {ex.Message}",
-					nameof(source),
-					ex
-				);
-			}
-		}
-
-		metadata[Metadata.SchemaName] = source.Type;
-		metadata[Metadata.SchemaDataFormat] = source.ContentType is Metadata.ContentTypes.ApplicationJson
-			? SchemaDataFormat.Json
-			: SchemaDataFormat.Bytes;
-
-		metadata.InjectTracingContext(activity);
-
-		var record = new Contracts.AppendRecord {
-			RecordId   = source.EventId.ToString(),
-			Data       = ByteString.CopyFrom(source.Data.Span),
-			Properties = { metadata.MapToDynamicMapField() }
-		};
-
-		return new ValueTask<Contracts.AppendRecord>(record);
-	}
-
-	public static Exception Map(this Contracts.AppendStreamFailure source) {
-		return source.ErrorCase switch {
-			Contracts.AppendStreamFailure.ErrorOneofCase.StreamRevisionConflict => new WrongExpectedVersionException(
-				source.Stream,
-				StreamState.StreamRevision((ulong)source.StreamRevisionConflict.StreamRevision)
-			),
-			Contracts.AppendStreamFailure.ErrorOneofCase.AccessDenied   => new AccessDeniedException(),
-			Contracts.AppendStreamFailure.ErrorOneofCase.StreamDeleted  => new StreamDeletedException(source.Stream),
-			Contracts.AppendStreamFailure.ErrorOneofCase.TransactionMaxSizeExceeded => new TransactionMaxSizeExceededException(
-				source.TransactionMaxSizeExceeded.MaxSize
-			),
-			_ => throw new ArgumentOutOfRangeException()
-		};
-	}
-
-	public static AppendStreamSuccess Map(this Contracts.AppendStreamSuccess source) =>
-		new(source.Stream, source.Position);
-
-	public static AppendStreamFailures Map(this RepeatedField<Contracts.AppendStreamFailure> source) =>
-		new(source.Select(failure => failure.Map()));
-
-	public static AppendStreamSuccesses Map(this RepeatedField<Contracts.AppendStreamSuccess> source) =>
-		new(source.Select(success => success.Map()));
-
-	public static AppendStreamFailures Map(this Types.Failure source) =>
-		new(source.Output.Map());
-
-	public static AppendStreamSuccesses Map(this Types.Success source) =>
-		new(source.Output.Map());
-}
-
-[PublicAPI]
-public record AppendStreamSuccess(string Stream, long Position);
-
-[PublicAPI]
-public class AppendStreamSuccesses : List<AppendStreamSuccess> {
-	public AppendStreamSuccesses() { }
-	public AppendStreamSuccesses(IEnumerable<AppendStreamSuccess> input) : base(input) { }
-}
-
-[PublicAPI]
-public class AppendStreamFailures : List<Exception> {
-	public AppendStreamFailures() { }
-	public AppendStreamFailures(IEnumerable<Exception> input) : base(input) { }
 }
