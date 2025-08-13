@@ -1,6 +1,4 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
-using KurrentDB.Client.Tests;
 
 namespace KurrentDB.Client.Tests;
 
@@ -32,9 +30,9 @@ public class MultipleRoleSecurityTests(ITestOutputHelper output, MultipleRoleSec
 		protected override async Task When() {
 			var settings = new SystemSettings(
 				new(
-					new[] { "user1", "user2" },
-					new[] { "$admins", "user1" },
-					new[] { "user1", SystemRoles.All }
+					["user1", "user2"],
+					["$admins", "user1"],
+					["user1", SystemRoles.All]
 				)
 			);
 

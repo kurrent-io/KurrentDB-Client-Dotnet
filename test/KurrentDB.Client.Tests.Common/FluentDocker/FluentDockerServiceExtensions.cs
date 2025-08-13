@@ -35,27 +35,13 @@ public static class FluentDockerServiceExtensions {
 
 	public static async Task WaitUntilNodesAreHealthy(this ICompositeService service, IEnumerable<string> services, CancellationToken cancellationToken) {
 		var nodes = service.Containers.Where(x => services.Contains(x.Name));
-#if NET
 		await Parallel.ForEachAsync(nodes, cancellationToken, async (node, ct) => await node.WaitUntilNodesAreHealthy(ct));
-#else
-		Parallel.ForEach(
-			nodes,
-			node => { node.WaitUntilNodesAreHealthy(cancellationToken).GetAwaiter().GetResult(); }
-		);
-#endif
 	}
 
 	public static async Task WaitUntilNodesAreHealthy(this ICompositeService service, string serviceNamePrefix, CancellationToken cancellationToken) {
 		var nodes = service.Containers.Where(x => x.Name.StartsWith(serviceNamePrefix));
 
-#if NET
 		await Parallel.ForEachAsync(nodes, cancellationToken, async (node, ct) => await node.WaitUntilNodesAreHealthy(ct));
-#else
-		Parallel.ForEach(
-			nodes,
-			node => { node.WaitUntilNodesAreHealthy(cancellationToken).GetAwaiter().GetResult(); }
-		);
-#endif
 	}
 
 	public static async Task WaitUntilNodesAreHealthy(this ICompositeService service, string serviceNamePrefix, TimeSpan timeout) {

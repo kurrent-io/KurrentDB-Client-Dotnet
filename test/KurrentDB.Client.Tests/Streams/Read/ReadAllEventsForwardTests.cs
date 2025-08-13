@@ -1,5 +1,4 @@
 using System.Text;
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests;
@@ -90,7 +89,7 @@ public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFi
 		await Fixture.Streams.AppendToStreamAsync(
 			linkedStream,
 			StreamState.Any,
-			new[] {
+			[
 				new EventData(
 					Uuid.NewUuid(),
 					SystemEventTypes.LinkTo,
@@ -98,7 +97,7 @@ public class ReadAllEventsForwardTests(ITestOutputHelper output, ReadAllEventsFi
 					Array.Empty<byte>(),
 					Constants.Metadata.ContentTypes.ApplicationOctetStream
 				)
-			}
+			]
 		);
 
 		var events = await Fixture.Streams.ReadStreamAsync(

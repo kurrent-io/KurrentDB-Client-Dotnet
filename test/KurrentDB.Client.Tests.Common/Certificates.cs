@@ -3,8 +3,9 @@
 namespace KurrentDB.Client.Tests;
 
 public static class Certificates {
+	const string CertsFolder = "certs";
+
 	static readonly string BaseDirectory = AppDomain.CurrentDomain.BaseDirectory;
-	const           string CertsFolder   = "certs";
 
 	public static class TlsCa {
 		public static string Absolute => GetAbsolutePath(CertsFolder, "ca", "ca.crt");

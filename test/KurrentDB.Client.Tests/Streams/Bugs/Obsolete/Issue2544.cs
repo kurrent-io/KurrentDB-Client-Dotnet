@@ -114,9 +114,9 @@ public class Issue2544 : IClassFixture<KurrentDBPermanentFixture> {
 		await Fixture.Streams.AppendToStreamAsync(
 			streamName,
 			expectedRevision,
-			new[] {
+			[
 				new EventData(Uuid.NewUuid(), "completed", Array.Empty<byte>(), contentType: "application/octet-stream")
-			}
+			]
 		);
 	}
 

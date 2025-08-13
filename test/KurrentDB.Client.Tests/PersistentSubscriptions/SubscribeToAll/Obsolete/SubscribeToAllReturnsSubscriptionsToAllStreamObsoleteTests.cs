@@ -1,5 +1,4 @@
 using KurrentDB.Client.Tests.TestNode;
-using KurrentDB.Client.Tests;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
