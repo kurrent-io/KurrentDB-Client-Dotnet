@@ -137,3 +137,116 @@ await client.AppendToStreamAsync(
   userCredentials: new UserCredentials("admin", "changeit")
 );
 ```
+
+## Append to multiple streams
+
+::: note
+This feature is only available in KurrentDB 25.1 and later. 
+:::
+
+You can append events to multiple streams in a single atomic operation. Either all streams are updated, or the entire operation fails.
+
+The `MultiStreamAppendAsync` method accepts a collection of `AppendStreamRequest` objects and returns a `MultiAppendWriteResult`. Each `AppendStreamRequest` contains:
+
+- **Stream** - The name of the stream
+- **ExpectedState** - The expected state of the stream for optimistic concurrency control
+- **Messages** - A collection of `EventData` objects to append
+
+The operation returns either:
+- `MultiAppendSuccess` - Successful append results for all streams
+- `MultiAppendFailure` - Specific exceptions for any failed operations
+
+::: warning
+Event metadata in `EventData` must be valid JSON deserializable to
+`Dictionary<string, object?>`. This requirement will be removed in a future
+major release.
+:::
+
+Here's a basic example of appending events to multiple streams:
+
+```cs
+using System.Text.Json;
+
+var metadata = JsonSerializer.SerializeToUtf8Bytes(
+	new {
+		Timestamp = DateTime.UtcNow,
+		Source    = "OrderProcessingSystem",
+		Version   = 1.0
+	}
+);
+
+AppendStreamRequest[] requests = [
+	new(
+		"order-stream-1",
+		StreamState.Any,
+		[
+			new EventData(
+				Uuid.NewUuid(),
+				"OrderCreated",
+				JsonSerializer.SerializeToUtf8Bytes(
+					new {
+						OrderId = "12345",
+						Amount  = 99.99
+					}
+				),
+				metadata
+			)
+		]
+	),
+	new(
+		"inventory-stream-1",
+		StreamState.Any,
+		[
+			new EventData(
+				Uuid.NewUuid(),
+				"ItemReserved",
+				JsonSerializer.SerializeToUtf8Bytes(
+					new {
+						ItemId   = "ABC123",
+						Quantity = 2
+					}
+				),
+				metadata
+			)
+		]
+	)
+];
+
+var result = await client.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
+
+if (result is MultiAppendSuccess { Successes: var successes })
+	foreach (var item in successes)
+		Console.WriteLine($"Stream '{item.Stream}' updated at position {item.Position}");
+```
+
+If the operation doesn't succeed, it can fail with the following exceptions:
+
+```cs
+var result = await client.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
+
+if (result is MultiAppendFailure { Failures: var failures }) {
+	foreach (var error in failures) {
+		switch (error) {
+			case WrongExpectedVersionException ex:
+				Console.WriteLine($"Version conflict in stream: {ex.Message}");
+				break;
+
+			case AccessDeniedException:
+				Console.WriteLine("Access denied to one or more streams");
+				break;
+
+			case StreamDeletedException ex:
+				Console.WriteLine($"Stream was deleted: {ex.Message}");
+				break;
+
+			case TransactionMaxSizeExceededException ex:
+				Console.WriteLine($"Transaction too large: {ex.Message}");
+				break;
+
+			default:
+				Console.WriteLine($"Unexpected error: {error.Message}");
+				break;
+		}
+	}
+}
+```
