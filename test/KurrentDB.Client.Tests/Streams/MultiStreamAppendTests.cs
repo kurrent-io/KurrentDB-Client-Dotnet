@@ -23,7 +23,7 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 
 		// Act & Assert
 		var exception = await Fixture.Streams
-			.MultiStreamAppendAsync(requests.ToAsyncEnumerable()).AsTask()
+			.MultiStreamAppendAsync(requests).AsTask()
 			.ShouldThrowAsync<ArgumentException>();
 
 		Assert.Contains("Deserialization failed:", exception.Message);
@@ -54,7 +54,7 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 		];
 
 		// Act
-		var result = await Fixture.Streams.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
+		var result = await Fixture.Streams.MultiStreamAppendAsync(requests);
 
 		// Assert
 		result.IsSuccess.ShouldBeTrue();
@@ -101,7 +101,7 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 		];
 
 		// Act
-		var result = await Fixture.Streams.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
+		var result = await Fixture.Streams.MultiStreamAppendAsync(requests);
 
 		// Assert
 		result.IsFailure.ShouldBeTrue();
