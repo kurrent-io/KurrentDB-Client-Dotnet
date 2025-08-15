@@ -109,7 +109,14 @@ public partial class KurrentClientTestFixture : TestFixture {
             .WithConnectionString(AuthenticatedConnectionString)
             .WithLoggerFactory(new SerilogLoggerFactory(Log.Logger))
             // .WithSchema(KurrentClientSchemaOptions.Disabled)
-            .WithResilience(KurrentClientResilienceOptions.NoResilience)
+            // .WithResilience(KurrentClientResilienceOptions.NoResilience)
+            // .ConfigureResilience(x => x with { Retry = x.Retry with { MaxBackoff = TimeSpan.FromSeconds(30) } })
+
+            .WithResilience(KurrentClientResilienceOptions.CautiousWrite)
+            .ConfigureResilience(x => x with { Retry = x.Retry with { Enabled = false } })
+
+
+
             .WithMessages(options => options.Map<StreamMetadata>("$metadata"));
 
         if (configure is not null)

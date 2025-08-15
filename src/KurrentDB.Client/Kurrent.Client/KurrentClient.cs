@@ -11,7 +11,6 @@ using Kurrent.Client.Schema.Serialization.Json;
 using Kurrent.Client.Schema.Serialization.Protobuf;
 using Kurrent.Client.Streams;
 using Kurrent.Client.Users;
-using KurrentDB.Client;
 
 namespace Kurrent.Client;
 
@@ -24,9 +23,7 @@ public partial class KurrentClient : IAsyncDisposable {
 
 	    Options = options;
 
-        LegacyCallInvoker = new KurrentDBLegacyCallInvoker(
-	        LegacyClusterClient.Create(options.ConvertToLegacySettings()));
-
+        LegacyCallInvoker     = new KurrentDBLegacyCallInvoker(options);
         BackdoorClientFactory = new KurrentBackdoorClientFactory(LegacyCallInvoker, options);
 
         var schemaManager = new SchemaManager(
@@ -70,8 +67,10 @@ public partial class KurrentClient : IAsyncDisposable {
 	// 	};
 	// }
 
-	public ValueTask DisposeAsync() =>
-		LegacyCallInvoker.DisposeAsync();
+	public async ValueTask DisposeAsync() {
+        BackdoorClientFactory.Dispose();
+        await LegacyCallInvoker.DisposeAsync();
+    }
 
     public static KurrentClient Create(KurrentClientOptions? options = null) =>
         new(options ?? new KurrentClientOptions());

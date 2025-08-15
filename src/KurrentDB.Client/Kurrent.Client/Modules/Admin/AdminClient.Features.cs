@@ -1,4 +1,3 @@
-using EventStore.Client;
 using Kurrent.Client.Features;
 
 namespace Kurrent.Client.Admin;

@@ -104,8 +104,8 @@ public record KurrentClientResilienceOptions : OptionsBase<KurrentClientResilien
     /// </remarks>
     /// <returns>A new <see cref="KurrentClientResilienceOptions"/> instance with default settings.</returns>
     public static KurrentClientResilienceOptions Default => new() {
-        // Deadline is Timeout.InfiniteTimeSpan by record default
-        // KeepAliveInterval and KeepAliveTimeout are standard by record default
+        // Deadline is Timeout.InfiniteTimeSpan by default
+        // KeepAliveInterval and KeepAliveTimeout are standard by default
         Retry = new() {
             Enabled           = true,
             MaxAttempts       = 3,
@@ -132,8 +132,8 @@ public record KurrentClientResilienceOptions : OptionsBase<KurrentClientResilien
     /// </remarks>
     /// <returns>A new <see cref="KurrentClientResilienceOptions"/> instance with retries disabled and an infinite deadline.</returns>
     public static KurrentClientResilienceOptions NoResilience => new() {
-        // Deadline is Timeout.InfiniteTimeSpan by record default
-        // KeepAliveInterval and KeepAliveTimeout are standard by record default
+        // Deadline is Timeout.InfiniteTimeSpan by default
+        // KeepAliveInterval and KeepAliveTimeout are standard by default
         Retry = new() { Enabled = false }
     };
 
@@ -147,7 +147,7 @@ public record KurrentClientResilienceOptions : OptionsBase<KurrentClientResilien
     /// </remarks>
     /// <returns>A new <see cref="KurrentClientResilienceOptions"/> instance optimized for failing fast.</returns>
     public static KurrentClientResilienceOptions FailFast => new() {
-        // KeepAliveInterval and KeepAliveTimeout are standard by record default
+        // KeepAliveInterval and KeepAliveTimeout are standard by default
         Deadline = TimeSpan.FromSeconds(5),
         Retry    = new() { Enabled = false }
     };
@@ -163,8 +163,8 @@ public record KurrentClientResilienceOptions : OptionsBase<KurrentClientResilien
     /// </remarks>
     /// <returns>A new <see cref="KurrentClientResilienceOptions"/> instance with unlimited retry attempts.</returns>
     public static KurrentClientResilienceOptions RetryForever => new() {
-        // Deadline is Timeout.InfiniteTimeSpan by record default
-        // KeepAliveInterval and KeepAliveTimeout are standard by record default
+        // Deadline is Timeout.InfiniteTimeSpan by default
+        // KeepAliveInterval and KeepAliveTimeout are standard by default
         Retry = new() {
             Enabled           = true,
             MaxAttempts       = -1, // -1 indicates infinite retries
@@ -191,8 +191,8 @@ public record KurrentClientResilienceOptions : OptionsBase<KurrentClientResilien
     /// </remarks>
     /// <returns>A new <see cref="KurrentClientResilienceOptions"/> instance optimized for subscriptions.</returns>
     public static KurrentClientResilienceOptions Subscription => new() {
-        // Deadline is Timeout.InfiniteTimeSpan by record default
-        // KeepAliveInterval and KeepAliveTimeout are standard by record default
+        // Deadline is Timeout.InfiniteTimeSpan by default
+        // KeepAliveInterval and KeepAliveTimeout are standard by default
         Retry = new() {
             Enabled           = true,
             MaxAttempts       = 8,
@@ -219,7 +219,7 @@ public record KurrentClientResilienceOptions : OptionsBase<KurrentClientResilien
     /// </remarks>
     /// <returns>A new <see cref="KurrentClientResilienceOptions"/> instance with high-availability settings.</returns>
     public static KurrentClientResilienceOptions HighAvailability => new() {
-        // KeepAliveInterval and KeepAliveTimeout are standard by record default
+        // KeepAliveInterval and KeepAliveTimeout are standard by default
         Deadline = TimeSpan.FromSeconds(30),
         Retry = new() {
             Enabled           = true,
@@ -248,7 +248,7 @@ public record KurrentClientResilienceOptions : OptionsBase<KurrentClientResilien
     /// </remarks>
     /// <returns>A new <see cref="KurrentClientResilienceOptions"/> instance for cautious writes.</returns>
     public static KurrentClientResilienceOptions CautiousWrite => new() {
-        // KeepAliveInterval and KeepAliveTimeout are standard by record default
+        // KeepAliveInterval and KeepAliveTimeout are standard by default
         Deadline = TimeSpan.FromSeconds(60),
         Retry = new() {
             Enabled           = true,

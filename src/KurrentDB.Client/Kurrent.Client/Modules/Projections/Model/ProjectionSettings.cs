@@ -4,7 +4,17 @@ namespace Kurrent.Client.Projections;
 
 [PublicAPI]
 public record ProjectionSettings {
-    public static readonly ProjectionSettings Unspecified = new();
+    public static readonly ProjectionSettings Unspecified = new() {
+        EmitEnabled                       = false,
+        TrackEmittedStreams               = false,
+        CheckpointAfter                   = -1, // Unspecified
+        CheckpointHandledThreshold        = -1, // Unspecified
+        CheckpointUnhandledBytesThreshold = -1, // Unspecified
+        PendingRecordsThreshold           = -1, // Unspecified
+        MaxWriteBatchLength               = -1, // Unspecified
+        MaxAllowedWritesInFlight          = -1, // Unspecified
+        ProjectionExecutionTimeout        = -1  // Unspecified
+    };
 
     public static readonly ProjectionSettings Default = new() {
         EmitEnabled                       = true,
@@ -22,7 +32,7 @@ public record ProjectionSettings {
     /// Whether the projection can emit events. <para/>
     /// If this is false then the projection will fault if linkTo or emit are used in the projection query.
     /// </summary>
-    public bool EmitEnabled { get; init; }
+    public bool EmitEnabled { get; init; } = true;
 
     /// <summary>
     /// Whether the projection should keep track of the emitted streams that it creates.
@@ -48,14 +58,14 @@ public record ProjectionSettings {
     /// This is the minimum number of events that must be handled before a checkpoint will be written,
     /// even if the other thresholds are not met.
     /// </summary>
-    public int CheckpointHandledThreshold { get; init; }
+    public int CheckpointHandledThreshold { get; init; } = 4000;
 
     /// <summary>
     /// The number of bytes that a projection can process before attempting to write a checkpoint. <para/>
     /// This is the minimum number of bytes that must be processed before a checkpoint will be written,
     /// even if the other thresholds are not met.
     /// </summary>
-    public int CheckpointUnhandledBytesThreshold { get; init; }
+    public int CheckpointUnhandledBytesThreshold { get; init; } = 10_000_000;
 
     /// <summary>
     /// The number of records that can be pending before the projection readers are temporarily paused. <para/>
@@ -64,7 +74,7 @@ public record ProjectionSettings {
     /// until the number of pending records falls below this threshold.
     /// </summary>
     [JsonPropertyName("PendingEventsThreshold")]
-    public int PendingRecordsThreshold { get; init; }
+    public int PendingRecordsThreshold { get; init; } = 5000;
 
     /// <summary>
     /// The maximum number of events that the projection can write in a batch at a time. <para/>
@@ -73,7 +83,7 @@ public record ProjectionSettings {
     /// write operation into multiple batches, each containing at most this many events. <para/>
     /// This is to ensure that the projection can write events efficiently without overwhelming the system.
     /// </summary>
-    public int MaxWriteBatchLength { get; init; }
+    public int MaxWriteBatchLength { get; init; } = 500;
 
     /// <summary>
     /// The maximum number of concurrent write operations allowed for a projection. <para/>
@@ -91,7 +101,7 @@ public record ProjectionSettings {
     /// If the query does not complete within this time, the projection will fault and stop processing. <para/>
     /// This is to ensure that the projection does not hang indefinitely and can recover from long-running queries.
     /// </summary>
-    public int ProjectionExecutionTimeout { get; init; }
+    public int ProjectionExecutionTimeout { get; init; } = 250; // in milliseconds
 
     public void EnsureValid() {
         if (TrackEmittedStreams && !EmitEnabled)

@@ -102,10 +102,6 @@
     <None Remove="Kurrent.Client\Legacy\RipAndTear\Client\Diagnostics\**" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Kurrent.Client\Options\Connection\Security\" />
-  </ItemGroup>
-
   <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">
     <ItemGroup>
       <ReferencedAssemblies Include="bin\$(Configuration)\**\*.dll" />

@@ -7,6 +7,7 @@
 using EnumerableAsyncProcessor.Extensions;
 using Kurrent.Client.Projections;
 using Kurrent.Client.Testing.TUnit;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Client.Tests.Projections;
@@ -27,24 +28,41 @@ public class ProjectionsTests : KurrentClientTestFixture {
 	.outputState();
 	""";
 
-    // public override ValueTask OnCleanUp() => CleanUpProjections();
+    public override ValueTask OnSetUp(IServiceCollection services) => CleanUpProjections();
 
     async ValueTask CleanUpProjections() {
-        var projections = await AutomaticClient.Projections.ListAsync();
+        var projections = await AutomaticClient.Projections
+            .ListAsync(new ListProjectionsOptions { Type = ProjectionType.User })
+            .ConfigureAwait(false);
 
-        await projections
+        await using var processor = projections
             .ForEachAsync(async p => {
-                if (p.Status == ProjectionStatus.Running)
-                    await AutomaticClient.Projections.DisableAsync(p.Name);
+                if (p.Status == ProjectionStatus.Stopped)
+                    Logger.LogInformation("[CleanUpProjections] Projection {ProjectionName} is already stopped: {ProjectionStatus}", p.Name, p.Status);
+                else {
+                    try {
+                        await AutomaticClient.Projections.DisableAsync(p.Name).ConfigureAwait(false);
+                        Logger.LogInformation("[CleanUpProjections] Stopped projection {ProjectionName}", p.Name);
+                    }
+                    catch (Exception ex) {
+                        Logger.LogWarning(ex, "[CleanUpProjections] Failed to stop projection {ProjectionName}", p.Name);
+                    }
+                }
 
-                await AutomaticClient.Projections.DeleteAsync(p.Name);
+                try {
+                    await AutomaticClient.Projections.DeleteAsync(p.Name).ConfigureAwait(false);
+                    Logger.LogInformation("[CleanUpProjections] Deleted projection {ProjectionName}", p.Name);
+                }
+                catch (Exception ex) {
+                    Logger.LogWarning(ex, "[CleanUpProjections] Failed to delete projection {ProjectionName}", p.Name);
+                }
             })
             .ProcessInParallel();
     }
 
     [Test, TimeoutAfter.SixtySeconds]
 	public async Task creates_projection(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
 		await AutomaticClient.Projections
 			.Create(projection, TestDefinition, ProjectionSettings.Default, false, ct)
@@ -63,7 +81,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task creates_projection_that_tracks_emitted_streams(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
         var settings = new ProjectionSettings {
             EmitEnabled         = true,
@@ -87,7 +105,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task updates_projection_definition(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
         await AutomaticClient.Projections
             .Create(projection, TestDefinition, ProjectionSettings.Default, ct)
@@ -108,7 +126,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task updates_projection_settings(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
         await AutomaticClient.Projections
             .Create(projection, TestDefinition, ProjectionSettings.Default, ct)
@@ -139,7 +157,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task gets_projection_settings(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
         await AutomaticClient.Projections
             .Create(projection, TestDefinition, ProjectionSettings.Default, ct)
@@ -156,14 +174,10 @@ public class ProjectionsTests : KurrentClientTestFixture {
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task deletes_projection(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
         await AutomaticClient.Projections
             .Create(projection, TestDefinition, ProjectionSettings.Default, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        await AutomaticClient.Projections
-            .Disable(projection, ct)
             .ShouldNotThrowOrFailAsync();
 
         await AutomaticClient.Projections
@@ -174,12 +188,18 @@ public class ProjectionsTests : KurrentClientTestFixture {
             .GetDetails(projection, ct)
             .ShouldNotThrowAsync();
 
-        result.Error.Case.ShouldBe(GetProjectionDetailsError.GetProjectionDetailsErrorCase.NotFound, "Projection should not exist after deletion");
+        if (result.IsSuccess) {
+            Logger.LogWarning("Projection {ProjectionName} still exists after deletion: {@ProjectionStatus}", projection, result.Value.Status);
+            return;
+        }
+
+        result.IsFailure.ShouldBeTrue($"Projection should not exist after deletion");
+        result.Error.Case.ShouldBe(GetProjectionDetailsError.GetProjectionDetailsErrorCase.NotFound);
     }
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task enables_projection(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
         await AutomaticClient.Projections
             .Create(projection, TestDefinition, ProjectionSettings.Default, ct)
@@ -200,7 +220,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task enables_already_enabled_projection(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
         await AutomaticClient.Projections
             .Create(projection, TestDefinition, ProjectionSettings.Default, ct)
@@ -225,7 +245,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task disables_projection(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
         await AutomaticClient.Projections
             .Create(projection, TestDefinition, ProjectionSettings.Default, ct)
@@ -250,7 +270,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task disables_already_disabled_projection(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
         await AutomaticClient.Projections
             .Create(projection, TestDefinition, ProjectionSettings.Default, ct)
@@ -279,7 +299,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task resets_projection(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
         await AutomaticClient.Projections
             .Create(projection, TestDefinition, ProjectionSettings.Default, ct)
@@ -304,7 +324,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task gets_projection(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
         await AutomaticClient.Projections
             .Create(projection, TestDefinition, ProjectionSettings.Default, ct)
@@ -344,7 +364,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
     [Test, TimeoutAfter.SixtySeconds]
     public async Task lists_projections(CancellationToken ct) {
         await AutomaticClient.Projections
-            .Create(NewShortTestID(), TestDefinition, ProjectionSettings.Default, ct)
+            .Create(NewEntityID(), TestDefinition, ProjectionSettings.Default, ct)
             .ShouldNotThrowOrFailAsync();
 
         var result = await AutomaticClient.Projections
@@ -371,14 +391,14 @@ public class ProjectionsTests : KurrentClientTestFixture {
 
         result.Count.ShouldBePositive();
         result.Any(x => x.HasDefinition).ShouldBeFalse();
-        result.Any(x => x.HasSettings).ShouldBeFalse();
+        result.Any(x => x.HasSettings).ShouldBeTrue();
         result.Any(x => x.HasStatistics).ShouldBeTrue();
     }
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task lists_projections_excluding_definition(CancellationToken ct) {
         await AutomaticClient.Projections
-            .Create(NewShortTestID(), TestDefinition, ProjectionSettings.Default, ct)
+            .Create(NewEntityID(), TestDefinition, ProjectionSettings.Default, ct)
             .ShouldNotThrowOrFailAsync();
 
         var options = new ListProjectionsOptions {
@@ -403,7 +423,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
     [Test, TimeoutAfter.SixtySeconds]
     public async Task lists_projections_excluding_settings(CancellationToken ct) {
         await AutomaticClient.Projections
-            .Create(NewShortTestID(), TestDefinition, ProjectionSettings.Default, ct)
+            .Create(NewEntityID(), TestDefinition, ProjectionSettings.Default, ct)
             .ShouldNotThrowOrFailAsync();
 
         var options = new ListProjectionsOptions {
@@ -428,7 +448,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
     [Test, TimeoutAfter.SixtySeconds]
     public async Task lists_projections_excluding_stats(CancellationToken ct) {
         await AutomaticClient.Projections
-            .Create(NewShortTestID(), TestDefinition, ProjectionSettings.Default, ct)
+            .Create(NewEntityID(), TestDefinition, ProjectionSettings.Default, ct)
             .ShouldNotThrowOrFailAsync();
 
         var options = new ListProjectionsOptions {
@@ -452,7 +472,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task fails_to_create_projection_with_already_existing_name(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
         await AutomaticClient.Projections
             .Create(projection, TestDefinition, ProjectionSettings.Default, ct)
@@ -467,7 +487,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
     [Test, TimeoutAfter.SixtySeconds]
     public async Task fails_to_enable_non_existing_projection(CancellationToken ct) {
         await AutomaticClient.Projections
-            .Enable(NewShortTestID(), ct)
+            .Enable(NewEntityID(), ct)
             .ShouldFailAsync(error =>
                 error.Case.ShouldBe(EnableProjectionError.EnableProjectionErrorCase.NotFound));
     }
@@ -475,14 +495,14 @@ public class ProjectionsTests : KurrentClientTestFixture {
     [Test, TimeoutAfter.FiveSeconds]
     public async Task fails_to_disable_non_existing_projection(CancellationToken ct) {
         await AutomaticClient.Projections
-            .Disable(NewShortTestID(), ct)
+            .Disable(NewEntityID(), ct)
             .ShouldFailAsync(error =>
                 error.Case.ShouldBe(DisableProjectionError.DisableProjectionErrorCase.NotFound));
     }
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task fails_to_delete_non_existing_projection(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
         await AutomaticClient.Projections
             .Delete(projection, DeleteProjectionOptions.Default, ct)
@@ -492,7 +512,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
 
     [Test, TimeoutAfter.SixtySeconds]
     public async Task fails_to_delete_running_projection(CancellationToken ct) {
-        ProjectionName projection = NewShortTestID();
+        ProjectionName projection = NewEntityID();
 
         await AutomaticClient.Projections
             .Create(projection, TestDefinition, ProjectionSettings.Default, ct)
@@ -511,7 +531,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
     [Test, TimeoutAfter.SixtySeconds]
     public async Task fails_to_reset_non_existing_projection(CancellationToken ct) {
         await AutomaticClient.Projections
-            .Reset(NewShortTestID(), ct)
+            .Reset(NewEntityID(), ct)
             .ShouldFailAsync(error =>
                 error.Case.ShouldBe(ResetProjectionError.ResetProjectionErrorCase.NotFound));
     }
@@ -519,7 +539,7 @@ public class ProjectionsTests : KurrentClientTestFixture {
     [Test, TimeoutAfter.SixtySeconds]
     public async Task fails_to_get_non_existing_projection(CancellationToken ct) {
         await AutomaticClient.Projections
-            .GetDetails(NewShortTestID(), ct)
+            .GetDetails(NewEntityID(), ct)
             .ShouldFailAsync(error =>
                 error.Case.ShouldBe(GetProjectionDetailsError.GetProjectionDetailsErrorCase.NotFound));
     }

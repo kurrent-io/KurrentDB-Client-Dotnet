@@ -9,6 +9,11 @@ using Polly;
 
 namespace Kurrent.Client;
 
+/// <summary>
+/// Factory for creating HTTP clients that communicate with the Kurrent backdoor service.
+/// By default, it will create a client that connects to the current target node of the
+/// <see cref="KurrentDBLegacyCallInvoker"/>.
+/// </summary>
 class KurrentBackdoorClientFactory : IDisposable {
     public KurrentBackdoorClientFactory(KurrentDBLegacyCallInvoker invoker, KurrentClientOptions options) {
         Invoker = invoker;
@@ -19,8 +24,8 @@ class KurrentBackdoorClientFactory : IDisposable {
 
         ParseTargetNodeUri = CreateTargetNodeUriParser(options.HttpUriScheme);
 
-        BackDoorHandler = new ResilienceHandler(CreateResiliencePipeline(options.Resilience)) {
-            InnerHandler = new EnsureSuccessStatusHandler {
+        BackdoorHandler = new EnsureSuccessStatusHandler {
+            InnerHandler = new ResilienceHandler(CreateResiliencePipeline(options.Resilience, Logger)) {
                 InnerHandler = CreatePrimaryHandler(options.Security, options.Resilience, Logger)
             }
         };
@@ -28,11 +33,11 @@ class KurrentBackdoorClientFactory : IDisposable {
 
     KurrentDBLegacyCallInvoker Invoker            { get; }
     ILogger                    Logger             { get; }
-    HttpMessageHandler         BackDoorHandler    { get; }
+    HttpMessageHandler         BackdoorHandler    { get; }
     Func<string, Uri>          ParseTargetNodeUri { get; }
 
     public HttpClient GetClient(Uri address) {
-        return new HttpClient(BackDoorHandler, disposeHandler: false) {
+        return new HttpClient(BackdoorHandler, disposeHandler: false) {
             BaseAddress           = address,
             Timeout               = Timeout.InfiniteTimeSpan,
             DefaultRequestVersion = HttpVersion.Version20,
@@ -42,26 +47,74 @@ class KurrentBackdoorClientFactory : IDisposable {
 
     public HttpClient GetClient(string targetNode) => GetClient(ParseTargetNodeUri(targetNode));
 
+    /// <summary>
+    /// Gets a new HTTP client that connects to the current target node of the <see cref="KurrentDBLegacyCallInvoker"/>.
+    /// </summary>
+    /// <remarks>
+    /// Always dispose the returned <see cref="HttpClient"/> after use to avoid resource leaks.
+    /// </remarks>
+    /// <returns></returns>
     public HttpClient GetClient() => GetClient(Invoker.ChannelTarget);
 
-    public void Dispose() => BackDoorHandler.Dispose();
+    public void Dispose() => BackdoorHandler.Dispose();
 
     static Func<string, Uri> CreateTargetNodeUriParser(string httpUriScheme) =>
         target => new Uri($"{httpUriScheme}://{target}");
 
-    static ResiliencePipeline<HttpResponseMessage> CreateResiliencePipeline(KurrentClientResilienceOptions options) {
+    static ResiliencePipeline<HttpResponseMessage> CreateResiliencePipeline(KurrentClientResilienceOptions options, ILogger logger) {
         var httpResilienceOptions = new HttpStandardResilienceOptions {
+            AttemptTimeout = {
+                Timeout   = options.Retry.MaxBackoff,
+                OnTimeout = arguments => {
+                    logger.LogWarning("Operation timed out after {Timeout}", arguments.Timeout);
+                    return ValueTask.CompletedTask;
+                }
+            },
             Retry = {
-                // ShouldHandle = new PredicateBuilder<HttpResponseMessage>().Handle<HttpRequestException>(ex =>
-                //     ex.StatusCode is HttpStatusCode.RequestTimeout
-                //                   or HttpStatusCode.GatewayTimeout
-                //                   or HttpStatusCode.ServiceUnavailable
-                // ),
+// #pragma warning disable EXTEXP0001
+//                 ShouldHandle = args => {
+//
+//                     if (args.Outcome.Exception is HttpRequestException hex)
+//                         logger.LogDebug(hex, "Checking if {Exception} is transient: {ExceptionMessage}", hex.GetType().Name, hex.Message);
+//
+//                     var isTransient = HttpClientResiliencePredicates.IsTransient(args.Outcome, args.Context.CancellationToken);
+//                     if (isTransient) {
+//                         logger.LogDebug(
+//                             "Operation is transient, retrying. Exception: {Exception}, Response: {ResponseMessage}",
+//                             args.Outcome.Exception?.Message,
+//                             args.Outcome.Result?.ReasonPhrase
+//                         );
+//                     }
+//                     else {
+//                         logger.LogDebug(
+//                             "Operation is not transient, skipping. Exception: {Exception}, Response: {ResponseMessage}",
+//                             args.Outcome.Exception?.Message,
+//                             args.Outcome.Result?.ReasonPhrase
+//                         );
+//                     }
+//
+//                     return ValueTask.FromResult(isTransient);
+//                 },
+// #pragma warning restore EXTEXP0001
                 MaxRetryAttempts = options.Retry.MaxAttempts,
                 Delay            = options.Retry.InitialBackoff,
                 MaxDelay         = options.Retry.MaxBackoff,
                 BackoffType      = DelayBackoffType.Exponential,
-                UseJitter        = true
+                UseJitter        = true,
+                OnRetry          = retryArguments => {
+                    if (retryArguments.Outcome.Result is not null) {
+                        var url    = retryArguments.Outcome.Result.RequestMessage!.RequestUri!.ToString();
+                        var method = retryArguments.Outcome.Result.RequestMessage.Method.ToString();
+
+                        logger.LogDebug(
+                            "Operation retrying after {Delay} due to response: {StatusCode} {ResponseMessage} for {Method} request to {Url}. Retry attempt {AttemptNumber}",
+                            retryArguments.Duration, (int)retryArguments.Outcome.Result.StatusCode, retryArguments.Outcome.Result.ReasonPhrase, method,
+                            url, retryArguments.AttemptNumber + 1
+                        );
+                    }
+
+                    return ValueTask.CompletedTask;
+                }
             }
         };
 
@@ -81,7 +134,8 @@ class KurrentBackdoorClientFactory : IDisposable {
         var handler = new SocketsHttpHandler {
             KeepAlivePingDelay             = resilience.KeepAliveInterval,
             KeepAlivePingTimeout           = resilience.KeepAliveTimeout,
-            EnableMultipleHttp2Connections = true
+            EnableMultipleHttp2Connections = true,
+            AutomaticDecompression         = DecompressionMethods.All
         };
 
         if (security.Transport.IsInsecure) {

@@ -1,5 +1,4 @@
 using System.Net;
-using Grpc.Core;
 using Grpc.Net.Client;
 
 namespace KurrentDB.Client;

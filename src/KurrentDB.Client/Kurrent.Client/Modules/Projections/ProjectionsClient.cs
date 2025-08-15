@@ -11,20 +11,16 @@ using Google.Protobuf;
 using Grpc.Core;
 using KurrentDB.Protocol.Projections.V1;
 using Microsoft.Extensions.Logging;
-using Polly;
 using ProjectionsServiceClient = KurrentDB.Protocol.Projections.V1.Projections.ProjectionsClient;
 
 namespace Kurrent.Client.Projections;
 
-public sealed class ProjectionsClient : ModuleClientBase {
+public sealed class ProjectionsClient : ClientModuleBase {
     internal ProjectionsClient(KurrentClient client) : base(client) {
         ServiceClient = new(client.LegacyCallInvoker);
     }
 
     ProjectionsServiceClient ServiceClient { get; }
-
-    static readonly ResiliencePropertyKey<Exception> ExceptionKey = new("LastException");
-    static readonly ResiliencePropertyKey<Success>   SuccessKey   = new("Success");
 
     public async ValueTask<Result<Success, CreateProjectionError>> Create(ProjectionName name, ProjectionDefinition definition, ProjectionSettings settings, bool autoStart, CancellationToken cancellationToken = default) {
         name.ThrowIfNone();
@@ -36,24 +32,26 @@ public sealed class ProjectionsClient : ModuleClientBase {
         // support configuration of projections and disabling auto-start.
         // The v2 protocol does, but it is not yet implemented in the server.
 
+        using var backdoorClient = GetBackdoorClient();
+
         try {
             // create the projection
             var content = new ByteArrayContent(Encoding.UTF8.GetBytes(definition))
                 .With(x => x.Headers.ContentType = new("application/javascript"));
 
-            await BackdoorClient
-                .PostAsync($"/projections/continuous?type=JS&name={name}&enabled=false", content, cancellationToken)
+            await backdoorClient
+                .PostAsync($"/projections/continuous?type=JS&name={name}&enabled=false&emit={settings.EmitEnabled}", content, cancellationToken)
                 .ConfigureAwait(false);
 
             // configure settings
             if (settings != ProjectionSettings.Default)
-                await BackdoorClient
+                await backdoorClient
                     .PutAsJsonAsync($"/projection/{name}/config", settings, cancellationToken)
                     .ConfigureAwait(false);
 
             // start projection if requested
             if (autoStart)
-                await BackdoorClient
+                await backdoorClient
                     .PostAsync($"/projection/{name}/command/enable", null, cancellationToken)
                     .ConfigureAwait(false);
 
@@ -63,7 +61,7 @@ public sealed class ProjectionsClient : ModuleClientBase {
             return Result.Failure<Success, CreateProjectionError>(hex.StatusCode switch {
                 HttpStatusCode.Unauthorized => new ErrorDetails.AccessDenied(),
                 HttpStatusCode.Conflict     => new ErrorDetails.AlreadyExists(),
-                // HttpStatusCode.RequestTimeout => new ErrorDetails.Timeout(),
+                //HttpStatusCode.RequestTimeout => new ErrorDetails.Timeout(),
                 // HttpStatusCode.Unknown when rex.Status.Detail.Contains("Operation is not valid") => new ErrorDetails.FailedPrecondition(),
                 _                           => throw hex.WithOriginalCallStack()
             });
@@ -108,8 +106,10 @@ public sealed class ProjectionsClient : ModuleClientBase {
         // support updating projection settings.
         // The v2 protocol does, but it is not yet implemented in the server.
 
+        using var backdoorClient = GetBackdoorClient();
+
         try {
-            await BackdoorClient
+            await backdoorClient
                 .PutAsJsonAsync($"/projection/{name}/config", settings, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -242,8 +242,10 @@ public sealed class ProjectionsClient : ModuleClientBase {
         // support getting projection settings.
         // The v2 protocol does, but it is not yet implemented in the server.
 
+        using var backdoorClient = GetBackdoorClient();
+
         try {
-            return await BackdoorClient
+            return await backdoorClient
                 .GetFromJsonAsync<ProjectionSettings>($"/projection/{name}/config", cancellationToken)
                 .ConfigureAwait(false) ?? ProjectionSettings.Unspecified;
         }
@@ -264,7 +266,9 @@ public sealed class ProjectionsClient : ModuleClientBase {
         // At this point we might as well just use the backdoor HTTP API...
 
         try {
-            var response = await BackdoorClient
+            using var backdoorClient = GetBackdoorClient();
+
+            var response = await backdoorClient
                 .GetFromJsonAsync<ProjectionsHttpModel.GetProjectionsResponse>($"/projection/{name}/statistics", cancellationToken)
                 .ConfigureAwait(false);
 
@@ -278,14 +282,14 @@ public sealed class ProjectionsClient : ModuleClientBase {
 
             if (options.IncludeDefinition && details.Type != ProjectionType.System)
                 details = details with {
-                    Definition = await BackdoorClient
+                    Definition = await backdoorClient
                         .GetStringAsync($"/projection/{name}/query", cancellationToken)
                         .ConfigureAwait(false)
                 };
 
             if (options.IncludeSettings)
                 details = details with {
-                    Settings = await BackdoorClient
+                    Settings = await backdoorClient
                         .GetFromJsonAsync<ProjectionSettings>($"/projection/{name}/config", cancellationToken)
                         .ConfigureAwait(false) ?? ProjectionSettings.Unspecified
                 };
@@ -315,8 +319,10 @@ public sealed class ProjectionsClient : ModuleClientBase {
             ProjectionMode.Transient   => "/projections/transient"
         };
 
+        using var backdoorClient = GetBackdoorClient();
+
         try {
-            var response = await BackdoorClient
+            var response = await backdoorClient
                 .GetFromJsonAsync<ProjectionsHttpModel.GetProjectionsResponse>(route, cancellationToken)
                 .ConfigureAwait(false);
 
@@ -332,8 +338,8 @@ public sealed class ProjectionsClient : ModuleClientBase {
                 return projections.ToList();
 
             return await projections.ToAsyncEnumerable()
-                .SelectAwaitWithCancellation(EnrichWithDefinition(BackdoorClient, options.IncludeDefinition))
-                .SelectAwaitWithCancellation(EnrichWithSettings(BackdoorClient, options.IncludeSettings))
+                .SelectAwaitWithCancellation(EnrichWithDefinition(backdoorClient, options.IncludeDefinition))
+                .SelectAwaitWithCancellation(EnrichWithSettings(backdoorClient, options.IncludeSettings))
                 .ToListAsync(cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -355,6 +361,10 @@ public sealed class ProjectionsClient : ModuleClientBase {
                         }
                         : projection;
                 }
+                catch(HttpRequestException hex) when (hex.StatusCode == HttpStatusCode.NotFound) {
+                    // edge case: because somehow the status is not deleting
+                    return projection with { Definition = ProjectionDefinition.None };
+                }
                 catch (Exception ex) {
                     Logger.LogError(ex, "Failed to enrich projection settings for {ProjectionName}", projection.Name);
                     throw;
@@ -372,6 +382,10 @@ public sealed class ProjectionsClient : ModuleClientBase {
                                 .ConfigureAwait(false)!
                         }
                         : projection;
+                }
+                catch(HttpRequestException hex) when (hex.StatusCode == HttpStatusCode.NotFound) {
+                    // edge case: because somehow the status is not deleting
+                    return projection with { Settings = ProjectionSettings.Unspecified };
                 }
                 catch (Exception ex) {
                     Logger.LogError(ex, "Failed to enrich projection settings for {ProjectionName}", projection.Name);

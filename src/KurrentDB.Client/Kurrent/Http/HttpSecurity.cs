@@ -1,7 +1,3 @@
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
-using Microsoft.Extensions.Logging;
-
 namespace Kurrent.Http;
 
 static class HttpSecurity {

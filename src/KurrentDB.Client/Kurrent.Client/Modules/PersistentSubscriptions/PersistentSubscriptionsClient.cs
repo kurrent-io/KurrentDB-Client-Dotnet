@@ -3,20 +3,15 @@
 
 using EventStore.Client;
 using Grpc.Core;
-using Kurrent.Client.Legacy;
-using Kurrent.Client.Registry;
-using Kurrent.Client.Schema.Serialization;
 using Kurrent.Client.Streams;
 using KurrentDB.Protocol.PersistentSubscriptions.V1;
-using Microsoft.Extensions.Logging;
-
 using PersistentSubscriptionsServiceClient = KurrentDB.Protocol.PersistentSubscriptions.V1.PersistentSubscriptions.PersistentSubscriptionsClient;
 
 using static Kurrent.Client.PersistentSubscriptions.PersistentSubscriptionV1Mapper.Requests;
 
 namespace Kurrent.Client.PersistentSubscriptions;
 
-public sealed partial class PersistentSubscriptionsClient : ModuleClientBase {
+public sealed partial class PersistentSubscriptionsClient : ClientModuleBase {
     internal PersistentSubscriptionsClient(KurrentClient client) : base(client) =>
         ServiceClient = new(client.LegacyCallInvoker);
 

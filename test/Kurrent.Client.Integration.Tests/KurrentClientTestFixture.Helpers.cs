@@ -1,4 +1,5 @@
 #pragma warning disable CA1822 // Mark members as static
+
 // ReSharper disable InconsistentNaming
 
 using System.Diagnostics;
@@ -14,9 +15,25 @@ using GameWon = TicTacToe.GameWon;
 namespace Kurrent.Client.Tests;
 
 public partial class KurrentClientTestFixture {
+    /// <summary>
+    /// Generates a new short ID, which is a 12-character string derived from a GUID.
+    /// This ID is suitable for use in test scenarios where a unique identifier is needed without the
+    /// full length of a standard GUID.
+    /// </summary>
     public string NewShortID() => Guid.NewGuid().ToString().Substring(24, 12);
 
-    public string NewShortTestID([CallerMemberName] string category = "") => $"{category}-{NewShortID()}";
+    /// <summary>
+    /// Generates a new entity ID, which is a unique identifier for an entity in the system.
+    /// The ID is generated using a version 7 GUID, which is suitable for use in
+    /// distributed systems and ensures uniqueness across different entities.
+    /// <remarks>
+    /// The entity ID is prefixed with the category name, which helps in organizing and identifying
+    /// entities based on their category.
+    /// </remarks>
+    /// <param name="category">The category of the entity, used to prefix the generated ID.</param>
+    /// <returns>A unique entity ID string formatted as "{category}-{version7-GUID}"</returns>
+    /// </summary>
+    public string NewEntityID([CallerMemberName] string category = "") => $"{category}-{Guid.NewGuid()}";
 
     /// <summary>
     /// Creates a unique stream name for KurrentDB operations, combining the given category with the last part of a randomly generated guid.

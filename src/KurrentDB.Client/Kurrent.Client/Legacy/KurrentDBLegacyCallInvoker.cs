@@ -18,32 +18,25 @@ namespace Kurrent.Client.Legacy;
 sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
 	readonly SemaphoreSlim        _stateLock = new(1, 1);
 	readonly LegacyClusterClient  _legacyClient;
-    readonly KurrentClientOptions _options;
     readonly bool                 _disposeClient;
 
     volatile ServerCapabilities _currentCapabilities;
     volatile GrpcChannelOptions _currentChannelOptions;
     volatile string             _currentChannelTarget;
 
-    volatile KurrentBackdoorClientFactory _backdoorClientFactory;
-
     bool _disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="KurrentDBLegacyCallInvoker"/> class.
     /// </summary>
-    /// <param name="legacyClient">
-    /// The legacy cluster client used to obtain channel information.
-    /// </param>
     /// <param name="options">
     /// The options used to configure the Kurrent client, including security and resilience settings.
     /// </param>
     /// <param name="disposeClient">
     /// Optional; indicates whether the legacy client should be disposed when this invoker is disposed.
     /// </param>
-    internal KurrentDBLegacyCallInvoker(LegacyClusterClient legacyClient, KurrentClientOptions options, bool disposeClient = true) {
-	    _legacyClient          = legacyClient;
-        _options               = options;
+    internal KurrentDBLegacyCallInvoker(KurrentClientOptions options, bool disposeClient = true) {
+	    _legacyClient          = LegacyClusterClient.Create(options.ConvertToLegacySettings());
         _disposeClient         = disposeClient;
 	    _currentCapabilities   = null!;
         _currentChannelOptions = null!;
@@ -100,22 +93,6 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
     }
 
     /// <summary>
-    /// Gets the backdoor client factory that provides access to the Kurrent HTTP API.
-    /// </summary>
-    public KurrentBackdoorClientFactory BackdoorClientFactory {
-        [SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract")]
-        get {
-            if (_backdoorClientFactory is not null)
-                return _backdoorClientFactory;
-
-            WithChannelInfoInvoker(CancellationToken.None);
-
-            return _backdoorClientFactory ?? throw new InvalidOperationException(
-                "Ensure the client is connected before accessing the backdoor client factory.");
-        }
-    }
-
-    /// <summary>
     /// Forces a refresh of the internal channel info and server capabilities by attempting to reconnect to the cluster.
     /// </summary>
     public async Task ForceRefresh(CancellationToken cancellationToken) {
@@ -165,18 +142,12 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
         var capabilities = channelInfo.ServerCapabilities;
         var target       = channelInfo.Channel.Target;
 
-        var factory = new KurrentBackdoorClientFactory(
-            this,
-            _options
-        );
-
 	    // update capabilities in a thread-safe manner
 	    await _stateLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 	    try {
             _currentChannelOptions = options;
 		    _currentCapabilities   = capabilities;
             _currentChannelTarget  = target;
-            _backdoorClientFactory = new KurrentBackdoorClientFactory(new KurrentDBLegacyCallInvoker(_legacyClient, _options, _disposeClient), _options);
         } finally {
 		    _stateLock.Release();
 	    }
