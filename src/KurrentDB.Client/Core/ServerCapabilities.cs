@@ -6,5 +6,6 @@ namespace KurrentDB.Client {
 		bool SupportsPersistentSubscriptionsGetInfo = false,
 		bool SupportsPersistentSubscriptionsRestartSubsystem = false,
 		bool SupportsPersistentSubscriptionsReplayParked = false,
+		bool SupportsMultiStreamAppend = false,
 		bool SupportsPersistentSubscriptionsList = false);
 }

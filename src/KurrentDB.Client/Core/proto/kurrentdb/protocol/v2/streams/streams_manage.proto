@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package kurrentdb.protocol.v2;
+
+option csharp_namespace    = "KurrentDB.Protocol.Streams.V2";
+option java_package        = "io.kurrentdb.protocol.streams.v2";
+option java_multiple_files = true;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/descriptor.proto";
+
+import "streams/error_details.proto";
+import "core.proto";
+
+service StreamsManagementService {
+  rpc DeleteStream(DeleteStreamRequest) returns (DeleteStreamResponse);
+
+  rpc GetStreamInfo(DeleteStreamRequest) returns (DeleteStreamResponse);
+}
+
+message DeleteStreamRequest {
+  // The name of the stream.
+  string stream = 1;
+  // The expected revision of the stream. If the stream's current revision does
+  // not match, the operation will fail.
+  // The expected revision can also be one of the special values
+  // from ExpectedRevisionConstants.
+  // Missing value means no expectation, the same as EXPECTED_REVISION_CONSTANTS_ANY
+  optional sint64 expected_revision = 3;
+
+  // If true, the stream will be tombstoned instead of deleted.
+  // A tombstoned stream cannot be used anymore.
+  bool tombstone = 4;
+}
+
+message DeleteStreamSuccess {
+  // The position of the last appended record in the stream.
+  int64 position = 2;
+  // The expected revision of the stream after the append operation.
+  int64 stream_revision = 3;
+}
+
+message DeleteStreamFailure {
+  // The error details
+  oneof error {
+    // Failed because the actual stream revision didn't match the expected revision.
+    StreamsErrorDetails.StreamRevisionConflict stream_revision_conflict = 2;
+    // Failed because the client lacks sufficient permissions.
+    CoreErrorDetails.AccessDenied access_denied = 3;
+    // Failed because the target stream has been deleted.
+    StreamsErrorDetails.StreamDeleted stream_deleted = 4;
+    // Failed because the stream has been tombstoned.
+    StreamsErrorDetails.StreamTombstoned stream_tombstoned = 5;
+    // Failed because the stream was not found.
+    StreamsErrorDetails.StreamNotFound stream_not_found = 6;
+  }
+}
+
+message DeleteStreamResponse {
+  // The result of the operation.
+  oneof result {
+    // Success represents the successful outcome of a delete operation.
+    DeleteStreamSuccess success = 1;
+    // Failure represents the details of a failed delete operation.
+    DeleteStreamFailure failure = 2;
+  }
+}
+
+// Represents the access control list (ACL) for a stream.
+// The ACL defines who can read, write, delete, or manage the stream.
+message StreamAcl {
+  // Roles and users permitted to read the stream
+  repeated string read_roles = 1;
+  // Roles and users permitted to write to the stream
+  repeated string write_roles = 2;
+  // Roles and users permitted to delete the stream
+  repeated string delete_roles = 3;
+  // Roles and users permitted to read stream metadata
+  repeated string meta_read_roles = 4;
+  // Roles and users permitted to write stream metadata
+  repeated string meta_write_roles = 5;
+}
+
+message StreamMetadata {
+  // Maximum age of events allowed in the stream.
+  optional google.protobuf.Duration max_age = 1;
+  // Stream revision from which previous events can be scavenged.
+  optional int64 TruncateBefore = 2;
+  // Amount of time for which the stream head is cacheable.
+  optional google.protobuf.Duration cache_control = 4;
+  // Maximum number of events allowed in the stream.
+  optional int32 MaxCount = 5;
+  // User-provided metadata.
+  optional string custom_metadata = 6;
+  // Access control list for the stream.
+  StreamAcl acl = 7;
+}
+
+// Represents the state of a stream.
+// The state is used to determine how the stream should be handled
+// during operations such as deletion or retrieval.
+enum StreamState {
+  NotFound   = 0;
+  Active     = 1;
+  Deleted    = 2;
+  Tombstoned = 3;
+}
+
+// Represents the information about a stream.
+message StreamInfo {
+  // The last stream revision of the stream.
+  int64 last_revision = 1;
+  // The last position in the stream.
+  int64 last_position = 2;
+  // The state of the stream.
+  StreamState State = 5;
+  // The metadata associated with the stream.
+  StreamMetadata metadata = 4;
+  // The revision of the stream metadata.
+  // This is the revision of the metadata, not the stream itself.
+  int64 metadata_revision = 3;
+}

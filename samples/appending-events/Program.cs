@@ -6,12 +6,58 @@ settings.OperationOptions.ThrowOnAppendFailure = false;
 
 await using var client = new KurrentDBClient(settings);
 
+await MultiStreamAppend(client);
 await AppendToStream(client);
 await AppendWithConcurrencyCheck(client);
 await AppendWithNoStream(client);
 await AppendWithSameId(client);
 
 return;
+
+static async Task MultiStreamAppend(KurrentDBClient client) {
+	var serializer = new KurrentDB.Client.Schema.Serialization.Json.JsonSerializer();
+
+	var metadata = serializer.Serialize(
+		new {
+			TimeStamp = DateTime.UtcNow,
+		}
+	);
+
+	AppendStreamRequest[] requests = [
+		new(
+			"stream-one",
+			StreamState.NoStream,
+			[new EventData(Uuid.NewUuid(), "event-one", "hello"u8.ToArray(), metadata)]
+		),
+		new(
+			"stream-two",
+			StreamState.NoStream,
+			[new EventData(Uuid.NewUuid(), "event-one", "hello"u8.ToArray(), metadata)]
+		)
+	];
+
+	var result = await client.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
+
+	if (result is MultiAppendSuccess { Successes: var successes })
+		foreach (var item in successes)
+			Console.WriteLine($"Stream: {item.Stream}, Position: {item.Position}");
+
+	else if (result is MultiAppendFailure { Failures: var failures })
+		foreach (var item in failures)
+			switch (item) {
+				case WrongExpectedVersionException ex:
+					Console.WriteLine($"Stream: {ex.StreamName}, Expected revision: {ex.ActualStreamState}");
+					break;
+
+				case TransactionMaxSizeExceededException ex:
+					Console.WriteLine($"Transaction size exceeded the maximum allowed size of {ex.MaxSize} bytes.");
+					break;
+
+				case StreamDeletedException ex:
+					Console.WriteLine($"Stream: {ex.Stream} has been deleted.");
+					break;
+			}
+}
 
 static async Task AppendToStream(KurrentDBClient client) {
 	#region append-to-stream
@@ -167,3 +213,5 @@ static async Task AppendOverridingUserCredentials(KurrentDBClient client, Cancel
 
 	#endregion overriding-user-credentials
 }
+
+record Metadata(DateTime TimeStamp);

@@ -1,0 +1,19 @@
+name: Client
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  old:
+    name: ${{ matrix.runtime }}
+    uses: ./.github/workflows/test.yml
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [ previous-lts, lts, ci ]
+    with:
+      runtime: ${{ matrix.runtime }}
+    secrets: inherit

@@ -1,6 +1,7 @@
 using Grpc.Core;
 using EventStore.Client;
-using EventStore.Client.PersistentSubscriptions;
+using KurrentDB.Protocol.PersistentSubscriptions.V1;
+using static KurrentDB.Protocol.PersistentSubscriptions.V1.PersistentSubscriptions;
 using NotSupportedException = System.NotSupportedException;
 
 #nullable enable
@@ -72,7 +73,7 @@ namespace KurrentDB.Client {
 				req.Options.NoLimit = new Empty();	
 			}
 
-			await new PersistentSubscriptions.PersistentSubscriptionsClient(callInvoker)
+			await new PersistentSubscriptionsClient(callInvoker)
 				.ReplayParkedAsync(req, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken))
 				.ConfigureAwait(false);
 		}

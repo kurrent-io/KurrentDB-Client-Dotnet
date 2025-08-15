@@ -1,6 +1,6 @@
 syntax = "proto3";
 package event_store.client;
-option java_package = "io.kurrent.dbclient.proto.shared";
+option java_package = "io.kurrent.client.proto.shared";
 import "google/protobuf/empty.proto";
 
 message UUID {

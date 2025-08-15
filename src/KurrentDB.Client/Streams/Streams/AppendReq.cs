@@ -1,19 +1,20 @@
+using EventStore.Client;
 using KurrentDB.Client;
 
-namespace EventStore.Client.Streams {
-	partial class AppendReq {
-		public AppendReq WithAnyStreamRevision(StreamState expectedState) {
-			if (expectedState == StreamState.Any) {
-				Options.Any = new Empty();
-			} else if (expectedState == StreamState.NoStream) {
-				Options.NoStream = new Empty();
-			} else if (expectedState == StreamState.StreamExists) {
-				Options.StreamExists = new Empty();
-			} else {
-				Options.Revision = (ulong)expectedState.ToInt64();
-			}
+namespace KurrentDB.Protocol.Streams.V1;
 
-			return this;
+partial class AppendReq {
+	public AppendReq WithAnyStreamRevision(StreamState expectedState) {
+		if (expectedState == StreamState.Any) {
+			Options.Any = new Empty();
+		} else if (expectedState == StreamState.NoStream) {
+			Options.NoStream = new Empty();
+		} else if (expectedState == StreamState.StreamExists) {
+			Options.StreamExists = new Empty();
+		} else {
+			Options.Revision = (ulong)expectedState.ToInt64();
 		}
+
+		return this;
 	}
 }

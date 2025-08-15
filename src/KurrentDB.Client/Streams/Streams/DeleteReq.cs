@@ -1,6 +1,7 @@
+using EventStore.Client;
 using KurrentDB.Client;
 
-namespace EventStore.Client.Streams {
+namespace KurrentDB.Protocol.Streams.V1 {
 	partial class DeleteReq {
 		public DeleteReq WithAnyStreamRevision(StreamState expectedState) {
 			if (expectedState == StreamState.Any) {

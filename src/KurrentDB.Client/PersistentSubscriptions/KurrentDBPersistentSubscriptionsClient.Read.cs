@@ -1,9 +1,10 @@
 using System.Threading.Channels;
 using EventStore.Client;
-using EventStore.Client.PersistentSubscriptions;
 using KurrentDB.Client.Diagnostics;
 using Grpc.Core;
-using static EventStore.Client.PersistentSubscriptions.ReadResp.ContentOneofCase;
+using KurrentDB.Protocol.PersistentSubscriptions.V1;
+using static KurrentDB.Protocol.PersistentSubscriptions.V1.PersistentSubscriptions;
+using static KurrentDB.Protocol.PersistentSubscriptions.V1.ReadResp.ContentOneofCase;
 
 namespace KurrentDB.Client {
 	partial class KurrentDBPersistentSubscriptionsClient {
@@ -247,7 +248,7 @@ namespace KurrentDB.Client {
 				async Task PumpMessages() {
 					try {
                         var channelInfo = await selectChannelInfo(_cts.Token).ConfigureAwait(false);
-                        var client      = new PersistentSubscriptions.PersistentSubscriptionsClient(channelInfo.CallInvoker);
+                        var client      = new PersistentSubscriptionsClient(channelInfo.CallInvoker);
 
 						_call = client.Read(_callOptions);
 

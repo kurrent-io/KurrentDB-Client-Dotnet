@@ -1,4 +1,5 @@
-using EventStore.Client.Operations;
+using KurrentDB.Protocol.Operations.V1;
+using static KurrentDB.Protocol.Operations.V1.Operations;
 
 namespace KurrentDB.Client {
 	public partial class KurrentDBOperationsClient {
@@ -27,7 +28,7 @@ namespace KurrentDB.Client {
 			}
 
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Operations.OperationsClient(
+			using var call = new OperationsClient(
 				channelInfo.CallInvoker).StartScavengeAsync(
 				new StartScavengeReq {
 					Options = new StartScavengeReq.Types.Options {
@@ -60,7 +61,7 @@ namespace KurrentDB.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			var result = await new Operations.OperationsClient(
+			var result = await new OperationsClient(
 				channelInfo.CallInvoker).StopScavengeAsync(new StopScavengeReq {
 				Options = new StopScavengeReq.Types.Options {
 					ScavengeId = scavengeId
