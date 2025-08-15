@@ -1,0 +1,335 @@
+// ReSharper disable AccessToDisposedClosure
+
+using System.Diagnostics;
+using KurrentDB.Client.Diagnostics;
+using KurrentDB.Client.Tests.Fixtures;
+using KurrentDB.Diagnostics.Telemetry;
+using KurrentDB.Diagnostics.Tracing;
+
+namespace KurrentDB.Client.Tests.Diagnostics;
+
+[Trait("Category", "Target:Diagnostics")]
+public class StreamsTracingInstrumentationTests(ITestOutputHelper output, DiagnosticsFixture fixture)
+	: KurrentDBPermanentTests<DiagnosticsFixture>(output, fixture) {
+	[Fact]
+	public async Task append_to_stream() {
+		var stream = Fixture.GetStreamName();
+
+		await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			Fixture.CreateTestEvents()
+		);
+
+		var activity = Fixture
+			.GetActivitiesForOperation(TracingConstants.Operations.Append, stream)
+			.SingleOrDefault()
+			.ShouldNotBeNull();
+
+		Fixture.AssertAppendActivityHasExpectedTags(activity, stream);
+	}
+
+	[MinimumVersion.Fact(25, 1)]
+	public async Task multi_stream_append() {
+		// Arrange
+		var seedEvents = Fixture.CreateTestEvents(10).ToList();
+
+		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+
+		var stream1 = Fixture.GetStreamName();
+		var stream2 = Fixture.GetStreamName();
+
+		AppendStreamRequest[] requests = [
+			new(stream1, StreamState.NoStream, seedEvents.Take(5)),
+			new(stream2, StreamState.NoStream, seedEvents.Skip(5))
+		];
+
+		// Act
+		var multiStreamAppendResult = await Fixture.Streams.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
+
+		await using var subscription = Fixture.Streams.SubscribeToAll(
+			FromAll.Start,
+			filterOptions: new SubscriptionFilterOptions(StreamFilter.Prefix(stream1, stream2))
+		);
+
+		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
+
+		await Subscribe().WithTimeout();
+
+		// Assert
+		multiStreamAppendResult.IsSuccess.ShouldBeTrue();
+
+		var appendActivities = Fixture.GetActivitiesForOperation(TracingConstants.Operations.Append, stream1, stream2);
+		var subscribeActivities = Fixture.GetActivitiesForOperation(TracingConstants.Operations.Subscribe, stream1, stream2);
+
+		appendActivities.ShouldNotBeEmpty();
+		subscribeActivities.ShouldNotBeEmpty();
+
+		appendActivities.Count.ShouldBe(2);
+		subscribeActivities.Count.ShouldBe(10);
+
+		// Append activities should not have parent span IDs
+		appendActivities.All(x => x.ParentSpanId == default).ShouldBeTrue();
+
+		// They also have the same duration
+		appendActivities.Select(x => x.Duration).Distinct().Count().ShouldBe(1);
+
+		// Check that subscribe activities have the correct parent IDs inherited from append activities
+		subscribeActivities
+			.FirstOrDefault(x => x.ParentId == appendActivities.First().Id)?.ParentSpanId
+			.ShouldBe(appendActivities.First().SpanId);
+
+		subscribeActivities
+			.FirstOrDefault(x => x.ParentId == appendActivities.Last().Id)?.ParentSpanId
+			.ShouldBe(appendActivities.Last().SpanId);
+
+		subscribeActivities
+			.All(x => x.StartTimeUtc > appendActivities.First().StartTimeUtc)
+			.ShouldBeTrue();
+
+		Fixture.AssertAppendActivityHasExpectedTags(appendActivities.First(), stream1);
+		Fixture.AssertAppendActivityHasExpectedTags(appendActivities.Last(), stream2);
+		Fixture.AssertSubscriptionActivityHasExpectedTags(subscribeActivities.First(), stream1, seedEvents.First().EventId.ToString());
+
+		return;
+
+		async Task Subscribe() {
+			while (await enumerator.MoveNextAsync()) {
+				if (enumerator.Current is not StreamMessage.Event(var resolvedEvent))
+					continue;
+
+				availableEvents.Remove(resolvedEvent.Event.EventId);
+
+				if (availableEvents.Count is 0)
+					return;
+			}
+		}
+	}
+
+	[MinimumVersion.Fact(25, 1)]
+	public async Task multi_stream_append_with_failures() {
+		// Arrange
+		var stream1 = Fixture.GetStreamName();
+		var stream2 = Fixture.GetStreamName();
+
+		AppendStreamRequest[] requests = [
+			new(stream1, StreamState.StreamExists, Fixture.CreateTestEvents()),
+			new(stream2, StreamState.StreamExists, Fixture.CreateTestEvents())
+		];
+
+		// Act
+		var multiStreamAppendResult = await Fixture.Streams.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
+
+		// Assert
+		multiStreamAppendResult.IsFailure.ShouldBeTrue();
+
+		var appendActivities = Fixture.GetActivitiesForOperation(TracingConstants.Operations.Append, stream1, stream2);
+
+		appendActivities.ShouldNotBeEmpty();
+
+		appendActivities.Count.ShouldBe(2);
+
+		var activity = appendActivities.FirstOrDefault().ShouldNotBeNull();
+		activity.Status.ShouldBe(ActivityStatusCode.Error);
+		activity.Events.Count().ShouldBe(2);
+
+		activity.Events.ShouldAllBe(activityEvent =>
+			activityEvent.Tags.Any(tag => tag.Key == TelemetryTags.Exception.Message) &&
+			activityEvent.Tags.Any(tag => tag.Key == TelemetryTags.Exception.Stacktrace) &&
+			activityEvent.Tags.Any(tag => tag.Key == TelemetryTags.Exception.Type && (string?)tag.Value == typeof(WrongExpectedVersionException).FullName)
+		);
+	}
+
+	[Fact]
+	public async Task append_trace_tagged_with_error_on_exception() {
+		var stream = Fixture.GetStreamName();
+
+		var actualException = await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			Fixture.CreateTestEventsThatThrowsException()
+		).ShouldThrowAsync<Exception>();
+
+		var activity = Fixture
+			.GetActivitiesForOperation(TracingConstants.Operations.Append, stream)
+			.SingleOrDefault()
+			.ShouldNotBeNull();
+
+		Fixture.AssertErroneousAppendActivityHasExpectedTags(activity, actualException);
+	}
+
+	[Fact]
+	public async Task tracing_context_injected_when_metadata_is_json() {
+		var stream = Fixture.GetStreamName();
+
+		await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			Fixture.CreateTestEvents(1, metadata: Fixture.CreateTestJsonMetadata())
+		);
+
+		var activity = Fixture
+			.GetActivitiesForOperation(TracingConstants.Operations.Append, stream)
+			.SingleOrDefault()
+			.ShouldNotBeNull();
+
+		var readResult = await Fixture.Streams
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+			.ToListAsync();
+
+		var tracingMetadata = readResult[0].OriginalEvent.Metadata.ExtractTracingMetadata();
+
+		tracingMetadata.ShouldNotBe(TracingMetadata.None);
+		tracingMetadata.TraceId.ShouldBe(activity.TraceId.ToString());
+		tracingMetadata.SpanId.ShouldBe(activity.SpanId.ToString());
+	}
+
+	[Fact]
+	public async Task tracing_context_not_injected_when_metadata_not_json() {
+		var stream = Fixture.GetStreamName();
+
+		var inputMetadata = "clearlynotavalidjsonobject"u8.ToArray();
+		await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			Fixture.CreateTestEvents(1, metadata: inputMetadata)
+		);
+
+		var readResult = await Fixture.Streams
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+			.ToListAsync();
+
+		var outputMetadata = readResult[0].OriginalEvent.Metadata.ToArray();
+		outputMetadata.ShouldBe(inputMetadata);
+	}
+
+	[Fact]
+	public async Task tracing_context_injected_when_event_not_json_but_metadata_json() {
+		var stream = Fixture.GetStreamName();
+
+		var inputMetadata = Fixture.CreateTestJsonMetadata().ToArray();
+		await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.NoStream,
+			Fixture.CreateTestEvents(
+				metadata: inputMetadata,
+				contentType: Constants.Metadata.ContentTypes.ApplicationOctetStream
+			)
+		);
+
+		var readResult = await Fixture.Streams
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+			.ToListAsync();
+
+		var outputMetadata = readResult[0].OriginalEvent.Metadata.ToArray();
+		outputMetadata.ShouldNotBe(inputMetadata);
+
+		var appendActivities = Fixture.GetActivitiesForOperation(TracingConstants.Operations.Append, stream);
+
+		appendActivities.ShouldNotBeEmpty();
+	}
+
+	[Fact]
+	public async Task json_metadata_traced_non_json_metadata_not_traced() {
+		var streamName = Fixture.GetStreamName();
+
+		var seedEvents = new[] {
+			Fixture.CreateTestEvent(metadata: Fixture.CreateTestJsonMetadata()),
+			Fixture.CreateTestEvent(metadata: Fixture.CreateTestNonJsonMetadata())
+		};
+
+		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
+
+		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
+
+		await using var subscription = Fixture.Streams.SubscribeToStream(streamName, FromStream.Start);
+		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
+
+		var appendActivities = Fixture
+			.GetActivitiesForOperation(TracingConstants.Operations.Append, streamName)
+			.ShouldNotBeNull();
+
+		Assert.True(await enumerator.MoveNextAsync());
+
+		Assert.IsType<StreamMessage.SubscriptionConfirmation>(enumerator.Current);
+
+		await Subscribe(enumerator).WithTimeout();
+
+		var subscribeActivities = Fixture
+			.GetActivitiesForOperation(TracingConstants.Operations.Subscribe, streamName)
+			.ToArray();
+
+		appendActivities.ShouldHaveSingleItem();
+
+		subscribeActivities.ShouldHaveSingleItem();
+
+		subscribeActivities.First().ParentId.ShouldBe(appendActivities.First().Id);
+
+		var jsonMetadataEvent = seedEvents.First();
+
+		Fixture.AssertSubscriptionActivityHasExpectedTags(
+			subscribeActivities.First(),
+			streamName,
+			jsonMetadataEvent.EventId.ToString()
+		);
+
+		return;
+
+		async Task Subscribe(IAsyncEnumerator<StreamMessage> internalEnumerator) {
+			while (await internalEnumerator.MoveNextAsync()) {
+				if (internalEnumerator.Current is not StreamMessage.Event(var resolvedEvent))
+					continue;
+
+				availableEvents.Remove(resolvedEvent.Event.EventId);
+
+				if (availableEvents.Count == 0)
+					return;
+			}
+		}
+	}
+
+	[RetryFact]
+	[Trait("Category", "Special cases")]
+	public async Task no_trace_when_event_is_null() {
+		var category   = Guid.NewGuid().ToString("N");
+		var streamName = category + "-123";
+
+		var seedEvents = Fixture.CreateTestEvents(type: $"{category}-{Fixture.GetStreamName()}").ToArray();
+		await Fixture.Streams.AppendToStreamAsync(streamName, StreamState.NoStream, seedEvents);
+
+		await Fixture.Streams.DeleteAsync(streamName, StreamState.StreamExists);
+
+		await using var subscription = Fixture.Streams.SubscribeToStream("$ce-" + category, FromStream.Start, resolveLinkTos: true);
+
+		await using var enumerator = subscription.Messages.GetAsyncEnumerator();
+
+		Assert.True(await enumerator.MoveNextAsync());
+
+		Assert.IsType<StreamMessage.SubscriptionConfirmation>(enumerator.Current);
+
+		await Subscribe().WithTimeout();
+
+		var appendActivities = Fixture
+			.GetActivitiesForOperation(TracingConstants.Operations.Append, streamName)
+			.ShouldNotBeNull();
+
+		var subscribeActivities = Fixture
+			.GetActivitiesForOperation(TracingConstants.Operations.Subscribe, "$ce-" + category)
+			.ToArray();
+
+		appendActivities.ShouldHaveSingleItem();
+		subscribeActivities.ShouldBeEmpty();
+
+		return;
+
+		async Task Subscribe() {
+			while (await enumerator.MoveNextAsync()) {
+				if (enumerator.Current is not StreamMessage.Event(var resolvedEvent))
+					continue;
+
+				if (resolvedEvent.Event?.EventType is "$metadata")
+					return;
+			}
+		}
+	}
+}

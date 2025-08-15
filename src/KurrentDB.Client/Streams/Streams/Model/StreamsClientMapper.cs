@@ -1,7 +1,9 @@
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
+using System.Diagnostics;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
+using KurrentDB.Client.Diagnostics;
 using KurrentDB.Client.Schema.Serialization.Json;
 using KurrentDB.Protocol.Streams.V2;
 
@@ -10,14 +12,14 @@ namespace KurrentDB.Client;
 static class StreamsClientMapper {
 	internal static JsonSerializer JsonSerializer { get; } = new();
 
-	public static async IAsyncEnumerable<AppendRecord> Map(this IEnumerable<EventData> source) {
+	public static async IAsyncEnumerable<AppendRecord> Map(this IEnumerable<EventData> source, Activity? activity = null) {
 		foreach (var message in source)
 			yield return await message
-				.Map()
+				.Map(activity)
 				.ConfigureAwait(false);
 	}
 
-	public static ValueTask<AppendRecord> Map(this EventData source) {
+	public static ValueTask<AppendRecord> Map(this EventData source, Activity? activity = null) {
 		Dictionary<string, object?> metadata;
 
 		if (source.Metadata.IsEmpty) {
@@ -40,6 +42,8 @@ static class StreamsClientMapper {
 		metadata[Constants.Metadata.SchemaDataFormat] = source.ContentType is Constants.Metadata.ContentTypes.ApplicationJson
 			? SchemaDataFormat.Json
 			: SchemaDataFormat.Bytes;
+
+		metadata.InjectTracingContext(activity);
 
 		var record = new AppendRecord {
 			RecordId   = source.EventId.ToString(),
