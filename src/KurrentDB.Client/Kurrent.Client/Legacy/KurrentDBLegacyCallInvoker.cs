@@ -16,12 +16,16 @@ namespace Kurrent.Client.Legacy;
 /// from the LegacyClusterClient for each gRPC call.
 /// </remarks>
 sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
-	readonly SemaphoreSlim       _stateLock = new(1, 1);
-	readonly LegacyClusterClient _legacyClient;
-	readonly bool                _disposeClient;
+	readonly SemaphoreSlim        _stateLock = new(1, 1);
+	readonly LegacyClusterClient  _legacyClient;
+    readonly KurrentClientOptions _options;
+    readonly bool                 _disposeClient;
 
-	volatile ServerCapabilities _currentCapabilities;
+    volatile ServerCapabilities _currentCapabilities;
     volatile GrpcChannelOptions _currentChannelOptions;
+    volatile string             _currentChannelTarget;
+
+    volatile KurrentBackdoorClientFactory _backdoorClientFactory;
 
     bool _disposed;
 
@@ -31,20 +35,24 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
     /// <param name="legacyClient">
     /// The legacy cluster client used to obtain channel information.
     /// </param>
+    /// <param name="options">
+    /// The options used to configure the Kurrent client, including security and resilience settings.
+    /// </param>
     /// <param name="disposeClient">
     /// Optional; indicates whether the legacy client should be disposed when this invoker is disposed.
     /// </param>
-    internal KurrentDBLegacyCallInvoker(LegacyClusterClient legacyClient, bool disposeClient = true) {
+    internal KurrentDBLegacyCallInvoker(LegacyClusterClient legacyClient, KurrentClientOptions options, bool disposeClient = true) {
 	    _legacyClient          = legacyClient;
-	    _disposeClient         = disposeClient;
+        _options               = options;
+        _disposeClient         = disposeClient;
 	    _currentCapabilities   = null!;
         _currentChannelOptions = null!;
+        _currentChannelTarget  = null!;
     }
 
     /// <summary>
     /// Gets the current server capabilities from the connected node.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when server capabilities are not yet initialized.</exception>
     public ServerCapabilities ServerCapabilities {
         [SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract")]
         get {
@@ -62,7 +70,6 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
     /// Gets the current channel options used for gRPC calls.
     /// This includes the HTTP client and other options necessary for making gRPC calls.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Thrown when server capabilities are not yet initialized.</exception>
     public GrpcChannelOptions ChannelOptions {
         [SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract")]
         get {
@@ -73,6 +80,38 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
 
             return _currentChannelOptions ?? throw new InvalidOperationException(
                 "Ensure the client is connected before accessing channel options.");
+        }
+    }
+
+    /// <summary>
+    /// Gets the current channel target (the address of the connected node).
+    /// </summary>
+    public string ChannelTarget {
+        [SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract")]
+        get {
+            if (_currentChannelTarget is not null)
+                return _currentChannelTarget;
+
+            WithChannelInfoInvoker(CancellationToken.None);
+
+            return _currentChannelTarget ?? throw new InvalidOperationException(
+                "Ensure the client is connected before accessing the channel target.");
+        }
+    }
+
+    /// <summary>
+    /// Gets the backdoor client factory that provides access to the Kurrent HTTP API.
+    /// </summary>
+    public KurrentBackdoorClientFactory BackdoorClientFactory {
+        [SuppressMessage("ReSharper", "ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract")]
+        get {
+            if (_backdoorClientFactory is not null)
+                return _backdoorClientFactory;
+
+            WithChannelInfoInvoker(CancellationToken.None);
+
+            return _backdoorClientFactory ?? throw new InvalidOperationException(
+                "Ensure the client is connected before accessing the backdoor client factory.");
         }
     }
 
@@ -124,13 +163,21 @@ sealed class KurrentDBLegacyCallInvoker : CallInvoker, IAsyncDisposable {
     async Task UpdateChannelInfo(ChannelInfo channelInfo, CancellationToken cancellationToken = default) {
         var options      = channelInfo.Options;
         var capabilities = channelInfo.ServerCapabilities;
+        var target       = channelInfo.Channel.Target;
+
+        var factory = new KurrentBackdoorClientFactory(
+            this,
+            _options
+        );
 
 	    // update capabilities in a thread-safe manner
 	    await _stateLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 	    try {
             _currentChannelOptions = options;
 		    _currentCapabilities   = capabilities;
-	    } finally {
+            _currentChannelTarget  = target;
+            _backdoorClientFactory = new KurrentBackdoorClientFactory(new KurrentDBLegacyCallInvoker(_legacyClient, _options, _disposeClient), _options);
+        } finally {
 		    _stateLock.Release();
 	    }
     }

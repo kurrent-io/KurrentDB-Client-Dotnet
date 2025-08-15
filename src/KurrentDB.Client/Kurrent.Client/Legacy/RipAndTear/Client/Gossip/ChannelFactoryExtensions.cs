@@ -32,7 +32,7 @@ static class ChannelFactoryExtensions {
         return GrpcChannel.ForAddress(address, options);
     }
 
-    public static HttpClient CreateHttpClient(this KurrentDBClientSettings settings, Uri address) {
+    static HttpClient CreateHttpClient(this KurrentDBClientSettings settings, Uri address) {
         if (settings.ConnectivitySettings.Insecure) {
             //this must be switched on before creation of the HttpMessageHandler
             AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
@@ -41,7 +41,8 @@ static class ChannelFactoryExtensions {
         return new(CreateHandler(settings), disposeHandler: true) {
             BaseAddress           = address,
             Timeout               = Timeout.InfiniteTimeSpan,
-            DefaultRequestVersion = new Version(2, 0)
+            DefaultRequestVersion = HttpVersion.Version20,
+            DefaultVersionPolicy  = HttpVersionPolicy.RequestVersionOrHigher
         };
 
         static HttpMessageHandler CreateHandler(KurrentDBClientSettings settings) {

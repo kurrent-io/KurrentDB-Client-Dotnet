@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using OneOf;
 
@@ -130,6 +131,27 @@ public partial class ClientCredentials : OneOfBase<NoCredentials, BasicCredentia
     public FileCertificateCredentials AsFileCertificateCredentials => AsT2;
     public X509CertificateCredentials AsX509CertificateCredentials => AsT3;
 
+
+    /// <summary>
+    /// Attempts to get the root CA certificate for custom CA validation.
+    /// <remarks>
+    /// If the client credentials is not using a certificate file or certificate,
+    /// this will return false.
+    /// </remarks>
+    /// </summary>
+    public bool TryGetCertificate([MaybeNullWhen(false)] out X509Certificate2 certificate) {
+        certificate = Match<X509Certificate2?>(
+            _ => null,
+            _ => null,
+            file => file.Certificate,
+            cert => cert.Certificate
+        );
+
+        return certificate is not null;
+    }
+
+    public bool IsCertificateBased => IsT2 || IsT3;
+
     public static NoCredentials None => NoCredentials.Value;
 
     public static ClientCredentials Basic(string username, string? password) =>
@@ -191,6 +213,15 @@ public record FileCertificateCredentials {
     /// </para>
     /// </remarks>
     public string KeyPath { get; }
+
+    /// <summary>
+    /// Client certificate for authentication.
+    /// </summary>
+    [field: AllowNull, MaybeNull]
+    public X509Certificate2 Certificate =>
+        field ??= CertificateLoader.LoadCertificate(
+            Path.GetFullPath(CertificatePath),
+            Path.GetFullPath(KeyPath));
 }
 
 /// <summary>
@@ -344,6 +375,11 @@ public partial class TransportSecurity : OneOfBase<NoTls, StandardTls, FileCerti
         );
 
     /// <summary>
+    /// Indicates whether the connection is insecure (no TLS).
+    /// </summary>
+    public bool IsInsecure => !IsEnabled;
+
+    /// <summary>
     /// Gets whether server certificate verification is enabled.
     /// </summary>
     /// <remarks>
@@ -362,37 +398,57 @@ public partial class TransportSecurity : OneOfBase<NoTls, StandardTls, FileCerti
             cert => cert.VerifyServerCertificate
         );
 
-    /// <summary>
-    /// Gets the root CA certificate path for custom CA validation.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// Returns the path to a custom CA certificate file if specified, or null.
-    /// </para>
-    /// </remarks>
-    public string? GetRootCertificatePath() =>
-        Match<string?>(
-            _    => null,
-            _    => null,
-            file => file.CaPath,
-            _    => null
-        );
+    // /// <summary>
+    // /// Gets the root CA certificate path for custom CA validation.
+    // /// </summary>
+    // /// <remarks>
+    // /// <para>
+    // /// Returns the path to a custom CA certificate file if specified, or null.
+    // /// </para>
+    // /// </remarks>
+    // public string? GetRootCertificatePath() =>
+    //     Match<string?>(
+    //         _    => null,
+    //         _    => null,
+    //         file => file.CaPath,
+    //         _    => null
+    //     );
+    //
+    // /// <summary>
+    // /// Gets the root CA certificate for custom CA validation.
+    // /// </summary>
+    // /// <remarks>
+    // /// <para>
+    // /// Returns a X509Certificate2 object if specified for custom CA validation, or null.
+    // /// </para>
+    // /// </remarks>
+    // public X509Certificate2 GetRootCertificate() =>
+    //     Match<X509Certificate2?>(
+    //         _    => null,
+    //         _    => null,
+    //         file => file.LoadCertificate(),
+    //         cert => cert.Certificate
+    //     )!;
 
     /// <summary>
-    /// Gets the root CA certificate for custom CA validation.
-    /// </summary>
+    /// Attempts to get the root CA certificate for custom CA validation.
     /// <remarks>
-    /// <para>
-    /// Returns a X509Certificate2 object if specified for custom CA validation, or null.
-    /// </para>
+    /// If the transport security is not using a custom CA file or certificate,
+    /// this will false.
     /// </remarks>
-    public X509Certificate2? GetRootCertificate() =>
-        Match<X509Certificate2?>(
-            _    => null,
-            _    => null,
-            _    => null,
+    /// </summary>
+    /// <param name="certificate"></param>
+    /// <returns></returns>
+    public bool TryGetCertificate([MaybeNullWhen(false)] out X509Certificate2 certificate) {
+        certificate = Match<X509Certificate2?>(
+            _ => null,
+            _ => null,
+            file => file.Certificate,
             cert => cert.Certificate
         );
+
+        return certificate is not null;
+    }
 }
 
 /// <summary>
@@ -465,6 +521,13 @@ public record FileCertificateTls {
     /// </para>
     /// </remarks>
     public bool VerifyServerCertificate { get; init; } = true;
+
+    /// <summary>
+    /// The X509Certificate2 loaded from the CA file path.
+    /// </summary>
+    [field: AllowNull, MaybeNull]
+    public X509Certificate2 Certificate =>
+        field ??= CertificateLoader.LoadCertificate(Path.GetFullPath(CaPath));
 }
 
 /// <summary>

@@ -9,102 +9,22 @@ using System.Text.Json;
 using EventStore.Client;
 using Google.Protobuf;
 using Grpc.Core;
-using Humanizer;
 using KurrentDB.Protocol.Projections.V1;
 using Microsoft.Extensions.Logging;
 using Polly;
-using Polly.Retry;
 using ProjectionsServiceClient = KurrentDB.Protocol.Projections.V1.Projections.ProjectionsClient;
 
 namespace Kurrent.Client.Projections;
 
-public sealed class ProjectionsClient : SubClientBase {
+public sealed class ProjectionsClient : ModuleClientBase {
     internal ProjectionsClient(KurrentClient client) : base(client) {
         ServiceClient = new(client.LegacyCallInvoker);
-
-        var builder = new ResiliencePipelineBuilder()
-            .AddRetry(new RetryStrategyOptions {
-                ShouldHandle     = new PredicateBuilder().Handle<HttpRequestException>(ex => ex.StatusCode is HttpStatusCode.RequestTimeout or HttpStatusCode.GatewayTimeout or HttpStatusCode.ServiceUnavailable),
-                MaxRetryAttempts = KurrentClient.Options.Resilience.Retry.MaxAttempts,
-                BackoffType      = DelayBackoffType.Exponential,
-                Delay            = KurrentClient.Options.Resilience.Retry.InitialBackoff,
-                MaxDelay         = KurrentClient.Options.Resilience.Retry.MaxBackoff,
-                UseJitter        = true,
-                OnRetry          = arguments => {
-                    var ex  = arguments.Context.Properties.GetValue(ExceptionKey, null!);
-
-                    Logger.LogWarning(ex,
-                        "[{Operation}] Request ({Attempt}/{MaxAttempts}) failed: {ErrorMessage}",
-                        arguments.Context.OperationKey, arguments.AttemptNumber + 1, KurrentClient.Options.Resilience.Retry.MaxAttempts, ex.Message);
-
-                    return ValueTask.CompletedTask;
-                }
-            });
-
-        Pipeline = KurrentClient.Options.Resilience.Deadline is null
-            ? builder.Build()
-            : builder.AddTimeout(KurrentClient.Options.Resilience.Deadline.Value).Build();
     }
 
     ProjectionsServiceClient ServiceClient { get; }
-    ResiliencePipeline       Pipeline      { get; }
-
-    // ValueTask UsingBackdoor(Func<HttpClient, CancellationToken, Task<HttpResponseMessage>> action, CancellationToken cancellationToken) =>
-    //     Pipeline.ExecuteAsync(static async (state, ct) => {
-    //         var response = await state.Action(state.Client, ct).ConfigureAwait(false);
-    //         response.EnsureSuccessStatusCode();
-    //     }, (Action: action, Client: BackdoorClient), cancellationToken);
 
     static readonly ResiliencePropertyKey<Exception> ExceptionKey = new("LastException");
     static readonly ResiliencePropertyKey<Success>   SuccessKey   = new("Success");
-
-    async Task UsingBackdoor(string operationKey, Func<HttpClient, CancellationToken, Task<HttpResponseMessage>> action, CancellationToken cancellationToken) {
-        var context = ResilienceContextPool.Shared.Get(operationKey, cancellationToken);
-        try {
-            await Pipeline.ExecuteAsync(
-                static async (ctx, state) => {
-                    try {
-                        var response = await state.Action(state.Client, ctx.CancellationToken).ConfigureAwait(false);
-                        response.EnsureSuccessStatusCode();
-                        ctx.Properties.Set(SuccessKey, Success.Instance);
-                    }
-                    catch (Exception ex) {
-                        ctx.Properties.Set(ExceptionKey, ex);
-                        throw;
-                    }
-                },
-                context,
-                (Action: action, Client: BackdoorClient)
-            );
-        }
-        finally {
-            ResilienceContextPool.Shared.Return(context);
-        }
-    }
-
-    async Task<T> UsingBackdoor<T>(string operationKey, Func<HttpClient, CancellationToken, Task<T>> action, CancellationToken cancellationToken) {
-        var context = ResilienceContextPool.Shared.Get(operationKey, cancellationToken);
-        try {
-            return await Pipeline.ExecuteAsync(
-                static async (ctx, state) => {
-                    try {
-                        var result = await state.Action(state.Client, ctx.CancellationToken).ConfigureAwait(false);
-                        ctx.Properties.Set(SuccessKey, Success.Instance);
-                        return result;
-                    }
-                    catch (Exception ex) {
-                        ctx.Properties.Set(ExceptionKey, ex);
-                        throw;
-                    }
-                },
-                context,
-                (Action: action, Client: BackdoorClient)
-            );
-        }
-        finally {
-            ResilienceContextPool.Shared.Return(context);
-        }
-    }
 
     public async ValueTask<Result<Success, CreateProjectionError>> Create(ProjectionName name, ProjectionDefinition definition, ProjectionSettings settings, bool autoStart, CancellationToken cancellationToken = default) {
         name.ThrowIfNone();
@@ -121,27 +41,21 @@ public sealed class ProjectionsClient : SubClientBase {
             var content = new ByteArrayContent(Encoding.UTF8.GetBytes(definition))
                 .With(x => x.Headers.ContentType = new("application/javascript"));
 
-            await UsingBackdoor(
-                $"create-projection--{name.Value.Underscore()}",
-                (client, ct) => client.PostAsync($"/projections/continuous?type=JS&name={name}&enabled=false", content, ct),
-                cancellationToken
-            ).ConfigureAwait(false);
+            await BackdoorClient
+                .PostAsync($"/projections/continuous?type=JS&name={name}&enabled=false", content, cancellationToken)
+                .ConfigureAwait(false);
 
             // configure settings
             if (settings != ProjectionSettings.Default)
-                await UsingBackdoor(
-                    $"set-projection-settings--{name.Value.Underscore()}",
-                    (client, ct) => client.PutAsJsonAsync($"/projection/{name}/config", settings, ct),
-                    cancellationToken
-                ).ConfigureAwait(false);
+                await BackdoorClient
+                    .PutAsJsonAsync($"/projection/{name}/config", settings, cancellationToken)
+                    .ConfigureAwait(false);
 
             // start projection if requested
             if (autoStart)
-                await UsingBackdoor(
-                    $"enable-projection--{name.Value.Underscore()}",
-                    (client, ct) => client.PostAsync($"/projection/{name}/command/enable", null, ct),
-                    cancellationToken
-                ).ConfigureAwait(false);
+                await BackdoorClient
+                    .PostAsync($"/projection/{name}/command/enable", null, cancellationToken)
+                    .ConfigureAwait(false);
 
             return Success.Instance;
         }
@@ -195,11 +109,9 @@ public sealed class ProjectionsClient : SubClientBase {
         // The v2 protocol does, but it is not yet implemented in the server.
 
         try {
-            await UsingBackdoor(
-                $"update-projection-settings--{name.Value.Underscore()}",
-                (client, ct) => client.PutAsJsonAsync($"/projection/{name}/config", settings, ct),
-                cancellationToken
-            ).ConfigureAwait(false);
+            await BackdoorClient
+                .PutAsJsonAsync($"/projection/{name}/config", settings, cancellationToken)
+                .ConfigureAwait(false);
 
             return Success.Instance;
         }
@@ -331,11 +243,9 @@ public sealed class ProjectionsClient : SubClientBase {
         // The v2 protocol does, but it is not yet implemented in the server.
 
         try {
-            return await UsingBackdoor<ProjectionSettings>(
-                $"get-projection-settings--{name.Value.Underscore()}",
-                (client, ct) => client.GetFromJsonAsync<ProjectionSettings>($"/projection/{name}/config", ct)!,
-                cancellationToken
-            ).ConfigureAwait(false);
+            return await BackdoorClient
+                .GetFromJsonAsync<ProjectionSettings>($"/projection/{name}/config", cancellationToken)
+                .ConfigureAwait(false) ?? ProjectionSettings.Unspecified;
         }
         catch (HttpRequestException rex) {
             return Result.Failure<ProjectionSettings, GetProjectionSettingsError>(rex.StatusCode switch {
@@ -368,20 +278,16 @@ public sealed class ProjectionsClient : SubClientBase {
 
             if (options.IncludeDefinition && details.Type != ProjectionType.System)
                 details = details with {
-                    Definition = await UsingBackdoor(
-                        $"get-projection-definition--{name.Value.Underscore()}",
-                        (client, ct) => client.GetStringAsync($"/projection/{name}/query", ct),
-                        cancellationToken
-                    ).ConfigureAwait(false)
+                    Definition = await BackdoorClient
+                        .GetStringAsync($"/projection/{name}/query", cancellationToken)
+                        .ConfigureAwait(false)
                 };
 
             if (options.IncludeSettings)
                 details = details with {
-                    Settings = await UsingBackdoor<ProjectionSettings>(
-                        $"get-projection-settings--{name.Value.Underscore()}",
-                        (client, ct) => client.GetFromJsonAsync<ProjectionSettings>($"/projection/{name}/config", ct)!,
-                        cancellationToken
-                    ).ConfigureAwait(false)
+                    Settings = await BackdoorClient
+                        .GetFromJsonAsync<ProjectionSettings>($"/projection/{name}/config", cancellationToken)
+                        .ConfigureAwait(false) ?? ProjectionSettings.Unspecified
                 };
 
             return details;

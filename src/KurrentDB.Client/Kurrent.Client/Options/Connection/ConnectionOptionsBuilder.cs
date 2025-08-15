@@ -2,7 +2,6 @@ using System.Net;
 
 namespace Kurrent.Client;
 
-
 [PublicAPI]
 public class ConnectionOptionsBuilder : OptionsBuilder<ConnectionOptionsBuilder, KurrentClientOptions> {
     public ConnectionOptionsBuilder(KurrentClientOptions options) : base(options) { }

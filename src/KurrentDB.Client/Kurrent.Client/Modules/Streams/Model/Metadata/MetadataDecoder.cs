@@ -63,7 +63,7 @@ public interface IMetadataDecoder {
     /// The context for decoding metadata, providing additional information such as the originating stream's name,
     /// </param>
     /// <returns>The decoded <see cref="Metadata"/> object.</returns>
-    Metadata Decode(ReadOnlyMemory<byte> bytes,  MetadataDecoderContext context);
+    Metadata Decode(ReadOnlyMemory<byte> bytes, MetadataDecoderContext context);
 }
 
 /// <summary>

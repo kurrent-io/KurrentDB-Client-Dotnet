@@ -3,7 +3,7 @@ using static KurrentDB.Protocol.Streams.V2.StreamsService;
 
 namespace Kurrent.Client.Streams;
 
-public partial class StreamsClient : SubClientBase {
+public partial class StreamsClient : ModuleClientBase {
     internal StreamsClient(KurrentClient client) : base(client) {
         TypeMapper.Map<StreamMetadata>("$metadata"); // metastream
         TypeMapper.Map<string>("$>");                // link

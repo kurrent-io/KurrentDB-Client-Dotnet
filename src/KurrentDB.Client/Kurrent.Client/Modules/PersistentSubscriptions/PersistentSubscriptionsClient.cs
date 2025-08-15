@@ -16,7 +16,7 @@ using static Kurrent.Client.PersistentSubscriptions.PersistentSubscriptionV1Mapp
 
 namespace Kurrent.Client.PersistentSubscriptions;
 
-public sealed partial class PersistentSubscriptionsClient : SubClientBase {
+public sealed partial class PersistentSubscriptionsClient : ModuleClientBase {
     internal PersistentSubscriptionsClient(KurrentClient client) : base(client) =>
         ServiceClient = new(client.LegacyCallInvoker);
 

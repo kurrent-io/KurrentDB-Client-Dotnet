@@ -330,7 +330,6 @@ public class ProjectionsTests : KurrentClientTestFixture {
     }
 
     [Test, TimeoutAfter.SixtySeconds, SystemProjectionsCases]
-
     public async Task gets_system_projections(ProjectionName projection, CancellationToken ct) {
         var details = await AutomaticClient.Projections
             .GetDetails(projection, ct)

@@ -58,7 +58,7 @@ static class KurrentDBLegacySettingsConverter {
             }
         );
 
-        // Handle client certificate
+        // Handle client certificate MISSING THE FILE
         if (options.Security.Authentication.Value is X509CertificateCredentials x509Credentials)
             connectivitySettings.ClientCertificate = x509Credentials.Certificate;
 

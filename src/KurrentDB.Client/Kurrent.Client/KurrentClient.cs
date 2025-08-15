@@ -1,6 +1,5 @@
 using Kurrent.Client.Admin;
 using Kurrent.Client.Connectors;
-using Kurrent.Client.Features;
 using Kurrent.Client.Legacy;
 using Kurrent.Client.PersistentSubscriptions;
 using Kurrent.Client.Projections;
@@ -13,12 +12,11 @@ using Kurrent.Client.Schema.Serialization.Protobuf;
 using Kurrent.Client.Streams;
 using Kurrent.Client.Users;
 using KurrentDB.Client;
-using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Client;
 
 [PublicAPI]
-public class KurrentClient : IAsyncDisposable {
+public partial class KurrentClient : IAsyncDisposable {
 	public static KurrentClientOptionsBuilder New => new KurrentClientOptionsBuilder();
 
     public KurrentClient(KurrentClientOptions options) {
@@ -28,6 +26,8 @@ public class KurrentClient : IAsyncDisposable {
 
         LegacyCallInvoker = new KurrentDBLegacyCallInvoker(
 	        LegacyClusterClient.Create(options.ConvertToLegacySettings()));
+
+        BackdoorClientFactory = new KurrentBackdoorClientFactory(LegacyCallInvoker, options);
 
         var schemaManager = new SchemaManager(
 	        new RegistryClient(this),
@@ -49,9 +49,10 @@ public class KurrentClient : IAsyncDisposable {
         Connectors              = new ConnectorsClient(this);
     }
 
-    internal KurrentClientOptions       Options               { get; }
-    internal KurrentDBLegacyCallInvoker LegacyCallInvoker     { get; }
-    internal ISchemaSerializerProvider  SerializerProvider    { get; }
+    internal KurrentClientOptions         Options               { get; }
+    internal KurrentDBLegacyCallInvoker   LegacyCallInvoker     { get; }
+    internal KurrentBackdoorClientFactory BackdoorClientFactory { get; }
+    internal ISchemaSerializerProvider    SerializerProvider    { get; }
 
     public StreamsClient                 Streams                 { get; }
     public RegistryClient                Registry                { get; }
