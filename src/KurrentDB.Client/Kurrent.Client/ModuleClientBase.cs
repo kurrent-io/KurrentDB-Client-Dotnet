@@ -6,10 +6,10 @@ using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Client;
 
-public abstract class SubClientBase {
-    protected SubClientBase(KurrentClient client) {
+public abstract class ModuleClientBase {
+    protected ModuleClientBase(KurrentClient client, string? moduleName = null) {
         KurrentClient = client;
-        Logger        = client.Options.LoggerFactory.CreateLogger(GetType().Name);
+        Logger        = client.Options.LoggerFactory.CreateLogger(moduleName ?? GetType().Name);
     }
 
     protected KurrentClient KurrentClient { get; }
@@ -17,7 +17,7 @@ public abstract class SubClientBase {
 
     protected ISchemaSerializerProvider SerializerProvider => KurrentClient.SerializerProvider;
     protected ServerCapabilities        ServerCapabilities => KurrentClient.LegacyCallInvoker.ServerCapabilities;
-    protected HttpClient                BackdoorClient     => KurrentClient.LegacyCallInvoker.ChannelOptions.HttpClient!;
+    protected HttpClient                BackdoorClient     => KurrentClient.BackdoorClientFactory.GetClient();
     protected MessageTypeMapper         TypeMapper         => KurrentClient.Options.Mapper;
     protected IMetadataDecoder          MetadataDecoder    => KurrentClient.Options.MetadataDecoder;
 }
