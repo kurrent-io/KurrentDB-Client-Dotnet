@@ -9,8 +9,8 @@ namespace Kurrent.Client.Connectors;
 /// <summary>
 /// Client for managing connectors in KurrentDB.
 /// </summary>
-public class ConnectorsClient {
-    internal ConnectorsClient(KurrentClient source) =>
+public class ConnectorsClient : ClientModuleBase {
+    internal ConnectorsClient(KurrentClient source)  : base(source) =>
         ServiceClient = new(source.LegacyCallInvoker);
 
     ConnectorsServiceClient ServiceClient { get; }
@@ -44,15 +44,14 @@ public class ConnectorsClient {
                 .CreateAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Success.Instance;
         }
-        catch (RpcException ex) {
-            return Result.Failure<Success, CreateConnectorError>(
-                ex.StatusCode switch {
-                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(CreateConnector), ex)
-                }
-            );
+        catch (RpcException rex) {
+            return Result.Failure<Success, CreateConnectorError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.AlreadyExists    => new ErrorDetails.AlreadyExists(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -78,19 +77,14 @@ public class ConnectorsClient {
                 .ReconfigureAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Success.Instance;
         }
-        catch (RpcException ex) {
-            return Result.Failure<Success, ReconfigureConnectorError>(
-                ex.StatusCode switch {
-                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(ReconfigureConnector), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(ReconfigureConnector), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, ReconfigureConnectorError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -113,19 +107,14 @@ public class ConnectorsClient {
                 .DeleteAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Success.Instance;
         }
-        catch (RpcException ex) {
-            return Result.Failure<Success, DeleteConnectorError>(
-                ex.StatusCode switch {
-                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(DeleteConnector), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(DeleteConnector), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, DeleteConnectorError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -153,19 +142,14 @@ public class ConnectorsClient {
                 .StartAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Success.Instance;
         }
-        catch (RpcException ex) {
-            return Result.Failure<Success, StartConnectorError>(
-                ex.StatusCode switch {
-                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(StartConnector), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(StartConnector), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, StartConnectorError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -193,19 +177,14 @@ public class ConnectorsClient {
                 .ResetAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Success.Instance;
         }
-        catch (RpcException ex) {
-            return Result.Failure<Success, ResetConnectorError>(
-                ex.StatusCode switch {
-                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(ResetConnector), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(ResetConnector), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, ResetConnectorError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -228,19 +207,14 @@ public class ConnectorsClient {
                 .StopAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Success.Instance;
         }
-        catch (RpcException ex) {
-            return Result.Failure<Success, StopConnectorError>(
-                ex.StatusCode switch {
-                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(StopConnector), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(StopConnector), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, StopConnectorError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -266,19 +240,14 @@ public class ConnectorsClient {
                 .RenameAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Success.Instance;
         }
-        catch (RpcException ex) {
-            return Result.Failure<Success, RenameConnectorError>(
-                ex.StatusCode switch {
-                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(RenameConnector), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(RenameConnector), ex);
+        catch (RpcException rex) {
+            return Result.Failure<Success, RenameConnectorError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -333,16 +302,11 @@ public class ConnectorsClient {
                 _ => throw new InvalidOperationException($"Unknown result case: {response.ResultCase}")
             };
         }
-        catch (RpcException ex) {
-            return Result.Failure<ConnectorListResult, ListConnectorsError>(
-                ex.StatusCode switch {
-                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(ListConnectors), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(ListConnectors), ex);
+        catch (RpcException rex) {
+            return Result.Failure<ConnectorListResult, ListConnectorsError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -352,7 +316,7 @@ public class ConnectorsClient {
     /// <param name="connectorId">Identifier of the connector to get settings for.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>Result containing the connector settings or specific error details.</returns>
-    public async ValueTask<Result<ConnectorSettingsResult, GetConnectorSettingsError>> GetConnectorSettings(
+    public async ValueTask<Result<ConnectorSettingsResult, GetConnectorSettingsError>> GetSettings(
         string connectorId,
         CancellationToken cancellationToken = default
     ) {
@@ -387,17 +351,12 @@ public class ConnectorsClient {
                 _ => throw new InvalidOperationException($"Unknown result case: {response.ResultCase}")
             };
         }
-        catch (RpcException ex) {
-            return Result.Failure<ConnectorSettingsResult, GetConnectorSettingsError>(
-                ex.StatusCode switch {
-                    StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
-                    StatusCode.NotFound         => new ErrorDetails.NotFound(),
-                    _                           => throw KurrentException.CreateUnknown(nameof(GetConnectorSettings), ex)
-                }
-            );
-        }
-        catch (Exception ex) {
-            throw KurrentException.CreateUnknown(nameof(GetConnectorSettings), ex);
+        catch (RpcException rex) {
+            return Result.Failure<ConnectorSettingsResult, GetConnectorSettingsError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
     }
 
@@ -413,7 +372,7 @@ public class ConnectorsClient {
             //     kvp => kvp.Value?.Value ?? string.Empty
             // ),
             SettingsUpdateTime = connector.SettingsUpdateTime.ToDateTimeOffset(),
-            // Position           = connector.Position?.Value,
+            Position           = connector.Position is not null ? LogPosition.From(connector.Position.Value) : LogPosition.Unset,
             PositionUpdateTime = connector.PositionUpdateTime?.ToDateTimeOffset(),
             CreateTime         = connector.CreateTime.ToDateTimeOffset(),
             UpdateTime         = connector.UpdateTime.ToDateTimeOffset(),

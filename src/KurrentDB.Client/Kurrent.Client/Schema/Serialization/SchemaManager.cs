@@ -76,7 +76,7 @@ public class SchemaManager(RegistryClient schemaRegistryClient, ISchemaExporter 
 	#region . Deserialize .
 
 	public async ValueTask<(Type MessageType, SchemaVersionId SchemaVersionId)> ValidateAndEnsureSchemaCompatibility(RecordSchemaInfo schemaInfo, ResolvedSchemaRegistryPolicy policy, CancellationToken ct) {
-		var messageType = TypeMapper.GetOrResolveMessageType(schemaInfo.SchemaName);
+        var messageType = TypeMapper.GetOrResolveMessageType(schemaInfo.SchemaName);
 
 		if (!policy.ValidateSchemas)
 			return (messageType, SchemaVersionId.None);

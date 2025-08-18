@@ -21,11 +21,9 @@
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.8.0" />
     <!--    <PackageReference Include="LruCacheNet" Version="1.2.0" />-->
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.8" />
-    <PackageReference Include="Microsoft.Extensions.Resilience" Version="9.8.0" />
     <PackageReference Include="NJsonSchema" Version="11.4.0" />
     <PackageReference Include="OneOf" Version="3.0.271" />
   
-    <PackageReference Include="Refit" Version="8.0.0" />
     <PackageReference Include="System.Linq.Async" Version="6.0.3"
                       Condition="'$(TargetFramework)' != 'net8.0' OR '$(TargetFramework)' != 'net9.0'" />
     <PackageReference Include="OpenTelemetry.Api" Version="1.12.0" />
@@ -61,6 +59,9 @@
         GrpcServices="Client"
         Access="internal"
     />
+    <Protobuf Update="..\..\proto\kurrentdb\protocol\v2\projections\projections.proto">
+      <Generator>MSBuild:Compile</Generator>
+    </Protobuf>
   </ItemGroup>
 
   <ItemGroup>

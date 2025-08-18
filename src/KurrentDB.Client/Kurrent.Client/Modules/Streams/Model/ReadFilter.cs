@@ -3,13 +3,36 @@ using static System.String;
 
 namespace Kurrent.Client.Streams;
 
+public interface IReadFilter {
+    bool IsMatch(ReadOnlySpan<char> input);
+}
+
+// public record CompositeReadFilter(params IReadFilter[] Filters) : IReadFilter {
+//     public static readonly CompositeReadFilter None = new();
+//
+//     public bool IsMatch(ReadOnlySpan<char> input) {
+//         if (IsEmpty)
+//             return true;
+//
+//         foreach (var filter in Filters) {
+//             if (filter.IsMatch(input))
+//                 return true;
+//         }
+//
+//         return false;
+//     }
+//
+//     public override string ToString() => $"CompositeFilter: [{Join(", ", Filters)}]";
+// }
+
+
 /// <summary>
 /// Represents a filter used to match or restrict data in a reading operation.
 /// The filter can be applied to streams or records and supports literal matching
 /// or regular expression-based matching.
 /// </summary>
 [PublicAPI]
-public record ReadFilter {
+public record ReadFilter : IReadFilter {
 	public static readonly ReadFilter None = new();
 
 	const char RegexIndicator = '~';

@@ -1,6 +1,7 @@
+// ReSharper disable CheckNamespace
+
 using Google.Protobuf;
 using NJsonSchema;
-// ReSharper disable CheckNamespace
 
 namespace Kurrent.Client.Tests;
 

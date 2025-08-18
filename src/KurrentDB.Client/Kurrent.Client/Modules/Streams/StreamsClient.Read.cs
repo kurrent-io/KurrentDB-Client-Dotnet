@@ -90,7 +90,7 @@ public partial class StreamsClient {
 
     // public IAsyncEnumerable<ReadMessage> Read(
     //     LogPosition startPosition, long limit,
-    //     ReadFilter filter, Direction direction,
+    //     ReadFilter filter, ReadDirection direction,
     //     HeartbeatOptions heartbeatOptions,
     //     CancellationToken cancellationToken = default
     // ) {
@@ -288,6 +288,27 @@ public partial class StreamsClient {
 
     public ValueTask<Result<Messages, ReadError>> ReadStream(ReadStreamOptions options) =>
         ReadCore(Requests.CreateReadRequest(options), options.BufferSize, options.Timeout, options.SkipDecoding, options.CancellationToken);
+
+
+
+    // public IAsyncEnumerable<ReadMessage> Read(
+    //     StreamName stream, ReadAllOptions options,
+    //     CancellationToken cancellationToken = default
+    // ) {
+    //     var session = filter.IsStreamNameFilter
+    //         ? ReadStream(
+    //             filter.Expression, startPosition,
+    //             limit, direction, cancellationToken
+    //         )
+    //         : ReadAll(
+    //             startPosition, limit, direction, filter,
+    //             heartbeatOptions, cancellationToken
+    //         );
+    //
+    //     return session;
+    // }
+
+
 
     async ValueTask<Result<Messages, ReadError>> ReadCore(ReadReq request, int bufferSize, TimeSpan timeout, bool skipDecoding, CancellationToken cancellationToken) {
         var cancellator   = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

@@ -54,7 +54,7 @@ public class RegistryClient {
 	) {
 		var request = new Contracts.CreateSchemaRequest {
 			SchemaName = schemaName,
-			Details = new Contracts.SchemaDetails {
+			Details    = new() {
 				DataFormat    = (Contracts.SchemaDataFormat)dataFormat,
 				Compatibility = (Contracts.CompatibilityMode)compatibilityMode,
 				Description   = description,
@@ -63,67 +63,21 @@ public class RegistryClient {
 			SchemaDefinition = ByteString.CopyFromUtf8(schemaDefinition)
 		};
 
-		return await ServiceClient
-			.CreateSchemaAsync(request, cancellationToken: cancellationToken)
-			.ResponseAsync
-			.ToResultAsync()
-			.MatchAsync(
-				onSuccess: response =>
-					Result.Success<SchemaVersionDescriptor, CreateSchemaError>(
-						new SchemaVersionDescriptor(Guid.Parse(response.SchemaVersionId), response.VersionNumber)
-					),
-				onFailure: exception => {
-					if (exception is RpcException rpcEx) {
-						return rpcEx.StatusCode switch {
-							StatusCode.AlreadyExists    => Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(new ErrorDetails.SchemaAlreadyExists(m => m.With("Schema", schemaName))),
-							StatusCode.PermissionDenied => Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(new ErrorDetails.AccessDenied()),
-							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
-							_                           => throw KurrentException.CreateUnknown(nameof(CreateSchema), rpcEx)
-						};
-					}
+        try {
+            var response = await ServiceClient
+                .CreateSchemaAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-					throw KurrentException.Throw(exception);
-				}
-			);
+            return new SchemaVersionDescriptor(Guid.Parse(response.SchemaVersionId), response.VersionNumber);
+        }
+        catch (RpcException rex) {
+            return Result.Failure<SchemaVersionDescriptor, CreateSchemaError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.AlreadyExists    => new ErrorDetails.AlreadyExists(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
-
-	/// <summary>
-	/// Creates a new schema in the registry with the provided details.
-	/// </summary>
-	/// <param name="schemaName">
-	/// The unique name of the schema to create.
-	/// </param>
-	/// <param name="schemaDefinition">
-	/// The schema definition in string format, representing the structure of the schema.
-	/// </param>
-	/// <param name="dataFormat">
-	/// The format of the schema, such as Json, Protobuf, Avro, or Bytes.
-	/// </param>
-	/// <param name="cancellationToken">
-	/// An optional <see cref="CancellationToken"/> to observe while waiting for the operation to complete.
-	/// </param>
-	/// <returns>
-	/// A <see cref="ValueTask{TResult}"/> containing a <see cref="Result{TSuccess, TError}"/> which represents the outcome of the schema creation.
-	/// The result may include the created schema version descriptor or an error in case of failure.
-	/// </returns>
-	/// <exception cref="Exception">
-	/// Throws an exception if the operation encounters an error, such as a network issue or invalid input.
-	/// </exception>
-	public ValueTask<Result<SchemaVersionDescriptor, CreateSchemaError>> CreateSchema(
-		SchemaName schemaName,
-		string schemaDefinition,
-		SchemaDataFormat dataFormat,
-		CancellationToken cancellationToken = default
-	) =>
-		CreateSchema(
-			schemaName,
-			schemaDefinition,
-			dataFormat,
-			CompatibilityMode.None,
-			"",
-			[],
-			cancellationToken
-		);
 
 	/// <summary>
 	/// Retrieves the schema details for the specified schema name from the registry.
@@ -145,25 +99,20 @@ public class RegistryClient {
 			SchemaName = schemaName
 		};
 
-		return await ServiceClient
-			.GetSchemaAsync(request, cancellationToken: cancellationToken)
-			.ResponseAsync
-			.ToResultAsync()
-			.MatchAsync(
-				onSuccess: response => Result.Success<Schema, GetSchemaError>(Schema.FromProto(response.Schema)),
-				onFailure: exception => {
-					if (exception is RpcException rpcEx) {
-						return rpcEx.StatusCode switch {
-							StatusCode.NotFound         => Result.Failure<Schema, GetSchemaError>(new ErrorDetails.SchemaNotFound(m => m.With("Schema", schemaName))),
-							StatusCode.PermissionDenied => Result.Failure<Schema, GetSchemaError>(new ErrorDetails.AccessDenied()),
-							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
-							_                           => throw KurrentException.CreateUnknown(nameof(GetSchema), rpcEx)
-						};
-					}
+        try {
+            var response = await ServiceClient
+                .GetSchemaAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-					throw KurrentException.Throw(exception);
-				}
-			);
+            return Schema.FromProto(response.Schema);
+        }
+        catch (RpcException rex) {
+            return Result.Failure<Schema, GetSchemaError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
 
 	/// <summary>
@@ -187,32 +136,25 @@ public class RegistryClient {
 	public async ValueTask<Result<SchemaVersion, GetSchemaVersionError>> GetSchemaVersion(
 		SchemaName schemaName, int? versionNumber = null, CancellationToken cancellationToken = default
 	) {
-		var request = new Contracts.GetSchemaVersionRequest {
-			SchemaName = schemaName
-		};
+		var request = new Contracts.GetSchemaVersionRequest { SchemaName = schemaName };
 
 		if (versionNumber.HasValue)
 			request.VersionNumber = versionNumber.Value;
 
-		return await ServiceClient
-			.GetSchemaVersionAsync(request, cancellationToken: cancellationToken)
-			.ResponseAsync
-			.ToResultAsync()
-			.MatchAsync(
-				onSuccess: response => Result.Success<SchemaVersion, GetSchemaVersionError>(SchemaVersion.FromProto(response.Version)),
-				onFailure: exception => {
-					if (exception is RpcException rpcEx) {
-						return rpcEx.StatusCode switch {
-							StatusCode.NotFound         => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.SchemaNotFound(m => m.With("Schema", schemaName))),
-							StatusCode.PermissionDenied => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.AccessDenied()),
-							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
-							_                           => throw KurrentException.CreateUnknown(nameof(GetSchemaVersion), rpcEx)
-						};
-					}
+        try {
+            var response = await ServiceClient
+                .GetSchemaVersionAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-					throw KurrentException.Throw(exception);
-				}
-			);
+            return SchemaVersion.FromProto(response.Version);
+        }
+        catch (RpcException rex) {
+            return Result.Failure<SchemaVersion, GetSchemaVersionError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
 
 	/// <summary>
@@ -234,29 +176,22 @@ public class RegistryClient {
 	public async ValueTask<Result<SchemaVersion, GetSchemaVersionError>> GetSchemaVersionById(
 		SchemaVersionId schemaVersionId, CancellationToken cancellationToken = default
 	) {
-		var request = new Contracts.GetSchemaVersionByIdRequest {
-			SchemaVersionId = schemaVersionId
-		};
+		var request = new Contracts.GetSchemaVersionByIdRequest { SchemaVersionId = schemaVersionId };
 
-		return await ServiceClient
-			.GetSchemaVersionByIdAsync(request, cancellationToken: cancellationToken)
-			.ResponseAsync
-			.ToResultAsync()
-			.MatchAsync(
-				onSuccess: response => Result.Success<SchemaVersion, GetSchemaVersionError>(SchemaVersion.FromProto(response.Version)),
-				onFailure: exception => {
-					if (exception is RpcException rpcEx) {
-						return rpcEx.StatusCode switch {
-							StatusCode.NotFound         => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.SchemaNotFound(m => m.With("schemaVersionId", schemaVersionId))),
-							StatusCode.PermissionDenied => Result.Failure<SchemaVersion, GetSchemaVersionError>(new ErrorDetails.AccessDenied()),
-							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
-							_                           => throw KurrentException.CreateUnknown(nameof(GetSchemaVersionById), rpcEx)
-						};
-					}
+        try {
+            var response = await ServiceClient
+                .GetSchemaVersionByIdAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-					throw KurrentException.Throw(exception);
-				}
-			);
+            return SchemaVersion.FromProto(response.Version);
+        }
+        catch (RpcException rex) {
+            return Result.Failure<SchemaVersion, GetSchemaVersionError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
 
 	/// <summary>
@@ -276,32 +211,25 @@ public class RegistryClient {
 	/// Throws an exception if the operation encounters an error, such as a network issue or invalid input.
 	/// </exception>
 	public async ValueTask<Result<Success, DeleteSchemaError>> DeleteSchema(SchemaName schemaName, CancellationToken cancellationToken = default) {
-		var request = new Contracts.DeleteSchemaRequest {
-			SchemaName = schemaName
-		};
+		var request = new Contracts.DeleteSchemaRequest { SchemaName = schemaName };
 
-		return await ServiceClient
-			.DeleteSchemaAsync(request, cancellationToken: cancellationToken)
-			.ResponseAsync
-			.ToResultAsync()
-			.MatchAsync(
-				onSuccess: _ => Result.Success<Success, DeleteSchemaError>(Success.Instance),
-				onFailure: exception => {
-					if (exception is RpcException rpcEx) {
-						return rpcEx.StatusCode switch {
-							StatusCode.NotFound         => Result.Failure<Success, DeleteSchemaError>(new ErrorDetails.SchemaNotFound(m => m.With("schemaName", schemaName))),
-							StatusCode.PermissionDenied => Result.Failure<Success, DeleteSchemaError>(new ErrorDetails.AccessDenied()),
-							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
-							_                           => throw KurrentException.CreateUnknown(nameof(DeleteSchema), rpcEx)
-						};
-					}
+        try {
+            _ = await ServiceClient
+                .DeleteSchemaAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-					throw KurrentException.Throw(exception);
-				}
-			);
+            return Success.Instance;
+        }
+        catch (RpcException rex) {
+            return Result.Failure<Success, DeleteSchemaError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
 
-	/// <summary>
+    /// <summary>
 	/// Checks the compatibility of a schema against a given schema identifier and data format.
 	/// </summary>
 	/// <param name="identifier">
@@ -323,35 +251,34 @@ public class RegistryClient {
 	/// <exception cref="Exception">
 	/// Throws an exception if there is an error during the compatibility check process.
 	/// </exception>
-	public ValueTask<Result<SchemaVersionId, CheckSchemaCompatibilityError>> CheckSchemaCompatibility(
+	public async ValueTask<Result<SchemaVersionId, CheckSchemaCompatibilityError>> CheckSchemaCompatibility(
 		SchemaIdentifier identifier, string schemaDefinition, SchemaDataFormat dataFormat, CancellationToken cancellationToken = default
 	) {
-		var request = identifier.IsSchemaName
-			? new Contracts.CheckSchemaCompatibilityRequest { SchemaName      = identifier.AsSchemaName }
-			: new Contracts.CheckSchemaCompatibilityRequest { SchemaVersionId = identifier.AsSchemaVersionId };
+        var request = new Contracts.CheckSchemaCompatibilityRequest {
+            Definition = ByteString.CopyFromUtf8(schemaDefinition),
+            DataFormat = (Contracts.SchemaDataFormat)dataFormat
+        };
 
-		request.Definition = ByteString.CopyFromUtf8(schemaDefinition);
-		request.DataFormat = (Contracts.SchemaDataFormat)dataFormat;
+        identifier.Switch(
+            sn => request.SchemaName = sn,
+            sv => request.SchemaVersionId = sv
+        );
 
-		return ServiceClient.CheckSchemaCompatibilityAsync(request, cancellationToken: cancellationToken).ResponseAsync.ToResultAsync()
-			.MatchAsync(
-				onSuccess: result => result.Success is not null
-					? Result.Success<SchemaVersionId, CheckSchemaCompatibilityError>(SchemaVersionId.From(result.Success.SchemaVersionId))
-					: Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(SchemaCompatibilityErrors.FromProto(result.Failure.Errors)),
-				onFailure: exception => {
-					if (exception is RpcException rpcEx) {
-						return rpcEx.StatusCode switch {
-							StatusCode.NotFound => Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(
-								new ErrorDetails.SchemaNotFound(m => m.With(identifier.IsSchemaName ? "schemaName" : "schemaVersionId", identifier))
-							),
-							StatusCode.PermissionDenied => Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(new ErrorDetails.AccessDenied()),
-							StatusCode.InvalidArgument  => throw KurrentException.Throw(rpcEx),
-							_                           => throw KurrentException.CreateUnknown(nameof(CheckSchemaCompatibility), rpcEx)
-						};
-					}
+        try {
+            var response = await ServiceClient
+                .CheckSchemaCompatibilityAsync(request, cancellationToken: cancellationToken)
+                .ConfigureAwait(false);
 
-					throw KurrentException.Throw(exception);
-				}
-			);
+            return response.Success is not null
+                ? Result.Success<SchemaVersionId, CheckSchemaCompatibilityError>(SchemaVersionId.From(response.Success.SchemaVersionId))
+                : Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(SchemaCompatibilityErrors.FromProto(response.Failure.Errors));
+        }
+        catch (RpcException rex) {
+            return Result.Failure<SchemaVersionId, CheckSchemaCompatibilityError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new ErrorDetails.AccessDenied(),
+                StatusCode.NotFound         => new ErrorDetails.NotFound(m => m.With(identifier.IsSchemaName ? "SchemaName" : "SchemaVersionId", identifier)),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
 	}
 }

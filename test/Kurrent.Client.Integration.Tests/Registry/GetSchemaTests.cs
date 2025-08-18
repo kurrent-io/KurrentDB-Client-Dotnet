@@ -8,26 +8,22 @@ public class GetSchemaTests : KurrentClientTestFixture {
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_schema(CancellationToken ct) {
-		// Arrange
-		var schemaName  = NewSchemaName();
-		var description = Faker.Lorem.Sentence();
-		var tags        = new Dictionary<string, string> { [Faker.Lorem.Word()] = Faker.Lorem.Word(), [Faker.Lorem.Word()] = Faker.Lorem.Word() };
+        var schemaName       = NewSchemaName();
+        var schemaDefinition = NewJsonSchemaDefinition().ToJson();
+        var description      = Faker.Lorem.Sentence();
+        var tags             = new Dictionary<string, string> { [Faker.Lorem.Word()] = Faker.Lorem.Word(), [Faker.Lorem.Word()] = Faker.Lorem.Word() };
 
-		var v1 = NewJsonSchemaDefinition();
+		var schemaVersion = await AutomaticClient.Registry
+            .CreateSchema(
+			    schemaName, schemaDefinition, SchemaDataFormat.Json,
+			    CompatibilityMode.Backward, description, tags, ct
+		    )
+            .ShouldNotThrowOrFailAsync();
 
-		var createdSchemaResult = await AutomaticClient.Registry.CreateSchema(
-			schemaName, v1.ToJson(), SchemaDataFormat.Json,
-			CompatibilityMode.Backward, description, tags,
-			ct
-		);
-
-		// Act & Assert
 		await AutomaticClient.Registry
-			.GetSchema(schemaName, cancellationToken: ct)
-			.ShouldNotThrowAsync()
-			.OnFailureAsync(failure => KurrentException.Throw(failure))
-			.OnSuccessAsync(schema => {
-				schema.LatestSchemaVersion.ShouldBe(createdSchemaResult.Value.VersionNumber);
+            .GetSchema(schemaName, cancellationToken: ct)
+			.ShouldNotThrowOrFailAsync(schema => {
+				schema.LatestSchemaVersion.ShouldBe(schemaVersion.VersionNumber);
 				schema.SchemaName.Value.ShouldBe(schemaName);
 				schema.CreatedAt.ShouldBeGreaterThan(DateTimeOffset.MinValue);
 				schema.UpdatedAt.ShouldBeGreaterThan(DateTimeOffset.MinValue);
@@ -40,39 +36,32 @@ public class GetSchemaTests : KurrentClientTestFixture {
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_schema_when_schema_does_no_exists(CancellationToken ct) {
-		// Arrange
-		var schemaName  = NewSchemaName();
 
-		// Act & Assert
+		var schemaName = NewSchemaName();
+
 		await AutomaticClient.Registry
 			.GetSchema(schemaName, cancellationToken: ct)
-			.ShouldNotThrowAsync()
-			.OnSuccessAsync(_ => KurrentException.Throw("Expected schema not found, but got a schema response."))
-			.OnFailureAsync(failure => {
-				failure.IsSchemaNotFound.ShouldBeTrue();
-				failure.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
-				failure.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema '{schemaName}' not found.");
-			});
+			.ShouldFailAsync(failure =>
+                failure.Case.ShouldBe(GetSchemaError.GetSchemaErrorCase.NotFound));
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_schema_when_schema_deleted(CancellationToken ct) {
 		// Arrange
-		var schemaName  = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var schemaName       = NewSchemaName();
+        var schemaDefinition = NewJsonSchemaDefinition().ToJson();
 
-		await AutomaticClient.Registry.CreateSchema(schemaName, v1.ToJson(), SchemaDataFormat.Json, ct);
-		await AutomaticClient.Registry.DeleteSchema(schemaName, ct);
+		await AutomaticClient.Registry
+            .CreateSchema(schemaName, schemaDefinition, SchemaDataFormat.Json, ct)
+            .ShouldNotThrowOrFailAsync();
 
-		// Act & Assert
+		await AutomaticClient.Registry
+            .DeleteSchema(schemaName, ct)
+            .ShouldNotThrowOrFailAsync();
+
 		await AutomaticClient.Registry
 			.GetSchema(schemaName, cancellationToken: ct)
-			.ShouldNotThrowAsync()
-			.OnSuccessAsync(schema => KurrentException.Throw("Expected schema not found, but got a schema response."))
-			.OnFailureAsync(failure => {
-				failure.IsSchemaNotFound.ShouldBeTrue();
-				failure.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
-				failure.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema '{schemaName}' not found.");
-			});
+			.ShouldFailAsync(failure =>
+                failure.Case.ShouldBe(GetSchemaError.GetSchemaErrorCase.NotFound));
 	}
 }

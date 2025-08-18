@@ -1,7 +1,7 @@
 using Grpc.Core;
 using Kurrent.Client.Registry;
+using Kurrent.Client.Streams;
 using NJsonSchema;
-using static Kurrent.Client.Streams.SchemaDataFormat;
 using static Kurrent.Client.Registry.CompatibilityMode;
 
 namespace Kurrent.Client.Tests.Registry;
@@ -11,24 +11,20 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task backward_mode_incompatible_when_deleting_required_field(CancellationToken ct) {
-		// Arrange
 		var schemaName  = NewSchemaName();
 
 		var v1 = NewJsonSchemaDefinition().AddRequired("email", JsonObjectType.String);
 		var v2 = v1.Remove("email");
 
-		var createResult = await AutomaticClient.Registry
-			.CreateSchema(schemaName, v1.ToJson(), Json, Backward, Faker.Lorem.Sentences(), [], ct)
-			.ShouldNotThrowAsync();
+		var schemaVersion = await AutomaticClient.Registry
+			.CreateSchema(schemaName, v1.ToJson(), SchemaDataFormat.Json, Backward, Faker.Lorem.Sentences(), [], ct)
+			.ShouldNotThrowOrFailAsync();
 
-		// Act & Assert
 		await AutomaticClient.Registry
-			.CheckSchemaCompatibility(createResult.Value.VersionId, v2.ToJson(), Json, ct)
-			.ShouldNotThrowAsync()
-			.OnSuccessAsync(_ => KurrentException.Throw("Expected compatibility check to fail, but it succeeded."))
-			.OnFailureAsync(error => {
-				error.IsSchemaCompatibilityErrors.ShouldBeTrue();
-				var errors = error.AsSchemaCompatibilityErrors.Errors;
+			.CheckSchemaCompatibility(schemaVersion.VersionId, v2.ToJson(), SchemaDataFormat.Json, ct)
+			.ShouldFailAsync(failure => {
+                failure.Case.ShouldBe(CheckSchemaCompatibilityError.CheckSchemaCompatibilityErrorCase.SchemaCompatibilityErrors);
+				var errors = failure.AsSchemaCompatibilityErrors.Errors;
 				errors.ShouldContain(e => e.Kind == SchemaCompatibilityErrorKind.MissingRequiredProperty);
 				errors.ShouldContain(e => e.Details.Contains("Required property in original schema is missing in new schema"));
 				errors.ShouldContain(e => e.PropertyPath.Contains("email"));
@@ -37,31 +33,21 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task check_schema_compatibility_fails_when_schema_not_found(CancellationToken ct) {
-		// Arrange
-		var schemaName = NewSchemaName();
+        var schemaName       = SchemaName.From(NewSchemaName());
+        var schemaDefinition = NewJsonSchemaDefinition().ToJson();
 
-		var v1 = NewJsonSchemaDefinition();
-
-		// Act & Assert
-		await AutomaticClient.Registry
-			.CheckSchemaCompatibility(SchemaName.From(schemaName), v1.ToJson(), Json, ct)
-			.ShouldNotThrowAsync()
-			.OnSuccessAsync(_ => KurrentException.Throw("Expected compatibility check to fail, but it succeeded."))
-			.OnFailureAsync(failure => {
-				failure.IsSchemaNotFound.ShouldBeTrue();
-				failure.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
-				failure.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema '{schemaName}' not found.");
-			});
+        await AutomaticClient.Registry
+			.CheckSchemaCompatibility(schemaName, schemaDefinition, SchemaDataFormat.Json, ct)
+			.ShouldFailAsync(failure =>
+                failure.Case.ShouldBe(CheckSchemaCompatibilityError.CheckSchemaCompatibilityErrorCase.NotFound));
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task check_schema_compatibility_handles_fatal_errors(CancellationToken ct) {
-		// Arrange
 		var v1 = NewJsonSchemaDefinition();
 
-		// Act & Assert
 		var result = async () => await AutomaticClient.Registry
-			.CheckSchemaCompatibility(SchemaName.From("#"), v1.ToJson(), Json, ct);
+			.CheckSchemaCompatibility(SchemaName.From("#"), v1.ToJson(), SchemaDataFormat.Json, ct);
 
 		var exception = await result.ShouldThrowAsync<KurrentException>();
 		exception.ErrorCode.ShouldBe(nameof(StatusCode.InvalidArgument));
@@ -76,22 +62,18 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task check_schema_compatibility_fails_when_data_format_not_matching(CancellationToken ct) {
-		// Arrange
-		var schemaName = NewSchemaName();
-
-		var v1 = NewJsonSchemaDefinition();
+        var schemaName       = SchemaName.From(NewSchemaName());
+        var schemaDefinition = NewJsonSchemaDefinition().ToJson();
 
 		await AutomaticClient.Registry
-			.CreateSchema(schemaName, v1.ToJson(), Json, Backward, Faker.Lorem.Sentences(), [], ct)
-			.ShouldNotThrowAsync();
+			.CreateSchema(schemaName, schemaDefinition, SchemaDataFormat.Json, ct)
+			.ShouldNotThrowOrFailAsync();
 
-		// Act & Assert
 		await AutomaticClient.Registry
-			.CheckSchemaCompatibility(SchemaName.From(schemaName), v1.ToJson(), Protobuf, ct)
+			.CheckSchemaCompatibility(schemaName, schemaDefinition, SchemaDataFormat.Protobuf, ct)
 			.ShouldNotThrowAsync()
-			.OnSuccessAsync(_ => KurrentException.Throw("Expected compatibility check to fail, but it succeeded."))
-			.OnFailureAsync(failure => {
-				failure.IsSchemaCompatibilityErrors.ShouldBeTrue();
+			.ShouldFailAsync(failure => {
+                failure.Case.ShouldBe(CheckSchemaCompatibilityError.CheckSchemaCompatibilityErrorCase.SchemaCompatibilityErrors);
 				var errors = failure.AsSchemaCompatibilityErrors.Errors;
 				errors.ShouldContain(e => e.Kind == SchemaCompatibilityErrorKind.DataFormatMismatch);
 			});

@@ -6,3 +6,7 @@ namespace Kurrent.Client;
 public readonly struct Success {
     public static readonly Success Instance = new();
 }
+
+public static class Results {
+    public static Success Success => Success.Instance;
+}

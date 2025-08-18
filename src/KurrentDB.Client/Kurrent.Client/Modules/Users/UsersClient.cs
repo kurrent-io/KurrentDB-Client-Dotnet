@@ -7,14 +7,13 @@ using UsersServiceClient = KurrentDB.Protocol.Users.V1.Users.UsersClient;
 
 namespace Kurrent.Client.Users;
 
-
-public class UsersClient {
-    internal UsersClient(KurrentClient source) =>
-        ServiceClient = new UsersServiceClient(source.LegacyCallInvoker);
+public class UsersClient : ClientModuleBase {
+    internal UsersClient(KurrentClient client) : base(client) =>
+        ServiceClient = new(client.LegacyCallInvoker);
 
     UsersServiceClient ServiceClient { get; }
 
-    public async ValueTask<Result<Success, CreateUserError>> CreateUser(
+    public async ValueTask<Result<Success, CreateUserError>> Create(
         LoginName loginName, string fullName, string[] groups, string password,
         CancellationToken cancellationToken = default
     ) {
@@ -32,7 +31,7 @@ public class UsersClient {
                 .CreateAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return Success.Instance;
+            return Results.Success;
         }
         catch (RpcException rex) {
             return Result.Failure<Success, CreateUserError>(rex.StatusCode switch {
@@ -43,7 +42,7 @@ public class UsersClient {
         }
     }
 
-    public async ValueTask<Result<Success, DeleteUserError>> DeleteUser(LoginName loginName, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<Success, DeleteUserError>> Delete(LoginName loginName, CancellationToken cancellationToken = default) {
         try {
             var request = new DeleteReq { Options = new() { LoginName = loginName } };
 
@@ -51,7 +50,7 @@ public class UsersClient {
                 .DeleteAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Results.Success;
         }
         catch (RpcException rex) {
             return Result.Failure<Success, DeleteUserError>(rex.StatusCode switch {
@@ -62,7 +61,7 @@ public class UsersClient {
         }
     }
 
-    public async ValueTask<Result<Success, DisableUserError>> DisableUser(LoginName loginName, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<Success, DisableUserError>> Disable(LoginName loginName, CancellationToken cancellationToken = default) {
         try {
             var request = new DisableReq { Options = new() { LoginName = loginName } };
 
@@ -70,7 +69,7 @@ public class UsersClient {
                 .DisableAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Results.Success;
         }
         catch (RpcException rex) {
             return Result.Failure<Success, DisableUserError>(rex.StatusCode switch {
@@ -81,7 +80,7 @@ public class UsersClient {
         }
     }
 
-    public async ValueTask<Result<Success, EnableUserError>> EnableUser(LoginName loginName, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<Success, EnableUserError>> Enable(LoginName loginName, CancellationToken cancellationToken = default) {
         try {
             var request = new EnableReq { Options = new() { LoginName = loginName } };
 
@@ -89,7 +88,7 @@ public class UsersClient {
                 .EnableAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Results.Success;
         }
         catch (RpcException rex) {
             return Result.Failure<Success, EnableUserError>(rex.StatusCode switch {
@@ -100,7 +99,7 @@ public class UsersClient {
         }
     }
 
-    public async ValueTask<Result<Success, ChangeUserPasswordError>> ChangeUserPassword(
+    public async ValueTask<Result<Success, ChangeUserPasswordError>> ChangePassword(
         LoginName loginName, string currentPassword, string newPassword, CancellationToken cancellationToken = default
     ) {
         try {
@@ -116,7 +115,7 @@ public class UsersClient {
                 .ChangePasswordAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Results.Success;
         }
         catch (RpcException rex) {
             return Result.Failure<Success, ChangeUserPasswordError>(rex.StatusCode switch {
@@ -127,7 +126,7 @@ public class UsersClient {
         }
     }
 
-    public async ValueTask<Result<Success, ResetUserPasswordError>> ResetUserPassword(
+    public async ValueTask<Result<Success, ResetUserPasswordError>> ResetPassword(
         LoginName loginName, string newPassword, CancellationToken cancellationToken = default
     ) {
         try {
@@ -144,7 +143,7 @@ public class UsersClient {
                 .ResetPasswordAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Results.Success;
         }
         catch (RpcException rex) {
             return Result.Failure<Success, ResetUserPasswordError>(rex.StatusCode switch {
@@ -155,7 +154,7 @@ public class UsersClient {
         }
     }
 
-    public async ValueTask<Result<UserDetails, GetUserError>> GetUser(LoginName loginName, CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<UserDetails, GetUserError>> GetDetails(LoginName loginName, CancellationToken cancellationToken = default) {
         try {
             var request = new DetailsReq { Options = new() { LoginName = loginName } };
 
@@ -183,7 +182,7 @@ public class UsersClient {
         }
     }
 
-    public async ValueTask<Result<List<UserDetails>, ListAllUsersError>> ListAllUsers(CancellationToken cancellationToken = default) {
+    public async ValueTask<Result<List<UserDetails>, ListAllUsersError>> List(CancellationToken cancellationToken = default) {
         try {
             using var call = ServiceClient.Details(new DetailsReq(), cancellationToken: cancellationToken);
 

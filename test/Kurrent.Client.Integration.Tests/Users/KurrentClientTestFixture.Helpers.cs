@@ -18,7 +18,7 @@ public partial class KurrentClientTestFixture {
 
 		var results = await users
 			.Select(async user => (user, result: await AutomaticClient.Users
-				.CreateUser(
+				.Create(
 					user.LoginName,
 					user.FullName,
 					user.Groups,

@@ -43,7 +43,6 @@ public readonly partial record struct LogPosition : IComparable<LogPosition>, IC
     /// </summary>
     /// <param name="position">The position value from which to create the LogPosition. Must be Unset, greater than or equal to 0, or an exception will be thrown.</param>
     /// <returns>A new instance of LogPosition corresponding to the provided position value.</returns>
-    /// <exception cref="InvalidLogPosition">Thrown when the provided position value is less than 0 and not equal to Unset.</exception>
     public static LogPosition From(long position) =>
         position switch {
             -1000 => Unset,
@@ -57,12 +56,6 @@ public readonly partial record struct LogPosition : IComparable<LogPosition>, IC
     /// <param name="position">
     /// The position string in the format "C:commit/P:prepare".
     /// </param>
-    /// <returns>
-    /// A new instance of <see cref="LogPosition"/> corresponding to the provided position string.
-    /// </returns>
-    /// <exception cref="InvalidLogPosition">
-    /// Thrown when the provided string is not in the correct format or contains invalid values.
-    /// </exception>
     internal static LogPosition From(string position) {
         if (string.IsNullOrEmpty(position))
             return Unset;

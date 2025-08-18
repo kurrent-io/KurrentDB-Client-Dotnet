@@ -8,68 +8,64 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_latest_schema_by_name(CancellationToken ct) {
-		// Arrange
-		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var schemaName       = NewSchemaName();
+        var schemaDefinition = NewJsonSchemaDefinition().ToJson();
 
-		await AutomaticClient.Registry.CreateSchema(schemaName, v1.ToJson(), SchemaDataFormat.Json, ct);
+        await AutomaticClient.Registry
+            .CreateSchema(schemaName, schemaDefinition, SchemaDataFormat.Json, ct)
+            .ShouldNotThrowOrFailAsync();
 
-		// Act & Assert
 		await AutomaticClient.Registry
 			.GetSchemaVersion(schemaName, cancellationToken: ct)
-			.ShouldNotThrowAsync()
-			.OnFailureAsync(failure => KurrentException.Throw(failure))
-			.OnSuccessAsync(schemaVersion => {
-				schemaVersion.VersionId.ShouldBeGuid();
-				schemaVersion.VersionNumber.ShouldBe(1);
-				schemaVersion.SchemaDefinition.ShouldBe(v1.ToJson());
-				schemaVersion.DataFormat.ShouldBe(SchemaDataFormat.Json);
-				schemaVersion.RegisteredAt.ShouldBeGreaterThan(DateTimeOffset.MinValue);
+			.ShouldNotThrowOrFailAsync(version => {
+				version.VersionId.ShouldBeGuid();
+				version.VersionNumber.ShouldBe(1);
+				version.SchemaDefinition.ShouldBe(schemaDefinition);
+				version.DataFormat.ShouldBe(SchemaDataFormat.Json);
+				version.RegisteredAt.ShouldBeGreaterThan(DateTimeOffset.MinValue);
 			});
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_schema_by_name_and_version(CancellationToken ct) {
-		// Arrange
-		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+        var schemaName       = NewSchemaName();
+        var schemaDefinition = NewJsonSchemaDefinition().ToJson();
 
-		var createResult = await AutomaticClient.Registry.CreateSchema(schemaName, v1.ToJson(), SchemaDataFormat.Json, ct);
+		var schemaVersion = await AutomaticClient.Registry
+            .CreateSchema(schemaName, schemaDefinition, SchemaDataFormat.Json, ct)
+            .ShouldNotThrowOrFailAsync();
 
-		// Act & Assert
 		await AutomaticClient.Registry
-			.GetSchemaVersion(schemaName, createResult.Value.VersionNumber, cancellationToken: ct)
-			.ShouldNotThrowAsync()
-			.OnFailureAsync(failure => KurrentException.Throw(failure))
-			.OnSuccessAsync(schemaVersion => {
-				schemaVersion.VersionId.ShouldBeGuid();
-				schemaVersion.VersionNumber.ShouldBe(1);
-				schemaVersion.SchemaDefinition.ShouldBe(v1.ToJson());
-				schemaVersion.DataFormat.ShouldBe(SchemaDataFormat.Json);
-				schemaVersion.RegisteredAt.ShouldBeGreaterThan(DateTimeOffset.MinValue);
+			.GetSchemaVersion(schemaName, schemaVersion.VersionNumber, cancellationToken: ct)
+			.ShouldNotThrowOrFailAsync(version => {
+				version.VersionId.ShouldBeGuid();
+				version.VersionNumber.ShouldBe(1);
+				version.SchemaDefinition.ShouldBe(schemaDefinition);
+				version.DataFormat.ShouldBe(SchemaDataFormat.Json);
+				version.RegisteredAt.ShouldBeGreaterThan(DateTimeOffset.MinValue);
 			});
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_schema_by_id(CancellationToken ct) {
 		// Arrange
-		var schemaName = NewSchemaName();
-		var v1 = NewJsonSchemaDefinition();
+		var schemaName       = NewSchemaName();
+        var schemaDefinition = NewJsonSchemaDefinition().ToJson();
 
-		var createResult = await AutomaticClient.Registry.CreateSchema(schemaName, v1.ToJson(), SchemaDataFormat.Json, ct);
+		var schemaVersion = await AutomaticClient.Registry
+            .CreateSchema(schemaName, schemaDefinition, SchemaDataFormat.Json, ct)
+            .ShouldNotThrowOrFailAsync();
 
 		// Act & Assert
 		await AutomaticClient.Registry
-			.GetSchemaVersionById(createResult.Value.VersionId, cancellationToken: ct)
-			.ShouldNotThrowAsync()
-			.OnFailureAsync(failure => KurrentException.Throw(failure))
-			.OnSuccessAsync(schemaVersion => {
-				schemaVersion.VersionId.ShouldBeGuid();
-				schemaVersion.VersionNumber.ShouldBe(1);
-				schemaVersion.SchemaDefinition.ShouldBe(v1.ToJson());
-				schemaVersion.DataFormat.ShouldBe(SchemaDataFormat.Json);
-				schemaVersion.RegisteredAt.ShouldBeGreaterThan(DateTimeOffset.MinValue);
-			});
+			.GetSchemaVersionById(schemaVersion.VersionId, cancellationToken: ct)
+            .ShouldNotThrowOrFailAsync(version => {
+                version.VersionId.ShouldBeGuid();
+                version.VersionNumber.ShouldBe(1);
+                version.SchemaDefinition.ShouldBe(schemaDefinition);
+                version.DataFormat.ShouldBe(SchemaDataFormat.Json);
+                version.RegisteredAt.ShouldBeGreaterThan(DateTimeOffset.MinValue);
+            });
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
@@ -80,53 +76,35 @@ public class GetSchemaVersionTests : KurrentClientTestFixture  {
 		// Act & Assert
 		await AutomaticClient.Registry
 			.GetSchemaVersion(nonExistentSchemaName, cancellationToken: ct)
-			.ShouldNotThrowAsync()
-			.OnSuccessAsync(schemaVersion => KurrentException.Throw($"Expected an error, but got a schema version {schemaVersion}"))
-			.OnFailureAsync(failure => {
-				failure.IsSchemaNotFound.ShouldBeTrue();
-				failure.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
-				failure.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema '{nonExistentSchemaName}' not found.");
-			});
+			.ShouldFailAsync(failure =>
+                failure.Case.ShouldBe(GetSchemaVersionError.GetSchemaVersionErrorCase.NotFound));
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_schema_by_name_fails_on_invalid_version(CancellationToken ct) {
 		// Arrange
-		var schemaName = NewSchemaName();
-		var schema = NewJsonSchemaDefinition();
+		var schemaName       = NewSchemaName();
+        var schemaDefinition = NewJsonSchemaDefinition().ToJson();
 
-		await AutomaticClient.Registry
-			.CreateSchema(schemaName, schema.ToJson(), SchemaDataFormat.Json, ct)
-			.ShouldNotThrowAsync();
+        await AutomaticClient.Registry
+            .CreateSchema(schemaName, schemaDefinition, SchemaDataFormat.Json, ct)
+            .ShouldNotThrowOrFailAsync();
 
 		const int nonExistentVersionNumber = 999;
 
-		// Act & Assert
 		await AutomaticClient.Registry
-			.GetSchemaVersion(schemaName, nonExistentVersionNumber, cancellationToken: ct)
-			.ShouldNotThrowAsync()
-			.OnSuccessAsync(schemaVersion => KurrentException.Throw($"Expected an error, but got a schema version {schemaVersion}"))
-			.OnFailureAsync(failure => {
-				failure.IsSchemaNotFound.ShouldBeTrue();
-				failure.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
-				failure.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema '{schemaName}' not found.");
-			});
+			.GetSchemaVersion(schemaName, nonExistentVersionNumber, ct)
+            .ShouldFailAsync(failure =>
+                failure.Case.ShouldBe(GetSchemaVersionError.GetSchemaVersionErrorCase.NotFound));
 	}
 
 	[Test, Timeout(TestTimeoutMs)]
 	public async Task get_schema_by_id_fails_on_unknown_id(CancellationToken ct) {
-		// Arrange
 		var nonExistentVersionId = SchemaVersionId.From(Guid.NewGuid());
 
-		// Act & Assert
 		await AutomaticClient.Registry
 			.GetSchemaVersionById(nonExistentVersionId, cancellationToken: ct)
-			.ShouldNotThrowAsync()
-			.OnSuccessAsync(schemaVersion => KurrentException.Throw($"Expected an error, but got a schema version {schemaVersion}"))
-			.OnFailureAsync(failure => {
-				failure.IsSchemaNotFound.ShouldBeTrue();
-				failure.AsSchemaNotFound.ErrorCode.ShouldBe(nameof(ErrorDetails.SchemaNotFound));
-				failure.AsSchemaNotFound.ErrorMessage.ShouldBe($"Schema version '{nonExistentVersionId}' not found.");
-			});
+			.ShouldFailAsync(failure =>
+                failure.Case.ShouldBe(GetSchemaVersionError.GetSchemaVersionErrorCase.NotFound));
 	}
 }

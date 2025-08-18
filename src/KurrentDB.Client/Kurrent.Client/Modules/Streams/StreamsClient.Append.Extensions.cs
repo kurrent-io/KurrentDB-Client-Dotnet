@@ -2,14 +2,16 @@ namespace Kurrent.Client.Streams;
 
 public static partial class StreamsClientExtensions {
     public static ValueTask<Result<AppendStreamSuccesses, AppendStreamFailures>> Append(
-        this StreamsClient client, IEnumerable<AppendStreamRequest> requests, CancellationToken cancellationToken = default
-    ) =>
-        client.Append(requests.ToAsyncEnumerable(), cancellationToken);
+        this StreamsClient client,
+        IEnumerable<AppendStreamRequest> requests,
+        CancellationToken cancellationToken = default
+    ) => client.Append(requests.ToAsyncEnumerable(), cancellationToken);
 
     public static ValueTask<Result<AppendStreamSuccesses, AppendStreamFailures>> Append(
-        this StreamsClient client, MultiStreamAppendRequest request, CancellationToken cancellationToken = default
-    ) =>
-        client.Append(request.Requests.ToAsyncEnumerable(), cancellationToken);
+        this StreamsClient client,
+        MultiStreamAppendRequest request,
+        CancellationToken cancellationToken = default
+    ) => client.Append(request.Requests.ToAsyncEnumerable(), cancellationToken);
 
     /// <summary>
     /// Appends a series of messages to a specified stream in KurrentDB.

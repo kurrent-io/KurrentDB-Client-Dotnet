@@ -63,7 +63,8 @@ public partial class KurrentClientTestFixture {
 
         var result = await AutomaticClient.Streams
             .Append(streamName, messages, cancellationToken)
-            .OnFailureAsync(err => err.Throw())
+            // .OnFailureAsync(err => err.Throw())
+            .ShouldNotThrowAsync()
             .MatchAsync(
                  Result.Success<AppendStreamSuccess, AppendStreamFailure>,
                  Result.Failure<AppendStreamSuccess, AppendStreamFailure>)

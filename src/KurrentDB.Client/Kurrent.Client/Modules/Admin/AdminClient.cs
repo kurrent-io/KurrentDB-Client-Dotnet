@@ -26,7 +26,7 @@ public partial class AdminClient {
                 .ShutdownAsync(EmptyRequest, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Results.Success;
         }
         catch (RpcException rex) {
             return Result.Failure<Success, ShutdownServerError>(rex.StatusCode switch {
@@ -43,7 +43,7 @@ public partial class AdminClient {
                 .ResignNodeAsync(EmptyRequest, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Results.Success;
 		}
         catch (RpcException rex) {
             return Result.Failure<Success, ResignNodeError>(rex.StatusCode switch {
@@ -61,7 +61,7 @@ public partial class AdminClient {
                 .SetNodePriorityAsync(new SetNodePriorityReq { Priority = nodePriority }, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Results.Success;
 		}
         catch (RpcException rex) {
             return Result.Failure<Success, SetNodePriorityError>(rex.StatusCode switch {
@@ -77,7 +77,7 @@ public partial class AdminClient {
                 .MergeIndexesAsync(EmptyRequest, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Results.Success;
         }
         catch (RpcException rex) {
             return Result.Failure<Success, MergeIndexesError>(rex.StatusCode switch {
@@ -93,7 +93,7 @@ public partial class AdminClient {
                 .RestartPersistentSubscriptionsAsync(EmptyRequest, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return new Success();
+            return Results.Success;
 		}
         catch (RpcException rex) {
             return Result.Failure<Success, RestartPersistentSubscriptionsError>(rex.StatusCode switch {
