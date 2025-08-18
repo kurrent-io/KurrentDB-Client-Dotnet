@@ -1,14 +1,30 @@
+// ReSharper disable InconsistentNaming
+
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
-using KurrentDB.Client.Schema.Serialization.Json;
 using KurrentDB.Protocol.Streams.V2;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace KurrentDB.Client;
 
 static class StreamsClientMapper {
-	internal static JsonSerializer JsonSerializer { get; } = new();
+	static readonly JsonSerializerOptions DefaultJsonSerializerOptions = new(JsonSerializerOptions.Default) {
+		PropertyNamingPolicy        = JsonNamingPolicy.CamelCase,
+		DictionaryKeyPolicy         = JsonNamingPolicy.CamelCase,
+		PropertyNameCaseInsensitive = false,
+		DefaultIgnoreCondition      = JsonIgnoreCondition.WhenWritingNull,
+		UnknownTypeHandling         = JsonUnknownTypeHandling.JsonNode,
+		UnmappedMemberHandling      = JsonUnmappedMemberHandling.Skip,
+		NumberHandling              = JsonNumberHandling.AllowReadingFromString,
+		Converters = {
+			new MetadataJsonConverter(),
+			new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
+		}
+	};
 
 	public static async IAsyncEnumerable<AppendRecord> Map(this IEnumerable<EventData> source) {
 		foreach (var message in source)
@@ -24,7 +40,7 @@ static class StreamsClientMapper {
 			metadata = new();
 		} else {
 			try {
-				metadata = JsonSerializer.Deserialize<Dictionary<string, object?>>(source.Metadata) ?? new();
+				metadata = JsonSerializer.Deserialize<Dictionary<string, object?>>(source.Metadata.Span, DefaultJsonSerializerOptions) ?? new();
 			} catch (Exception ex) {
 				throw new ArgumentException(
 					$"Event metadata must be valid JSON with property values limited to: null, boolean, number, string, Guid, DateTime, TimeSpan, or Base64-encoded byte arrays. " +

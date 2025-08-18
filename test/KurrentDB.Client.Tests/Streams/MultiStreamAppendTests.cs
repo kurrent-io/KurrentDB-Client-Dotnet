@@ -1,6 +1,6 @@
+using System.Text.Json;
 using Humanizer;
 using static KurrentDB.Client.Constants;
-using JsonSerializer = KurrentDB.Client.Schema.Serialization.Json.JsonSerializer;
 
 namespace KurrentDB.Client.Tests.Streams;
 
@@ -8,7 +8,6 @@ namespace KurrentDB.Client.Tests.Streams;
 [Trait("Category", "Operation:MultiStreamAppend")]
 public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
 	: KurrentDBPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
-	static JsonSerializer JsonSerializer { get; } = new();
 
 	[MinimumVersion.Fact(25, 1)]
 	public async Task append_events_with_invalid_metadata_format_throws_exceptions() {
@@ -46,7 +45,7 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 			ByteArrayValue = "Bar"u8.ToArray()
 		};
 
-		var metadataBytes = JsonSerializer.Serialize(expectedMetadata);
+		var metadataBytes = JsonSerializer.SerializeToUtf8Bytes(expectedMetadata);
 
 		AppendStreamRequest[] requests = [
 			new(stream1, StreamState.NoStream, Fixture.CreateTestEvents(3, metadata: metadataBytes).ToArray()),
@@ -69,7 +68,7 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 			.ReadStreamAsync(Direction.Forwards, stream2, StreamPosition.Start, 10)
 			.ToArrayAsync();
 
-		var metadata = JsonSerializer.Deserialize<Dictionary<string, object?>>(stream1Events.First().OriginalEvent.Metadata);
+		var metadata = JsonSerializer.Deserialize<Dictionary<string, object?>>(stream1Events.First().OriginalEvent.Metadata.Span);
 
 		stream1Events.Length.ShouldBe(3);
 		stream2Events.Length.ShouldBe(2);
