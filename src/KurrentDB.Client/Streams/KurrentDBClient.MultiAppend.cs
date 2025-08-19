@@ -5,17 +5,12 @@
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
 using System.Diagnostics;
-using Google.Protobuf;
-using Google.Protobuf.Collections;
-using JetBrains.Annotations;
 using KurrentDB.Client.Diagnostics;
 using KurrentDB.Diagnostics;
 using KurrentDB.Diagnostics.Telemetry;
 using static KurrentDB.Protocol.Streams.V2.StreamsService;
 using static KurrentDB.Protocol.Streams.V2.MultiStreamAppendResponse;
-using static KurrentDB.Client.Constants;
 using Contracts = KurrentDB.Protocol.Streams.V2;
-using JsonSerializer = KurrentDB.Client.Schema.Serialization.Json.JsonSerializer;
 
 namespace KurrentDB.Client;
 

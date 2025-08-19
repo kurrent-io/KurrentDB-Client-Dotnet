@@ -1,17 +1,16 @@
+// ReSharper disable InconsistentNaming
+
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
 using System.Diagnostics;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
 using KurrentDB.Client.Diagnostics;
-using KurrentDB.Client.Schema.Serialization.Json;
 using KurrentDB.Protocol.Streams.V2;
 
 namespace KurrentDB.Client;
 
 static class StreamsClientMapper {
-	internal static JsonSerializer JsonSerializer { get; } = new();
-
 	public static async IAsyncEnumerable<AppendRecord> Map(this IEnumerable<EventData> source, Activity? activity = null) {
 		foreach (var message in source)
 			yield return await message
@@ -20,23 +19,10 @@ static class StreamsClientMapper {
 	}
 
 	public static ValueTask<AppendRecord> Map(this EventData source, Activity? activity = null) {
-		Dictionary<string, object?> metadata;
+		Dictionary<string, object?> metadata = new();
 
-		if (source.Metadata.IsEmpty) {
-			metadata = new();
-		} else {
-			try {
-				metadata = JsonSerializer.Deserialize<Dictionary<string, object?>>(source.Metadata) ?? new();
-			} catch (Exception ex) {
-				throw new ArgumentException(
-					$"Event metadata must be valid JSON with property values limited to: null, boolean, number, string, Guid, DateTime, TimeSpan, or Base64-encoded byte arrays. " +
-					$"Complex objects and arrays are not supported. This limitation will be removed in the next major release. " +
-					$"Deserialization failed: {ex.Message}",
-					nameof(source),
-					ex
-				);
-			}
-		}
+		if (!source.Metadata.IsEmpty)
+			metadata = MetadataDecoder.Decode(source.Metadata);
 
 		metadata[Constants.Metadata.SchemaName] = source.Type;
 		metadata[Constants.Metadata.SchemaDataFormat] = source.ContentType is Constants.Metadata.ContentTypes.ApplicationJson

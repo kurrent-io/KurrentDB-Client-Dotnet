@@ -27,8 +27,8 @@ static class DynamicValueMapper {
 			float x  => new() { FloatValue   = x },
 			double x => new() { DoubleValue  = x },
 
-			DateTime x       => new() { TimestampValue = Timestamp.FromDateTime(x.Kind is DateTimeKind.Utc ? x : DateTime.SpecifyKind(x, DateTimeKind.Utc)) },
-			DateTimeOffset x => new() { TimestampValue = Timestamp.FromDateTimeOffset(x) },
+			DateTime x       => new() { TimestampValue = x.ToTimestamp() },
+			DateTimeOffset x => new() { TimestampValue = x.ToTimestamp() },
 			TimeSpan x       => new() { DurationValue  = x.ToDuration() },
 
 			byte[] x               => new() { BytesValue = ByteString.CopyFrom(x) },

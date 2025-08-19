@@ -212,7 +212,7 @@ AppendStreamRequest[] requests = [
 	)
 ];
 
-var result = await client.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
+var result = await client.MultiStreamAppendAsync(requests);
 
 if (result is MultiAppendSuccess { Successes: var successes })
 	foreach (var item in successes)
