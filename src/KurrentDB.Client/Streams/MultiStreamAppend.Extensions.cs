@@ -1,4 +1,4 @@
-﻿namespace KurrentDB.Client.Tests.Streams;
+﻿namespace KurrentDB.Client;
 
 public static class MultiStreamAppendExtensions {
 	public static ValueTask<MultiAppendWriteResult> MultiStreamAppendAsync(
