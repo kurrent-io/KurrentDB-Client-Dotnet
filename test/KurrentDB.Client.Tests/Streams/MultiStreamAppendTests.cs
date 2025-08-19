@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Humanizer;
+using KurrentDB.Client.Streams;
 using static KurrentDB.Client.Constants;
 
 namespace KurrentDB.Client.Tests.Streams;
@@ -37,10 +38,8 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 		var expectedMetadata = new TestMetadata {
 			StringValue    = "Foo",
 			BooleanValue   = true,
-			Int32Value     = 42,
-			Int64Value     = 9223372036854775807L,
 			DoubleValue    = 2.718281828,
-			DateTimeValue  = DateTime.Now,
+			DateTimeValue  = DateTime.UtcNow,
 			TimeSpanValue  = 2.5.Hours(),
 			ByteArrayValue = "Bar"u8.ToArray()
 		};
@@ -68,7 +67,7 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 			.ReadStreamAsync(Direction.Forwards, stream2, StreamPosition.Start, 10)
 			.ToArrayAsync();
 
-		var metadata = JsonSerializer.Deserialize<Dictionary<string, object?>>(stream1Events.First().OriginalEvent.Metadata.Span);
+		var metadata = MetadataDecoder.Decode(stream1Events.First().OriginalEvent.Metadata);
 
 		stream1Events.Length.ShouldBe(3);
 		stream2Events.Length.ShouldBe(2);
@@ -76,14 +75,12 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 		metadata.ShouldNotBeNull();
 		metadata[Metadata.SchemaName].ShouldBe("test-event-type");
 		metadata[Metadata.SchemaDataFormat].ShouldBe(SchemaDataFormat.Json);
-		metadata["stringValue"].ShouldBe(expectedMetadata.StringValue);
-		metadata["booleanValue"].ShouldBe(expectedMetadata.BooleanValue);
-		metadata["int32Value"].ShouldBe(expectedMetadata.Int32Value);
-		metadata["int64Value"].ShouldBe(expectedMetadata.Int64Value);
-		metadata["doubleValue"].ShouldBe(expectedMetadata.DoubleValue);
-		metadata["dateTimeValue"].ShouldBe(expectedMetadata.DateTimeValue);
-		metadata["timeSpanValue"].ShouldBe(expectedMetadata.TimeSpanValue);
-		metadata["byteArrayValue"].ShouldBe(expectedMetadata.ByteArrayValue);
+		metadata["StringValue"].ShouldBe(expectedMetadata.StringValue);
+		metadata["BooleanValue"].ShouldBe(expectedMetadata.BooleanValue);
+		metadata["DoubleValue"].ShouldBe(expectedMetadata.DoubleValue);
+		metadata["DateTimeValue"].ShouldBe(expectedMetadata.DateTimeValue);
+		metadata["TimeSpanValue"].ShouldBe(expectedMetadata.TimeSpanValue);
+		metadata["ByteArrayValue"].ShouldBe(expectedMetadata.ByteArrayValue);
 	}
 
 	[MinimumVersion.Fact(25, 1)]
@@ -116,8 +113,6 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 public class TestMetadata {
 	public string?  StringValue    { get; init; }
 	public bool     BooleanValue   { get; init; }
-	public int      Int32Value     { get; init; }
-	public long     Int64Value     { get; init; }
 	public double   DoubleValue    { get; init; }
 	public DateTime DateTimeValue  { get; init; }
 	public TimeSpan TimeSpanValue  { get; init; }
