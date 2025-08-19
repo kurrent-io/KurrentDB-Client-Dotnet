@@ -2,9 +2,11 @@
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 
 namespace KurrentDB.Client.Streams;
 
+[PublicAPI]
 public static class MetadataDecoder {
 	public static readonly JsonSerializerOptions JsonSerializerOptions = new(JsonSerializerOptions.Default) {
 		PropertyNamingPolicy        = JsonNamingPolicy.CamelCase,
