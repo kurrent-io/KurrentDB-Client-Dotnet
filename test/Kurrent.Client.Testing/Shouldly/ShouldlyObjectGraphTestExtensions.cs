@@ -101,17 +101,17 @@ static class ExpressionPathResolver {
 public static class ShouldlyObjectGraphTestExtensions {
     const BindingFlags DefaultBindingFlags = BindingFlags.Public | BindingFlags.Instance;
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public static void ShouldBeEquivalentTo(
-        [NotNullIfNotNull(nameof(expected))] this object? actual,
-        [NotNullIfNotNull(nameof(actual))] object? expected,
-        string? customMessage = null
-    ) {
-        CompareObjects(
-            actual, expected, new List<string>(),
-            new Dictionary<object, IList<object?>>(), null, customMessage
-        );
-    }
+    // [MethodImpl(MethodImplOptions.NoInlining)]
+    // public static void ShouldBeEquivalentTo(
+    //     [NotNullIfNotNull(nameof(expected))] this object? actual,
+    //     [NotNullIfNotNull(nameof(actual))] object? expected,
+    //     string? customMessage = null
+    // ) {
+    //     CompareObjects(
+    //         actual, expected, new List<string>(),
+    //         new Dictionary<object, IList<object?>>(), null, customMessage
+    //     );
+    // }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static void ShouldBeEquivalentTo(

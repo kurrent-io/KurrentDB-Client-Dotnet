@@ -3,6 +3,11 @@ using Kurrent.Variant;
 namespace Kurrent.Client.Streams;
 
 [PublicAPI]
+public readonly partial record struct InspectRecordError : IVariantResultError<
+    ErrorDetails.AccessDenied,
+    ErrorDetails.NotFound>;
+
+[PublicAPI]
 public readonly partial record struct AppendStreamFailure : IVariantResultError<
     ErrorDetails.AccessDenied,
     ErrorDetails.StreamTombstoned,
@@ -15,11 +20,6 @@ public readonly partial record struct ReadError : IVariantResultError<
     ErrorDetails.NotFound,
     ErrorDetails.StreamDeleted,
     ErrorDetails.StreamTombstoned>;
-
-[PublicAPI]
-public readonly partial record struct InspectRecordError : IVariantResultError<
-    ErrorDetails.AccessDenied,
-    ErrorDetails.LogPositionNotFound>;
 
 [PublicAPI]
 public readonly partial record struct DeleteStreamError : IVariantResultError<
@@ -39,16 +39,13 @@ public readonly partial record struct TombstoneError : IVariantResultError<
 
 [PublicAPI]
 public readonly partial record struct GetStreamInfoError : IVariantResultError<
-    ErrorDetails.AccessDenied,
-    ErrorDetails.NotFound,
-    ErrorDetails.StreamDeleted, // Can we set metadata on a deleted stream?
-    ErrorDetails.StreamTombstoned>;
+    ErrorDetails.AccessDenied>;
 
 [PublicAPI]
 public readonly partial record struct SetStreamMetadataError : IVariantResultError<
     ErrorDetails.AccessDenied,
     ErrorDetails.NotFound,
-    ErrorDetails.StreamDeleted, // Can we set metadata on a deleted stream?
+    ErrorDetails.StreamDeleted,
     ErrorDetails.StreamTombstoned,
     ErrorDetails.StreamRevisionConflict>;
 
@@ -56,6 +53,14 @@ public readonly partial record struct SetStreamMetadataError : IVariantResultErr
 public readonly partial record struct TruncateStreamError : IVariantResultError<
     ErrorDetails.AccessDenied,
     ErrorDetails.NotFound,
-    ErrorDetails.StreamDeleted, // Can we set metadata on a deleted stream?
+    ErrorDetails.StreamDeleted,
     ErrorDetails.StreamTombstoned,
     ErrorDetails.StreamRevisionConflict>;
+
+
+
+[PublicAPI]
+public readonly partial record struct GetStreamMetadataError : IVariantResultError<
+    ErrorDetails.AccessDenied,
+    ErrorDetails.NotFound,
+    ErrorDetails.StreamDeleted>;

@@ -42,7 +42,7 @@ public class DeleteTests : KurrentClientTestFixture {
         await AutomaticClient.Streams
             .Delete(game.Stream, ct)
             .ShouldFailAsync(error =>
-                error.Value.ShouldBeOfType<ErrorDetails.StreamNotFound>());
+                error.Case.ShouldBe(DeleteStreamError.DeleteStreamErrorCase.NotFound));
     }
 
     [Test]
@@ -56,7 +56,7 @@ public class DeleteTests : KurrentClientTestFixture {
         await AutomaticClient.Streams
             .Delete(simulation.Game.Stream, ct)
             .ShouldFailAsync(error =>
-                error.Value.ShouldBeOfType<ErrorDetails.StreamDeleted>());
+                error.Case.ShouldBe(DeleteStreamError.DeleteStreamErrorCase.StreamDeleted));
     }
 
     [Test]
@@ -70,6 +70,6 @@ public class DeleteTests : KurrentClientTestFixture {
         await AutomaticClient.Streams
             .Delete(simulation.Game.Stream, ct)
             .ShouldFailAsync(error =>
-                error.Value.ShouldBeOfType<ErrorDetails.StreamTombstoned>());
+                error.Case.ShouldBe(DeleteStreamError.DeleteStreamErrorCase.StreamTombstoned));
     }
 }

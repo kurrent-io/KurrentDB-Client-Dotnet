@@ -1,5 +1,7 @@
 // ReSharper disable InconsistentNaming
 
+using Kurrent.Client.Admin;
+
 namespace Kurrent.Client.Tests.Admin;
 
 [Skip("Ignore this because it interferes with other tests")]
@@ -38,5 +40,6 @@ public class AdminTests : KurrentClientTestFixture {
 	public async Task stop_scavenge() =>
         await AutomaticClient.Admin.StopScavenge("wwd")
             .ShouldNotThrowAsync()
-            .ShouldFailAsync(failure => failure.Value.ShouldBeOfType<ErrorDetails.NotFound>());
+            .ShouldFailAsync(error =>
+                error.Case.ShouldBe(StopScavengeError.StopScavengeErrorCase.NotFound));
 }

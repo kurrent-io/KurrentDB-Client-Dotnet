@@ -1,5 +1,7 @@
 #pragma warning disable CS8509
+#pragma warning disable CS8524 // The switch expression does not handle some values of its input type (it is not exhaustive) involving an unnamed enum value.
 
+using System.Diagnostics;
 using System.Threading.Channels;
 using KurrentDB.Protocol.Streams.V1;
 using Grpc.Core;
@@ -11,7 +13,210 @@ using static Kurrent.Client.Streams.StreamsClientV1Mapper;
 
 namespace Kurrent.Client.Streams;
 
+public static class StreamsClientExtensions2 {
+    // public static ValueTask<Result<Record, InspectRecordError>> InspectFirstRecord(this StreamsClient client, bool skipDecoding = true, CancellationToken cancellationToken = default) =>
+    //     client.InspectRecord(LogPosition.Earliest, skipDecoding, cancellationToken);
+    //
+    // public static ValueTask<Result<Record, InspectRecordError>> InspectLastRecord(this StreamsClient client, bool skipDecoding = true, CancellationToken cancellationToken = default) =>
+    //     client.InspectRecord(LogPosition.Latest, skipDecoding, cancellationToken);
+
+    // public static async ValueTask<Result<StreamState, GetStreamDetailsError>> CheckStream(this StreamsClient client, StreamName stream, CancellationToken cancellationToken = default) {
+    //     var result = await client.GetStreamDetails(stream, cancellationToken).ConfigureAwait(false);
+    //
+    //     // failure to access the meta-stream invalidates the operation,
+    //     // and if not found we just let it flow through
+    //     if (result.IsFailure) {
+    //         if (result.Error.Case == GetStreamDetailsError.GetStreamDetailsErrorCase.AccessDenied)
+    //             return Result.Failure<StreamState, GetStreamDetailsError>(result.Error.AsAccessDenied);
+    //
+    //         return StreamState.Missing;
+    //     }
+    //
+    //     return result.Value.State;
+    // }
+}
+
 public partial class StreamsClient {
+    public async ValueTask<Result<Record, InspectRecordError>> InspectRecord(LogPosition position, bool skipDecoding = true, CancellationToken cancellationToken = default) {
+        var request = position switch {
+            _ when position == LogPosition.Unset    => throw new ArgumentOutOfRangeException(nameof(position), "Log position cannot be unset."),
+            _ when position == LogPosition.Earliest => Requests.CreateReadRequest(ReadAllOptions.FirstRecord(cancellationToken)),
+            _ when position == LogPosition.Latest   => Requests.CreateReadRequest(ReadAllOptions.LastRecord(cancellationToken)),
+            _                                       => Requests.CreateInspectRecordRequest(position)
+        };
+
+        using var session = LegacyServiceClient.Read(request, cancellationToken: cancellationToken);
+
+        try {
+            await session.ResponseStream.MoveNext(cancellationToken).ConfigureAwait(false);
+
+            if (session.ResponseStream.Current is null)
+                return Result.Failure<Record, InspectRecordError>(new NotFound(mt => mt.With("Position", position)));
+
+            if (session.ResponseStream.Current.ContentCase is not Event)
+                throw new UnreachableException($"Unreachable error while reading with position {position}. "
+                                             + $"Response {session.ResponseStream.Current.ContentCase} is unexpected.");
+
+            return await session.ResponseStream.Current.Event
+                .MapToRecord(SerializerProvider, MetadataDecoder, skipDecoding, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (RpcException rex) {
+            return Result.Failure<Record, InspectRecordError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new AccessDenied()
+            });
+        }
+    }
+
+    public async ValueTask<Result<Record, ReadError>> ReadStreamEdge(StreamName stream, ReadDirection direction, bool skipDecoding, CancellationToken cancellationToken) {
+        try {
+            var request = Requests.CreateReadStreamEdgeRequest(stream, direction);
+
+            using var session = LegacyServiceClient.Read(request, cancellationToken: cancellationToken);
+
+            await session.ResponseStream.MoveNext(cancellationToken).ConfigureAwait(false);
+
+            if (session.ResponseStream.Current.ContentCase is ReadResp.ContentOneofCase.StreamNotFound) {
+                var streamDetailsResult = await GetStreamInfo(stream, cancellationToken).ConfigureAwait(false);
+
+                // failure to access the meta-stream invalidates the operation,
+                // and if not found we just let it flow through
+                if (streamDetailsResult.IsFailure)
+                    return Result.Failure<Record, ReadError>(streamDetailsResult.Error.Case switch {
+                        GetStreamInfoError.GetStreamInfoErrorCase.AccessDenied => new AccessDenied(),
+                    });
+
+                // no more ambiguity here, we know the stream is not found, deleted or tombstoned
+                return Result.Failure<Record, ReadError>(streamDetailsResult.Value.State switch {
+                    StreamState.Missing   => new NotFound(),
+                    StreamState.Deleted    => new StreamDeleted(),
+                    StreamState.Tombstoned => new StreamTombstoned()
+                });
+            }
+
+            var record = await session.ResponseStream.Current.Event
+                .MapToRecord(SerializerProvider, MetadataDecoder, skipDecoding, cancellationToken)
+                .ConfigureAwait(false);
+
+            return record;
+        }
+        catch (RpcException rex) {
+            return Result.Failure<Record, ReadError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
+        }
+    }
+
+
+
+    // public async ValueTask<CheckStreamResult> CheckStream(StreamName stream, CancellationToken cancellationToken = default) {
+    //     var request = Requests.CreateReadStreamEdgeRequest(stream, ReadDirection.Forwards);
+    //
+    //     using var session = LegacyServiceClient.Read(request, cancellationToken: cancellationToken);
+    //
+    //     try {
+    //         await session.ResponseStream.MoveNext(cancellationToken).ConfigureAwait(false);
+    //
+    //
+    //         if (session.ResponseStream.Current.ContentCase is ReadResp.ContentOneofCase.StreamNotFound) {
+    //             // check if tombstoned, deleted or non existing by reading metadata
+    //
+    //
+    //             var metaStreamName = SystemStreams.MetastreamOf(stream);
+    //
+    //             return await this.ReadLastStreamRecord(metaStreamName, cancellationToken)
+    //                 .MatchAsync(
+    //                     rec => {
+    //                         if (rec == Record.None)
+    //                             return Result.Failure<Messages, ReadError>(new NotFound(mt => mt.WithStreamName(stream)));
+    //
+    //                         var metadata = (StreamMetadata)rec.Value!;
+    //                         if (metadata.TruncateBefore == StreamRevision.Max)
+    //                             return Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.WithStreamName(stream)));
+    //
+    //                         throw KurrentException.CreateUnknown(
+    //                             nameof(ReadCore),
+    //                             new InvalidOperationException(
+    //                                 $"Stream {stream} was not found, but metadata does exist and the stream was not truncated. This is unexpected."
+    //                             )
+    //                         );
+    //                     },
+    //                     err => err.Case switch {
+    //                         ReadError.ReadErrorCase.AccessDenied  => Result.Failure<Messages, ReadError>(new AccessDenied(mt => mt.WithStreamName(metaStreamName))),
+    //                         ReadError.ReadErrorCase.NotFound      => Result.Failure<Messages, ReadError>(new NotFound(mt => mt.WithStreamName(stream))),
+    //                         ReadError.ReadErrorCase.StreamDeleted => Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.WithStreamName(metaStreamName))),
+    //
+    //                     }
+    //                 )
+    //                 .ConfigureAwait(false);
+    //
+    //         }
+    //
+    //
+    //         if (session.ResponseStream.Current.ContentCase is not Event)
+    //             throw new UnreachableException($"Unreachable error while reading with position {position}. "
+    //                                          + $"Response {session.ResponseStream.Current.ContentCase} is unexpected.");
+    //
+    //         return CheckStreamResult.Exists;
+    //     }
+    //     catch (RpcException rex) {
+    //         return CheckStreamResult.AccessDenied;
+    //     }
+    // }
+
+
+    //
+    // public async ValueTask<Result<Record, InspectRecordError>> InspectRecord(LogPosition position, CancellationToken cancellationToken = default) {
+    //     ArgumentOutOfRangeException.ThrowIfEqual(position, LogPosition.Unset, nameof(position));
+    //
+    //     var readResult = await ReadCore(
+    //             request: Requests.CreateInspectRecordRequest(position),
+    //             bufferSize: 1,
+    //             timeout: Timeout.InfiniteTimeSpan,
+    //             skipDecoding: true,
+    //             cancellationToken: cancellationToken)
+    //         .ConfigureAwait(false);
+    //
+    //     if (readResult.IsFailure)
+    //         return Result.Failure<Record, InspectRecordError>(readResult.Error.AsAccessDenied);
+    //
+    //     await using var messages = readResult.Value;
+    //
+    //     var record = await messages
+    //         .Select(msg => msg.AsRecord)
+    //         .FirstOrDefaultAsync(cancellationToken)
+    //         .ConfigureAwait(false);
+    //
+    //     return record ?? Result.Failure<Record, InspectRecordError>(
+    //         new LogPositionNotFound(mt => mt.With("Position", position)));
+    // }
+
+    // public async ValueTask<Result<Record, InspectRecordError>> InspectRecord(LogPosition position, CancellationToken cancellationToken = default) {
+    //     ArgumentOutOfRangeException.ThrowIfEqual(position, LogPosition.Unset, nameof(position));
+    //
+    //     var readResult = await ReadCore(
+    //             request: Requests.CreateInspectRecordRequest(position),
+    //             bufferSize: 1,
+    //             timeout: Timeout.InfiniteTimeSpan,
+    //             skipDecoding: true,
+    //             cancellationToken: cancellationToken)
+    //         .ConfigureAwait(false);
+    //
+    //     if (readResult.IsFailure)
+    //         return Result.Failure<Record, InspectRecordError>(readResult.Error.AsAccessDenied);
+    //
+    //     await using var messages = readResult.Value;
+    //
+    //     var record = await messages
+    //         .Select(msg => msg.AsRecord)
+    //         .FirstOrDefaultAsync(cancellationToken)
+    //         .ConfigureAwait(false);
+    //
+    //     return record ?? Result.Failure<Record, InspectRecordError>(
+    //         new LogPositionNotFound(mt => mt.With("Position", position)));
+    // }
+
     // internal async IAsyncEnumerable<ReadMessage> NewRead(
     //     LogPosition startPosition,
     //     long limit,
@@ -289,8 +494,6 @@ public partial class StreamsClient {
     public ValueTask<Result<Messages, ReadError>> ReadStream(ReadStreamOptions options) =>
         ReadCore(Requests.CreateReadRequest(options), options.BufferSize, options.Timeout, options.SkipDecoding, options.CancellationToken);
 
-
-
     // public IAsyncEnumerable<ReadMessage> Read(
     //     StreamName stream, ReadAllOptions options,
     //     CancellationToken cancellationToken = default
@@ -310,73 +513,197 @@ public partial class StreamsClient {
 
 
 
+    // async ValueTask<Result<Messages, ReadError>> ReadCore(ReadReq request, int bufferSize, TimeSpan timeout, bool skipDecoding, CancellationToken cancellationToken) {
+    //     var cancellator   = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+    //     var stoppingToken = cancellator.Token;
+    //
+    //     var session = LegacyServiceClient.Read(request, cancellationToken: stoppingToken);
+    //
+    //     try {
+    //         await session.ResponseStream.MoveNext(stoppingToken).ConfigureAwait(false);
+    //
+    //         if (session.ResponseStream.Current.ContentCase is ReadResp.ContentOneofCase.StreamNotFound) {
+    //             cancellator.Dispose();
+    //
+    //             // we must check the metadata stream to see if the stream was deleted.
+    //             // this is just a big brutal hack because:
+    //             // - what happens if the meta-stream is deleted in the meantime?
+    //             // - or we lose access to it?
+    //             // it's like inception but worst...
+    //             StreamName stream = request.Options.Stream.StreamIdentifier.StreamName.ToStringUtf8();
+    //
+    //             // and one must break out right here if the stream is a meta-stream cause otherwise
+    //             // we get into a logical loop and boom - stack overflow
+    //             // this is the most absurd thing ever
+    //             if (stream.IsMetastream)
+    //                 return Result.Failure<Messages, ReadError>(new NotFound(mt => mt.WithStreamName(stream)));
+    //
+    //             // ReSharper disable once PossiblyMistakenUseOfCancellationToken
+    //             // because we are checking the metadata stream on a failure path,
+    //             // we must use the original cancellation token
+    //             return await this.ReadLastStreamRecord(SystemStreams.MetastreamOf(stream), cancellationToken)
+    //                 .MatchAsync(
+    //                     rec => {
+    //                         if (rec == Record.None)
+    //                             return Result.Failure<Messages, ReadError>(new NotFound(mt => mt.WithStreamName(stream)));
+    //
+    //                         var metadata = (StreamMetadata)rec.Value!;
+    //                         if (metadata.TruncateBefore == StreamRevision.Max)
+    //                             return Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.WithStreamName(stream)));
+    //
+    //                         throw KurrentException.CreateUnknown(
+    //                             nameof(ReadCore),
+    //                             new InvalidOperationException(
+    //                                 $"Stream {stream} was not found, but metadata does exist and the stream was not truncated. This is unexpected."
+    //                             )
+    //                         );
+    //                     },
+    //                     err => err.Case switch {
+    //                         ReadError.ReadErrorCase.StreamDeleted => Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.WithStreamName(stream))),
+    //                         ReadError.ReadErrorCase.NotFound      => Result.Failure<Messages, ReadError>(new NotFound(mt => mt.WithStreamName(stream))),
+    //                         ReadError.ReadErrorCase.AccessDenied  => Result.Failure<Messages, ReadError>(new AccessDenied(mt => mt.WithStreamName(stream)))
+    //                     }
+    //                 )
+    //                 .ConfigureAwait(false);
+    //         }
+    //     }
+    //     catch (RpcException rex) {
+    //         cancellator.Dispose();
+    //
+    //         return Result.Failure<Messages, ReadError>(
+    //             rex.StatusCode switch {
+    //                 StatusCode.PermissionDenied                                                          => new AccessDenied(),
+    //                 StatusCode.FailedPrecondition when rex.IsLegacyError(LegacyErrorCodes.StreamDeleted) => new StreamTombstoned(),
+    //                 _                                                                                    => throw rex.WithOriginalCallStack()
+    //             }
+    //         );
+    //     }
+    //
+    //     // Creates a factory function instead of starting immediately
+    //     var channelFactory = new Func<Channel<ReadMessage>>(() => StartReadMessageRelay(session, bufferSize, timeout, skipDecoding, cancellator));
+    //
+    //     return new Messages(channelFactory);
+    // }
+
+
+
+    // async ValueTask<Result<Messages, ReadError>> ReadCore(ReadReq request, int bufferSize, TimeSpan timeout, bool skipDecoding, CancellationToken cancellationToken) {
+    //     var cancellator   = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+    //     var stoppingToken = cancellator.Token;
+    //
+    //     var session = LegacyServiceClient.Read(request, cancellationToken: stoppingToken);
+    //
+    //     try {
+    //         await session.ResponseStream.MoveNext(stoppingToken).ConfigureAwait(false);
+    //
+    //         if (session.ResponseStream.Current.ContentCase is ReadResp.ContentOneofCase.StreamNotFound) {
+    //             throw new RpcException(new Status(StatusCode.NotFound, "Stream not found. Either it does not exit or was tombstoned."));
+    //         }
+    //
+    //         if (session.ResponseStream.Current.ContentCase is ReadResp.ContentOneofCase.StreamNotFound) {
+    //             cancellator.Dispose();
+    //
+    //             // we must check the metadata stream to see if the stream was deleted.
+    //             // this is just a big brutal hack because:
+    //             // - what happens if the meta-stream is deleted in the meantime?
+    //             // - or we lose access to it?
+    //             // it's like inception but worst...
+    //             StreamName stream = request.Options.Stream.StreamIdentifier.StreamName.ToStringUtf8();
+    //
+    //             // and one must break out right here if the stream is a meta-stream cause otherwise
+    //             // we get into a logical loop and boom - stack overflow
+    //             // this is the most absurd thing ever
+    //             if (stream.IsMetastream)
+    //                 return Result.Failure<Messages, ReadError>(new NotFound(mt => mt.WithStreamName(stream)));
+    //
+    //             // ReSharper disable once PossiblyMistakenUseOfCancellationToken
+    //             // because we are checking the metadata stream on a failure path,
+    //             // we must use the original cancellation token
+    //             var metaStreamName = SystemStreams.MetastreamOf(stream);
+    //
+    //             return await this.ReadLastStreamRecord(SystemStreams.MetastreamOf(stream), cancellationToken)
+    //                 .MatchAsync(
+    //                     rec => {
+    //                         if (rec == Record.None)
+    //                             return Result.Failure<Messages, ReadError>(new NotFound(mt => mt.WithStreamName(stream)));
+    //
+    //                         var metadata = (StreamMetadata)rec.Value!;
+    //                         if (metadata.TruncateBefore == StreamRevision.Max)
+    //                             return Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.WithStreamName(stream)));
+    //
+    //                         throw KurrentException.CreateUnknown(
+    //                             nameof(ReadCore),
+    //                             new InvalidOperationException(
+    //                                 $"Stream {stream} was not found, but metadata does exist and the stream was not truncated. This is unexpected."
+    //                             )
+    //                         );
+    //                     },
+    //                     err => err.Case switch {
+    //                         ReadError.ReadErrorCase.AccessDenied  => Result.Failure<Messages, ReadError>(new AccessDenied(mt => mt.WithStreamName(metaStreamName))),
+    //                         ReadError.ReadErrorCase.NotFound      => Result.Failure<Messages, ReadError>(new NotFound(mt => mt.WithStreamName(stream))),
+    //                         ReadError.ReadErrorCase.StreamDeleted => Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.WithStreamName(metaStreamName))),
+    //
+    //                     }
+    //                 )
+    //                 .ConfigureAwait(false);
+    //         }
+    //     }
+    //     catch (RpcException rex) {
+    //         cancellator.Dispose();
+    //
+    //         return Result.Failure<Messages, ReadError>(
+    //             rex.StatusCode switch {
+    //                 StatusCode.PermissionDenied                                                          => new AccessDenied(),
+    //                 StatusCode.NotFound                                                                  => new NotFound(),
+    //                 StatusCode.FailedPrecondition when rex.IsLegacyError(LegacyErrorCodes.StreamDeleted) => new StreamTombstoned(),
+    //                 _                                                                                    => throw rex.WithOriginalCallStack()
+    //             }
+    //         );
+    //     }
+    //
+    //     // Creates a factory function instead of starting immediately
+    //     var channelFactory = new Func<Channel<ReadMessage>>(() => StartReadMessageRelay(session, bufferSize, timeout, skipDecoding, cancellator));
+    //
+    //     return new Messages(channelFactory);
+    // }
+
     async ValueTask<Result<Messages, ReadError>> ReadCore(ReadReq request, int bufferSize, TimeSpan timeout, bool skipDecoding, CancellationToken cancellationToken) {
         var cancellator   = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         var stoppingToken = cancellator.Token;
 
         var session = LegacyServiceClient.Read(request, cancellationToken: stoppingToken);
 
-        // Check for access denied. the legacy exception mapper throws this exception...
-        // we could skip it for this operation... requires refactoring the interceptor
-        // we also need to check for stream not found. this is absurd...
         try {
             await session.ResponseStream.MoveNext(stoppingToken).ConfigureAwait(false);
 
             if (session.ResponseStream.Current.ContentCase is ReadResp.ContentOneofCase.StreamNotFound) {
                 cancellator.Dispose();
 
-                // we must check the metadata stream to see if the stream was deleted.
-                // this is just a big brutal hack because:
-                // - what happens if the meta-stream is deleted in the meantime?
-                // - or we lose access to it?
-                // it's like inception but worst...
                 StreamName stream = request.Options.Stream.StreamIdentifier.StreamName.ToStringUtf8();
 
-                // and one must break out right here if the stream is a meta-stream cause otherwise
-                // we get into a logical loop and boom - stack overflow
-                // this is the most absurd thing ever
-                if (stream.IsMetastream)
-                    return Result.Failure<Messages, ReadError>(new NotFound(mt => mt.WithStreamName(stream)));
-
                 // ReSharper disable once PossiblyMistakenUseOfCancellationToken
-                // because we are checking the metadata stream on a failure path,
+                // because we are checking the stream details on a failure path,
                 // we must use the original cancellation token
-                return await this.ReadLastStreamRecord(SystemStreams.MetastreamOf(stream), cancellationToken)
-                    .MatchAsync(
-                        rec => {
-                            if (rec == Record.None)
-                                return Result.Failure<Messages, ReadError>(new NotFound(mt => mt.WithStreamName(stream)));
+                var result = await GetStreamInfo(stream, cancellationToken).ConfigureAwait(false);
 
-                            var metadata = (StreamMetadata)rec.Value!;
-                            if (metadata.TruncateBefore == StreamRevision.Max)
-                                return Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.WithStreamName(stream)));
-
-                            throw KurrentException.CreateUnknown(
-                                nameof(ReadCore),
-                                new InvalidOperationException(
-                                    $"Stream {stream} was not found, but metadata does exist and the stream was not truncated. This is unexpected."
-                                )
-                            );
-                        },
-                        err => err.Case switch {
-                            ReadError.ReadErrorCase.StreamDeleted => Result.Failure<Messages, ReadError>(new StreamDeleted(mt => mt.WithStreamName(stream))),
-                            ReadError.ReadErrorCase.NotFound      => Result.Failure<Messages, ReadError>(new NotFound(mt => mt.WithStreamName(stream))),
-                            ReadError.ReadErrorCase.AccessDenied  => Result.Failure<Messages, ReadError>(new AccessDenied(mt => mt.WithStreamName(stream)))
-                        }
-                    )
-                    .ConfigureAwait(false);
+                return result.IsFailure
+                    ? Result.Failure<Messages, ReadError>(result.Error.Case switch {
+                        GetStreamInfoError.GetStreamInfoErrorCase.AccessDenied => result.Error.AsAccessDenied
+                    })
+                    : Result.Failure<Messages, ReadError>(result.Value.State switch {
+                        StreamState.Missing    => new NotFound(),
+                        StreamState.Deleted    => new StreamDeleted(),
+                        StreamState.Tombstoned => new StreamTombstoned()
+                    });
             }
         }
         catch (RpcException rex) {
             cancellator.Dispose();
 
-            return Result.Failure<Messages, ReadError>(
-                rex.StatusCode switch {
-                    StatusCode.PermissionDenied                                                          => new AccessDenied(),
-                    StatusCode.FailedPrecondition when rex.IsLegacyError(LegacyErrorCodes.StreamDeleted) => new StreamTombstoned(),
-                    _                                                                                    => throw rex.WithOriginalCallStack()
-                }
-            );
+            return Result.Failure<Messages, ReadError>(rex.StatusCode switch {
+                StatusCode.PermissionDenied => new AccessDenied(),
+                _                           => throw rex.WithOriginalCallStack()
+            });
         }
 
         // Creates a factory function instead of starting immediately
@@ -453,30 +780,5 @@ public partial class StreamsClient {
         );
 
         return channel;
-    }
-
-    public async ValueTask<Result<Record, InspectRecordError>> InspectRecord(LogPosition position, CancellationToken cancellationToken = default) {
-        ArgumentOutOfRangeException.ThrowIfEqual(position, LogPosition.Unset, nameof(position));
-
-        var readResult = await ReadCore(
-                request: Requests.CreateInspectRecordRequest(position),
-                bufferSize: 1,
-                timeout: Timeout.InfiniteTimeSpan,
-                skipDecoding: true,
-                cancellationToken: cancellationToken)
-            .ConfigureAwait(false);
-
-        if (readResult.IsFailure)
-            return Result.Failure<Record, InspectRecordError>(readResult.Error.AsAccessDenied);
-
-        await using var messages = readResult.Value;
-
-        var record = await messages
-            .Select(msg => msg.AsRecord)
-            .FirstOrDefaultAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        return record ?? Result.Failure<Record, InspectRecordError>(
-            new LogPositionNotFound(mt => mt.With("Position", position)));
     }
 }

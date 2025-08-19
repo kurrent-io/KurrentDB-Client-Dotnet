@@ -4,6 +4,7 @@ using System.Threading.Channels;
 using Grpc.Core;
 using KurrentDB.Protocol.Streams.V1;
 using static KurrentDB.Protocol.Streams.V1.ReadResp.ContentOneofCase;
+using AsyncStreamReaderExtensions = Kurrent.Grpc.AsyncStreamReaderExtensions;
 
 namespace Kurrent.Client.Streams;
 
@@ -88,7 +89,7 @@ public partial class StreamsClient {
         _ = Task.Run(
             async () => {
                 try {
-                    var messages = session.ResponseStream.ReadAllAsync(stoppingToken)
+                    var messages = AsyncStreamReaderExtensions.ReadAllAsync(session.ResponseStream, stoppingToken)
                         .Where(x => x.ContentCase is Event or Checkpoint or CaughtUp or FellBehind)
                         .SelectAwait<ReadResp, ReadMessage>(async x => x.ContentCase switch {
                                 Event => await x.Event.MapToRecord(

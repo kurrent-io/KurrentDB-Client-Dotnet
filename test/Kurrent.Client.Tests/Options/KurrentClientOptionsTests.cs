@@ -20,10 +20,10 @@ public class KurrentClientOptionsTests {
 
         options.ConnectionScheme.ShouldBe(KurrentConnectionScheme.Direct);
         options.Endpoints.ShouldHaveSingleItem();
-        ShouldlyObjectGraphTestExtensions.ShouldBeEquivalentTo(options.Gossip, KurrentClientGossipOptions.Default);
+        options.Gossip.ShouldBeEquivalentTo(KurrentClientGossipOptions.Default);
         options.Security.ShouldBe(KurrentClientSecurityOptions.Default);
-        ShouldlyObjectGraphTestExtensions.ShouldBeEquivalentTo(options.Resilience, KurrentClientResilienceOptions.NoResilience);
-        ShouldlyObjectGraphTestExtensions.ShouldBeEquivalentTo(options.Schema, KurrentClientSchemaOptions.FullValidation);
+        options.Resilience.ShouldBeEquivalentTo(KurrentClientResilienceOptions.NoResilience);
+        options.Schema.ShouldBeEquivalentTo(KurrentClientSchemaOptions.FullValidation);
         options.Interceptors.ShouldBeEmpty();
     }
 

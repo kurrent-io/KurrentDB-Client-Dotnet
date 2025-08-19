@@ -33,7 +33,7 @@ public class TombstoneTests : KurrentClientTestFixture {
         await AutomaticClient.Streams
             .Tombstone(simulation.Game.Stream, simulation.Revision + 99, ct)
             .ShouldFailAsync(error =>
-                error.Value.ShouldBeOfType<ErrorDetails.StreamRevisionConflict>());
+                error.Case.ShouldBe(TombstoneError.TombstoneErrorCase.StreamRevisionConflict));
     }
 
     [Test]
@@ -43,7 +43,7 @@ public class TombstoneTests : KurrentClientTestFixture {
         await AutomaticClient.Streams
             .Tombstone(game.Stream, ct)
             .ShouldFailAsync(error =>
-                error.Value.ShouldBeOfType<ErrorDetails.StreamNotFound>());
+                error.Case.ShouldBe(TombstoneError.TombstoneErrorCase.NotFound));
     }
 
     [Test]
@@ -57,7 +57,7 @@ public class TombstoneTests : KurrentClientTestFixture {
         await AutomaticClient.Streams
             .Tombstone(simulation.Game.Stream, ct)
             .ShouldFailAsync(error =>
-                error.Value.ShouldBeOfType<ErrorDetails.StreamDeleted>());
+                error.Case.ShouldBe(TombstoneError.TombstoneErrorCase.StreamDeleted));
     }
 
     [Test]
@@ -71,6 +71,6 @@ public class TombstoneTests : KurrentClientTestFixture {
         await AutomaticClient.Streams
             .Tombstone(simulation.Game.Stream, ct)
             .ShouldFailAsync(error =>
-                error.Value.ShouldBeOfType<ErrorDetails.StreamTombstoned>());
+                error.Case.ShouldBe(TombstoneError.TombstoneErrorCase.StreamTombstoned));
     }
 }

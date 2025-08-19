@@ -10,6 +10,7 @@ using KurrentDB.Client;
 using KurrentDB.Protocol.PersistentSubscriptions.V1;
 using static System.Threading.Channels.Channel;
 using static KurrentDB.Protocol.PersistentSubscriptions.V1.ReadResp.ContentOneofCase;
+using AsyncStreamReaderExtensions = Kurrent.Grpc.AsyncStreamReaderExtensions;
 
 namespace Kurrent.Client.PersistentSubscriptions;
 
@@ -225,7 +226,7 @@ public partial class PersistentSubscriptionsClient {
 
                     await ReadCall.RequestStream.WriteAsync(Request).ConfigureAwait(false);
 
-                    await foreach (var response in ReadCall.ResponseStream.ReadAllAsync(Cancellator.Token).ConfigureAwait(false)) {
+                    await foreach (var response in AsyncStreamReaderExtensions.ReadAllAsync(ReadCall.ResponseStream, Cancellator.Token).ConfigureAwait(false)) {
                         PersistentSubscriptionMessage subscriptionMessage = response.ContentCase switch {
                             SubscriptionConfirmation => new PersistentSubscriptionMessage.SubscriptionConfirmation(
                                 response.SubscriptionConfirmation.SubscriptionId

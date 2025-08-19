@@ -1,8 +1,10 @@
 // ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
 
 using Grpc.Core;
+using Kurrent.Grpc;
 using KurrentDB.Client;
 using KurrentDB.Protocol.Users.V1;
+using AsyncStreamReaderExtensions = Kurrent.Grpc.AsyncStreamReaderExtensions;
 using UsersServiceClient = KurrentDB.Protocol.Users.V1.Users.UsersClient;
 
 namespace Kurrent.Client.Users;
@@ -160,8 +162,7 @@ public class UsersClient : ClientModuleBase {
 
             using var call = ServiceClient.Details(request, cancellationToken: cancellationToken);
 
-            var user = await call.ResponseStream
-                .ReadAllAsync(cancellationToken)
+            var user = await AsyncStreamReaderExtensions.ReadAllAsync(call.ResponseStream, cancellationToken)
                 .Select(static resp => new UserDetails {
                     LoginName       = resp.UserDetails.LoginName,
                     FullName        = resp.UserDetails.FullName,
@@ -186,8 +187,7 @@ public class UsersClient : ClientModuleBase {
         try {
             using var call = ServiceClient.Details(new DetailsReq(), cancellationToken: cancellationToken);
 
-            var users = await call.ResponseStream
-                .ReadAllAsync(cancellationToken)
+            var users = await AsyncStreamReaderExtensions.ReadAllAsync(call.ResponseStream, cancellationToken)
                 .Select(static resp => new UserDetails { // TODO SS: Create a mapper for mapping user details
                     LoginName       = resp.UserDetails.LoginName,
                     FullName        = resp.UserDetails.FullName,

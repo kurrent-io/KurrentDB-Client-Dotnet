@@ -91,6 +91,25 @@ static class StreamsClientV1Mapper {
             };
         }
 
+        public static Contracts.ReadReq CreateReadStreamEdgeRequest(StreamName stream, ReadDirection direction) {
+            return new Contracts.ReadReq {
+                Options = new() {
+                    UuidOption    = DefaultUuidOptions,
+                    ControlOption = DefaultControlOption,
+                    NoFilter      = DefaultEmpty,
+                    ReadDirection = direction switch {
+                        ReadDirection.Backwards => Contracts.ReadReq.Types.Options.Types.ReadDirection.Backwards,
+                        ReadDirection.Forwards  => Contracts.ReadReq.Types.Options.Types.ReadDirection.Forwards,
+                    },
+                    Stream = ConvertToStreamOptions(stream, direction switch {
+                        ReadDirection.Backwards => StreamRevision.Max,
+                        ReadDirection.Forwards  => StreamRevision.Min,
+                    }),
+                    Count  = 1,
+                }
+            };
+        }
+
         // NoStream     = -1
         // Any          = -2
         // StreamExists = -4

@@ -9,7 +9,7 @@ public record Message {
 		Metadata   = null!
 	};
 
-	public static MessageBuilder New => new();
+	public static AppendRecordBuilder New => new();
 
 	/// <summary>
 	/// The assigned record id.
@@ -47,7 +47,7 @@ public record Message {
 }
 
 [PublicAPI]
-public class MessageBuilder {
+public class AppendRecordBuilder {
 	Message _message = new() {
 		RecordId   = Guid.NewGuid(),
 		Value      = null!,
@@ -55,7 +55,7 @@ public class MessageBuilder {
 		Metadata   = new Metadata().With(SystemMetadataKeys.SchemaDataFormat, SchemaDataFormat.Json)
 	};
 
-	public MessageBuilder WithRecordId(Guid recordId) {
+	public AppendRecordBuilder WithRecordId(Guid recordId) {
 		if (_message.RecordId == Guid.Empty)
 			throw new ArgumentNullException(nameof(recordId), "RecordId cannot be empty");
 
@@ -63,7 +63,7 @@ public class MessageBuilder {
 		return this;
 	}
 
-	public MessageBuilder WithValue(object value) {
+	public AppendRecordBuilder WithValue(object value) {
         if (value is null)
             throw new ArgumentNullException(nameof(value), "Message value cannot be null");
 
@@ -72,7 +72,7 @@ public class MessageBuilder {
 		return this;
 	}
 
-	public MessageBuilder WithDataFormat(SchemaDataFormat dataFormat) {
+	public AppendRecordBuilder WithDataFormat(SchemaDataFormat dataFormat) {
 		if (dataFormat == SchemaDataFormat.Unspecified)
 			throw new ArgumentNullException(nameof(dataFormat), "Data format cannot be unspecified");
 
@@ -87,7 +87,7 @@ public class MessageBuilder {
 		return this;
 	}
 
-	public MessageBuilder WithMetadata(Metadata metadata) {
+	public AppendRecordBuilder WithMetadata(Metadata metadata) {
 		var dataFormat = metadata.GetSchemaDataFormat();
 		if (dataFormat == SchemaDataFormat.Unspecified)
 			dataFormat = _message.DataFormat;
@@ -101,10 +101,10 @@ public class MessageBuilder {
 		return this;
 	}
 
-	public MessageBuilder WithMetadata<T>(string key, T value) =>
+	public AppendRecordBuilder WithMetadata<T>(string key, T value) =>
 		WithMetadata(_message.Metadata.With(key, value));
 
-	public MessageBuilder WithMetadata(IDictionary<string, object?> entries) =>
+	public AppendRecordBuilder WithMetadata(IDictionary<string, object?> entries) =>
 		WithMetadata(_message.Metadata.WithMany(entries));
 
 	public Message Build() {

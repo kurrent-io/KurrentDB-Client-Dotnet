@@ -7,11 +7,11 @@ public static partial class StreamsClientExtensions {
         CancellationToken cancellationToken = default
     ) => client.Append(requests.ToAsyncEnumerable(), cancellationToken);
 
-    public static ValueTask<Result<AppendStreamSuccesses, AppendStreamFailures>> Append(
-        this StreamsClient client,
-        MultiStreamAppendRequest request,
-        CancellationToken cancellationToken = default
-    ) => client.Append(request.Requests.ToAsyncEnumerable(), cancellationToken);
+    // public static ValueTask<Result<AppendStreamSuccesses, AppendStreamFailures>> Append(
+    //     this StreamsClient client,
+    //     MultiStreamAppendRequest request,
+    //     CancellationToken cancellationToken = default
+    // ) => client.Append(request.Requests.ToAsyncEnumerable(), cancellationToken);
 
     /// <summary>
     /// Appends a series of messages to a specified stream in KurrentDB.

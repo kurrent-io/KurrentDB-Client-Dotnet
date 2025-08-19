@@ -5,6 +5,8 @@ namespace Kurrent.Client.Streams;
 /// </summary>
 [PublicAPI]
 public record StreamInfo {
+    public static readonly StreamInfo None = new();
+
     /// <summary>
     /// The metadata associated with the stream.
     /// </summary>
@@ -14,16 +16,6 @@ public record StreamInfo {
     /// The revision of the metadata stream
     /// </summary>
     public StreamRevision MetadataRevision { get; init; } = StreamRevision.Unset;
-
-    /// <summary>
-    /// Indicates whether the stream has been deleted.
-    /// </summary>
-    public bool IsDeleted { get; init; }
-
-    /// <summary>
-    /// Indicates whether the stream has been tombstoned.
-    /// </summary>
-    public bool IsTombstoned { get; init; }
 
     /// <summary>
     ///  The last stream revision of the stream.
@@ -36,14 +28,17 @@ public record StreamInfo {
     public LogPosition LastStreamPosition { get; init; } = LogPosition.Unset;
 
     /// <summary>
-    /// The last time the stream was updated.
+    /// The last time the stream was appended.
     /// </summary>
-    public DateTimeOffset LastStreamUpdate { get; init; } = DateTimeOffset.MinValue;
+    public DateTime LastStreamAppendTime { get; init; } = DateTime.MinValue;
 
     /// <summary>
     /// Indicates whether the stream has metadata associated with it.
     /// </summary>
     public bool HasMetadata => Metadata != StreamMetadata.None;
 
-    public StreamsClient.StreamState State { get; init; } = StreamsClient.StreamState.NotFound;
+    /// <summary>
+    /// The state of the stream, indicating whether it is active, deleted, tombstoned, or missing.
+    /// </summary>
+    public StreamState State { get; init; } = StreamState.Missing;
 }

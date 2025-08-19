@@ -35,11 +35,10 @@ public class ProjectionsStateTests : KurrentClientTestFixture {
 
         await Task.Delay(1.Seconds(), ct); // Allow time for the projection to process messages
 
-        var state = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .GetState<TestProjectionState>(projection, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        state.Count.ShouldBeGreaterThan(0);
+            .ShouldNotThrowOrFailAsync(
+                state => state.Count.ShouldBeGreaterThan(0));
 	}
 
     record TestProjectionState(int Count);

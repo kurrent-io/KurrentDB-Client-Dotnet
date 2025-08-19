@@ -16,7 +16,9 @@ public record JsonSchemaSerializerOptions : SchemaSerializerOptions {
 		UnmappedMemberHandling      = JsonUnmappedMemberHandling.Skip,
 		NumberHandling              = JsonNumberHandling.AllowReadingFromString,
 		Converters                  = {
-			new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
+			new JsonStringEnumConverter(JsonNamingPolicy.CamelCase),
+            new NullableTimeSpanIso8601Converter(),
+            new TimeSpanIso8601Converter()
 		}
 	};
 

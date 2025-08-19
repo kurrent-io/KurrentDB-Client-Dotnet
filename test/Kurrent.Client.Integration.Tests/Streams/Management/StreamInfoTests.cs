@@ -33,13 +33,13 @@ public class StreamInfoTests : KurrentClientTestFixture {
                 info.MetadataRevision.ShouldBe(0);
                 info.LastStreamPosition.ShouldBeGreaterThan(LogPosition.Earliest);
                 info.LastStreamRevision.ShouldBe(simulation.Revision);
-                info.LastStreamUpdate.ShouldBeGreaterThan(DateTimeOffset.MinValue);
-                info.IsDeleted.ShouldBeFalse();
+                info.LastStreamAppendTime.ShouldBeGreaterThan(DateTime.MinValue);
+                info.State.ShouldBe(StreamState.Active);
             });
     }
 
     [Test]
-    public async Task returns_stream_info_with_empty_metadata_when_not_set(CancellationToken ct) {
+    public async Task returns_stream_info_with_empty_metadata_when_no_metadata_exists(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
         await AutomaticClient.Streams
@@ -49,8 +49,8 @@ public class StreamInfoTests : KurrentClientTestFixture {
                 info.MetadataRevision.ShouldBe(StreamRevision.Unset);
                 info.LastStreamPosition.ShouldBeGreaterThan(LogPosition.Earliest);
                 info.LastStreamRevision.ShouldBe(simulation.Revision);
-                info.LastStreamUpdate.ShouldBeGreaterThan(DateTimeOffset.MinValue);
-                info.IsDeleted.ShouldBeFalse();
+                info.LastStreamAppendTime.ShouldBeGreaterThan(DateTime.MinValue);
+                info.State.ShouldBe(StreamState.Active);
             });
     }
 
@@ -60,8 +60,7 @@ public class StreamInfoTests : KurrentClientTestFixture {
             .GetStreamInfo("does_not_exist", ct)
             .ShouldNotThrowOrFailAsync(info => {
                 info.HasMetadata.ShouldBeFalse();
-                info.IsDeleted.ShouldBeFalse();
-                info.IsTombstoned.ShouldBeFalse();
+                info.State.ShouldBe(StreamState.Missing);
             });
     }
 
@@ -77,8 +76,7 @@ public class StreamInfoTests : KurrentClientTestFixture {
             .GetStreamInfo(simulation.Game.Stream, ct)
             .ShouldNotThrowOrFailAsync(info => {
                 info.HasMetadata.ShouldBeTrue();
-                info.IsDeleted.ShouldBeTrue();
-                info.IsTombstoned.ShouldBeFalse();
+                info.State.ShouldBe(StreamState.Deleted);
             });
     }
 
@@ -93,24 +91,23 @@ public class StreamInfoTests : KurrentClientTestFixture {
         await AutomaticClient.Streams
             .GetStreamInfo(simulation.Game.Stream, ct)
             .ShouldNotThrowOrFailAsync(info => {
-                info.HasMetadata.ShouldBeFalse(); // because the server does not let this happen... absurd...
-                info.IsDeleted.ShouldBeTrue();
-                info.IsTombstoned.ShouldBeTrue();
+                info.HasMetadata.ShouldBeFalse();
+                info.State.ShouldBe(StreamState.Tombstoned);
             });
     }
 
     [Test, Skip("Must setup a client with invalid credentials, and for that I need user management wrapped")]
-    public async Task fails_with_access_denied_without_permissions(CancellationToken ct) {
+    public async Task fails_to_return_stream_info_with_access_denied_without_permissions(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
         await AutomaticClient.Streams
             .GetStreamInfo(simulation.Game.Stream, ct)
             .ShouldFailAsync(error =>
-                error.Value.ShouldBeOfType<ErrorDetails.AccessDenied>());
+                error.Case.ShouldBe(GetStreamInfoError.GetStreamInfoErrorCase.AccessDenied));
     }
 
     [Test]
-    public async Task sets_stream_metadata(CancellationToken ct) {
+    public async Task sets_stream_metadata_when_stream_exists(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
         var customMetadata = JsonDocument.Parse("""{ "key1": "value1" }""");
@@ -129,7 +126,31 @@ public class StreamInfoTests : KurrentClientTestFixture {
     }
 
     [Test]
-    public async Task sets_stream_metadata_even_when_stream_is_deleted(CancellationToken ct) {
+    public async Task sets_stream_metadata_when_stream_does_not_exist(CancellationToken ct) {
+        var stream = NewStreamName();
+
+        var meta = new StreamMetadata {
+            MaxAge         = TimeSpan.FromDays(1),
+            TruncateBefore = null,
+            CacheControl   = TimeSpan.FromHours(1),
+            MaxCount       = 100,
+            CustomMetadata = JsonDocument.Parse("""{"key1":"value1"}""")
+        };
+
+        await AutomaticClient.Streams
+            .SetStreamMetadata(stream, meta, ct)
+            .ShouldNotThrowOrFailAsync(revision => revision.ShouldBe(0));
+
+        await AutomaticClient.Streams
+            .GetStreamInfo(stream, ct)
+            .ShouldNotThrowOrFailAsync(info => {
+                info.Metadata.ShouldBeEquivalentTo(meta, x => x.Using<JsonDocument>((l, r) => l.ToString() == r.ToString()));
+                info.State.ShouldBe(StreamState.Missing);
+            });
+    }
+
+    [Test]
+    public async Task sets_stream_metadata_when_stream_is_deleted(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
         await AutomaticClient.Streams
@@ -164,31 +185,6 @@ public class StreamInfoTests : KurrentClientTestFixture {
         await AutomaticClient.Streams
             .SetStreamMetadata(simulation.Game.Stream, meta, ct)
             .ShouldFailAsync(error =>
-                error.Value.ShouldBeOfType<ErrorDetails.StreamDeleted>());
+                error.Case.ShouldBe(SetStreamMetadataError.SetStreamMetadataErrorCase.StreamTombstoned));
     }
-
-
-    // [Test]
-    // public async Task gets_stream_metadata(CancellationToken ct) {
-    //     var simulation = await SeedGame(ct);
-    //
-    //     var customMetadata = JsonDocument.Parse("""{"key1":"value1"}""");
-    //
-    //     var meta = new StreamMetadata {
-    //         MaxAge         = TimeSpan.FromDays(7),
-    //         TruncateBefore = null,
-    //         CacheControl   = TimeSpan.FromHours(3),
-    //         MaxCount       = 200,
-    //         CustomMetadata = customMetadata
-    //     };
-    //
-    //     await AutomaticClient.Streams
-    //         .SetStreamMetadata(simulation.Game.Stream, meta, ExpectedStreamState.Any, ct)
-    //         .ShouldNotThrowOrFailAsync();
-    //
-    //     await AutomaticClient.Streams
-    //         .GetStreamMetadata(simulation.Game.Stream, ct)
-    //         .ShouldNotThrowOrFailAsync(streamMeta =>
-    //             streamMeta.ShouldBeEquivalentTo(meta, x => x.Using<JsonDocument>((l, r) => l.ToString() == r.ToString())));
-    // }
 }

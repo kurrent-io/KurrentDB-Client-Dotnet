@@ -68,15 +68,14 @@ public class ProjectionsTests : KurrentClientTestFixture {
 			.Create(projection, TestDefinition, ProjectionSettings.Default, false, ct)
 			.ShouldNotThrowOrFailAsync();
 
-        var details = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .GetDetails(projection, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        Logger.LogInformation("{@ProjectionDetails}", details);
-
-        details.Mode.ShouldBe(ProjectionMode.Continuous);
-        details.Settings.EmitEnabled.ShouldBeTrue();
-        details.Settings.TrackEmittedStreams.ShouldBeFalse();
+            .ShouldNotThrowOrFailAsync(details => {
+                Logger.LogInformation("{@ProjectionDetails}", details);
+                details.Mode.ShouldBe(ProjectionMode.Continuous);
+                details.Settings.EmitEnabled.ShouldBeTrue();
+                details.Settings.TrackEmittedStreams.ShouldBeFalse();
+            });
 	}
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -92,15 +91,14 @@ public class ProjectionsTests : KurrentClientTestFixture {
             .Create(projection, TestDefinition, settings, ct)
             .ShouldNotThrowOrFailAsync();
 
-        var details = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .GetDetails(projection, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        Logger.LogInformation("{@ProjectionDetails}", details);
-
-        details.Mode.ShouldBe(ProjectionMode.Continuous);
-        details.Settings.EmitEnabled.ShouldBeTrue();
-        details.Settings.TrackEmittedStreams.ShouldBeTrue();
+            .ShouldNotThrowOrFailAsync(details => {
+                Logger.LogInformation("{@ProjectionDetails}", details);
+                details.Mode.ShouldBe(ProjectionMode.Continuous);
+                details.Settings.EmitEnabled.ShouldBeTrue();
+                details.Settings.TrackEmittedStreams.ShouldBeTrue();
+            });
     }
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -115,13 +113,12 @@ public class ProjectionsTests : KurrentClientTestFixture {
             .UpdateDefinition(projection, AnotherTestDefinition, ct)
             .ShouldNotThrowOrFailAsync();
 
-        var details = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .GetDetails(projection, new() { IncludeDefinition = true }, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        Logger.LogInformation("{@ProjectionDefinition}", details.Definition);
-
-        details.Definition.ShouldBe<ProjectionDefinition>(AnotherTestDefinition);
+            .ShouldNotThrowOrFailAsync(details => {
+                Logger.LogInformation("{@ProjectionDefinition}", details.Definition);
+                details.Definition.ShouldBe<ProjectionDefinition>(AnotherTestDefinition);
+            });
     }
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -146,13 +143,12 @@ public class ProjectionsTests : KurrentClientTestFixture {
             .UpdateSettings(projection, newSettings, ct)
             .ShouldNotThrowOrFailAsync();
 
-        var settings = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .GetSettings(projection, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        Logger.LogInformation("{@ProjectionSettings}", settings);
-
-        settings.ShouldBeEquivalentTo(newSettings);
+            .ShouldNotThrowOrFailAsync(settings => {
+                Logger.LogInformation("{@ProjectionSettings}", settings);
+                settings.ShouldBeEquivalentTo(newSettings);
+            });
     }
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -163,13 +159,12 @@ public class ProjectionsTests : KurrentClientTestFixture {
             .Create(projection, TestDefinition, ProjectionSettings.Default, ct)
             .ShouldNotThrowOrFailAsync();
 
-        var settings = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .GetSettings(projection, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        Logger.LogInformation("{@ProjectionSettings}", settings);
-
-        settings.ShouldNotBeNull();
+            .ShouldNotThrowOrFailAsync(settings => {
+                Logger.LogInformation("{@ProjectionSettings}", settings);
+                settings.ShouldNotBeNull();
+            });
     }
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -184,17 +179,20 @@ public class ProjectionsTests : KurrentClientTestFixture {
             .Delete(projection, DeleteProjectionOptions.Default, ct)
             .ShouldNotThrowOrFailAsync();
 
-        var result = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .GetDetails(projection, ct)
-            .ShouldNotThrowAsync();
+            .ShouldNotThrowAsync()
+            .OnSuccessAsync(details => Logger.LogWarning("Projection {ProjectionName} still exists after deletion: {@ProjectionDetails}", projection, details))
+            .ShouldFailAsync(error =>
+                error.Case.ShouldBe(GetProjectionDetailsError.GetProjectionDetailsErrorCase.NotFound));
 
-        if (result.IsSuccess) {
-            Logger.LogWarning("Projection {ProjectionName} still exists after deletion: {@ProjectionStatus}", projection, result.Value.Status);
-            return;
-        }
-
-        result.IsFailure.ShouldBeTrue($"Projection should not exist after deletion");
-        result.Error.Case.ShouldBe(GetProjectionDetailsError.GetProjectionDetailsErrorCase.NotFound);
+        // if (result.IsSuccess) {
+        //     Logger.LogWarning("Projection {ProjectionName} still exists after deletion: {@ProjectionStatus}", projection, result.Value.Status);
+        //     return;
+        // }
+        //
+        // result.IsFailure.ShouldBeTrue($"Projection should not exist after deletion");
+        // result.Error.Case.ShouldBe(GetProjectionDetailsError.GetProjectionDetailsErrorCase.NotFound);
     }
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -209,13 +207,13 @@ public class ProjectionsTests : KurrentClientTestFixture {
             .Enable(projection, ct)
             .ShouldNotThrowOrFailAsync();
 
-        var details = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .GetDetails(projection, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        Logger.LogInformation("{@ProjectionDetails}", details);
-
-        details.ShouldNotBeNull();
+            .ShouldNotThrowOrFailAsync(details => {
+                Logger.LogInformation("{@ProjectionDetails}", details);
+                details.Status.ShouldBe(ProjectionStatus.Running);
+                details.ShouldNotBeNull();
+            });
     }
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -234,13 +232,12 @@ public class ProjectionsTests : KurrentClientTestFixture {
             .Enable(projection, ct)
             .ShouldNotThrowOrFailAsync();
 
-        var details = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .GetDetails(projection, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        Logger.LogInformation("{@ProjectionDetails}", details);
-
-        details.ShouldNotBeNull();
+            .ShouldNotThrowOrFailAsync(details => {
+                Logger.LogInformation("{@ProjectionDetails}", details);
+                details.Status.ShouldBe(ProjectionStatus.Running);
+            });
     }
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -288,13 +285,12 @@ public class ProjectionsTests : KurrentClientTestFixture {
             .Disable(projection, ct)
             .ShouldNotThrowOrFailAsync();
 
-        var details = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .GetDetails(projection, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        Logger.LogInformation("{@ProjectionDetails}", details);
-
-        details.ShouldNotBeNull();
+            .ShouldNotThrowOrFailAsync(details => {
+                Logger.LogInformation("{@ProjectionDetails}", details);
+                details.Status.ShouldBe(ProjectionStatus.Stopped);
+            });
     }
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -313,13 +309,12 @@ public class ProjectionsTests : KurrentClientTestFixture {
             .Reset(projection, ct)
             .ShouldNotThrowOrFailAsync();
 
-        var details = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .GetDetails(projection, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        Logger.LogInformation("{@ProjectionDetails}", details);
-
-        details.ShouldNotBeNull();
+            .ShouldNotThrowOrFailAsync(details => {
+                Logger.LogInformation("{@ProjectionDetails}", details);
+                details.ShouldNotBeNull();
+            });
     }
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -330,13 +325,15 @@ public class ProjectionsTests : KurrentClientTestFixture {
             .Create(projection, TestDefinition, ProjectionSettings.Default, ct)
             .ShouldNotThrowOrFailAsync();
 
-        var details = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .GetDetails(projection, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        Logger.LogInformation("{@ProjectionDetails}", details);
-
-        details.ShouldNotBeNull();
+            .ShouldNotThrowOrFailAsync(details => {
+                Logger.LogInformation("{@ProjectionDetails}", details);
+                details.Name.ShouldBe(projection);
+                details.Definition.ShouldBe(ProjectionDefinition.From(TestDefinition));
+                details.Settings.ShouldBe(ProjectionSettings.Default);
+                details.Status.ShouldBe(ProjectionStatus.Stopped);
+            });
     }
 
     public class SystemProjectionsCases : TestCaseGenerator<ProjectionName> {
@@ -351,14 +348,16 @@ public class ProjectionsTests : KurrentClientTestFixture {
 
     [Test, TimeoutAfter.SixtySeconds, SystemProjectionsCases]
     public async Task gets_system_projections(ProjectionName projection, CancellationToken ct) {
-        var details = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .GetDetails(projection, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        details.Name.IsSystemProjection.ShouldBeTrue();
-        details.Definition.ShouldBe(ProjectionDefinition.None);
-
-        Logger.LogInformation("{@ProjectionDetails}", details);
+            .ShouldNotThrowOrFailAsync(details => {
+                Logger.LogInformation("{@ProjectionDetails}", details);
+                details.Name.IsSystemProjection.ShouldBeTrue();
+                details.Name.ShouldBe(projection);
+                details.Definition.ShouldBe(ProjectionDefinition.None);
+                details.Settings.ShouldBe(ProjectionSettings.Default);
+                details.Status.ShouldBe(ProjectionStatus.Running);
+            });
     }
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -367,11 +366,12 @@ public class ProjectionsTests : KurrentClientTestFixture {
             .Create(NewEntityID(), TestDefinition, ProjectionSettings.Default, ct)
             .ShouldNotThrowOrFailAsync();
 
-        var result = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .List(ListProjectionsOptions.Default, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        result.Count.ShouldBePositive();
+            .ShouldNotThrowOrFailAsync(details => {
+                Logger.LogInformation("{@Projections}", details);
+                details.Count.ShouldBePositive();
+            });
     }
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -383,16 +383,15 @@ public class ProjectionsTests : KurrentClientTestFixture {
             IncludeStatistics = true
         };
 
-        var result = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .List(options, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        Logger.LogInformation("{@Projections}", result);
-
-        result.Count.ShouldBePositive();
-        result.Any(x => x.HasDefinition).ShouldBeFalse();
-        result.Any(x => x.HasSettings).ShouldBeTrue();
-        result.Any(x => x.HasStatistics).ShouldBeTrue();
+            .ShouldNotThrowOrFailAsync(result => {
+                Logger.LogInformation("{@Projections}", result);
+                result.Count.ShouldBePositive();
+                result.Any(x => x.HasDefinition).ShouldBeFalse();
+                result.Any(x => x.HasSettings).ShouldBeTrue();
+                result.Any(x => x.HasStatistics).ShouldBeTrue();
+            });
     }
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -408,16 +407,15 @@ public class ProjectionsTests : KurrentClientTestFixture {
             IncludeStatistics = true
         };
 
-        var result = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .List(options, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        Logger.LogInformation("{@Projections}", result);
-
-        result.Count.ShouldBePositive();
-        result.Any(x => x.HasDefinition).ShouldBeFalse();
-        result.Any(x => x.HasSettings).ShouldBeTrue();
-        result.Any(x => x.HasStatistics).ShouldBeTrue();
+            .ShouldNotThrowOrFailAsync(result => {
+                Logger.LogInformation("{@Projections}", result);
+                result.Count.ShouldBePositive();
+                result.Any(x => x.HasDefinition).ShouldBeFalse();
+                result.Any(x => x.HasSettings).ShouldBeTrue();
+                result.Any(x => x.HasStatistics).ShouldBeTrue();
+            });
     }
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -433,16 +431,15 @@ public class ProjectionsTests : KurrentClientTestFixture {
             IncludeStatistics = true
         };
 
-        var result = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .List(options, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        Logger.LogInformation("{@Projections}", result);
-
-        result.Count.ShouldBePositive();
-        result.Any(x => x.HasDefinition).ShouldBeTrue();
-        result.Any(x => x.HasSettings).ShouldBeFalse();
-        result.Any(x => x.HasStatistics).ShouldBeTrue();
+            .ShouldNotThrowOrFailAsync(result => {
+                Logger.LogInformation("{@Projections}", result);
+                result.Count.ShouldBePositive();
+                result.Any(x => x.HasDefinition).ShouldBeTrue();
+                result.Any(x => x.HasSettings).ShouldBeFalse();
+                result.Any(x => x.HasStatistics).ShouldBeTrue();
+            });
     }
 
     [Test, TimeoutAfter.SixtySeconds]
@@ -458,16 +455,15 @@ public class ProjectionsTests : KurrentClientTestFixture {
             IncludeStatistics = false
         };
 
-        var result = await AutomaticClient.Projections
+        await AutomaticClient.Projections
             .List(options, ct)
-            .ShouldNotThrowOrFailAsync();
-
-        Logger.LogInformation("{@Projections}", result);
-
-        result.Count.ShouldBePositive();
-        result.Any(x => x.HasDefinition).ShouldBeTrue();
-        result.Any(x => x.HasSettings).ShouldBeTrue();
-        result.Any(x => x.HasStatistics).ShouldBeFalse();
+            .ShouldNotThrowOrFailAsync(result => {
+                Logger.LogInformation("{@Projections}", result);
+                result.Count.ShouldBePositive();
+                result.Any(x => x.HasDefinition).ShouldBeTrue();
+                result.Any(x => x.HasSettings).ShouldBeTrue();
+                result.Any(x => x.HasStatistics).ShouldBeFalse();
+            });
     }
 
     [Test, TimeoutAfter.SixtySeconds]
