@@ -1,4 +1,6 @@
-﻿#pragma warning disable CS8321 // Local function is declared but never used
+﻿using System.Text.Json;
+
+#pragma warning disable CS8321 // Local function is declared but never used
 
 var settings = KurrentDBClientSettings.Create("kurrentdb://localhost:2113?tls=false");
 
@@ -15,9 +17,7 @@ await AppendWithSameId(client);
 return;
 
 static async Task MultiStreamAppend(KurrentDBClient client) {
-	var serializer = new KurrentDB.Client.Schema.Serialization.Json.JsonSerializer();
-
-	var metadata = serializer.Serialize(
+	var metadata = JsonSerializer.SerializeToUtf8Bytes(
 		new {
 			TimeStamp = DateTime.UtcNow,
 		}
@@ -36,7 +36,7 @@ static async Task MultiStreamAppend(KurrentDBClient client) {
 		)
 	];
 
-	var result = await client.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
+	var result = await client.MultiStreamAppendAsync(requests);
 
 	if (result is MultiAppendSuccess { Successes: var successes })
 		foreach (var item in successes)
