@@ -12,7 +12,7 @@ using static KurrentDB.Client.Constants;
 namespace KurrentDB.Client;
 
 /// <summary>
-/// Provides methods to encode and decode metadata.
+/// Provides methods to decode metadata.
 /// </summary>
 [PublicAPI]
 public static class MetadataDecoder {
