@@ -1,4 +1,4 @@
-// ReSharper disable InvertIf
+using Humanizer;
 
 namespace Kurrent.Client;
 
@@ -7,63 +7,60 @@ namespace Kurrent.Client;
 /// Provides relevant error details, including error codes, statuses, field violations, and associated metadata.
 /// </summary>
 [PublicAPI]
-public class KurrentException(string errorCode, string message, Metadata? metadata = null, Exception? innerException = null) : Exception(message, innerException) {
-    /// <summary>
-    /// Gets the error code associated with this exception.
-    /// </summary>
-    public string ErrorCode { get; } = errorCode;
+public class KurrentException : Exception {
+    public KurrentException(string errorCode, string errorMessage, ErrorSeverity errorSeverity, Metadata errorData, Exception? innerException = null) : base(errorMessage, innerException) {
+        ArgumentException.ThrowIfNullOrWhiteSpace(errorCode);
+        ArgumentException.ThrowIfNullOrWhiteSpace(errorMessage);
 
-    /// <summary>
-    /// Additional context about the error.
-    /// </summary>
-    public Metadata Metadata { get; } = metadata is not null ? new(metadata) : [];
+        ErrorCode     = errorCode;
+        ErrorSeverity = errorSeverity;
 
-    public static KurrentException Wrap<T>(T exception, string? errorCode = null) where T : Exception =>
-        new KurrentException(errorCode ?? exception.GetType().Name, exception.Message, null, exception);
-
-    /// <summary>
-    /// Creates and throws a <see cref="KurrentException"/> with an error code derived from the type name of <typeparamref name="T"/>
-    /// and a message from the string representation of the <paramref name="error"/> object.
-    /// </summary>
-    /// <typeparam name="T">The type of the error object. The name of this type will be used as the error code.</typeparam>
-    /// <param name="error">The error object. Its string representation will be used as the exception message.</param>
-    /// <param name="innerException">The exception that is the cause of the current exception, or a null reference if no inner exception is specified.</param>
-    /// <returns>This method always throws an exception, so it never returns a value.</returns>
-    /// <exception cref="KurrentException">Always thrown by this method.</exception>
-    public static KurrentException Throw<T>(T error, Exception? innerException = null) where T : notnull =>
-        throw new KurrentException(typeof(T).Name, error.ToString()!, null, innerException);
-
-    /// <summary>
-    /// Creates a <see cref="KurrentException"/> for an unknown or unexpected error that occurred during a specific operation.
-    /// </summary>
-    /// <param name="operation">The name of the operation during which the error occurred. Cannot be null or whitespace.</param>
-    /// <param name="innerException">The exception that is the cause of the current exception.</param>
-    /// <returns>A new instance of <see cref="KurrentException"/> representing the unknown error.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="operation"/> is null.</exception>
-    /// <exception cref="ArgumentException"><paramref name="operation"/> is empty or consists only of white-space characters.</exception>
-    public static KurrentException CreateUnknown(string operation, Exception innerException) {
-        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
-        return new("Unknown", $"Unexpected behaviour detected during {operation}: {innerException.Message}", new Metadata().With("Operation", operation), innerException);
+        ErrorData = errorData
+            .With(nameof(ErrorCode), errorCode)
+            .With(nameof(ErrorSeverity), errorSeverity)
+            .Lock();
     }
 
-    public static KurrentException CreateUnknown(string operation, string message) {
-        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
-        ArgumentException.ThrowIfNullOrWhiteSpace(message);
-        return new("Unknown", $"Unexpected behaviour detected during {operation}: {message}", new Metadata().With("Operation", operation));
+    public KurrentException(string errorMessage, ErrorSeverity errorSeverity, Metadata errorData, Exception? innerException = null)
+        : base(errorMessage, innerException) {
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(errorMessage);
+
+        ErrorCode     = GetType().Name.Replace("Exception", "").Underscore().ToUpper();
+        ErrorSeverity = errorSeverity;
+        ErrorData     = errorData
+            .With(nameof(ErrorCode), ErrorCode)
+            .With(nameof(ErrorSeverity), ErrorSeverity)
+            .Lock();
     }
 
-    /// <summary>
-    /// Creates and throws a <see cref="KurrentException"/> for an unknown or unexpected error that occurred during a specific operation.
-    /// </summary>
-    /// <param name="operation">The name of the operation during which the error occurred. Cannot be null or whitespace.</param>
-    /// <param name="innerException">The exception that is the cause of the current exception.</param>
-    /// <returns>This method always throws an exception, so it never returns a value.</returns>
-    /// <exception cref="KurrentException">Always thrown by this method.</exception>
-    /// <exception cref="ArgumentNullException"><paramref name="operation"/> is null.</exception>
-    /// <exception cref="ArgumentException"><paramref name="operation"/> is empty or consists only of white-space characters.</exception>
-    public static KurrentException ThrowUnknown(string operation, Exception innerException) =>
-        throw CreateUnknown(operation, innerException);
+    public KurrentException(string errorMessage, Metadata errorData, Exception? innerException = null)
+        : this(errorMessage, ErrorSeverity.Fatal, errorData, innerException) { }
 
-    public static KurrentException ThrowUnknown(string operation, string message) =>
-        throw CreateUnknown(operation, message);
+    public KurrentException(string errorMessage, Exception? innerException = null)
+        : this(errorMessage, ErrorSeverity.Fatal, [], innerException) { }
+
+    /// <summary>
+    /// The error code associated with this exception.
+    /// </summary>
+    public string ErrorCode { get; }
+
+    /// <summary>
+    /// The severity of the error, indicating whether it is recoverable or fatal.
+    /// </summary>
+    public ErrorSeverity ErrorSeverity { get; }
+
+    /// <summary>
+    /// This information is typically used to provide more details about the error condition.
+    /// It can include information like which fields were violated, the state of the system when the error occurred, etc.
+    /// The data is locked to prevent further modifications after the exception is created.
+    /// This ensures that the error data remains consistent and immutable once the exception is thrown.
+    /// </summary>
+    public Metadata ErrorData { get; }
+}
+
+public abstract class KurrentException<TError>(TError error) : KurrentException(
+    error.ErrorCode, error.ErrorMessage, error.ErrorSeverity, error.ErrorData
+) where TError : KurrentResultError<TError> {
+    public TError Error { get; } = error;
 }

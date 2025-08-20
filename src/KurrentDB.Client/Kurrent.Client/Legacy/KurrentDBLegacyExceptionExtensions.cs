@@ -28,19 +28,4 @@ static class KurrentDBLegacyExceptionExtensions {
             throw new InvalidCastException($"Failed to map {nameof(RpcException)} with legacy error code {legacyErrorCode} to {typeof(T).Name}.", mex);
         }
     }
-
-    public static bool TryMapToErrorResult<T>(this Exception ex, string legacyErrorCode, Func<RpcException, T> map, [MaybeNullWhen(false)] out T errorResult) where T : IResultError {
-        if (ex is not RpcException rex || !rex.TryGetLegacyErrorCode(out var code) || code != legacyErrorCode) {
-            errorResult = default(T);
-            return false;
-        }
-
-        try {
-            errorResult = map(rex);
-            return true;
-        }
-        catch (Exception mex) {
-            throw new InvalidCastException($"Failed to map {nameof(RpcException)} with legacy error code {legacyErrorCode} to {typeof(T).Name}.", mex);
-        }
-    }
 }

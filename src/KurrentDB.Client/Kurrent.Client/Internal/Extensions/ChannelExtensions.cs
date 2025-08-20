@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 
@@ -38,6 +39,45 @@ static class ChannelExtensions {
             }
 
             if (reader.Completion.IsCompleted) yield break;
+        }
+    }
+
+    // just having fun
+    static async IAsyncEnumerable<T[]> ReadBatchesOptimized<T>(this ChannelReader<T> reader, int batchSize, TimeSpan timeout, [EnumeratorCancellation] CancellationToken cancellationToken = default) {
+        var pool   = ArrayPool<T>.Shared;
+        var buffer = pool.Rent(batchSize);
+
+        try {
+            while (!cancellationToken.IsCancellationRequested) {
+                var currentIndex = 0;
+
+                using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+                cts.CancelAfter(timeout);
+
+                while (currentIndex < batchSize && !cts.Token.IsCancellationRequested) {
+                    try {
+                        if (await reader.WaitToReadAsync(cts.Token))
+                            while (currentIndex < batchSize && reader.TryRead(out var item))
+                                buffer[currentIndex++] = item;
+                    }
+                    catch (OperationCanceledException) when (cts.Token.IsCancellationRequested) {
+                        break; // Timeout occurred
+                    }
+                }
+
+                if (currentIndex > 0) {
+                    var result = new T[currentIndex];
+                    Array.Copy(buffer, 0, result, 0, currentIndex);
+                    yield return result;
+                }
+
+                if (reader.Completion.IsCompleted)
+                    yield break;
+            }
+        }
+        finally {
+            pool.Return(buffer, clearArray: true);
         }
     }
 }

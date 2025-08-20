@@ -242,13 +242,13 @@ public class SchemaManager(RegistryClient schemaRegistryClient, ISchemaExporter 
 /// Exception thrown when a schema validation fails.
 /// </summary>
 public class SchemaValidationException(SchemaDataFormat dataFormat, SchemaIdentifier schemaIdentifier, Type messageType, IReadOnlyList<SchemaCompatibilityError> validationErrors)
-	: Exception(FormatMessage(messageType, schemaIdentifier, validationErrors)) {
+	: KurrentException(ErrorMessage(messageType, schemaIdentifier, validationErrors)) {
 	public SchemaDataFormat                        DataFormat       { get; } = dataFormat;
 	public Type                                    MessageType      { get; } = messageType;
 	public SchemaIdentifier                        SchemaIdentifier { get; } = schemaIdentifier;
 	public IReadOnlyList<SchemaCompatibilityError> ValidationErrors { get; } = validationErrors;
 
-	static string FormatMessage(Type messageType, SchemaIdentifier schemaIdentifier, IReadOnlyList<SchemaCompatibilityError> validationErrors) {
+	static string ErrorMessage(Type messageType, SchemaIdentifier schemaIdentifier, IReadOnlyList<SchemaCompatibilityError> validationErrors) {
 		var schemaIdentifierText = schemaIdentifier.Match(
 			schemaName => $"schema '{schemaName}'",
 			schemaVersionId => $"schema version '{schemaVersionId}'"
@@ -262,10 +262,10 @@ public class SchemaValidationException(SchemaDataFormat dataFormat, SchemaIdenti
 /// <summary>
 /// Exception thrown when a schema cannot be found in the registry.
 /// </summary>
-public class SchemaNotFoundException(SchemaIdentifier schemaIdentifier) : Exception(FormatMessage(schemaIdentifier)) {
+public class SchemaNotFoundException(SchemaIdentifier schemaIdentifier) : KurrentException(ErrorMessage(schemaIdentifier)) {
 	public SchemaIdentifier SchemaIdentifier { get; } = schemaIdentifier;
 
-	static string FormatMessage(SchemaIdentifier schemaIdentifier) =>
+	static string ErrorMessage(SchemaIdentifier schemaIdentifier) =>
 		schemaIdentifier.Match(
 			schemaName      => $"Schema '{schemaName}' was not found in the registry.",
 			schemaVersionId => $"Schema version '{schemaVersionId}' was not found in the registry."

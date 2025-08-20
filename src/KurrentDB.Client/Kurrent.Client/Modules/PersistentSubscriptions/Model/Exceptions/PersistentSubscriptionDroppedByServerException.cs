@@ -3,7 +3,7 @@ namespace Kurrent.Client.PersistentSubscriptions;
 /// <summary>
 /// The exception that is thrown when the KurrentDB drops a persistent subscription.
 /// </summary>
-class PersistentSubscriptionDroppedByServerException : Exception {
+class PersistentSubscriptionDroppedByServerException : KurrentException {
     /// <summary>
     /// The group name.
     /// </summary>

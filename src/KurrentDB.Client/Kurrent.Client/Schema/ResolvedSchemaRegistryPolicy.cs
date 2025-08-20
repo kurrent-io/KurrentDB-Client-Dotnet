@@ -86,29 +86,29 @@ public delegate SchemaName GenerateSchemaName(Type messageType);
 /// <summary>
 /// Exception thrown when a schema data format does not comply with the format required by the schema registry governance policy.
 /// </summary>
-public class NonCompliantSchemaDataFormatException : Exception {
+public class NonCompliantSchemaDataFormatException : KurrentException {
 	/// <summary>
 	/// Initializes a new instance of the <see cref="NonCompliantSchemaDataFormatException"/> class.
 	/// </summary>
 	/// <param name="providedFormat">The data format that was provided but does not comply with policy.</param>
 	/// <param name="requiredFormat">The data format that is required according to the schema registry governance policy.</param>
 	public NonCompliantSchemaDataFormatException(SchemaDataFormat providedFormat, SchemaDataFormat requiredFormat)
-		: base(FormatMessage(providedFormat, requiredFormat)) {
+		: base(ErrorMessage(providedFormat, requiredFormat)) {
 		ProvidedFormat = providedFormat;
 		RequiredFormat = requiredFormat;
 	}
 
 	/// <summary>
-	/// Gets the data format that was provided but does not comply with policy.
+	/// The data format that was provided but does not comply with policy.
 	/// </summary>
 	public SchemaDataFormat ProvidedFormat { get; }
 
 	/// <summary>
-	/// Gets the data format that is required according to the schema registry governance policy.
+	/// The data format required according to the schema registry governance policy.
 	/// </summary>
 	public SchemaDataFormat RequiredFormat { get; }
 
-	static string FormatMessage(SchemaDataFormat providedFormat, SchemaDataFormat requiredFormat) =>
+	static string ErrorMessage(SchemaDataFormat providedFormat, SchemaDataFormat requiredFormat) =>
 		$"Schema registry is enabled and data format enforcement is active. " +
 		$"The data format '{providedFormat}' is not allowed. It must be '{requiredFormat}'.";
 }

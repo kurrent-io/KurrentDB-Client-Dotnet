@@ -57,8 +57,8 @@ public abstract class SchemaSerializerBase(SchemaSerializerOptions options, Sche
 
 			return Serialize(value);
 		}
-		catch (Exception ex) when (ex is not SerializationException) {
-			throw new SerializationFailedException(DataFormat, messageType,  ex);
+		catch (Exception ex) when (ex is not SchemaSerializationException) {
+			throw new SchemaSerializationFailedException(DataFormat, messageType,  ex);
 		}
 	}
 
@@ -91,8 +91,8 @@ public abstract class SchemaSerializerBase(SchemaSerializerOptions options, Sche
 
 			return Deserialize(data, result.MessageType);
 		}
-		catch (Exception ex) when (ex is not SerializationException) {
-			throw new DeserializationFailedException(DataFormat, schemaInfo.SchemaName,  ex);
+		catch (Exception ex) when (ex is not SchemaSerializationException) {
+			throw new SchemaDeserializationFailedException(DataFormat, schemaInfo.SchemaName,  ex);
 		}
 	}
 

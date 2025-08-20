@@ -8,11 +8,11 @@ using Contracts = KurrentDB.Protocol.Registry.V2;
 
 namespace Kurrent.Client.Registry;
 
-public class RegistryClient {
-	internal RegistryClient(KurrentClient source) =>
-		ServiceClient = new(source.LegacyCallInvoker);
+public class RegistryClient : ClientModuleBase {
+    internal RegistryClient(KurrentClient client) : base(client) =>
+        ServiceClient = new(client.LegacyCallInvoker);
 
-	SchemaRegistryServiceClient ServiceClient { get; }
+    SchemaRegistryServiceClient ServiceClient { get; }
 
 	/// <summary>
 	/// Creates a new schema in the registry with the provided details.
@@ -134,7 +134,9 @@ public class RegistryClient {
 	/// Throws an exception if an error occurs during the operation, such as network issues or invalid input.
 	/// </exception>
 	public async ValueTask<Result<SchemaVersion, GetSchemaVersionError>> GetSchemaVersion(
-		SchemaName schemaName, int? versionNumber = null, CancellationToken cancellationToken = default
+		SchemaName schemaName,
+        int? versionNumber = null,
+        CancellationToken cancellationToken = default
 	) {
 		var request = new Contracts.GetSchemaVersionRequest { SchemaName = schemaName };
 
@@ -174,7 +176,8 @@ public class RegistryClient {
 	/// Throws an exception in case of communication errors with the schema registry service.
 	/// </exception>
 	public async ValueTask<Result<SchemaVersion, GetSchemaVersionError>> GetSchemaVersionById(
-		SchemaVersionId schemaVersionId, CancellationToken cancellationToken = default
+		SchemaVersionId schemaVersionId,
+        CancellationToken cancellationToken = default
 	) {
 		var request = new Contracts.GetSchemaVersionByIdRequest { SchemaVersionId = schemaVersionId };
 
@@ -210,7 +213,10 @@ public class RegistryClient {
 	/// <exception cref="Exception">
 	/// Throws an exception if the operation encounters an error, such as a network issue or invalid input.
 	/// </exception>
-	public async ValueTask<Result<Success, DeleteSchemaError>> DeleteSchema(SchemaName schemaName, CancellationToken cancellationToken = default) {
+	public async ValueTask<Result<Success, DeleteSchemaError>> DeleteSchema(
+        SchemaName schemaName,
+        CancellationToken cancellationToken = default
+    ) {
 		var request = new Contracts.DeleteSchemaRequest { SchemaName = schemaName };
 
         try {

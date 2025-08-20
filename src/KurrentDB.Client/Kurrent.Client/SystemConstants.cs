@@ -1,53 +1,32 @@
-namespace Kurrent.Client.Streams;
+using Kurrent.Client.Registry;
+
+namespace Kurrent.Client;
 
 public static class SystemConstants {
-	[PublicAPI]
-	public static class MetadataKeys {
-		const string SystemPrefix = "$";
+    public static class SystemEventSchemaNames {
+        public static readonly SchemaName StreamDeleted   = "$streamDeleted";
+        public static readonly SchemaName StatsCollection = "$statsCollected";
+        public static readonly SchemaName StreamMetadata  = "$metadata";
+        public static readonly SchemaName Settings        = "$settings";
+    }
 
-		public static bool IsSystemMetadataKey(string key) =>
-			key.StartsWith(SystemPrefix, StringComparison.Ordinal);
+    /// <summary>
+    /// Roles used by the system.
+    /// </summary>
+    public static class SystemRoles {
+        /// <summary>
+        /// The $admins role.
+        /// </summary>
+        public const string Administrators = "$admins";
 
-		public const string SchemaName       = $"{SystemPrefix}schema.name";
-		public const string SchemaDataFormat = $"{SystemPrefix}schema.data-format";
-		public const string SchemaVersionId  = $"{SystemPrefix}schema.version-id";
-		public const string SchemaUrn        = $"{SystemPrefix}schema.urn"; // NEW represents the schema name + format and version id
+        /// <summary>
+        /// The $ops role.
+        /// </summary>
+        public const string Operations = "$ops";
 
-		#region . internal .
-
-		/// <summary>
-		/// possibly used internally and then removed right after.
-		/// </summary>
-		internal const string Stream = $"{SystemPrefix}stream.name";
-
-		/// <summary>
-		/// not sure yet, but will be required when using the new contracts because
-		/// old metadata will be sent inside the new Record properties
-		/// </summary>
-		internal const string HasProperties = $"{SystemPrefix}has-properties";
-
-		#endregion
-	}
-
-	public static class EventSchemaNames {
-		///<summary>
-		/// event type for stream deleted
-		///</summary>
-		public const string StreamDeleted = "$streamDeleted";
-
-		///<summary>
-		/// event type for statistics
-		///</summary>
-		public const string StatsCollection = "$statsCollected";
-
-		///<summary>
-		/// event type for stream metadata
-		///</summary>
-		public const string StreamMetadata = "$metadata";
-
-		///<summary>
-		/// event type for the system settings
-		///</summary>
-		public const string Settings = "$settings";
-	}
+        /// <summary>
+        /// The $all role.
+        /// </summary>
+        public const string All = "$all";
+    }
 }

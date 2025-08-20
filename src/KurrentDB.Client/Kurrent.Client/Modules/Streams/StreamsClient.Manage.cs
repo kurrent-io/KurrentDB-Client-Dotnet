@@ -7,7 +7,6 @@
 using System.Diagnostics;
 using Grpc.Core;
 using Kurrent.Client.Legacy;
-using Kurrent.Variant;
 using KurrentDB.Client;
 using KurrentDB.Protocol.Streams.V1;
 using static Kurrent.Client.ErrorDetails;
@@ -125,114 +124,54 @@ public partial class StreamsClient {
         }
     }
 
-
-    // public async ValueTask<Result<StreamDetails, GetStreamDetailsError>> GetStreamDetails(StreamName stream, CancellationToken cancellationToken = default) {
-    //     // This operation can be greatly optimized by implementing it in the server
-    //     // and as unbelievable as it sounds, the code bellow is the simplest most effective
-    //     // way to get the stream details for the time being.
-    //     // Even with all the permission issues, since the operation should always work...
-    //     // This is just code that is easy to be deleted. That's it, and that's all.
-    //
-    //     StreamDetails details;
+    // public async ValueTask<Result<LogPosition, DeleteStreamError>> Delete(StreamName stream, StreamRevision revision, CancellationToken cancellationToken = default) {
+    //     var request = Requests.CreateDeleteRequest(stream, revision);
     //
     //     try {
-    //         var metaStream = SystemStreams.MetastreamOf(stream);
-    //         var request    = Requests.CreateReadStreamEdgeRequest(metaStream, ReadDirection.Forwards);
-    //
-    //         using var session = LegacyServiceClient.Read(request, cancellationToken: cancellationToken);
-    //
-    //         var isEmpty = !await session.ResponseStream.MoveNext(cancellationToken).ConfigureAwait(false);
-    //
-    //         // if the meta-stream is not found, then the stream itself does not exist either
-    //         if (isEmpty || session.ResponseStream.Current.ContentCase is ReadResp.ContentOneofCase.StreamNotFound)
-    //             return Result.Failure<StreamDetails, GetStreamDetailsError>(new NotFound());
-    //
-    //         var record = await session.ResponseStream.Current.Event
-    //             .MapToRecord(SerializerProvider, MetadataDecoder, skipDecoding: false, cancellationToken)
+    //         var resp = await LegacyServiceClient
+    //             .DeleteAsync(request, cancellationToken: cancellationToken)
     //             .ConfigureAwait(false);
     //
-    //         var metadata = (StreamMetadata)record.Value!;
+    //         return resp?.Position?.MapToLogPosition() ?? LogPosition.Unset;
+    //     }
+    //     catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.WrongExpectedVersion)) {
+    //         // the request must be done with StreamExists expectation,
+    //         // if the actual version is -1, it means the stream was not found
+    //         // this was a tribal knowledge discovery in the original codebase
+    //         // that for whatever reason I 100% think it is a bug in the server
     //
-    //         var isTombstoned = metadata.TruncateBefore == StreamRevision.Max;
-    //         var isDeleted    = metadata.TruncateBefore > StreamRevision.Min;
+    //         ExpectedStreamState actualState = long.Parse(rex.Trailers.GetValue("actual-version")!);
     //
-    //         // at this point if not deleted/tombstoned it is not found because we haven't read the stream yet
-    //         details = new StreamDetails {
-    //             Metadata         = metadata,
-    //             MetadataRevision = record.StreamRevision,
-    //             IsDeleted        = isDeleted,
-    //             IsTombstoned     = isTombstoned,
-    //             State = isTombstoned
-    //                 ? StreamState.Tombstoned
-    //                 : isDeleted
-    //                     ? StreamState.Deleted
-    //                     : StreamState.Missing
-    //         };
+    //         return actualState == ExpectedStreamState.NoStream
+    //             ? Result.Failure<LogPosition, DeleteStreamError>(new NotFound())
+    //             : Result.Failure<LogPosition, DeleteStreamError>(new StreamRevisionConflict(x => x
+    //                 .With<StreamName>("Stream", rex.Trailers.GetValue("stream-name") ?? StreamName.None)
+    //                 .With<StreamRevision>("ExpectedRevision", long.Parse(rex.Trailers.GetValue("expected-version")!))
+    //                 .With<StreamRevision>("ActualRevision", long.Parse(rex.Trailers.GetValue("actual-version")!))
+    //             ));
+    //
+    //         // var error = rex.AsStreamRevisionConflictError();
+    //         //
+    //         // return error.Metadata.GetRequired<long>("ActualRevision") == ExpectedStreamState.NoStream
+    //         //     ? Result.Failure<LogPosition, DeleteStreamError>(new NotFound(x => x.WithStreamName(stream)))
+    //         //     : Result.Failure<LogPosition, DeleteStreamError>(error);
+    //     }
+    //     catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.StreamDeleted)) {
+    //         return await GetStreamInfo(stream, cancellationToken).MatchAsync(
+    //             info => info.State switch {
+    //                 StreamState.Deleted    => Result.Failure<LogPosition, DeleteStreamError>(new StreamDeleted()),
+    //                 StreamState.Tombstoned => Result.Failure<LogPosition, DeleteStreamError>(new StreamTombstoned())
+    //             },
+    //             err => err.ForwardErrors<DeleteStreamError>()
+    //         );
     //     }
     //     catch (RpcException rex) {
-    //         // no permissions to access metadata... sigh...
-    //         return Result.Failure<StreamDetails, GetStreamDetailsError>(rex.StatusCode switch {
-    //             StatusCode.PermissionDenied => new AccessDenied(),
-    //             StatusCode.FailedPrecondition when rex.Status.Detail.Contains("is deleted") =>
-    //             _                           => throw rex.WithOriginalCallStack()
-    //         });
-    //
-    //
-    //
-    //         Grpc.Core.RpcException: Status(StatusCode="FailedPrecondition", Detail="Event stream '$$TicTacToe-7e56e68924e5' is deleted.")
-    //
-    //
-    //     }
-    //
-    //     // if the stream is deleted or tombstoned, we return the details as is
-    //     // because we don't have to read the stream itself
-    //     if (details.State is StreamState.Deleted or StreamState.Tombstoned)
-    //         return details;
-    //
-    //     // now we enrich the stream info with the latest position and revision
-    //     try {
-    //         var request = Requests.CreateReadStreamEdgeRequest(stream, ReadDirection.Backwards);
-    //
-    //         using var session = LegacyServiceClient.Read(request, cancellationToken: cancellationToken);
-    //
-    //         var isEmpty = !await session.ResponseStream.MoveNext(cancellationToken).ConfigureAwait(false);
-    //
-    //         // if the stream is empty, we return the details with the state set to Active
-    //         if (isEmpty)
-    //             return details with { State = StreamState.Active, };
-    //
-    //         // if the stream is not found, we return the details and call it a day
-    //         if (session.ResponseStream.Current.ContentCase is ReadResp.ContentOneofCase.StreamNotFound)
-    //             return details;
-    //
-    //         if (session.ResponseStream.Current.ContentCase is not ReadResp.ContentOneofCase.Event)
-    //             throw new UnreachableException(
-    //                 $"Unexpected content case: {session.ResponseStream.Current.ContentCase} " +
-    //                 $"while reading the last record of the stream {stream}"
-    //             );
-    //
-    //         var record = await session.ResponseStream.Current.Event
-    //             .MapToRecord(SerializerProvider, MetadataDecoder, skipDecoding: true, cancellationToken)
-    //             .ConfigureAwait(false);
-    //
-    //         return details with {
-    //             State              = StreamState.Active,
-    //             LastStreamPosition = record.Position,
-    //             LastStreamRevision = record.StreamRevision,
-    //             LastStreamAppendTime   = record.Timestamp
-    //         };
-    //     }
-    //     catch (RpcException rex) {
-    //         // no permissions to access the stream itself... sigh...
-    //         // instead of returning what we have cause its ambiguous,
-    //         // we return access denied and invalidate the operation
-    //         return Result.Failure<StreamDetails, GetStreamDetailsError>(rex.StatusCode switch {
+    //         return Result.Failure<LogPosition, DeleteStreamError>(rex.StatusCode switch {
     //             StatusCode.PermissionDenied => new AccessDenied(),
     //             _                           => throw rex.WithOriginalCallStack()
     //         });
     //     }
     // }
-
 
     public async ValueTask<Result<LogPosition, DeleteStreamError>> Delete(StreamName stream, StreamRevision revision, CancellationToken cancellationToken = default) {
         var request = Requests.CreateDeleteRequest(stream, revision);
@@ -242,26 +181,17 @@ public partial class StreamsClient {
                 .DeleteAsync(request, cancellationToken: cancellationToken)
                 .ConfigureAwait(false);
 
-            return resp?.Position?.MapToLogPosition() ?? LogPosition.Unset;
+            return resp.Position.MapToLogPosition();
         }
-        catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.WrongExpectedVersion)) {
-            // the request must be done with StreamExists expectation,
-            // if the actual version is -1, it means the stream was not found
-            // this was a tribal knowledge discovery in the original codebase
-            // that for whatever reason I 100% think it is a bug in the server
-
-            var reVisionConflictError = rex.AsStreamRevisionConflictError();
-            return reVisionConflictError.Metadata.GetRequired<StreamRevision>("ActualRevision") == ExpectedStreamState.NoStream.Value
-                ? Result.Failure<LogPosition, DeleteStreamError>(new NotFound(x => x.WithStreamName(stream)))
-                : Result.Failure<LogPosition, DeleteStreamError>(reVisionConflictError);
-        }
-        catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.StreamDeleted)) {
+        catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.StreamDeleted) || rex.IsLegacyError(LegacyErrorCodes.WrongExpectedVersion)) {
             return await GetStreamInfo(stream, cancellationToken).MatchAsync(
                 info => info.State switch {
-                    StreamState.Deleted    => Result.Failure<LogPosition, DeleteStreamError>(new StreamDeleted(x => x.WithStreamName(stream))),
-                    StreamState.Tombstoned => Result.Failure<LogPosition, DeleteStreamError>(new StreamTombstoned(x => x.WithStreamName(stream)))
+                    StreamState.Active     => Result.Failure<LogPosition, DeleteStreamError>(new StreamRevisionConflict()),
+                    StreamState.Deleted    => Result.Failure<LogPosition, DeleteStreamError>(new StreamDeleted()),
+                    StreamState.Tombstoned => Result.Failure<LogPosition, DeleteStreamError>(new StreamTombstoned()),
+                    StreamState.Missing    => Result.Failure<LogPosition, DeleteStreamError>(new NotFound()),
                 },
-                err => Result.Failure<LogPosition, DeleteStreamError>(err.AsAccessDenied)
+                err => err.ForwardErrors<DeleteStreamError>()
             );
         }
         catch (RpcException rex) {
@@ -271,6 +201,7 @@ public partial class StreamsClient {
             });
         }
     }
+
 
     public ValueTask<Result<LogPosition, DeleteStreamError>> Delete(StreamName stream, CancellationToken cancellationToken = default) =>
         Delete(stream, StreamRevision.Unset, cancellationToken);
@@ -285,24 +216,15 @@ public partial class StreamsClient {
 
             return resp?.Position?.MapToLogPosition() ?? LogPosition.Unset;
         }
-        catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.WrongExpectedVersion)) {
-            // the request must be done with StreamExists expectation,
-            // if the actual version is -1, it means the stream was not found
-            // this was a tribal knowledge discovery in the original codebase
-            // that for whatever reason I 100% think it is a bug in the server
-
-            var reVisionConflictError = rex.AsStreamRevisionConflictError();
-            return reVisionConflictError.Metadata.GetRequired<StreamRevision>("ActualRevision") == ExpectedStreamState.NoStream.Value
-                ? Result.Failure<LogPosition, TombstoneError>(new NotFound(x => x.WithStreamName(stream)))
-                : Result.Failure<LogPosition, TombstoneError>(reVisionConflictError);
-        }
-        catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.StreamDeleted)) {
+        catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.StreamDeleted) || rex.IsLegacyError(LegacyErrorCodes.WrongExpectedVersion)) {
             return await GetStreamInfo(stream, cancellationToken).MatchAsync(
                 info => info.State switch {
-                    StreamState.Deleted    => Result.Failure<LogPosition, TombstoneError>(new StreamDeleted(x => x.WithStreamName(stream))),
-                    StreamState.Tombstoned => Result.Failure<LogPosition, TombstoneError>(new StreamTombstoned(x => x.WithStreamName(stream)))
+                    StreamState.Active     => Result.Failure<LogPosition, TombstoneError>(new StreamRevisionConflict()),
+                    StreamState.Deleted    => Result.Failure<LogPosition, TombstoneError>(new StreamDeleted()),
+                    StreamState.Tombstoned => Result.Failure<LogPosition, TombstoneError>(new StreamTombstoned()),
+                    StreamState.Missing    => Result.Failure<LogPosition, TombstoneError>(new NotFound()),
                 },
-                err => Result.Failure<LogPosition, TombstoneError>(err.AsAccessDenied)
+                err => err.ForwardErrors<TombstoneError>()
             );
         }
         catch (RpcException rex) {
@@ -312,6 +234,44 @@ public partial class StreamsClient {
             });
         }
     }
+
+    // public async ValueTask<Result<LogPosition, TombstoneError>> Tombstone(StreamName stream, StreamRevision revision, CancellationToken cancellationToken = default) {
+    //     var request = Requests.CreateTombstoneRequest(stream, revision);
+    //
+    //     try {
+    //         var resp = await LegacyServiceClient
+    //             .TombstoneAsync(request, cancellationToken: cancellationToken)
+    //             .ConfigureAwait(false);
+    //
+    //         return resp?.Position?.MapToLogPosition() ?? LogPosition.Unset;
+    //     }
+    //     catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.WrongExpectedVersion)) {
+    //         // the request must be done with StreamExists expectation,
+    //         // if the actual version is -1, it means the stream was not found
+    //         // this was a tribal knowledge discovery in the original codebase
+    //         // that for whatever reason I 100% think it is a bug in the server
+    //
+    //         var reVisionConflictError = rex.AsStreamRevisionConflictError();
+    //         return reVisionConflictError.Metadata.GetRequired<StreamRevision>("ActualRevision") == ExpectedStreamState.NoStream.Value
+    //             ? Result.Failure<LogPosition, TombstoneError>(new NotFound(x => x.WithStreamName(stream)))
+    //             : Result.Failure<LogPosition, TombstoneError>(reVisionConflictError);
+    //     }
+    //     catch (RpcException rex) when (rex.IsLegacyError(LegacyErrorCodes.StreamDeleted)) {
+    //         return await GetStreamInfo(stream, cancellationToken).MatchAsync(
+    //             info => info.State switch {
+    //                 StreamState.Deleted    => Result.Failure<LogPosition, TombstoneError>(new StreamDeleted(x => x.WithStreamName(stream))),
+    //                 StreamState.Tombstoned => Result.Failure<LogPosition, TombstoneError>(new StreamTombstoned(x => x.WithStreamName(stream)))
+    //             },
+    //             err => Result.Failure<LogPosition, TombstoneError>(err.AsAccessDenied)
+    //         );
+    //     }
+    //     catch (RpcException rex) {
+    //         return Result.Failure<LogPosition, TombstoneError>(rex.StatusCode switch {
+    //             StatusCode.PermissionDenied => new AccessDenied(),
+    //             _                           => throw rex.WithOriginalCallStack()
+    //         });
+    //     }
+    // }
 
     public ValueTask<Result<LogPosition, TombstoneError>> Tombstone(StreamName stream, CancellationToken cancellationToken = default) =>
         Tombstone(stream, StreamRevision.Unset, cancellationToken);
@@ -505,20 +465,4 @@ public partial class StreamsClient {
     //     //     rev => Result.Success<bool, TruncateStreamError>(true),
     //     //     err => (TruncateStreamError)err.Value);
     // }
-}
-
-static class VariantResultErrorExtensions {
-    /// <summary>
-    /// Dangerous method that casts the error values to the specified type.
-    /// It is the caller's responsibility to ensure that the error types are available in the target type.
-    /// If any of the error types is not correct, an <see cref="InvalidCastException"/> will be thrown.
-    /// </summary>
-    public static TError ForwardErrors<TError>(this IVariantResultError error) {
-        try {
-            return (TError)(dynamic)error.Value;
-        }
-        catch (Exception ex) {
-           throw new InvalidCastException($"Cannot forward result error of type {error.Value.GetType().Name} to {typeof(TError).Name}.", ex);
-        }
-    }
 }

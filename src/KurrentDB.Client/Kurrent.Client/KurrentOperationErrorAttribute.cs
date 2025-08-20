@@ -40,12 +40,13 @@ public sealed class KurrentOperationErrorAttribute : Attribute {
 
     public MessageDescriptor MessageDescriptor { get; set; }
 
-    public (string Code, string Message, bool IsFatal) Annotations { get; }
+    public (string Code, string Message, ErrorSeverity Severity) Annotations { get; }
 
-    public static KurrentOperationErrorAttribute GetAttribute(Type type) {
-        return type.GetCustomAttributes<KurrentOperationErrorAttribute>().FirstOrDefault()
-            ?? throw new InvalidOperationException($"The type {type.Name} must have a KurrentOperationError attribute.");
-    }
+    public static KurrentOperationErrorAttribute? GetAttribute(Type type) =>
+        type.GetCustomAttributes<KurrentOperationErrorAttribute>().FirstOrDefault();
+
+    public static KurrentOperationErrorAttribute GetRequiredAttribute(Type type) =>
+        GetAttribute(type) ?? throw new InvalidOperationException($"The type {type.Name} must have a KurrentOperationError attribute.");
 }
 
 static class KurrentOperationErrorAnnotations {
@@ -57,18 +58,35 @@ static class KurrentOperationErrorAnnotations {
         Annotations.GetOrAdd(descriptor.FullName, static (_, descriptor) =>
             descriptor.GetRequiredMessageExtensionValue(CoreExtensions.ErrorInfo), descriptor);
 
-    public static (string Code, string Message, bool IsFatal) GetAnnotations(MessageDescriptor descriptor) {
+    public static (string Code, string Message, ErrorSeverity Severity) GetAnnotations(MessageDescriptor descriptor) {
         try {
             var ann = Get(descriptor);
-            return (ann.Code, ann.Message, ann.Severity.GetHashCode() == 1);
+            return (ann.Code, ann.Message, (ErrorSeverity)ann.Severity);
         } catch {
             return (
                 ErrorAnnotationsNotFound,
                 $"Failed to retrieve error annotations for `{descriptor.FullName}`",
-                IsFatal: true);
+                ErrorSeverity.Fatal);
         }
     }
 
-    public static (string Code, string Message, bool IsFatal) GetAnnotations(Type errorType) =>
+    public static (string Code, string Message, ErrorSeverity Severity) GetAnnotations(Type errorType) =>
         GetAnnotations(errorType.EnsureTypeIsProtoMessage().GetProtoMessageDescriptor());
+}
+
+public enum ErrorSeverity {
+    /// <summary>
+    /// The error is recoverable, the operation failed, but the session can continue.
+    /// </summary>
+    Recoverable = 0,
+
+    /// <summary>
+    /// The error is fatal and the session should be terminated.
+    /// </summary>
+    Fatal = 1,
+
+    /// <summary>
+    /// The error is retriable, the operation failed but can be retried.
+    /// </summary>
+    Retriable = 2,
 }

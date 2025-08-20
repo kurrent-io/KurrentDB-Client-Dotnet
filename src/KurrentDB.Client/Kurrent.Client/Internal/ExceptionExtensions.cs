@@ -3,7 +3,7 @@ using System.Runtime.ExceptionServices;
 
 namespace Kurrent.Client;
 
-static class Exceptions {
+static class ExceptionExtensions {
     /// <summary>
     /// Captures the current exception and throws it, preserving the stack trace.
     /// Created to fool the compiler into not optimizing away the stack trace.

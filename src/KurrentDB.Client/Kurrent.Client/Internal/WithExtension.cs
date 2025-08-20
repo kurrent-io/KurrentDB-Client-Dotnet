@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace Kurrent.Client;
 
-public static class WithExtension {
+public static class WithExtensions {
     [DebuggerStepThrough]
     public static T With<T>(this T instance, Action<T> apply) {
         apply(instance);

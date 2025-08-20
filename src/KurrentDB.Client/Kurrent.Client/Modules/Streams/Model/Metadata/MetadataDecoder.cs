@@ -30,7 +30,7 @@ public abstract class MetadataDecoder : IMetadataDecoder {
                 .AddSchemaDataFormatIfMissing(context.SchemaDataFormat);
         }
         catch (Exception ex) when (ex is not MetadataDecodingException) {
-            throw new MetadataDecodingException("Failed to decode metadata", ex);
+            throw new MetadataDecodingException(GetType(), context, ex);
         }
     }
 
@@ -78,5 +78,22 @@ public readonly record struct MetadataDecoderContext(
     SchemaDataFormat SchemaDataFormat
 );
 
-public class MetadataDecodingException(string message, Exception? innerException = null)
-    : KurrentException(errorCode: "MetadataDecodingError", message, null, innerException);
+[PublicAPI]
+public class MetadataDecodingException(Type decoderType, MetadataDecoderContext decoderContext, Exception innerException)
+    : KurrentException(
+        ErrorMessage(decoderType, decoderContext, innerException),
+        new Metadata()
+            .With(nameof(DecoderType), decoderType)
+            .With(nameof(Stream), decoderContext.Stream)
+            .With(nameof(SchemaName), decoderContext.SchemaName)
+            .With(nameof(SchemaDataFormat), decoderContext.SchemaDataFormat),
+        innerException
+    ) {
+
+    public Type                   DecoderType    { get; } = decoderType;
+    public MetadataDecoderContext DecoderContext { get; } = decoderContext;
+
+    static string ErrorMessage(Type type, MetadataDecoderContext ctx, Exception ex) =>
+        $"Failed to decode '{ctx.SchemaName}' record metadata "
+      + $"from '{ctx.Stream}' using instance of '{type.Name}': {ex.Message}";
+}

@@ -1,5 +1,6 @@
 #pragma warning disable CS8509
 
+using System.Diagnostics;
 using System.Threading.Channels;
 using Grpc.Core;
 using KurrentDB.Protocol.Streams.V1;
@@ -43,9 +44,7 @@ public partial class StreamsClient {
 
         // why would this even happen? seems like an unreachable state...
         if (session.ResponseStream.Current.ContentCase != Confirmation)
-            throw KurrentException.CreateUnknown(
-                nameof(Subscription), new Exception($"Expected confirmation message but got {session.ResponseStream.Current.ContentCase}")
-            );
+            throw new UnreachableException($"Expected confirmation message but got {session.ResponseStream.Current.ContentCase}");
 
         var subscriptionId = session.ResponseStream.Current.Confirmation.SubscriptionId;
 

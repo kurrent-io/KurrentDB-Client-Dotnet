@@ -197,7 +197,7 @@ public record KurrentDBConnectionString {
 /// <summary>
 /// The base exception that is thrown when an KurrentDB connection string could not be parsed.
 /// </summary>
-public class ConnectionStringParseException : Exception {
+public class ConnectionStringParseException : KurrentException {
     /// <summary>
     /// Constructs a new <see cref="ConnectionStringParseException"/>.
     /// </summary>

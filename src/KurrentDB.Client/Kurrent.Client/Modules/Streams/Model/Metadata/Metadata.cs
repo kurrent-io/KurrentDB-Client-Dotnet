@@ -48,10 +48,12 @@ public class Metadata : IEnumerable<KeyValuePair<string, object?>> {
 		Dictionary = items.ToDictionary(k => k.Key, v => v.Value, StringComparer.OrdinalIgnoreCase);
 	}
 
+    public static Metadata New => new Metadata();
+
     public static Metadata Create(Dictionary<string, object?> items) => new(items);
     public static Metadata Create(Dictionary<string, string?> items) => new(items.ToDictionary(x => x.Key, static object? (kvp) => kvp.Value));
 
-	/// <summary>
+    /// <summary>
 	/// Locks this metadata instance, making it immutable. Direct mutations will throw an exception.
 	/// Use CreateUnlockedCopy() method to create a mutable copy when modifications are needed.
 	/// </summary>

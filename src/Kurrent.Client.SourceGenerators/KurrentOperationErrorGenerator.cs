@@ -167,8 +167,7 @@ public class KurrentOperationErrorGenerator : ISourceGenerator {
 
         sourceBuilder
             .Replace("{USING_STATEMENTS}", GenerateUsingStatements(ns))
-            .Replace("{NAMESPACE_DECLARATION}", GenerateNamespaceDeclaration(ns))
-            .AppendLine();
+            .Replace("{NAMESPACE_DECLARATION}", GenerateNamespaceDeclaration(ns));
 
         const string tab = "    ";
 
@@ -184,34 +183,30 @@ public class KurrentOperationErrorGenerator : ISourceGenerator {
 
         var declarationIndent = "";
         foreach (var declaration in containingTypeSymbols.Select(GenerateTypeDeclaration)) {
-            sourceBuilder.AppendLine($"{declarationIndent}{declaration} {{");
             declarationIndent += tab;
+            sourceBuilder.AppendLine($"{declarationIndent}{declaration} {{");
+
         }
 
         // Generate the instance type
         var memberIndent = declarationIndent;
 
-        const string codeBlock = """
-            
-            [PublicAPI, CompilerGenerated, GeneratedCode("KurrentOperationErrorGenerator", "1.0.0")]
-            public readonly partial record struct {INSTANCE_NAME} : IResultError {
-                static readonly KurrentOperationErrorAttribute Info =
-                    KurrentOperationErrorAttribute.GetAttribute(typeof({INSTANCE_NAME}));
-
-                public {INSTANCE_NAME}(Action<Metadata>? configure = null) =>
-                    Metadata = new Metadata().Transform(x => configure?.Invoke(x)).Lock();
-
-                public string ErrorCode    => Info.Annotations.Code;
-                public string ErrorMessage => Info.Annotations.Message;
-                public bool   IsFatal      => Info.Annotations.IsFatal;
-
-                public Metadata Metadata { get; }
-
-                public Exception CreateException(Exception? innerException = null) =>
-                    new KurrentException(ErrorCode, ErrorMessage, Metadata, innerException);
-
-                public override string ToString() => ErrorMessage;
-            }
+        const string codeBlock =
+            """
+                [PublicAPI, CompilerGenerated, GeneratedCode("KurrentOperationErrorGenerator", "1.0.0")]
+                public partial record {INSTANCE_NAME} : KurrentResultError<{INSTANCE_NAME}> {
+                    public {INSTANCE_NAME}(Metadata? errorData = null) : base(errorData) { }
+                
+                    public {INSTANCE_NAME}(Action<Metadata> configureErrorData) : base(configureErrorData) { }
+                
+                    public {INSTANCE_NAME}(string errorMessage, Metadata? errorData = null) : base(errorMessage, errorData) { }
+                
+                    public {INSTANCE_NAME}(string errorCode, string errorMessage, ErrorSeverity errorSeverity, Metadata errorData) 
+                        : base(errorCode, errorMessage, errorSeverity, errorData) { }
+                
+                    public override Exception CreateException(Exception? innerException = null) =>
+                        new {INSTANCE_NAME}Exception(this);
+                }
             """;
 
         var indentedCode = Regex.Replace(codeBlock, @"(?<=\n)", memberIndent);
@@ -224,8 +219,27 @@ public class KurrentOperationErrorGenerator : ISourceGenerator {
         sourceBuilder.AppendLine();
         for (var i = containingTypeSymbols.Count - 1; i >= 0; i--) {
             declarationIndent = declarationIndent.Substring(0, declarationIndent.Length - tab.Length);
-            sourceBuilder.AppendLine($"{declarationIndent}}}");
+            sourceBuilder.AppendLine($"{memberIndent + declarationIndent}}}");
         }
+
+        // Close the error namespace declaration
+        sourceBuilder
+            .Append('}')
+            .AppendLine();
+
+        // Exception class declaration
+        const string exceptionCodeBlock = """
+            namespace Kurrent.Client.Exceptions {
+                [PublicAPI, CompilerGenerated, GeneratedCode("KurrentOperationErrorGenerator", "1.0.0")]
+                public sealed class {INSTANCE_NAME}Exception(ErrorDetails.{INSTANCE_NAME} error) 
+                    : KurrentException<ErrorDetails.{INSTANCE_NAME}>(error);
+            }
+            """;
+
+        sourceBuilder
+            .AppendLine()
+            .Append(exceptionCodeBlock)
+            .Replace("{INSTANCE_NAME}", name);
 
         return SourceText.From(sourceBuilder.ToString(), Encoding.UTF8);
 
@@ -235,6 +249,7 @@ public class KurrentOperationErrorGenerator : ISourceGenerator {
             stringBuilder.AppendLine("using System;");
             stringBuilder.AppendLine("using System.CodeDom.Compiler;");
             stringBuilder.AppendLine("using System.Runtime.CompilerServices;");
+            stringBuilder.AppendLine("using Kurrent.Client.Exceptions;");
 
             if (ns != KurrentClientModelNamespace)
                 stringBuilder.AppendLine("using Kurrent.Client.Model;");
@@ -243,7 +258,7 @@ public class KurrentOperationErrorGenerator : ISourceGenerator {
         }
 
         static string GenerateNamespaceDeclaration(string ns) =>
-            ns != string.Empty ? $"namespace {ns};" : "// Global namespace";
+            ns != string.Empty ? $"namespace {ns} {{" : "// Global namespace";
     }
 
     static string GenerateTypeDeclaration(INamedTypeSymbol containingTypeSymbol) {

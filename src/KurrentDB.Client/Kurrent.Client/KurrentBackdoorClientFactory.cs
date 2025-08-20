@@ -71,31 +71,6 @@ class KurrentBackdoorClientFactory : IDisposable {
                 }
             },
             Retry = {
-// #pragma warning disable EXTEXP0001
-//                 ShouldHandle = args => {
-//
-//                     if (args.Outcome.Exception is HttpRequestException hex)
-//                         logger.LogDebug(hex, "Checking if {Exception} is transient: {ExceptionMessage}", hex.GetType().Name, hex.Message);
-//
-//                     var isTransient = HttpClientResiliencePredicates.IsTransient(args.Outcome, args.Context.CancellationToken);
-//                     if (isTransient) {
-//                         logger.LogDebug(
-//                             "Operation is transient, retrying. Exception: {Exception}, Response: {ResponseMessage}",
-//                             args.Outcome.Exception?.Message,
-//                             args.Outcome.Result?.ReasonPhrase
-//                         );
-//                     }
-//                     else {
-//                         logger.LogDebug(
-//                             "Operation is not transient, skipping. Exception: {Exception}, Response: {ResponseMessage}",
-//                             args.Outcome.Exception?.Message,
-//                             args.Outcome.Result?.ReasonPhrase
-//                         );
-//                     }
-//
-//                     return ValueTask.FromResult(isTransient);
-//                 },
-// #pragma warning restore EXTEXP0001
                 MaxRetryAttempts = options.Retry.MaxAttempts,
                 Delay            = options.Retry.InitialBackoff,
                 MaxDelay         = options.Retry.MaxBackoff,

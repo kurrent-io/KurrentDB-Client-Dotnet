@@ -29,8 +29,10 @@ public class DeleteTests : KurrentClientTestFixture {
     public async Task fails_to_delete_stream_with_revision_conflict_error_when_revision_is_not_matched(CancellationToken ct) {
         var simulation = await SeedGame(ct);
 
+        var badRevision = simulation.Revision + 1;
+
         await AutomaticClient.Streams
-            .Delete(simulation.Game.Stream, simulation.Revision + 99, ct)
+            .Delete(simulation.Game.Stream, badRevision, ct)
             .ShouldFailAsync(error =>
                 error.Value.ShouldBeOfType<ErrorDetails.StreamRevisionConflict>());
     }

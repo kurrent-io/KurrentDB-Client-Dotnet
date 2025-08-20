@@ -76,4 +76,4 @@ public record StreamRevision : IComparable<StreamRevision>, IComparable {
     #endregion
 }
 
-public class InvalidStreamRevision(long value) : Exception($"Stream revision is invalid: {value}");
+public class InvalidStreamRevision(long value) : KurrentException($"Stream revision is invalid: {value}");

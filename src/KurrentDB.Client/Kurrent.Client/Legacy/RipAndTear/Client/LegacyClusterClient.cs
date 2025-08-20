@@ -165,7 +165,7 @@ class LegacyClusterClient {
 /// <summary>
 /// Exception thrown when an append exceeds the maximum size set by the server.
 /// </summary>
-class MaximumAppendSizeExceededException : Exception {
+class MaximumAppendSizeExceededException : KurrentException {
     /// <summary>
     /// Constructs a new <see cref="MaximumAppendSizeExceededException"/>.
     /// </summary>

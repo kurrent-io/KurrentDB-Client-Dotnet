@@ -12,8 +12,6 @@ public static class SystemMetadataKeys {
     public const string SchemaVersionId    = $"{SystemPrefix}schema.version-id";
     public const string SchemaUrn          = $"{SystemPrefix}schema.urn"; // NEW represents the schema name + format + version id
 
-    #region . internal .
-
     /// <summary>
     /// possibly used internally and then removed right after.
     /// </summary>
@@ -24,6 +22,4 @@ public static class SystemMetadataKeys {
     /// old metadata will be sent inside the new Record properties
     /// </summary>
     internal const string HasProperties = $"{SystemPrefix}has-properties";
-
-    #endregion
 }

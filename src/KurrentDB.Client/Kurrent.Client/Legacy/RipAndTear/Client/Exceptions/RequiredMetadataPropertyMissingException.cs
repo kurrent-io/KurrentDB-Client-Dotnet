@@ -1,9 +1,11 @@
-﻿namespace KurrentDB.Client;
+﻿using Kurrent.Client;
+
+namespace KurrentDB.Client;
 
 /// <summary>
 /// Exception thrown when a required metadata property is missing.
 /// </summary>
-public class RequiredMetadataPropertyMissingException : Exception {
+public class RequiredMetadataPropertyMissingException : KurrentException {
 	/// <summary>
 	/// Constructs a new <see cref="RequiredMetadataPropertyMissingException"/>.
 	/// </summary>

@@ -15,7 +15,7 @@ using Kurrent.Client.Users;
 namespace Kurrent.Client;
 
 [PublicAPI]
-public partial class KurrentClient : IAsyncDisposable {
+public class KurrentClient : IAsyncDisposable {
 	public static KurrentClientOptionsBuilder New => new KurrentClientOptionsBuilder();
 
     public KurrentClient(KurrentClientOptions options) {

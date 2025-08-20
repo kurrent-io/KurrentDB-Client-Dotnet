@@ -3,7 +3,7 @@ namespace Kurrent.Client.PersistentSubscriptions;
 /// <summary>
 /// The exception that is thrown when the maximum number of subscribers on a persistent subscription is exceeded.
 /// </summary>
-class MaximumSubscribersReachedException : Exception {
+class MaximumSubscribersReachedException : KurrentException {
     /// <summary>
     /// The group name.
     /// </summary>

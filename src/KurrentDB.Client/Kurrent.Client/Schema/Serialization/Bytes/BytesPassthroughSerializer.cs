@@ -1,5 +1,6 @@
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
+using System.Buffers;
 using System.Diagnostics;
 using Kurrent.Client.Streams;
 
@@ -16,7 +17,9 @@ public class BytesPassthroughSerializer : ISchemaSerializer {
 	public SchemaDataFormat DataFormat => SchemaDataFormat.Bytes;
 
 	public ValueTask<ReadOnlyMemory<byte>> Serialize(object? value, SchemaSerializationContext context) {
-		Debug.Assert(value is null or byte[] or ReadOnlyMemory<byte> or Memory<byte>, "value must be byte[] or ReadOnlyMemory<byte> or Memory<byte>");
+		Debug.Assert(
+            value is null or byte[] or ReadOnlyMemory<byte> or Memory<byte> or ReadOnlySequence<byte>,
+            "value must be byte[] or ReadOnlyMemory<byte> or Memory<byte> or ReadOnlySequence<byte>");
 
 		// enforce the schema data format
 		context.Metadata
@@ -26,11 +29,12 @@ public class BytesPassthroughSerializer : ISchemaSerializer {
 			null                       => ReadOnlyMemory<byte>.Empty,
 			byte[] bytes               => bytes,
 			ReadOnlyMemory<byte> bytes => bytes,
-			Memory<byte> bytes         => bytes
+			Memory<byte> bytes         => bytes,
+            ReadOnlySequence<byte> seq => seq.ToArray(),
 		};
 
 		return new(result);
 	}
 
-	public ValueTask<object?> Deserialize(ReadOnlyMemory<byte> data, SchemaSerializationContext context) => new(data);
+    public ValueTask<object?> Deserialize(ReadOnlyMemory<byte> data, SchemaSerializationContext context) => new(data);
 }

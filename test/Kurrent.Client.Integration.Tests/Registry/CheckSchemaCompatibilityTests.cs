@@ -52,7 +52,7 @@ public class CheckSchemaCompatibilityTests : KurrentClientTestFixture {
 		var exception = await result.ShouldThrowAsync<KurrentException>();
 		exception.ErrorCode.ShouldBe(nameof(StatusCode.InvalidArgument));
 
-		exception.Metadata.GetRequired<List<FieldViolation>>("FieldViolations").ShouldSatisfyAllConditions(
+		exception.ErrorData.GetRequired<List<FieldViolation>>("FieldViolations").ShouldSatisfyAllConditions(
 			vs => vs.ShouldNotBeEmpty(),
 			vs => vs.ShouldHaveSingleItem(),
 			vs => vs.ShouldContain(v => v.Field == "SchemaName"),
