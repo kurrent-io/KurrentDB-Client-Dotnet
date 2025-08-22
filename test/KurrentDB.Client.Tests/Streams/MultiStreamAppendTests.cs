@@ -8,18 +8,6 @@ namespace KurrentDB.Client.Tests.Streams;
 [Trait("Category", "Operation:MultiStreamAppend")]
 public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
 	: KurrentDBPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
-	[Fact]
-	public void timespan_json_roundtrip() {
-		var obj = new TestMetadata { TimeSpanValue = 1.Hours().Add(30.Minutes()) };
-
-		string json = JsonSerializer.Serialize(obj, MetadataDecoder.JsonSerializerOptions);
-		json.ShouldContain("PT1H30M");
-
-		var deserialized = JsonSerializer.Deserialize<TestMetadata>(json, MetadataDecoder.JsonSerializerOptions);
-		deserialized.ShouldNotBeNull();
-		deserialized.TimeSpanValue.ShouldBe(obj.TimeSpanValue);
-	}
-
 	[MinimumVersion.Fact(25, 1)]
 	public async Task append_events_with_invalid_metadata_format_throws_exceptions() {
 		// Arrange
@@ -87,7 +75,7 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 		metadata["BooleanValue"].ShouldBe(expectedMetadata.BooleanValue);
 		metadata["DoubleValue"].ShouldBe(expectedMetadata.DoubleValue);
 		metadata["DateTimeValue"].ShouldBe(expectedMetadata.DateTimeValue);
-		// metadata["TimeSpanValue"].ShouldBe(expectedMetadata.TimeSpanValue);
+		metadata["TimeSpanValue"].ShouldBe(expectedMetadata.TimeSpanValue);
 		metadata["ByteArrayValue"].ShouldBe(expectedMetadata.ByteArrayValue);
 	}
 

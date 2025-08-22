@@ -3,7 +3,6 @@
 using System.Buffers;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Xml;
 using JetBrains.Annotations;
 using System.Text;
 using KurrentDB.Client.Core.Internal.Exceptions;
@@ -26,7 +25,6 @@ public static class MetadataDecoder {
 		UnknownTypeHandling         = JsonUnknownTypeHandling.JsonNode,
 		Converters = {
 			new MetadataJsonConverter(),
-			new TimeSpanIso8601Converter(),
 			new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)
 		}
 	};
@@ -115,23 +113,4 @@ public class MetadataJsonConverter : JsonConverter<Dictionary<string, object?>> 
 
 	public override void Write(Utf8JsonWriter writer, Dictionary<string, object?> value, JsonSerializerOptions options) =>
 		JsonSerializer.Serialize(writer, value, options);
-}
-
-public class TimeSpanIso8601Converter : JsonConverter<TimeSpan> {
-	public override TimeSpan Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) {
-		if (reader.TokenType == JsonTokenType.Null)
-			return TimeSpan.Zero;
-
-		if (reader.TokenType != JsonTokenType.String)
-			throw new JsonException("Failed to convert ISO8601 TimeSpan from JSON. Expected a string value.");
-
-		var value = reader.GetString();
-
-		return string.IsNullOrEmpty(value) ? TimeSpan.Zero : XmlConvert.ToTimeSpan(value);
-	}
-
-	public override void Write(Utf8JsonWriter writer, TimeSpan value, JsonSerializerOptions options) {
-		if (value != TimeSpan.Zero || options.DefaultIgnoreCondition is not (JsonIgnoreCondition.WhenWritingDefault or JsonIgnoreCondition.Always))
-			writer.WriteStringValue(XmlConvert.ToString(value));
-	}
 }
