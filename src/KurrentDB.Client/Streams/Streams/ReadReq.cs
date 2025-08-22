@@ -1,7 +1,7 @@
-using System;
+using EventStore.Client;
 using KurrentDB.Client;
 
-namespace EventStore.Client.Streams {
+namespace KurrentDB.Protocol.Streams.V1 {
 	partial class ReadReq {
 		partial class Types {
 			partial class Options {

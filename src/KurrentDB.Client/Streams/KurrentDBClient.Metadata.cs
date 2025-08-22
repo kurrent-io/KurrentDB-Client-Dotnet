@@ -1,5 +1,5 @@
 using System.Text.Json;
-using EventStore.Client.Streams;
+using KurrentDB.Protocol.Streams.V1;
 using Microsoft.Extensions.Logging;
 
 namespace KurrentDB.Client {

@@ -1,5 +1,3 @@
-using System;
-
 namespace KurrentDB.Client {
 	/// <summary>
 	/// Exception thrown if the expected version specified on an operation
@@ -44,6 +42,12 @@ namespace KurrentDB.Client {
 			ExpectedStreamState = expectedStreamState;
 			ExpectedVersion = expectedStreamState.ToInt64();
 			ActualVersion = actualStreamState.ToInt64();
+		}
+
+		public WrongExpectedVersionException(string streamName, StreamState actualStreamState, Exception? exception = null, string? message = null) :
+			base(message ?? $"Append failed due to WrongExpectedVersion. Stream: {streamName}, Actual version: {actualStreamState}", exception) {
+			StreamName        = streamName;
+			ActualStreamState = actualStreamState;
 		}
 	}
 }
