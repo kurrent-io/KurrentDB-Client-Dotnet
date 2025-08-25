@@ -63,6 +63,14 @@ public class SchemaNameStrategiesTests {
 	#region . edge cases .
 
 	[Test]
+	public void message_schema_name_with_no_namespace_generates_correct_name() {
+		var strategy    = new MessageSchemaNameStrategy();
+		var messageType = typeof(Order);
+		var result      = strategy.GenerateSchemaName(messageType);
+		result.Value.ShouldBe("Order");
+	}
+
+	[Test]
 	public void message_schema_name_strategy_generates_correct_name_with_nested_types() {
 		var strategy    = new MessageSchemaNameStrategy();
 		var messageType = typeof(Company.Logistics.Events.OrderShipped.Address);

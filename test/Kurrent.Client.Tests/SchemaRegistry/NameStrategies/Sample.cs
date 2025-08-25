@@ -6,3 +6,5 @@ namespace Company.Logistics.Events {
 		public record Address(string Street, string City, string ZipCode);
 	}
 }
+
+record Order(string OrderId, string Product, int Quantity);
