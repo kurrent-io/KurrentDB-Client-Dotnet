@@ -1,5 +1,3 @@
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Tests;
 
 public readonly record struct EventBinaryData(Uuid Id, byte[] Data, byte[] Metadata) {

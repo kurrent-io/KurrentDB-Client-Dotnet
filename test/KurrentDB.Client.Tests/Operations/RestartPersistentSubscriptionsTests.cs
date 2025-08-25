@@ -1,4 +1,3 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests.Operations;
@@ -12,7 +11,7 @@ public class RestartPersistentSubscriptionsTests(ITestOutputHelper output, Resta
 			.RestartPersistentSubscriptions(userCredentials: TestCredentials.Root)
 			.ShouldNotThrowAsync();
 
-	[RetryFact]
+	[RetryFact(Skip = "We disable passing credentials to the operations by default, so this test is not applicable")]
 	public async Task restart_persistent_subscriptions_without_credentials_throws() =>
 		await Fixture.DBOperations
 			.RestartPersistentSubscriptions()

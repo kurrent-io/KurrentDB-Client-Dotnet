@@ -1,15 +1,16 @@
 <Project>
-    <PropertyGroup>
-        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
-        <Nullable>enable</Nullable>
-        <NullableContextOptions>enable</NullableContextOptions>
-        <ImplicitUsings>true</ImplicitUsings>
-        <OutputType>Exe</OutputType>
-        <LangVersion>preview</LangVersion>
-    </PropertyGroup>
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <NullableContextOptions>enable</NullableContextOptions>
+    <ImplicitUsings>true</ImplicitUsings>
+    <OutputType>Exe</OutputType>
+    <LangVersion>preview</LangVersion>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+  </PropertyGroup>
 
-    <ItemGroup>
-        <Using Include="System.Text" />
-        <Using Include="KurrentDB.Client" />
-    </ItemGroup>
+  <ItemGroup>
+    <Using Include="System.Text" />
+    <Using Include="KurrentDB.Client" />
+  </ItemGroup>
 </Project>

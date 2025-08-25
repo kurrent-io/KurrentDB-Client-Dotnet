@@ -7,16 +7,16 @@ services:
     environment:
       PROVISION_DIRECTORIES: "1000:1000:0755:/tmp/certs"
     volumes:
-    - "${ES_CERTS_CLUSTER}:/tmp/certs"
+      - "${ES_CERTS_CLUSTER}:/tmp/certs"
     network_mode: none
-    
+
   cert-gen:
     image: docker.eventstore.com/eventstore-utils/es-gencert-cli:latest
     container_name: cert-gen
     user: "1000:1000"
     entrypoint: [ "/bin/sh","-c" ]
     #    rm -rf /tmp/certs/**
-    command: 
+    command:
       - |
         es-gencert-cli create-ca -out /tmp/certs/ca
         es-gencert-cli create-node -ca-certificate /tmp/certs/ca/ca.crt -ca-key /tmp/certs/ca/ca.key -out /tmp/certs/node1 -ip-addresses 127.0.0.1,172.30.240.11 -dns-names localhost
@@ -27,7 +27,7 @@ services:
       - "${ES_CERTS_CLUSTER}:/tmp/certs"
     depends_on:
       - volumes-provisioner
-  
+
   seq:
     image: datalust/seq:latest
     container_name: seq
@@ -38,7 +38,7 @@ services:
     depends_on:
       - volumes-provisioner
       - cert-gen
-        
+
   esdb-node1:
     image: docker.eventstore.com/eventstore-ce/eventstoredb-ce:${ES_DOCKER_TAG}
     container_name: esdb-node1
@@ -166,11 +166,11 @@ networks:
         - subnet: 172.30.240.0/24
 
 volumes:
-    eventstore-volume-data1:
-    eventstore-volume-logs1:
-    eventstore-volume-data2:
-    eventstore-volume-logs2:
-    eventstore-volume-data3:
-    eventstore-volume-logs3:
-    eventstore-volume-data4:
-    eventstore-volume-logs4:
+  eventstore-volume-data1:
+  eventstore-volume-logs1:
+  eventstore-volume-data2:
+  eventstore-volume-logs2:
+  eventstore-volume-data3:
+  eventstore-volume-logs3:
+  eventstore-volume-data4:
+  eventstore-volume-logs4:

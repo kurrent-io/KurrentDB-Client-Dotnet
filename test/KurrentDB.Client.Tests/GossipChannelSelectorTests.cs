@@ -1,5 +1,4 @@
 using System.Net;
-using KurrentDB.Client;
 using Grpc.Core;
 
 namespace KurrentDB.Client.Tests;
@@ -16,10 +15,10 @@ public class GossipChannelSelectorTests {
 
 		var settings = new KurrentDBClientSettings {
 			ConnectivitySettings = {
-				DnsGossipSeeds = new[] {
+				GossipSeeds = [
 					firstSelection,
 					secondSelection
-				},
+				],
 				Insecure = true
 			}
 		};
@@ -30,7 +29,7 @@ public class GossipChannelSelectorTests {
 			channelCache,
 			new FakeGossipClient(
 				new(
-					new ClusterMessages.MemberInfo[] {
+					[
 						new(
 							firstId,
 							ClusterMessages.VNodeState.Leader,
@@ -43,7 +42,7 @@ public class GossipChannelSelectorTests {
 							true,
 							secondSelection
 						)
-					}
+					]
 				)
 			)
 		);
@@ -51,7 +50,7 @@ public class GossipChannelSelectorTests {
 		var channel = await sut.SelectChannelAsync(default);
 		Assert.Equal($"{firstSelection.Host}:{firstSelection.Port}", channel.Target);
 
-		channel = sut.SelectChannel(secondSelection);
+		channel = sut.SelectEndpointChannel(secondSelection);
 		Assert.Equal($"{secondSelection.Host}:{secondSelection.Port}", channel.Target);
 	}
 
@@ -59,9 +58,9 @@ public class GossipChannelSelectorTests {
 	public async Task ThrowsWhenDiscoveryFails() {
 		var settings = new KurrentDBClientSettings {
 			ConnectivitySettings = {
-				IpGossipSeeds = new[] {
-					new IPEndPoint(IPAddress.Loopback, 2113)
-				},
+				GossipSeeds = [
+					new DnsEndPoint(IPAddress.Loopback.ToString(), 2113)
+				],
 				Insecure            = true,
 				MaxDiscoverAttempts = 3
 			}
