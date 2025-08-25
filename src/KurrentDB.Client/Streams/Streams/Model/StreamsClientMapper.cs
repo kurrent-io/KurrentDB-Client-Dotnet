@@ -11,14 +11,14 @@ using KurrentDB.Protocol.Streams.V2;
 namespace KurrentDB.Client;
 
 static class StreamsClientMapper {
-	public static async IAsyncEnumerable<AppendRecord> Map(this IEnumerable<EventData> source, Activity? activity = null) {
+	public static async IAsyncEnumerable<AppendRecord> Map(this IEnumerable<EventData> source) {
 		foreach (var message in source)
 			yield return await message
-				.Map(activity)
+				.Map()
 				.ConfigureAwait(false);
 	}
 
-	public static ValueTask<AppendRecord> Map(this EventData source, Activity? activity = null) {
+	public static ValueTask<AppendRecord> Map(this EventData source) {
 		Dictionary<string, object?> metadata = new();
 
 		if (!source.Metadata.IsEmpty)
@@ -29,7 +29,7 @@ static class StreamsClientMapper {
 			? SchemaDataFormat.Json
 			: SchemaDataFormat.Bytes;
 
-		metadata.InjectTracingContext(activity);
+		metadata.InjectTracingContext(Activity.Current);
 
 		var record = new AppendRecord {
 			RecordId   = source.EventId.ToString(),

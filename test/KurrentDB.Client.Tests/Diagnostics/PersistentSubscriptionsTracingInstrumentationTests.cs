@@ -9,6 +9,7 @@ public class PersistentSubscriptionsTracingInstrumentationTests(ITestOutputHelpe
 	: KurrentDBPermanentTests<DiagnosticsFixture>(output, fixture) {
 	[RetryFact]
 	public async Task persistent_subscription_restores_remote_append_context() {
+		var traceId = Fixture.CreateTraceId();
 		var stream = Fixture.GetStreamName();
 		var events = Fixture.CreateTestEvents(2, metadata: Fixture.CreateTestJsonMetadata()).ToArray();
 
@@ -29,12 +30,12 @@ public class PersistentSubscriptionsTracingInstrumentationTests(ITestOutputHelpe
 		await Subscribe().WithTimeout();
 
 		var appendActivity = Fixture
-			.GetActivitiesForOperation(TracingConstants.Operations.Append, stream)
+			.GetActivities(TracingConstants.Operations.Append, traceId)
 			.SingleOrDefault()
 			.ShouldNotBeNull();
 
 		var subscribeActivities = Fixture
-			.GetActivitiesForOperation(TracingConstants.Operations.Subscribe, stream)
+			.GetActivities(TracingConstants.Operations.Subscribe, traceId)
 			.ToArray();
 
 		subscriptionId.ShouldNotBeNull();

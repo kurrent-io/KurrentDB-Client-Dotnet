@@ -11,7 +11,7 @@ using KurrentDB.Diagnostics.Tracing;
 namespace KurrentDB.Client.Tests.Fixtures;
 
 public class DiagnosticsFixture : KurrentDBPermanentFixture {
-	readonly ConcurrentDictionary<(string Operation, string Stream), List<Activity>> Activities = [];
+	readonly ConcurrentDictionary<(string Operation, ActivityTraceId TraceId), List<Activity>> Activities = [];
 
 	public DiagnosticsFixture() : base(x => x.RunProjections()) {
 		var diagnosticActivityListener = new ActivityListener {
@@ -19,13 +19,12 @@ public class DiagnosticsFixture : KurrentDBPermanentFixture {
 			Sample         = (ref _) => ActivitySamplingResult.AllDataAndRecorded,
 			ActivityStopped = activity => {
 				var operation = (string?)activity.GetTagItem(TelemetryTags.Database.Operation);
-				var stream    = (string?)activity.GetTagItem(TelemetryTags.KurrentDB.Stream);
 
-				if (operation is null || stream is null)
+				if (operation is null)
 					return;
 
 				Activities.AddOrUpdate(
-					(operation, stream),
+					(operation, activity.TraceId),
 					_ => [activity],
 					(_, activities) => {
 						activities.Add(activity);
@@ -46,8 +45,27 @@ public class DiagnosticsFixture : KurrentDBPermanentFixture {
 		};
 	}
 
-	public List<Activity> GetActivitiesForOperation(string operation, params string[] streams) =>
-		streams.SelectMany(stream => Activities.TryGetValue((operation, stream), out var activities) ? activities : []).ToList();
+	public ActivityTraceId CreateTraceId() {
+		var activity = new Activity(Guid.NewGuid().ToString("N"));
+		activity.Start();
+		Activity.Current = activity;
+		return activity.TraceId;
+	}
+
+	public List<Activity> GetActivities(string operation, ActivityTraceId traceId) =>
+		Activities.TryGetValue((operation, traceId), out var activities) ? activities : [];
+
+	public void AssertMultiAppendActivityHasExpectedTags(Activity activity) {
+		var expectedTags = new Dictionary<string, string?> {
+			{ TelemetryTags.Database.System, KurrentDBClientDiagnostics.InstrumentationName },
+			{ TelemetryTags.Database.Operation, TracingConstants.Operations.MultiAppend },
+			{ TelemetryTags.Database.User, TestCredentials.Root.Username },
+			{ TelemetryTags.Otel.StatusCode, ActivityStatusCodeHelper.OkStatusCodeTagValue }
+		};
+
+		foreach (var tag in expectedTags)
+			activity.Tags.ShouldContain(tag);
+	}
 
 	public void AssertAppendActivityHasExpectedTags(Activity activity, string stream) {
 		var expectedTags = new Dictionary<string, string?> {
@@ -73,13 +91,9 @@ public class DiagnosticsFixture : KurrentDBPermanentFixture {
 		var actualEvent = activity.Events.ShouldHaveSingleItem();
 
 		actualEvent.Name.ShouldBe(TelemetryTags.Exception.EventName);
-		actualEvent.Tags.ShouldContain(
-			new KeyValuePair<string, object?>(TelemetryTags.Exception.Type, actualException.GetType().FullName)
-		);
+		actualEvent.Tags.ShouldContain(new KeyValuePair<string, object?>(TelemetryTags.Exception.Type, actualException.GetType().FullName));
 
-		actualEvent.Tags.ShouldContain(
-			new KeyValuePair<string, object?>(TelemetryTags.Exception.Message, actualException.Message)
-		);
+		actualEvent.Tags.ShouldContain(new KeyValuePair<string, object?>(TelemetryTags.Exception.Message, actualException.Message));
 
 		actualEvent.Tags.Any(x => x.Key == TelemetryTags.Exception.Stacktrace).ShouldBeTrue();
 	}

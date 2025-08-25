@@ -13,6 +13,8 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 	: KurrentDBPermanentTests<DiagnosticsFixture>(output, fixture) {
 	[Fact]
 	public async Task append_to_stream() {
+		var traceId = Fixture.CreateTraceId();
+
 		var stream = Fixture.GetStreamName();
 
 		await Fixture.Streams.AppendToStreamAsync(
@@ -22,7 +24,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 		);
 
 		var activity = Fixture
-			.GetActivitiesForOperation(TracingConstants.Operations.Append, stream)
+			.GetActivities(TracingConstants.Operations.Append, traceId)
 			.SingleOrDefault()
 			.ShouldNotBeNull();
 
@@ -32,6 +34,8 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 	[MinimumVersion.Fact(25, 1)]
 	public async Task multi_stream_append() {
 		// Arrange
+		var traceId = Fixture.CreateTraceId();
+
 		var seedEvents = Fixture.CreateTestEvents(10).ToList();
 
 		var availableEvents = new HashSet<Uuid>(seedEvents.Select(x => x.EventId));
@@ -39,10 +43,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 		var stream1 = Fixture.GetStreamName();
 		var stream2 = Fixture.GetStreamName();
 
-		AppendStreamRequest[] requests = [
-			new(stream1, StreamState.NoStream, seedEvents.Take(5)),
-			new(stream2, StreamState.NoStream, seedEvents.Skip(5))
-		];
+		AppendStreamRequest[] requests = [new(stream1, StreamState.NoStream, seedEvents.Take(5)), new(stream2, StreamState.NoStream, seedEvents.Skip(5))];
 
 		// Act
 		var multiStreamAppendResult = await Fixture.Streams.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
@@ -59,17 +60,14 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 		// Assert
 		multiStreamAppendResult.IsSuccess.ShouldBeTrue();
 
-		var appendActivities = Fixture.GetActivitiesForOperation(TracingConstants.Operations.Append, stream1, stream2);
-		var subscribeActivities = Fixture.GetActivitiesForOperation(TracingConstants.Operations.Subscribe, stream1, stream2);
+		var appendActivities    = Fixture.GetActivities(TracingConstants.Operations.MultiAppend, traceId);
+		var subscribeActivities = Fixture.GetActivities(TracingConstants.Operations.Subscribe, traceId);
 
 		appendActivities.ShouldNotBeEmpty();
 		subscribeActivities.ShouldNotBeEmpty();
 
-		appendActivities.Count.ShouldBe(2);
+		appendActivities.Count.ShouldBe(1);
 		subscribeActivities.Count.ShouldBe(10);
-
-		// Append activities should not have parent span IDs
-		appendActivities.All(x => x.ParentSpanId == default).ShouldBeTrue();
 
 		// They also have the same duration
 		appendActivities.Select(x => x.Duration).Distinct().Count().ShouldBe(1);
@@ -87,8 +85,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 			.All(x => x.StartTimeUtc > appendActivities.First().StartTimeUtc)
 			.ShouldBeTrue();
 
-		Fixture.AssertAppendActivityHasExpectedTags(appendActivities.First(), stream1);
-		Fixture.AssertAppendActivityHasExpectedTags(appendActivities.Last(), stream2);
+		Fixture.AssertMultiAppendActivityHasExpectedTags(appendActivities.First());
 		Fixture.AssertSubscriptionActivityHasExpectedTags(subscribeActivities.First(), stream1, seedEvents.First().EventId.ToString());
 
 		return;
@@ -108,6 +105,8 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 
 	[MinimumVersion.Fact(25, 1)]
 	public async Task multi_stream_append_with_failures() {
+		var traceId = Fixture.CreateTraceId();
+
 		// Arrange
 		var stream1 = Fixture.GetStreamName();
 		var stream2 = Fixture.GetStreamName();
@@ -118,16 +117,16 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 		];
 
 		// Act
-		var multiStreamAppendResult = await Fixture.Streams.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
+		var multiStreamAppendResult = await Fixture.Streams.MultiStreamAppendAsync(requests);
 
 		// Assert
 		multiStreamAppendResult.IsFailure.ShouldBeTrue();
 
-		var appendActivities = Fixture.GetActivitiesForOperation(TracingConstants.Operations.Append, stream1, stream2);
+		var appendActivities = Fixture.GetActivities(TracingConstants.Operations.MultiAppend, traceId);
 
 		appendActivities.ShouldNotBeEmpty();
 
-		appendActivities.Count.ShouldBe(2);
+		appendActivities.Count.ShouldBe(1);
 
 		var activity = appendActivities.FirstOrDefault().ShouldNotBeNull();
 		activity.Status.ShouldBe(ActivityStatusCode.Error);
@@ -142,6 +141,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 
 	[Fact]
 	public async Task append_trace_tagged_with_error_on_exception() {
+		var traceId = Fixture.CreateTraceId();
 		var stream = Fixture.GetStreamName();
 
 		var actualException = await Fixture.Streams.AppendToStreamAsync(
@@ -151,7 +151,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 		).ShouldThrowAsync<Exception>();
 
 		var activity = Fixture
-			.GetActivitiesForOperation(TracingConstants.Operations.Append, stream)
+			.GetActivities(TracingConstants.Operations.Append, traceId)
 			.SingleOrDefault()
 			.ShouldNotBeNull();
 
@@ -160,6 +160,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 
 	[Fact]
 	public async Task tracing_context_injected_when_metadata_is_json() {
+		var traceId = Fixture.CreateTraceId();
 		var stream = Fixture.GetStreamName();
 
 		await Fixture.Streams.AppendToStreamAsync(
@@ -169,7 +170,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 		);
 
 		var activity = Fixture
-			.GetActivitiesForOperation(TracingConstants.Operations.Append, stream)
+			.GetActivities(TracingConstants.Operations.Append, traceId)
 			.SingleOrDefault()
 			.ShouldNotBeNull();
 
@@ -205,6 +206,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 
 	[Fact]
 	public async Task tracing_context_injected_when_event_not_json_but_metadata_json() {
+		var traceId = Fixture.CreateTraceId();
 		var stream = Fixture.GetStreamName();
 
 		var inputMetadata = Fixture.CreateTestJsonMetadata().ToArray();
@@ -224,13 +226,14 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 		var outputMetadata = readResult[0].OriginalEvent.Metadata.ToArray();
 		outputMetadata.ShouldNotBe(inputMetadata);
 
-		var appendActivities = Fixture.GetActivitiesForOperation(TracingConstants.Operations.Append, stream);
+		var appendActivities = Fixture.GetActivities(TracingConstants.Operations.Append, traceId);
 
 		appendActivities.ShouldNotBeEmpty();
 	}
 
 	[Fact]
 	public async Task json_metadata_traced_non_json_metadata_not_traced() {
+		var traceId = Fixture.CreateTraceId();
 		var streamName = Fixture.GetStreamName();
 
 		var seedEvents = new[] {
@@ -246,7 +249,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 		await using var enumerator   = subscription.Messages.GetAsyncEnumerator();
 
 		var appendActivities = Fixture
-			.GetActivitiesForOperation(TracingConstants.Operations.Append, streamName)
+			.GetActivities(TracingConstants.Operations.Append, traceId)
 			.ShouldNotBeNull();
 
 		Assert.True(await enumerator.MoveNextAsync());
@@ -256,7 +259,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 		await Subscribe(enumerator).WithTimeout();
 
 		var subscribeActivities = Fixture
-			.GetActivitiesForOperation(TracingConstants.Operations.Subscribe, streamName)
+			.GetActivities(TracingConstants.Operations.Subscribe, traceId)
 			.ToArray();
 
 		appendActivities.ShouldHaveSingleItem();
@@ -291,6 +294,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 	[RetryFact]
 	[Trait("Category", "Special cases")]
 	public async Task no_trace_when_event_is_null() {
+		var traceId = Fixture.CreateTraceId();
 		var category   = Guid.NewGuid().ToString("N");
 		var streamName = category + "-123";
 
@@ -310,11 +314,11 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 		await Subscribe().WithTimeout();
 
 		var appendActivities = Fixture
-			.GetActivitiesForOperation(TracingConstants.Operations.Append, streamName)
+			.GetActivities(TracingConstants.Operations.Append, traceId)
 			.ShouldNotBeNull();
 
 		var subscribeActivities = Fixture
-			.GetActivitiesForOperation(TracingConstants.Operations.Subscribe, "$ce-" + category)
+			.GetActivities(TracingConstants.Operations.Subscribe, traceId)
 			.ToArray();
 
 		appendActivities.ShouldHaveSingleItem();
