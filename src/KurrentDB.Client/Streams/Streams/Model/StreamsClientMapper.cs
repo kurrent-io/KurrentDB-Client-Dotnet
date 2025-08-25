@@ -2,8 +2,10 @@
 
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
+using System.Diagnostics;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
+using KurrentDB.Client.Diagnostics;
 using KurrentDB.Protocol.Streams.V2;
 
 namespace KurrentDB.Client;
@@ -26,6 +28,8 @@ static class StreamsClientMapper {
 		metadata[Constants.Metadata.SchemaDataFormat] = source.ContentType is Constants.Metadata.ContentTypes.ApplicationJson
 			? SchemaDataFormat.Json
 			: SchemaDataFormat.Bytes;
+
+		metadata.InjectTracingContext(Activity.Current);
 
 		var record = new AppendRecord {
 			RecordId   = source.EventId.ToString(),
