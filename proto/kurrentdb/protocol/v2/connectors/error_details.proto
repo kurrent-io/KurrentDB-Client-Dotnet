@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package kurrentdb.protocol.v2;
+
+option csharp_namespace    = "KurrentDB.Protocol.Connectors.V2";
+option java_package        = "io.kurrentdb.protocol.Connectors.v2";
+option java_multiple_files = true;
+
+import "core.proto";
+
+// ErrorDetails provides detailed information about specific error conditions.
+message ConnectorsErrorDetails {
+  message ConnectorNotFound {
+    option (error_info) = {
+      code: "CONNECTOR_NOT_FOUND",
+      severity: RECOVERABLE,
+      message: "The specified connector could not be found. Please check the connector identifier and try again."
+    };
+  }
+}

@@ -1,7 +1,6 @@
 using Ductus.FluentDocker.Builders;
 using Ductus.FluentDocker.Common;
 using Ductus.FluentDocker.Services;
-using Google.Protobuf.WellKnownTypes;
 using Serilog;
 using static Serilog.Core.Constants;
 

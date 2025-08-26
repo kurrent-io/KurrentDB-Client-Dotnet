@@ -1,53 +1,47 @@
 <Project>
-    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
-    <PropertyGroup>
-        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-        <RootNamespace>KurrentDB.Client</RootNamespace>
-        <PackageId>KurrentDB.Client</PackageId>
-    </PropertyGroup>
+  <PropertyGroup>
+    <Title>KurrentDB .NET Client</Title>
+    <Product>KurrentDB .NET Client</Product>
+    <Description>The base GRPC client library for the Kurrent Platform. Get the open source or commercial versions of KurrentDB from https://kurrent.io/</Description>
 
-    <PropertyGroup>
-        <PackageIcon>ouro.png</PackageIcon>
-        <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
-        <PackageProjectUrl>https://kurrent.io</PackageProjectUrl>
-        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <PackageReleaseNotes>https://kurrent.io/blog/</PackageReleaseNotes>
-        <PackageTags>KurrentDB Client gRPC</PackageTags>
-        <Authors>Kurrent, Inc</Authors>
-        <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Kurrent, Inc</Copyright>
-        <MinVerTagPrefix>v</MinVerTagPrefix>
-    </PropertyGroup>
+    <!--    &lt;!&ndash; Exclude all .DotSettings files from being included &ndash;&gt;-->
+    <!--    <DefaultItemExcludes>$(DefaultItemExcludes);**/*.DotSettings</DefaultItemExcludes>-->
 
-    <ItemGroup>
-        <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
-        <None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
-    </ItemGroup>
+    <PackageIcon>ouro.png</PackageIcon>
+    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>
+    <PackageProjectUrl>https://kurrent.io</PackageProjectUrl>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReleaseNotes>https://kurrent.io/blog/</PackageReleaseNotes>
+    <PackageTags>KurrentDB Client gRPC Kurrent</PackageTags>
+    <Authors>Kurrent, Inc</Authors>
+    <Copyright>Copyright 2012-$([System.DateTime]::Today.Year.ToString()) Kurrent, Inc</Copyright>
 
-    <ItemGroup>
-<!--        <PackageReference Include="ConfigureAwaitChecker.Analyzer" Version="5.0.0.1">-->
-<!--            <PrivateAssets>all</PrivateAssets>-->
-<!--            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>-->
-<!--        </PackageReference>-->
-<!--        <PackageReference Include="Grpc.Tools" Version="$(GrpcToolsPackageVersion)">-->
-<!--            <PrivateAssets>all</PrivateAssets>-->
-<!--            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>-->
-<!--        </PackageReference>-->
-        <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" PrivateAssets="All" />
-        <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All"/>
-        <PackageReference Include="MinVer" Version="3.0.0" PrivateAssets="All" />
-    </ItemGroup>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <!--    <EmbedAllSources>true</EmbedAllSources>-->
+    <!--    <EmbedUntrackedSources>true</EmbedUntrackedSources>-->
+    <!--    <IncludeBuildOutput>true</IncludeBuildOutput>-->
+    <DebugType>full</DebugType>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 
-    <ItemGroup>
-        <InternalsVisibleTo Include="$(ProjectName)" />
-        <InternalsVisibleTo Include="$(ProjectName).Operations.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).PersistentSubscriptions.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).ProjectionManagement.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).Streams.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).UserManagement.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).Extensions.OpenTelemetry" />
-        <InternalsVisibleTo Include="$(ProjectName).Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).Common.Tests" />
-        <InternalsVisibleTo Include="$(ProjectName).Tests.Common" />
-    </ItemGroup>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+
+    <!-- NETSDK1057 - You are using a preview version of .NET -->
+    <NoWarn>$(NoWarn);NETSDK1057</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup Label="Default Packages">
+    <PackageReference Include="JetBrains.Annotations" Version="2025.2.0" PrivateAssets="All" />
+    <Using Include="JetBrains.Annotations" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="..\..\LICENSE.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\ouro.png" Pack="true" PackagePath="\" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
+    <PackageReference Include="MinVer" Version="6.0.0" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

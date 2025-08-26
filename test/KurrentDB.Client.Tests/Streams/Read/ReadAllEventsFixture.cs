@@ -17,7 +17,7 @@ public class ReadAllEventsFixture : KurrentDBTemporaryFixture {
 			);
 
 			Events = CreateTestEvents(20)
-				.Concat(CreateTestEvents(2, metadata: CreateMetadataOfSize(10_000)))
+				.Concat(CreateTestEvents(2, metadata: CreateMetadataOfSize(1_000_000)))
 				.Concat(CreateTestEvents(2, AnotherTestEventType))
 				.ToArray();
 
@@ -26,7 +26,7 @@ public class ReadAllEventsFixture : KurrentDBTemporaryFixture {
 			await Streams.AppendToStreamAsync(ExpectedStreamName, StreamState.NoStream, Events);
 
 			ExpectedEvents         = Events.ToBinaryData();
-			ExpectedEventsReversed = Enumerable.Reverse(ExpectedEvents).ToArray();
+			ExpectedEventsReversed = ((IEnumerable<EventBinaryData>)ExpectedEvents).Reverse().ToArray();
 
 			ExpectedFirstEvent = ExpectedEvents.First();
 			ExpectedLastEvent  = ExpectedEvents.Last();
@@ -35,10 +35,10 @@ public class ReadAllEventsFixture : KurrentDBTemporaryFixture {
 
 	public string ExpectedStreamName { get; private set; } = null!;
 
-	public EventData[] Events { get; private set; } = Array.Empty<EventData>();
+	public EventData[] Events { get; private set; } = [];
 
-	public EventBinaryData[] ExpectedEvents         { get; private set; } = Array.Empty<EventBinaryData>();
-	public EventBinaryData[] ExpectedEventsReversed { get; private set; } = Array.Empty<EventBinaryData>();
+	public EventBinaryData[] ExpectedEvents         { get; private set; } = [];
+	public EventBinaryData[] ExpectedEventsReversed { get; private set; } = [];
 
 	public EventBinaryData ExpectedFirstEvent { get; private set; }
 	public EventBinaryData ExpectedLastEvent  { get; private set; }

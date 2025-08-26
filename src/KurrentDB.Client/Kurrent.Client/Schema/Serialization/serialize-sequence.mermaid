@@ -1,0 +1,21 @@
+sequenceDiagram
+    participant Client
+    participant SchemaSerializer
+    participant PolicyResolver
+    participant Registry
+    participant Serializer
+    Client ->> SchemaSerializer: Serialize(value, context)
+    SchemaSerializer ->> PolicyResolver: Resolve policy requirements
+    PolicyResolver -->> SchemaSerializer: Resolved policy
+
+    alt Schema Registry Enabled
+        SchemaSerializer ->> Registry: Register or validate schema
+        Registry -->> SchemaSerializer: Schema version info
+    else Schema Registry Disabled
+        SchemaSerializer ->> SchemaSerializer: Local type mapping
+    end
+
+    SchemaSerializer ->> SchemaSerializer: Update metadata with schema info
+    SchemaSerializer ->> Serializer: Format-specific serialization
+    Serializer -->> SchemaSerializer: Serialized bytes
+    SchemaSerializer -->> Client: Return serialized data

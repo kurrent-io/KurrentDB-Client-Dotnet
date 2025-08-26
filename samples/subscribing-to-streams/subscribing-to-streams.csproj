@@ -1,8 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <RootNamespace>subscribing_to_streams</RootNamespace>
-    </PropertyGroup>
-    <ItemGroup>
-      <ProjectReference Include="..\..\src\KurrentDB.Client\KurrentDB.Client.csproj" />
-    </ItemGroup>
+  <PropertyGroup>
+    <RootNamespace>subscribing_to_streams</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\KurrentDB.Client\KurrentDB.Client.csproj" />
+    <ProjectReference Include="..\..\src\Variant\Variant.csproj" />
+  </ItemGroup>
 </Project>

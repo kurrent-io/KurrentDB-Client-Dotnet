@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text;
-using KurrentDB.Client;
+using Kurrent.Client;
 
 namespace KurrentDB.Client.Tests.TestNode;
 
@@ -18,7 +18,7 @@ public partial class KurrentDBTemporaryFixture {
 	public string GetGroupName([CallerMemberName] string? testMethod = null) =>
 		$"group-{testMethod}-{Guid.NewGuid():N}";
 
-	public UserCredentials GetUserCredentials([CallerMemberName] string? testMethod = null) => new UserCredentials(
+	public UserCredentials GetUserCredentials([CallerMemberName] string? testMethod = null) => new(
 		$"user-{testMethod}-{Guid.NewGuid():N}",
 		"pa$$word"
 	);
@@ -86,8 +86,7 @@ public partial class KurrentDBTemporaryFixture {
 		Fakers.Users
 			.RuleFor(x => x.Groups, f => withoutGroups ? Array.Empty<string>() : f.Lorem.Words())
 			.Generate(count)
-			.Select(
-				async user => {
+			.Select(async user => {
 					await DBUsers.CreateUserAsync(
 						user.LoginName,
 						user.FullName,

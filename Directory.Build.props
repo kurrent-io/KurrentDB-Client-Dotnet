@@ -1,21 +1,65 @@
 <Project>
-    <PropertyGroup>
-        <TargetFrameworks>net48;net8.0;net9.0</TargetFrameworks>
-        <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
-        <Nullable>enable</Nullable>
-        <NullableContextOptions>enable</NullableContextOptions>
-        <ImplicitUsings>true</ImplicitUsings>
-        <LangVersion>preview</LangVersion>
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>preview</LangVersion>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 
-        <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-        <DebugType Condition=" '$(Configuration)' == 'Debug' ">full</DebugType>
-        <DebugType Condition=" '$(Configuration)' == 'Release' ">pdbonly</DebugType>
+    <!-- Performance optimizations -->
+    <TieredCompilation>true</TieredCompilation>
+    <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
+    <TieredCompilationQuickJitForLoops>true</TieredCompilationQuickJitForLoops>
 
-        <UseLinkBase>true</UseLinkBase>
-    </PropertyGroup>
+    <!-- Code quality -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <!--        <AnalysisMode>AllEnabledByDefault</AnalysisMode>-->
+    <!--        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>-->
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-        <Reference Include="System.Net.Http" />
-        <Reference Include="System.Web" />
-    </ItemGroup>
+    <!-- Set Default Configuration -->
+    <Configuration Condition="'$(Configuration)'==''">Debug</Configuration>
+
+    <!-- Exclude all .DotSettings files from being included -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);**/*.DotSettings</DefaultItemExcludes>
+
+    <!--    <Deterministic>true</Deterministic>-->
+  </PropertyGroup>
+
+  <!-- Debug Configuration Settings -->
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>false</Optimize>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+
+  <!-- Release Configuration Settings -->
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <Optimize>true</Optimize>
+    <!--    <EmbedAllSources>true</EmbedAllSources>-->
+  </PropertyGroup>
+
+  <!--  &lt;!&ndash; Add Source Link support for public packages &ndash;&gt;-->
+  <!--  <PropertyGroup Condition="'$(Configuration)'=='Release'">-->
+  <!--    <PublishRepositoryUrl>true</PublishRepositoryUrl>-->
+  <!--    <EmbedUntrackedSources>true</EmbedUntrackedSources>-->
+  <!--    <IncludeSymbols>true</IncludeSymbols>-->
+  <!--    <SymbolPackageFormat>snupkg</SymbolPackageFormat>-->
+
+  <!--    &lt;!&ndash; Uncomment if you want to enable trimming &ndash;&gt;-->
+  <!--    &lt;!&ndash; <PublishTrimmed>true</PublishTrimmed> &ndash;&gt;-->
+
+  <!--    &lt;!&ndash; Uncomment if you want AOT compilation &ndash;&gt;-->
+  <!--    &lt;!&ndash; <PublishAot>true</PublishAot> &ndash;&gt;-->
+  <!--  </PropertyGroup>-->
+
+  <!-- Deterministic builds for CI environments -->
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
 </Project>

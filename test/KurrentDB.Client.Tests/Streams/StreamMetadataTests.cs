@@ -87,9 +87,8 @@ public class StreamMetadataTests(ITestOutputHelper output, KurrentDBPermanentFix
 	[Fact]
 	public async Task setting_with_wrong_expected_version_throws() {
 		var stream = Fixture.GetStreamName();
-		await Assert.ThrowsAsync<WrongExpectedVersionException>(
-			() =>
-				Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(2), new())
+		await Assert.ThrowsAsync<WrongExpectedVersionException>(() =>
+			Fixture.Streams.SetStreamMetadataAsync(stream, StreamState.StreamRevision(2), new())
 		);
 	}
 
@@ -155,14 +154,13 @@ public class StreamMetadataTests(ITestOutputHelper output, KurrentDBPermanentFix
 	[Fact]
 	public async Task with_timeout_set_with_any_stream_revision_fails_when_operation_expired() {
 		var stream = Fixture.GetStreamName();
-		var rpcException = await Assert.ThrowsAsync<RpcException>(
-			() =>
-				Fixture.Streams.SetStreamMetadataAsync(
-					stream,
-					StreamState.Any,
-					new(),
-					deadline: TimeSpan.Zero
-				)
+		var rpcException = await Assert.ThrowsAsync<RpcException>(() =>
+			Fixture.Streams.SetStreamMetadataAsync(
+				stream,
+				StreamState.Any,
+				new(),
+				deadline: TimeSpan.Zero
+			)
 		);
 
 		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);
@@ -172,14 +170,13 @@ public class StreamMetadataTests(ITestOutputHelper output, KurrentDBPermanentFix
 	public async Task with_timeout_set_with_stream_revision_fails_when_operation_expired() {
 		var stream = Fixture.GetStreamName();
 
-		var rpcException = await Assert.ThrowsAsync<RpcException>(
-			() =>
-				Fixture.Streams.SetStreamMetadataAsync(
-					stream,
-					StreamState.StreamRevision(0),
-					new(),
-					deadline: TimeSpan.Zero
-				)
+		var rpcException = await Assert.ThrowsAsync<RpcException>(() =>
+			Fixture.Streams.SetStreamMetadataAsync(
+				stream,
+				StreamState.StreamRevision(0),
+				new(),
+				deadline: TimeSpan.Zero
+			)
 		);
 
 		Assert.Equal(StatusCode.DeadlineExceeded, rpcException.StatusCode);

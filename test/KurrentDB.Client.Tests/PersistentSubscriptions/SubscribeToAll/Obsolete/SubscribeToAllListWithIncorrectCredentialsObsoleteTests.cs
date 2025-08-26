@@ -1,4 +1,3 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
@@ -6,7 +5,7 @@ namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 [Trait("Category", "Target:PersistentSubscriptions")]
 public class SubscribeToAllListWithIncorrectCredentialsObsoleteTests(ITestOutputHelper output, SubscribeToAllListWithIncorrectCredentialsObsoleteTests.CustomFixture fixture)
 	: KurrentTemporaryTests<SubscribeToAllListWithIncorrectCredentialsObsoleteTests.CustomFixture>(output, fixture) {
-	[RetryFact]
+	[RetryFact(Skip = "We disable passing credentials to the operations by default, so this test is not applicable")]
 	public async Task throws_with_no_credentials() {
 		var group  = Fixture.GetGroupName();
 		var stream = Fixture.GetStreamName();

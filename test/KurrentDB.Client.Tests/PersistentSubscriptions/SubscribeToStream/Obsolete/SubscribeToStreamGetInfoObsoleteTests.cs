@@ -1,4 +1,3 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
@@ -23,7 +22,7 @@ public class SubscribeToStreamGetInfoObsoleteTests(SubscribeToStreamGetInfoObsol
 	);
 
 	public static IEnumerable<object[]> AllowedUsers() {
-		yield return new object[] { TestCredentials.Root };
+		yield return [TestCredentials.Root];
 	}
 
 	[Theory]
@@ -120,7 +119,7 @@ public class SubscribeToStreamGetInfoObsoleteTests(SubscribeToStreamGetInfoObsol
 		);
 	}
 
-	[RetryFact]
+	[RetryFact(Skip = "We disable passing credentials to the operations by default, so this test is not applicable")]
 	public async Task throws_with_no_credentials() {
 		var group  = $"NonExisting-{fixture.GetGroupName()}";
 		var stream = $"NonExisting-{fixture.GetStreamName()}";

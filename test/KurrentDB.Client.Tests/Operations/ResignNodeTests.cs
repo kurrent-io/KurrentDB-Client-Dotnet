@@ -1,6 +1,4 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
-using KurrentDB.Client.Tests;
 
 namespace KurrentDB.Client.Tests.Operations;
 
@@ -13,7 +11,7 @@ public class ResignNodeTests(ITestOutputHelper output, ResignNodeTests.CustomFix
 			.ResignNodeAsync(userCredentials: TestCredentials.Root)
 			.ShouldNotThrowAsync();
 
-	[RetryFact]
+	[RetryFact(Skip = "We disable passing credentials to the operations by default, so this test is not applicable")]
 	public async Task resign_node_without_credentials_throws() =>
 		await Fixture.DBOperations
 			.ResignNodeAsync()

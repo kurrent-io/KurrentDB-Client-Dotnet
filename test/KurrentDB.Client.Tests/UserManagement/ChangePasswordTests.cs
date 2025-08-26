@@ -1,5 +1,3 @@
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Tests;
 
 [Trait("Category", "Target:UserManagement")]
@@ -26,7 +24,7 @@ public class ChangePasswordTests(ITestOutputHelper output, KurrentDBPermanentFix
 	[Theory(Skip = "This can't be right")]
 	[ClassData(typeof(InvalidCredentialsTestCases))]
 	public async Task changing_user_password_with_user_with_insufficient_credentials_throws(string loginName, UserCredentials userCredentials) {
-		await Fixture.DBUsers.CreateUserAsync(loginName, "Full Name", Array.Empty<string>(), "password", userCredentials: TestCredentials.Root);
+		await Fixture.DBUsers.CreateUserAsync(loginName, "Full Name", [], "password", userCredentials: TestCredentials.Root);
 
 		await Fixture.DBUsers
 			.ChangePasswordAsync(loginName, "password", "newPassword", userCredentials: userCredentials)

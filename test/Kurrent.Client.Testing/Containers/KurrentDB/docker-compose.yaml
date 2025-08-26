@@ -1,0 +1,127 @@
+services:
+  volumes-provisioner:
+    image: hasnat/volumes-provisioner
+    environment:
+      PROVISION_DIRECTORIES: "1000:1000:0755:/tmp/certs"
+    volumes:
+      - certs:/tmp/certs
+    network_mode: none
+
+  setup:
+    image: eventstore/es-gencert-cli:1.0.2
+    entrypoint: bash
+    user: "1000:1000"
+    command: >
+      -c "mkdir -p ./certs && cd /certs
+      && es-gencert-cli create-ca
+      && es-gencert-cli create-node -out ./node1 -ip-addresses 127.0.0.1,172.30.240.11 -dns-names localhost
+      && es-gencert-cli create-node -out ./node2 -ip-addresses 127.0.0.1,172.30.240.12 -dns-names localhost
+      && es-gencert-cli create-node -out ./node3 -ip-addresses 127.0.0.1,172.30.240.13 -dns-names localhost
+      && find . -type f -print0 | xargs -0 chmod 666"
+    container_name: setup
+    volumes:
+      - certs:/certs
+    depends_on:
+      - volumes-provisioner
+
+  node1.kurrentdb: &template
+    image: docker.kurrent.io/kurrent-latest/kurrentdb:latest
+    container_name: node1.kurrentdb
+    env_file:
+      - vars.env
+    environment:
+      - KURRENTDB_CLUSTER_SIZE=3
+      - KURRENTDB_RUN_PROJECTIONS=All
+      - KURRENTDB_DISCOVER_VIA_DNS=false
+      - KURRENTDB_ENABLE_ATOM_PUB_OVER_HTTP=true
+      - KURRENTDB_ADVERTISE_HOST_TO_CLIENT_AS=127.0.0.1
+      # Node-specific variables below
+      - KURRENTDB_REPLICATION_IP=172.30.240.11
+      - KURRENTDB_ADVERTISE_NODE_PORT_TO_CLIENT_AS=2111
+      - KURRENTDB_GOSSIP_SEED=172.30.240.12:2113,172.30.240.13:2113
+      - KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH=/certs/ca
+      - KURRENTDB_CERTIFICATE_FILE=/certs/node1/node.crt
+      - KURRENTDB_CERTIFICATE_PRIVATE_KEY_FILE=/certs/node1/node.key
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail --insecure https://node1.kurrentdb:2113/health/live || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    ports:
+      - "2111:2113"
+    volumes:
+      - certs:/certs
+    depends_on:
+      - setup
+    restart: always
+    networks:
+      clusternetwork:
+        ipv4_address: 172.30.240.11
+
+  node2.kurrentdb:
+    <<: *template
+    container_name: node2.kurrentdb
+    env_file:
+      - vars.env
+    environment:
+      - KURRENTDB_REPLICATION_IP=172.30.240.12
+      - KURRENTDB_ADVERTISE_NODE_PORT_TO_CLIENT_AS=2112
+      - KURRENTDB_GOSSIP_SEED=172.30.240.11:2113,172.30.240.13:2113
+      - KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH=/certs/ca
+      - KURRENTDB_CERTIFICATE_FILE=/certs/node2/node.crt
+      - KURRENTDB_CERTIFICATE_PRIVATE_KEY_FILE=/certs/node2/node.key
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail --insecure https://node2.kurrentdb:2113/health/live || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    ports:
+      - "2112:2113"
+    networks:
+      clusternetwork:
+        ipv4_address: 172.30.240.12
+
+  node3.kurrentdb:
+    <<: *template
+    container_name: node3.kurrentdb
+    environment:
+      - KURRENTDB_REPLICATION_IP=172.30.240.13
+      - KURRENTDB_ADVERTISE_NODE_PORT_TO_CLIENT_AS=2113
+      - KURRENTDB_GOSSIP_SEED=172.30.240.11:2113,172.30.240.12:2113
+      - KURRENTDB_TRUSTED_ROOT_CERTIFICATES_PATH=/certs/ca
+      - KURRENTDB_CERTIFICATE_FILE=/certs/node3/node.crt
+      - KURRENTDB_CERTIFICATE_PRIVATE_KEY_FILE=/certs/node3/node.key
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail --insecure https://node3.kurrentdb:2113/health/live || exit 1",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    ports:
+      - "2113:2113"
+    networks:
+      clusternetwork:
+        ipv4_address: 172.30.240.13
+
+networks:
+  clusternetwork:
+    name: kurrentdb.local
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.30.240.0/24
+
+volumes:
+  certs:

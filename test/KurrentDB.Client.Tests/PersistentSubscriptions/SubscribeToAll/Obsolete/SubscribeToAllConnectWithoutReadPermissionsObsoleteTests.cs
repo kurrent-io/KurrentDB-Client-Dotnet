@@ -1,4 +1,3 @@
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
@@ -21,8 +20,7 @@ public class SubscribeToAllConnectWithoutReadPermissionsObsoleteTests(ITestOutpu
 			TestCredentials.Root
 		);
 
-		await Assert.ThrowsAsync<AccessDeniedException>(
-			async () => {
+		await Assert.ThrowsAsync<AccessDeniedException>(async () => {
 				using var _ = await Fixture.Subscriptions.SubscribeToAllAsync(
 					group,
 					delegate { return Task.CompletedTask; },

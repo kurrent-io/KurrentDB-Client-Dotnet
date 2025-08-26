@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client;
 

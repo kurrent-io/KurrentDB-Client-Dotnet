@@ -1,0 +1,228 @@
+syntax = "proto3";
+
+package kurrentdb.protocol.v2;
+
+option csharp_namespace    = "KurrentDB.Protocol.Connectors.V2";
+option java_package        = "io.kurrentdb.protocol.connectors.v2";
+option java_multiple_files = true;
+
+import "google/protobuf/wrappers.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+import "connectors/error_details.proto";
+import "core.proto";
+
+service ConnectorsService {
+  rpc Create(CreateConnector) returns (google.protobuf.Empty);
+
+  rpc Reconfigure(ReconfigureConnector) returns (google.protobuf.Empty);
+
+  rpc Delete(DeleteConnector) returns (google.protobuf.Empty);
+
+  rpc Start(StartConnector) returns (google.protobuf.Empty);
+
+  rpc Reset(ResetConnector) returns (google.protobuf.Empty);
+
+  rpc Stop(StopConnector) returns (google.protobuf.Empty);
+
+  rpc Rename(RenameConnector) returns (google.protobuf.Empty);
+
+  rpc List(ListConnectorsRequest) returns (ListConnectorsResponse);
+
+  rpc GetSettings(GetConnectorSettingsRequest) returns (GetConnectorSettingsResponse);
+}
+
+message CreateConnector {
+  string                      connector_id = 1;
+  google.protobuf.StringValue name         = 2;
+  google.protobuf.Struct      settings     = 3;
+  // map<string, google.protobuf.StringValue> settings     = 4;
+  // map<string, DynamicValue> settings = 5;
+}
+
+message ReconfigureConnector {
+  string                 connector_id = 1;
+  google.protobuf.Struct settings     = 2;
+}
+
+message DeleteConnector {
+  string connector_id = 1;
+}
+
+message StartConnector {
+  string   connector_id                              = 1;
+  optional google.protobuf.Int64Value start_position = 2;
+}
+
+message ResetConnector {
+  string   connector_id                              = 1;
+  optional google.protobuf.Int64Value start_position = 2;
+}
+
+message StopConnector {
+  string connector_id = 1;
+}
+
+message RenameConnector {
+  string connector_id = 1;
+  string name         = 3;
+}
+
+message GetConnectorSettingsRequest {
+  string connector_id = 1;
+}
+
+message GetConnectorSettingsResponse {
+  oneof result {
+    GetConnectorSettingsSuccess success = 1;
+    GetConnectorSettingsFailure failure = 2;
+  }
+}
+
+message GetConnectorSettingsSuccess {
+  map<string, google.protobuf.StringValue> settings             = 1;
+  google.protobuf.Timestamp                settings_update_time = 2;
+}
+
+message GetConnectorSettingsFailure {
+  // The error details
+  oneof error {
+    // Failed because the client lacks sufficient permissions.
+    CoreErrorDetails.AccessDenied access_denied = 1;
+    // Failed because the connector was not found.
+    ConnectorsErrorDetails.ConnectorNotFound connector_not_found = 2;
+  }
+}
+
+message ListConnectorsRequest {
+  repeated ConnectorState state                           = 1;
+  repeated google.protobuf.StringValue instance_type_name = 2;
+  repeated google.protobuf.StringValue connector_id       = 3;
+
+  bool   include_settings = 4;
+  bool   show_deleted     = 5;
+  Paging paging           = 6;
+}
+
+message ListConnectorsResponse {
+  oneof result {
+    ListConnectorsSuccess success = 1;
+    ListConnectorsFailure failure = 2;
+  }
+}
+
+message ListConnectorsSuccess {
+  repeated Connector items      = 1;
+  int32              total_size = 2;
+}
+
+message ListConnectorsFailure {
+  // The error details
+  oneof error {
+    // Failed because the client lacks sufficient permissions.
+    CoreErrorDetails.AccessDenied access_denied = 1;
+  }
+}
+
+message Paging {
+  int32 page      = 1;
+  int32 page_size = 2;
+}
+
+enum NodeAffinity {
+  NODE_AFFINITY_ANY = 0;
+
+  // The connector prefers to read from the leader node.
+  NODE_AFFINITY_LEADER = 1;
+
+  // The connector prefers to read from a follower node.
+  NODE_AFFINITY_FOLLOWER = 2;
+
+  // The connector prefers to read from a read-only replica node.
+  NODE_AFFINITY_READONLY_REPLICA = 3;
+}
+
+enum ConnectorType {
+  // Do not use this default value.
+  CONNECTOR_TYPE_UNSPECIFIED = 0;
+  CONNECTOR_TYPE_SINK        = 1;
+  CONNECTOR_TYPE_SOURCE      = 2;
+}
+
+// Enum representing the various states a connector can be in.
+enum ConnectorState {
+  // The state of the connector is unknown.
+  CONNECTOR_STATE_UNKNOWN = 0;
+
+  // The connector is in the process of being activated.
+  CONNECTOR_STATE_ACTIVATING = 1;
+
+  // The connector is currently running.
+  CONNECTOR_STATE_RUNNING = 2;
+
+  // The connector is in the process of being deactivated.
+  CONNECTOR_STATE_DEACTIVATING = 3;
+
+  // The connector is currently stopped.
+  CONNECTOR_STATE_STOPPED = 4;
+}
+
+// Revision of the connector. Only changes when the configuration settings are updated.
+message ConnectorRevision {
+  int32                                    number     = 1;
+  map<string, google.protobuf.StringValue> settings   = 2;
+  google.protobuf.Timestamp                created_at = 3;
+}
+
+message ConnectorStatus {
+  string            connector_id   = 1;
+  ConnectorType     connector_type = 2;
+  string            instance_type  = 3;
+  ConnectorRevision revision       = 4;
+  ConnectorState    state          = 5;
+  repeated uint64   positions      = 6;
+}
+
+// message StartFromPosition {
+//   google.protobuf.UInt64Value log_position = 1;
+// }
+
+message Error {
+  // Standardized string to programmatically identify the error.
+  string code = 1;
+
+  // Detailed error description and debugging information.
+  string message = 2;
+}
+
+message ValidationFailure {
+  string          property_name = 1;
+  repeated string errors        = 2;
+}
+
+message ValidationProblem {
+  repeated ValidationFailure failures = 1;
+}
+
+message Connector {
+  string connector_id       = 1;
+  string instance_type_name = 2;
+  string name               = 3;
+
+  ConnectorState            state             = 4;
+  google.protobuf.Timestamp state_update_time = 5;
+
+  map<string, google.protobuf.StringValue> settings             = 6;
+  google.protobuf.Timestamp                settings_update_time = 7;
+
+  google.protobuf.Int64Value position             = 8;
+  google.protobuf.Timestamp  position_update_time = 9;
+
+  google.protobuf.Timestamp create_time = 10;
+  google.protobuf.Timestamp update_time = 11;
+  google.protobuf.Timestamp delete_time = 12;
+
+  Error error_details = 13;
+}

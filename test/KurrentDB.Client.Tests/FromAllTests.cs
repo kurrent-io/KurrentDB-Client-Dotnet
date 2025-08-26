@@ -1,5 +1,4 @@
 using AutoFixture;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests;
 
@@ -21,9 +20,9 @@ public class FromAllTests : ValueObjectTests<FromAll> {
 	public static IEnumerable<object?[]> ToStringCases() {
 		var fixture  = new ScenarioFixture();
 		var position = fixture.Create<Position>();
-		yield return new object?[] { FromAll.After(position), position.ToString() };
-		yield return new object?[] { FromAll.Start, "Start" };
-		yield return new object?[] { FromAll.End, "Live" };
+		yield return [FromAll.After(position), position.ToString()];
+		yield return [FromAll.Start, "Start"];
+		yield return [FromAll.End, "Live"];
 	}
 
 	[Theory]

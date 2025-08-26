@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using AutoFixture;
-using KurrentDB.Client;
 
 namespace KurrentDB.Client.Tests;
 

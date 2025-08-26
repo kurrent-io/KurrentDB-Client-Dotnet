@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to the KurrentDB .NET Client will be documented in this file.
 
 ## [Unreleased]
 

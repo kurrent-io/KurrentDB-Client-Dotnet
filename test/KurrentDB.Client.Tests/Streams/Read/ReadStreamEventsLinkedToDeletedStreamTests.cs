@@ -1,7 +1,5 @@
 using System.Text;
-using KurrentDB.Client;
 using KurrentDB.Client.Tests.TestNode;
-using KurrentDB.Client.Tests;
 
 // ReSharper disable ClassNeverInstantiated.Global
 
@@ -50,7 +48,7 @@ public abstract class ReadEventsLinkedToDeletedStreamFixture : KurrentDBTemporar
 			await Streams.AppendToStreamAsync(
 				LinkedStream,
 				StreamState.Any,
-				new[] {
+				[
 					new EventData(
 						Uuid.NewUuid(),
 						SystemEventTypes.LinkTo,
@@ -58,7 +56,7 @@ public abstract class ReadEventsLinkedToDeletedStreamFixture : KurrentDBTemporar
 						Array.Empty<byte>(),
 						Constants.Metadata.ContentTypes.ApplicationOctetStream
 					)
-				}
+				]
 			);
 
 			await Streams.DeleteAsync(DeletedStream, StreamState.Any);

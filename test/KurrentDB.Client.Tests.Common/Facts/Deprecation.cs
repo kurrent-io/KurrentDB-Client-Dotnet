@@ -1,25 +1,19 @@
-﻿namespace KurrentDB.Client.Tests;
+﻿using KurrentDB.Client.Tests.FluentDocker;
+
+namespace KurrentDB.Client.Tests;
 
 [PublicAPI]
 public class Deprecation {
 	public class FactAttribute(Version since, string skipMessage) : Xunit.FactAttribute {
 		public override string? Skip {
-			get => KurrentDBPermanentTestNode.Version >= since ? skipMessage : null;
+			get => TestContainerService.Version >= since ? skipMessage : null;
 			set => throw new NotSupportedException();
 		}
 	}
 
-	public class TheoryAttribute : Xunit.TheoryAttribute {
-		readonly Version _legacySince;
-		readonly string  _skipMessage;
-
-		public TheoryAttribute(Version since, string skipMessage) {
-			_legacySince = since;
-			_skipMessage = skipMessage;
-		}
-
+	public class TheoryAttribute(Version since, string skipMessage) : Xunit.TheoryAttribute {
 		public override string? Skip {
-			get => KurrentDBPermanentTestNode.Version >= _legacySince ? _skipMessage : null;
+			get => TestContainerService.Version >= since ? skipMessage : null;
 			set => throw new NotSupportedException();
 		}
 	}

@@ -1,6 +1,5 @@
 using System.Net.Http.Headers;
 using System.Text;
-using KurrentDB.Client;
 using static System.Convert;
 
 namespace KurrentDB.Client.Tests;

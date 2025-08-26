@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package kurrentdb.protocol.v2;
+
+option csharp_namespace    = "KurrentDB.Protocol.Registry.V2";
+option java_package        = "io.kurrentdb.protocol.Registry.v2";
+option java_multiple_files = true;
+
+import "core.proto";
+
+// ErrorDetails provides detailed information about specific error conditions.
+message RegistryErrorDetails {
+  // When the user does not have sufficient permissions to perform the
+  // operation.
+  message SchemaNotFound {
+    option (error_info) = {
+      code : "SCHEMA_NOT_FOUND",
+      severity : RECOVERABLE,
+      message : "The specified schema could not be found. Please check the schema name and try again."
+    };
+  }
+
+  message SchemaAlreadyExists {
+    option (error_info) = {
+      code : "SCHEMA_ALREADY_EXISTS",
+      severity : RECOVERABLE,
+      message : "The specified schema has already been created and cannot be created again. Please use a different name."
+    };
+  }
+}

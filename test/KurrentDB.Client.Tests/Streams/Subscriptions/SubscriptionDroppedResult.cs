@@ -1,5 +1,3 @@
-using KurrentDB.Client;
-
 namespace KurrentDB.Client.Tests;
 
 public record SubscriptionDroppedResult(SubscriptionDroppedReason Reason, Exception? Error) {

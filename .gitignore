@@ -360,12 +360,19 @@ MigrationBackup/
 .idea/
 
 # Generated Certificates
-
 certs/
 certs-cluster/
 .DS_Store
 docs/public
 
+# Ignore multiple experimental and development directories and files
+docs/dev/**
+tasks/**
+CLAUDE.local.md
+ai-agent-system/
+.cursor/
+.clinerules/
+.github/instructions/**
 
 .cache
 .temp

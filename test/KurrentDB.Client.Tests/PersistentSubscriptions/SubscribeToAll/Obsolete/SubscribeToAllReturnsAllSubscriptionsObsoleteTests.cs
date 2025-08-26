@@ -1,5 +1,4 @@
 using KurrentDB.Client.Tests.TestNode;
-using KurrentDB.Client.Tests;
 
 namespace KurrentDB.Client.Tests.PersistentSubscriptions;
 
@@ -35,8 +34,6 @@ public class SubscribeToAllReturnsAllSubscriptionsObsoleteTests(ITestOutputHelpe
 	}
 
 	public class CustomFixture : KurrentDBTemporaryFixture {
-		public CustomFixture() {
-			SkipPsWarmUp = true;
-		}
+		public CustomFixture() => SkipPsWarmUp = true;
 	}
 }

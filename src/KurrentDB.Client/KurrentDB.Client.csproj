@@ -1,113 +1,170 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<PackageId>KurrentDB.Client</PackageId>
-		<Description>The base GRPC client library for the Kurrent Platform. Get the open source or commercial versions of KurrentDB from https://kurrent.io/</Description>
-		<PackageId>KurrentDB.Client</PackageId>
-		<IsPackable>true</IsPackable>
-	</PropertyGroup>
+  <PropertyGroup>
+    <!--    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>-->
+    <PackageId>KurrentDB.Client</PackageId>
+    <IsPackable>true</IsPackable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <RootNamespace />
+  </PropertyGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Google.Protobuf" Version="3.29.1"/>
-		<PackageReference Include="Grpc.Net.Client" Version="2.67.0"/>
-		<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0"/>
-		<PackageReference Include="System.Diagnostics.DiagnosticSource" Version="9.0.0"/>
-		<PackageReference Include="System.Linq.Async" Version="6.0.1"/>
-		<PackageReference Include="OpenTelemetry.Api" Version="1.12.0"/>
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="12.0.0" />
+    <PackageReference Include="Google.Protobuf" Version="3.31.1" />
+    <PackageReference Include="Grpc.StatusProto" Version="2.71.0" />
+    <PackageReference Include="Grpc.Net.ClientFactory" Version="2.71.0" />
+    <PackageReference Include="Humanizer.Core" Version="2.14.1" />
+    <PackageReference Include="Jint" Version="4.4.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.ExceptionSummarization" Version="9.8.0" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" Version="9.8.0" />
+    <!--    <PackageReference Include="LruCacheNet" Version="1.2.0" />-->
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.8" />
+    <PackageReference Include="NJsonSchema" Version="11.4.0" />
+    <PackageReference Include="OneOf" Version="3.0.271" />
+  
+    <PackageReference Include="System.Linq.Async" Version="6.0.3"
+                      Condition="'$(TargetFramework)' != 'net8.0' OR '$(TargetFramework)' != 'net9.0'" />
+    <PackageReference Include="OpenTelemetry.Api" Version="1.12.0" />
 
-		<PackageReference Include="Grpc.Tools" Version="2.68.1">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-	</ItemGroup>
+    <PackageReference Include="OneOf.SourceGenerator" Version="3.0.271">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Grpc.Tools" Version="2.72.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+<!--    -->
+<!--    <PackageReference Include="Polly" Version="8.6.2" />-->
+<!--    <PackageReference Include="Polly.Contrib.WaitAndRetry" Version="1.1.1" />-->
+  </ItemGroup>
 
-	<ItemGroup>
-		<Protobuf
-			ProtoRoot="Core/protos"
-			Include="Core/protos/**/*.proto"
-			Link="Core\protos\%(RecursiveDir)/%(FileName)%(Extension)"
-			GrpcServices="Client"
-			Access="internal"
-		/>
-		<Protobuf Update="Core\protos\code.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\gossip.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\operations.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\persistentsubscriptions.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\projectionmanagement.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\serverfeatures.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\shared.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\status.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\streams.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\usermanagement.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\code.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\gossip.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\operations.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\persistentsubscriptions.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\projectionmanagement.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\status.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\streams.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
-		<Protobuf Update="Core\protos\usermanagement.proto">
-		  <Generator>MSBuild:Compile</Generator>
-		</Protobuf>
+  <ItemGroup>
+    <!-- v1 -->
+    <Protobuf
+        ProtoRoot="../../proto/kurrentdb/protocol/v1"
+        Include="../../proto/kurrentdb/protocol/v1/**/*.proto"
+        Link="proto\kurrentdb\protocol\v1\%(RecursiveDir)/%(FileName)%(Extension)"
+        GrpcServices="Client"
+        Access="internal"
+    />
 
-		<!--       -->
-		<!--        <Protobuf-->
-		<!--                Access="internal"-->
-		<!--                Include="..\Kurrent.Client\Common\protos\shared.proto;..\Kurrent.Client\Common\protos\status.proto;..\Kurrent.Client\Core\Common\protos\code.proto;"-->
-		<!--                ProtoRoot="..\Kurrent.Client\Core\Common\protos"-->
-		<!--                GrpcServices="Client"-->
-		<!--        />-->
-	</ItemGroup>
+    <!-- v2 -->
+    <Protobuf
+        ProtoRoot="../../proto/kurrentdb/protocol/v2"
+        Include="../../proto/kurrentdb/protocol/v2/**/*.proto"
+        Link="proto\kurrentdb\protocol\v2\%(RecursiveDir)/%(FileName)%(Extension)"
+        GrpcServices="Client"
+        Access="internal"
+    />
+    <Protobuf Update="..\..\proto\kurrentdb\protocol\v2\projections\projections.proto">
+      <Generator>MSBuild:Compile</Generator>
+    </Protobuf>
+  </ItemGroup>
 
-	<!--    <ItemGroup Condition="'$(TargetFramework)' == 'net48'">-->
-	<!--        <PackageReference Include="System.Net.Http.WinHttpHandler" Version="9.0.0"/>-->
-	<!--        <PackageReference Include="System.Threading.Channels" Version="9.0.0"/>-->
-	<!--        <PackageReference Include="BouncyCastle.Cryptography" Version="2.5.0" />-->
-	<!--    </ItemGroup>-->
+  <ItemGroup>
+    <!-- Source Generators: Embed as analyzer, don't propagate as dependency -->
+    <ProjectReference Include="..\Kurrent.Client.SourceGenerators\Kurrent.Client.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
 
-	<ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-		<!--        <PackageReference Include="System.Net.Http" Version="4.3.4"/>-->
-		<PackageReference Include="System.Net.Http.WinHttpHandler" Version="8.0.0"/>
-		<PackageReference Include="System.Text.Json" Version="8.0.5"/>
-		<PackageReference Include="System.Threading.Channels" Version="8.0.0"/>
-		<PackageReference Include="BouncyCastle.Cryptography" Version="2.3.1"/>
-	</ItemGroup>
+    <ProjectReference Include="..\Variant.SourceGenerators\Variant.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
 
-	<ItemGroup>
-		<None Remove="KurrentDB.Client.csproj.DotSettings"/>
-	</ItemGroup>
+    <!-- Runtime Library: Include assembly but don't propagate as dependency -->
+    <ProjectReference Include="..\Variant\Variant.csproj" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kurrent.Client" />
+    <InternalsVisibleTo Include="Kurrent.Client.Tests" />
+    <InternalsVisibleTo Include="Kurrent.Client.Integration.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Client.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Client.Tests.Common" />
+    <InternalsVisibleTo Include="KurrentDB.Client.Operations.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Client.PersistentSubscriptions.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Client.ProjectionManagement.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Client.Streams.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Client.UserManagement.Tests" />
+    <InternalsVisibleTo Include="KurrentDB.Client.Extensions.OpenTelemetry" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Kurrent.Client\Legacy\RipAndTear\PersistentSubscriptions\**" />
+    <Compile Remove="Kurrent.Client\Legacy\RipAndTear\Client\Diagnostics\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Kurrent.Client\Legacy\RipAndTear\PersistentSubscriptions\**" />
+    <EmbeddedResource Remove="Kurrent.Client\Legacy\RipAndTear\Client\Diagnostics\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Kurrent.Client\Legacy\RipAndTear\PersistentSubscriptions\**" />
+    <None Remove="Kurrent.Client\Legacy\RipAndTear\Client\Diagnostics\**" />
+  </ItemGroup>
+
+  <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">
+    <ItemGroup>
+      <ReferencedAssemblies Include="bin\$(Configuration)\**\*.dll" />
+      <ReferencedAssemblies Include="bin\$(Configuration)\**\*.pdb" Condition="'$(Configuration)' == 'Debug'" />
+      <ReferencedAssemblies Remove="@(ReferencedAssemblies->WithMetadataValue('FileName', '$(AssemblyName)'))" />
+      <_PackageFiles Include="@(ReferencedAssemblies)">
+        <PackagePath>lib\%(RecursiveDir)%(FileName)%(Extension)</PackagePath>
+        <Visible>false</Visible>
+        <BuildAction>None</BuildAction>
+      </_PackageFiles>
+    </ItemGroup>
+  </Target>
+
+  <!--  &lt;!&ndash; Include specific PackageReference dependencies in the package &ndash;&gt;-->
+  <!--  <Target Name="PackSelectedPackageReferences" BeforeTargets="GenerateNuspec">-->
+  <!--    <ItemGroup>-->
+  <!--      &lt;!&ndash; Find all PackageReferences with Pack="true" &ndash;&gt;-->
+  <!--      <PackageReferencesToInclude Include="@(PackageReference)" Condition="'%(PackageReference.Pack)' == 'true'" />-->
+  <!--    </ItemGroup>-->
+
+  <!--    &lt;!&ndash; For each marked PackageReference, find its resolved assemblies &ndash;&gt;-->
+  <!--    <ItemGroup>-->
+  <!--      <PackageReferenceAssemblies Include="@(ReferenceCopyLocalPaths)"-->
+  <!--                                  Condition="'%(ReferenceCopyLocalPaths.NuGetPackageId)' != '' AND -->
+  <!--                                          '@(PackageReferencesToInclude->WithMetadataValue('Identity', '%(ReferenceCopyLocalPaths.NuGetPackageId)'))' != ''" />-->
+
+  <!--      &lt;!&ndash; Add them to the package &ndash;&gt;-->
+  <!--      <_PackageFiles Include="@(PackageReferenceAssemblies)">-->
+  <!--        <PackagePath>lib\$(TargetFramework)\%(Filename)%(Extension)</PackagePath>-->
+  <!--        <Visible>false</Visible>-->
+  <!--        <BuildAction>None</BuildAction>-->
+  <!--      </_PackageFiles>-->
+  <!--    </ItemGroup>-->
+  <!--  </Target>-->
+
+  <!--  -->
+  <!--  <Target Name="PackProjectDependencies" BeforeTargets="GenerateNuspec">-->
+  <!--    <ItemGroup>-->
+  <!--      &lt;!&ndash; Get all files from bin folder &ndash;&gt;-->
+  <!--      <AllReferencedAssemblies Include="bin\$(Configuration)\**\*.dll" />-->
+  <!--      <AllReferencedAssemblies Include="bin\$(Configuration)\**\*.pdb" Condition="'$(Configuration)' == 'Debug'" />-->
+
+  <!--      &lt;!&ndash; Remove the main assembly &ndash;&gt;-->
+  <!--      <AllReferencedAssemblies Remove="@(AllReferencedAssemblies->WithMetadataValue('FileName', '$(AssemblyName)'))" />-->
+
+  <!--      &lt;!&ndash; Filter to only include:-->
+  <!--           1. Project references-->
+  <!--           2. PackageReferences marked with Pack="true" &ndash;&gt;-->
+  <!--      <ReferencedAssemblies Include="@(AllReferencedAssemblies)"-->
+  <!--                            Condition="'%(FileName)' == 'Whatever' OR -->
+  <!--                                   Exists('$(MSBuildProjectDirectory)\PackageIncludes\%(FileName).marker')" />-->
+
+  <!--      &lt;!&ndash; Fallback: If we can't determine package origin, check against our marked packages &ndash;&gt;-->
+  <!--      <ReferencedAssemblies Include="@(AllReferencedAssemblies)"-->
+  <!--                            Condition="'%(FileName)' == 'FluentValidation'" />-->
+
+  <!--      <_PackageFiles Include="@(ReferencedAssemblies)">-->
+  <!--        <PackagePath>lib\%(RecursiveDir)%(FileName)%(Extension)</PackagePath>-->
+  <!--        <Visible>false</Visible>-->
+  <!--        <BuildAction>None</BuildAction>-->
+  <!--      </_PackageFiles>-->
+  <!--    </ItemGroup>-->
+  <!--  </Target>-->
+
 </Project>
