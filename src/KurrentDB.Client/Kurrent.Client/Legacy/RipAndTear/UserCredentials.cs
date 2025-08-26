@@ -9,13 +9,17 @@ namespace KurrentDB.Client;
 /// authorization to perform operations on the KurrentDB.
 /// </summary>
 public class UserCredentials {
-	public static readonly UserCredentials Empty = new UserCredentials {
-		Username = null,
-		Password = null
-	};
-
 	// ReSharper disable once InconsistentNaming
 	static readonly UTF8Encoding UTF8NoBom = new(false);
+
+	public static readonly UserCredentials Empty = new UserCredentials {
+		Username      = null,
+		Password      = null,
+		Authorization = new(
+			Constants.Headers.BasicScheme,
+			ToBase64String(UTF8NoBom.GetBytes(":"))
+		)
+	};
 
 	UserCredentials() { }
 
