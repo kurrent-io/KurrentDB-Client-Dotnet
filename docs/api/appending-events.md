@@ -157,9 +157,23 @@ The operation returns either:
 - `MultiAppendFailure` - Specific exceptions for any failed operations
 
 ::: warning
-Event metadata in `EventData` must be valid JSON deserializable to
-`Dictionary<string, object?>`. This requirement will be removed in a future
-major release.
+Event metadata in `EventData` must currently be valid JSON that can be deserialized into a
+`Dictionary<string, object?>`. This means any metadata you attach to an event should be structured as a JSON object, not as a primitive value or array.
+
+For example, to encode metadata:
+```cs
+var metadata = JsonSerializer.SerializeToUtf8Bytes(new {
+	Timestamp = DateTime.UtcNow,
+	Source = "OrderProcessingSystem",
+	Version = 1.0
+});
+```
+To decode metadata back into a dictionary:
+```cs
+var dictionary = MetadataDecoder.Decode(metadataBytes);
+```
+
+This requirement ensures compatibility with KurrentDB's current metadata handling. In a future major release, this restriction will be lifted, allowing more flexible metadata formats.
 :::
 
 Here's a basic example of appending events to multiple streams:
@@ -167,47 +181,19 @@ Here's a basic example of appending events to multiple streams:
 ```cs
 using System.Text.Json;
 
-var metadata = JsonSerializer.SerializeToUtf8Bytes(
-	new {
-		Timestamp = DateTime.UtcNow,
-		Source    = "OrderProcessingSystem",
-		Version   = 1.0
-	}
-);
-
 AppendStreamRequest[] requests = [
 	new(
-		"order-stream-1",
+		"order-stream",
 		StreamState.Any,
 		[
-			new EventData(
-				Uuid.NewUuid(),
-				"OrderCreated",
-				JsonSerializer.SerializeToUtf8Bytes(
-					new {
-						OrderId = "12345",
-						Amount  = 99.99
-					}
-				),
-				metadata
-			)
+			new EventData(Uuid.NewUuid(), "OrderCreated", Encoding.UTF8.GetBytes("{\"orderId\": \"21345\", \"amount\": 99.99}"))
 		]
 	),
 	new(
-		"inventory-stream-1",
+		"inventory-stream",
 		StreamState.Any,
 		[
-			new EventData(
-				Uuid.NewUuid(),
-				"ItemReserved",
-				JsonSerializer.SerializeToUtf8Bytes(
-					new {
-						ItemId   = "ABC123",
-						Quantity = 2
-					}
-				),
-				metadata
-			)
+			new EventData(Uuid.NewUuid(), "ItemReserved", Encoding.UTF8.GetBytes("{\"itemId\": \"abc123\", \"quantity\": 2}"))
 		]
 	)
 ];
@@ -219,10 +205,10 @@ if (result is MultiAppendSuccess { Successes: var successes })
 		Console.WriteLine($"Stream '{item.Stream}' updated at position {item.Position}");
 ```
 
-If the operation doesn't succeed, it can fail with the following exceptions:
+If the operation doesn't succeed, you should check if the result is a `MultiAppendFailure` and handle each failure case appropriately. This allows you to respond to specific errors, such as version conflicts, access issues, deleted streams, or transaction size limits. For example:
 
 ```cs
-var result = await client.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
+var result = await client.MultiStreamAppendAsync(requests);
 
 if (result is MultiAppendFailure { Failures: var failures }) {
 	foreach (var error in failures) {
