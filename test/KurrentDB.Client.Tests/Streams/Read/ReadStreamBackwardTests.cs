@@ -267,14 +267,14 @@ public class ReadStreamBackwardTests(ITestOutputHelper output, KurrentDBTemporar
 		).Messages.ToArrayAsync();
 
 		Assert.Equal(
-			eventCount + (Fixture.EventStoreHasLastStreamPosition ? 2 : 1),
+			eventCount + (Fixture.HasLastStreamPosition ? 2 : 1),
 			result.Length
 		);
 
 		Assert.Equal(StreamMessage.Ok.Instance, result[0]);
 		Assert.Equal(eventCount, result.OfType<StreamMessage.Event>().Count());
 
-		if (Fixture.EventStoreHasLastStreamPosition)
+		if (Fixture.HasLastStreamPosition)
 			Assert.Equal(new StreamMessage.LastStreamPosition(new(31)), result[^1]);
 	}
 }

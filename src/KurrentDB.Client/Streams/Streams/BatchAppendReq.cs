@@ -1,7 +1,8 @@
+using EventStore.Client;
 using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Client;
 
-namespace EventStore.Client.Streams {
+namespace KurrentDB.Protocol.Streams.V1 {
 	partial class BatchAppendReq {
 		partial class Types {
 			partial class Options {

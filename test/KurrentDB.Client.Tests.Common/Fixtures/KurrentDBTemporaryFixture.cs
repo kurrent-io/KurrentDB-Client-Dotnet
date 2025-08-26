@@ -1,11 +1,9 @@
 // ReSharper disable InconsistentNaming
 
-using System.Net;
-using Ductus.FluentDocker.Builders;
-using Ductus.FluentDocker.Extensions;
-using Ductus.FluentDocker.Services.Extensions;
+using System.Net.Http;
 using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
+using Serilog.Extensions.Logging;
 using static System.TimeSpan;
 
 namespace KurrentDB.Client.Tests.TestNode;
@@ -18,38 +16,35 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 		Logging.Initialize();
 		Logger = Serilog.Log.ForContext<KurrentDBTemporaryFixture>();
 
-#if NET9_0_OR_GREATER
 		var httpClientHandler = new HttpClientHandler();
 		httpClientHandler.ServerCertificateCustomValidationCallback = delegate { return true; };
-#else
-		ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
-#endif
 	}
 
 	public KurrentDBTemporaryFixture() : this(options => options) { }
 
 	protected KurrentDBTemporaryFixture(ConfigureFixture configure) {
-		// Options = configure(EventStoreTemporaryTestNode.DefaultOptions());
 		Options = configure(KurrentDBTemporaryTestNode.DefaultOptions());
 		Service = new KurrentDBTemporaryTestNode(Options);
+
+		Options.DBClientSettings.LoggerFactory = new SerilogLoggerFactory(Logger);
 	}
 
 	List<Guid> TestRuns { get; } = new();
 
 	public ILogger Log => Logger;
 
-	public ITestService          Service { get; }
+	public ITestService            Service { get; }
 	public KurrentDBFixtureOptions Options { get; }
-	public Faker                 Faker   { get; } = new Faker();
+	public Faker                   Faker   { get; } = new Faker();
 
-	public Version EventStoreVersion               { get; private set; } = null!;
-	public bool    EventStoreHasLastStreamPosition { get; private set; }
+	public Version DatabaseVersion               { get; private set; } = null!;
+	public bool    HasLastStreamPosition { get; private set; }
 
 	public KurrentDBClient                        Streams       { get; private set; } = null!;
-	public KurrentDBUserManagementClient          DBUsers         { get; private set; } = null!;
-	public KurrentDBProjectionManagementClient    DBProjections   { get; private set; } = null!;
+	public KurrentDBUserManagementClient          DBUsers       { get; private set; } = null!;
+	public KurrentDBProjectionManagementClient    DBProjections { get; private set; } = null!;
 	public KurrentDBPersistentSubscriptionsClient Subscriptions { get; private set; } = null!;
-	public KurrentDBOperationsClient              DBOperations    { get; private set; } = null!;
+	public KurrentDBOperationsClient              DBOperations  { get; private set; } = null!;
 
 	public bool SkipPsWarmUp { get; set; }
 
@@ -87,8 +82,8 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 
 		try {
 			await Service.Start();
-			EventStoreVersion               = GetKurrentVersion();
-			EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
+			DatabaseVersion       = TestContainerService.Version;
+			HasLastStreamPosition = (DatabaseVersion?.Major ?? int.MaxValue) >= 21;
 
 			if (!WarmUpCompleted.CurrentValue) {
 				Logger.Warning("*** Warmup started ***");
@@ -124,42 +119,6 @@ public partial class KurrentDBTemporaryFixture : IAsyncLifetime, IAsyncDisposabl
 			var client = (Activator.CreateInstance(typeof(T), DBClientSettings) as T)!;
 			await action(client);
 			return client;
-		}
-
-		static Version GetKurrentVersion() {
-			const string versionPrefix     = "KurrentDB version";
-			const string esdbVersionPrefix = "EventStoreDB version";
-
-			using var cancellator = new CancellationTokenSource(FromSeconds(30));
-			using var eventstore = new Builder()
-				.UseContainer()
-				.UseImage(GlobalEnvironment.DockerImage)
-				.Command("--version")
-				.Build()
-				.Start();
-
-			using var log = eventstore.Logs(true, cancellator.Token);
-			var logs = log.ReadToEnd();
-			foreach (var line in logs) {
-				Logger.Information("KurrentDB: {Line}", line);
-				if (line.StartsWith(versionPrefix) &&
-				    Version.TryParse(new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()), out var version)) {
-					return version;
-				}
-				
-				if (line.StartsWith(esdbVersionPrefix) &&
-				    Version.TryParse(new string(ReadVersion(line[(esdbVersionPrefix.Length + 1)..]).ToArray()), out var esdbVersion)) {
-					return esdbVersion;
-				}
-			}
-
-			throw new InvalidOperationException($"Could not determine server version from logs: {string.Join(Environment.NewLine, logs)}");
-
-			IEnumerable<char> ReadVersion(string s) {
-				foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) {
-					yield return c;
-				}
-			}
 		}
 	}
 

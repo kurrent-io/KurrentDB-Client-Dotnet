@@ -4,7 +4,8 @@ namespace KurrentDB.Diagnostics.Tracing;
 
 static partial class TracingConstants {
     public static class Operations {
-        public const string Append         = "streams.append";
-        public const string Subscribe      = "streams.subscribe";
+	    public const string Append      = "streams.append";
+	    public const string MultiAppend = "streams.multi-append";
+	    public const string Subscribe   = "streams.subscribe";
     }
 }
