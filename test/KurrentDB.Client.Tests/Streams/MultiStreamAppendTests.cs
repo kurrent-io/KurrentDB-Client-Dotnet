@@ -32,12 +32,15 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 		var stream2 = Fixture.GetStreamName();
 
 		var expectedMetadata = new TestMetadata {
-			StringValue    = "Foo",
-			BooleanValue   = true,
-			DoubleValue    = 2.718281828,
-			DateTimeValue  = DateTime.UtcNow,
-			TimeSpanValue  = 2.5.Hours(),
-			ByteArrayValue = "Bar"u8.ToArray()
+			StringValue       = "Foo",
+			IntegerValue      = 0,
+			BooleanValue      = true,
+			DoubleValue       = 2.718281828,
+			DateTimeValue     = DateTime.UtcNow,
+			TimeSpanValue     = 2.5.Hours(),
+			NullTimeSpanValue = null,
+			ZeroTimeSpanValue = TimeSpan.Zero,
+			ByteArrayValue    = "Bar"u8.ToArray()
 		};
 
 		var metadataBytes = JsonSerializer.SerializeToUtf8Bytes(expectedMetadata);
@@ -73,10 +76,23 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 		metadata[Metadata.SchemaDataFormat].ShouldBe(SchemaDataFormat.Json);
 		metadata["StringValue"].ShouldBe(expectedMetadata.StringValue);
 		metadata["BooleanValue"].ShouldBe(expectedMetadata.BooleanValue);
+		metadata["IntegerValue"].ShouldBe(expectedMetadata.IntegerValue);
 		metadata["DoubleValue"].ShouldBe(expectedMetadata.DoubleValue);
 		metadata["DateTimeValue"].ShouldBe(expectedMetadata.DateTimeValue);
 		metadata["TimeSpanValue"].ShouldBe(expectedMetadata.TimeSpanValue);
+		metadata["NullTimeSpanValue"].ShouldBeNull();
+		metadata["ZeroTimeSpanValue"].ShouldBe(expectedMetadata.ZeroTimeSpanValue);
 		metadata["ByteArrayValue"].ShouldBe(expectedMetadata.ByteArrayValue);
+
+		metadata["BooleanValue"]?.GetType().ShouldBe(typeof(bool));
+		metadata["StringValue"]?.GetType().ShouldBe(typeof(string));
+		metadata["IntegerValue"]?.GetType().ShouldBe(typeof(int));
+		metadata["DoubleValue"]?.GetType().ShouldBe(typeof(double));
+		metadata["DateTimeValue"]?.GetType().ShouldBe(typeof(DateTime));
+		metadata["TimeSpanValue"]?.GetType().ShouldBe(typeof(TimeSpan));
+		metadata["NullTimeSpanValue"]?.GetType().ShouldBe(typeof(TimeSpan));
+		metadata["ZeroTimeSpanValue"]?.GetType().ShouldBe(typeof(TimeSpan));
+		metadata["ByteArrayValue"]?.GetType().ShouldBe(typeof(ReadOnlyMemory<byte>));
 	}
 
 	[MinimumVersion.Fact(25, 1)]
@@ -107,10 +123,13 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 }
 
 public class TestMetadata {
-	public string?   StringValue    { get; init; }
-	public bool?     BooleanValue   { get; init; }
-	public double?   DoubleValue    { get; init; }
-	public DateTime? DateTimeValue  { get; init; }
-	public TimeSpan? TimeSpanValue  { get; init; }
-	public byte[]?   ByteArrayValue { get; init; }
+	public string?   StringValue       { get; init; }
+	public int?      IntegerValue      { get; init; }
+	public bool?     BooleanValue      { get; init; }
+	public double?   DoubleValue       { get; init; }
+	public DateTime? DateTimeValue     { get; init; }
+	public TimeSpan? TimeSpanValue     { get; init; }
+	public TimeSpan? NullTimeSpanValue { get; init; }
+	public TimeSpan? ZeroTimeSpanValue { get; init; }
+	public byte[]?   ByteArrayValue    { get; init; }
 }

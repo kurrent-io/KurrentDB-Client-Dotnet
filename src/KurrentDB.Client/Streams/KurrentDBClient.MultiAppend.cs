@@ -8,7 +8,6 @@ using System.Diagnostics;
 using KurrentDB.Client.Diagnostics;
 using KurrentDB.Diagnostics;
 using KurrentDB.Diagnostics.Telemetry;
-using KurrentDB.Diagnostics.Tracing;
 using static KurrentDB.Protocol.Streams.V2.StreamsService;
 using static KurrentDB.Protocol.Streams.V2.MultiStreamAppendResponse;
 using Contracts = KurrentDB.Protocol.Streams.V2;
