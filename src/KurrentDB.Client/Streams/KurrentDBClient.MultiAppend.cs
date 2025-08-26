@@ -1,8 +1,14 @@
 // ReSharper disable SwitchExpressionHandlesSomeKnownEnumValuesWithExceptionInDefault
 // ReSharper disable ConvertToPrimaryConstructor
+// ReSharper disable PossibleMultipleEnumeration
 
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
+using System.Diagnostics;
+using KurrentDB.Client.Diagnostics;
+using KurrentDB.Diagnostics;
+using KurrentDB.Diagnostics.Telemetry;
+using KurrentDB.Diagnostics.Tracing;
 using static KurrentDB.Protocol.Streams.V2.StreamsService;
 using static KurrentDB.Protocol.Streams.V2.MultiStreamAppendResponse;
 using Contracts = KurrentDB.Protocol.Streams.V2;
@@ -34,35 +40,43 @@ public partial class KurrentDBClient {
 
 		var client = new StreamsServiceClient(channelInfo.CallInvoker);
 
-		using var session = client.MultiStreamAppendSession(KurrentDBCallOptions.CreateStreaming(Settings, cancellationToken: cancellationToken));
+		var tags = new ActivityTagsCollection()
+			.WithGrpcChannelServerTags(channelInfo)
+			.WithClientSettingsServerTags(Settings)
+			.WithOptionalTag(TelemetryTags.Database.User, Settings.DefaultCredentials?.Username);
 
-		await foreach (var request in requests.WithCancellation(cancellationToken)) {
-			var records = await request.Messages
-				.Map()
-				.ToArrayAsync(cancellationToken)
-				.ConfigureAwait(false);
+		return await KurrentDBClientDiagnostics.ActivitySource.TraceMultiStreamAppend(Operation, tags);
 
-			var serviceRequest = new Contracts.AppendStreamRequest {
-				Stream           = request.Stream,
-				ExpectedRevision = request.ExpectedState.ToInt64(),
-				Records          = { records }
+		async ValueTask<MultiAppendWriteResult> Operation() {
+			using var session = client.MultiStreamAppendSession(KurrentDBCallOptions.CreateStreaming(Settings, cancellationToken: cancellationToken));
+
+			await foreach (var request in requests.WithCancellation(cancellationToken)) {
+				var records = await request.Messages
+					.Map()
+					.ToArrayAsync(cancellationToken)
+					.ConfigureAwait(false);
+
+				var serviceRequest = new Contracts.AppendStreamRequest {
+					Stream           = request.Stream,
+					ExpectedRevision = request.ExpectedState.ToInt64(),
+					Records          = { records }
+				};
+
+				// Cancellation of stream writes is not supported by this gRPC implementation.
+				// To cancel the operation, we should cancel the entire session.
+				await session.RequestStream
+					.WriteAsync(serviceRequest)
+					.ConfigureAwait(false);
+			}
+
+			await session.RequestStream.CompleteAsync();
+
+			var response = await session.ResponseAsync;
+
+			return response.ResultCase switch {
+				ResultOneofCase.Success => new MultiAppendSuccess(response.Success.Map()),
+				ResultOneofCase.Failure => new MultiAppendFailure(response.Failure.Map())
 			};
-
-			// Cancellation of stream writes is not supported by this gRPC implementation.
-			// To cancel the operation, we should cancel the entire session.
-			await session.RequestStream
-				.WriteAsync(serviceRequest)
-				.ConfigureAwait(false);
 		}
-
-		await session.RequestStream.CompleteAsync();
-
-		var response = await session.ResponseAsync;
-
-		return response.ResultCase switch {
-			ResultOneofCase.Success => new MultiAppendSuccess(response.Success.Map()),
-			ResultOneofCase.Failure => new MultiAppendFailure(response.Failure.Map())
-		};
 	}
 }
-

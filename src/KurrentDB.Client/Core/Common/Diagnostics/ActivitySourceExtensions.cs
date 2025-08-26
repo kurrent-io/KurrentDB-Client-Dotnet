@@ -1,9 +1,10 @@
+// ReSharper disable ConvertIfStatementToSwitchStatement
 // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 using System.Diagnostics;
 using KurrentDB.Diagnostics;
 using KurrentDB.Diagnostics.Telemetry;
-using KurrentDB.Diagnostics.Tracing;
+using static KurrentDB.Diagnostics.Tracing.TracingConstants;
 
 namespace KurrentDB.Client.Diagnostics;
 
@@ -20,6 +21,30 @@ static class ActivitySourceExtensions {
 			var res = await tracedOperation().ConfigureAwait(false);
 			activity?.StatusOk();
 			return res;
+		} catch (Exception ex) {
+			activity?.StatusError(ex);
+			throw;
+		}
+	}
+
+	public static async ValueTask<MultiAppendWriteResult> TraceMultiStreamAppend(
+		this ActivitySource source,
+		Func<ValueTask<MultiAppendWriteResult>> tracedOperation,
+		ActivityTagsCollection? tags = null
+	) {
+		using var activity = StartActivity(source, Operations.MultiAppend, ActivityKind.Client, tags, Activity.Current?.Context);
+
+		try {
+			var result = await tracedOperation().ConfigureAwait(false);
+
+			if (result is MultiAppendFailure { Failures: var failures }) {
+				activity?.SetStatus(ActivityStatusCode.Error);
+				failures.ForEach(error => activity?.AddException(error));
+				return result;
+			}
+
+			activity?.StatusOk();
+			return result;
 		} catch (Exception ex) {
 			activity?.StatusError(ex);
 			throw;
@@ -54,7 +79,7 @@ static class ActivitySourceExtensions {
 				userCredentials?.Username ?? settings.DefaultCredentials?.Username
 			);
 
-		StartActivity(source, TracingConstants.Operations.Subscribe, ActivityKind.Consumer, tags, parentContext)
+		StartActivity(source, Operations.Subscribe, ActivityKind.Consumer, tags, parentContext)
 			?.Dispose();
 	}
 
@@ -67,7 +92,7 @@ static class ActivitySourceExtensions {
 			return null;
 
 		(tags ??= new ActivityTagsCollection())
-			.WithRequiredTag(TelemetryTags.Database.System, "kurrent")
+			.WithRequiredTag(TelemetryTags.Database.System, KurrentDBClientDiagnostics.InstrumentationName)
 			.WithRequiredTag(TelemetryTags.Database.Operation, operationName);
 
 		return source
