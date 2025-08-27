@@ -1,6 +1,11 @@
+// ReSharper disable RedundantCatchClause
+
 #pragma warning disable CS8509
 
+using System.Diagnostics;
 using Grpc.Core;
+using KurrentDB.Diagnostics;
+using KurrentDB.Diagnostics.Tracing;
 using static KurrentDB.Protocol.Streams.V2.MultiStreamAppendResponse;
 using Contracts = KurrentDB.Protocol.Streams.V2;
 
@@ -8,6 +13,10 @@ namespace Kurrent.Client.Streams;
 
 public partial class StreamsClient {
     public async ValueTask<Result<AppendStreamSuccesses, AppendStreamFailures>> Append(IAsyncEnumerable<AppendStreamRequest> requests, CancellationToken cancellationToken = default) {
+        var tags = Tags.WithRequiredTag(TraceConstants.Tags.DatabaseOperationName, TraceConstants.Operations.Append);
+
+        var activity = KurrentActivitySource.StartAppendActivity(tags);
+
         try {
             using var session = ServiceClient.MultiStreamAppendSession(cancellationToken: cancellationToken);
 
@@ -34,12 +43,17 @@ public partial class StreamsClient {
 
             var response = await session.ResponseAsync;
 
-            return response.ResultCase switch {
-                ResultOneofCase.Success => response.Success.Map(),
-                ResultOneofCase.Failure => response.Failure.Map(),
-            };
+            if (response.ResultCase is ResultOneofCase.Failure) {
+	            var failures = response.Failure.Map();
+	            activity.FailActivity(failures);
+	            return failures;
+            }
+
+            activity.CompleteActivity();
+            return response.Success.Map();
         }
         catch (RpcException rex) {
+	        activity.FailActivity(rex);
             throw;
 
             // we have a problem here cause the error result must contain a list of failures or permission denied or others...
@@ -50,3 +64,43 @@ public partial class StreamsClient {
         }
     }
 }
+
+#region tracing
+
+static class AppendActivityExtensions {
+	public static void FailActivity(this Activity? activity, RpcException exception) {
+		if (activity is null)
+			return;
+
+		if (activity.IsAllDataRequested) {
+			activity.SetStatus(ActivityStatusCode.Error);
+			activity.AddException(exception);
+		}
+
+		activity.Dispose();
+	}
+
+	public static void FailActivity(this Activity? activity, AppendStreamFailures failures) {
+		if (activity is null)
+			return;
+
+		if (activity.IsAllDataRequested) {
+			activity.SetStatus(ActivityStatusCode.Error);
+			failures.ForEach(failure => activity.AddException(failure.CreateException()));
+		}
+
+		activity.Dispose();
+	}
+
+	public static void CompleteActivity(this Activity? activity) {
+		if (activity is null)
+			return;
+
+		if (activity.IsAllDataRequested)
+			activity.SetStatus(ActivityStatusCode.Ok);
+
+		activity.Dispose();
+	}
+}
+
+#endregion

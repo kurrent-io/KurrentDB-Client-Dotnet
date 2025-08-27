@@ -1,5 +1,11 @@
+// ReSharper disable InconsistentNaming
+
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading.Channels;
 using Kurrent.Variant;
+using KurrentDB.Diagnostics;
+using KurrentDB.Diagnostics.Tracing;
 using static System.Threading.Interlocked;
 
 namespace Kurrent.Client.Streams;
@@ -10,13 +16,19 @@ public readonly partial record struct ReadMessage : IVariant<Record, Heartbeat> 
 }
 
 [PublicAPI]
-public record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
+public partial record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
     int _disposed;
     int _enumeratorCreated;
 
+    readonly ConcurrentDictionary<Guid, Activity> Activities = new();
+    readonly ActivityTagsCollection?              Tags       = new();
+
     Lazy<Channel<ReadMessage>> _lazyChannel;
 
-    internal Messages(Func<Channel<ReadMessage>> channelFactory) => _lazyChannel = new Lazy<Channel<ReadMessage>>(channelFactory);
+    internal Messages(Func<Channel<ReadMessage>> channelFactory, ActivityTagsCollection? tags = null) {
+	    Tags         = tags;
+	    _lazyChannel = new Lazy<Channel<ReadMessage>>(channelFactory);
+    }
 
     Channel<ReadMessage> Channel => _lazyChannel.Value;
 
@@ -30,6 +42,9 @@ public record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
             return;
 
         Channel.Writer.TryComplete();
+
+        foreach (var activity in Activities.Values)
+            activity.Dispose();
 
         if (Channel.Reader.Completion.IsFaulted)
             await Channel.Reader.Completion;
@@ -52,6 +67,20 @@ public record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
             ReadMessage message;
             try {
                 message = await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+
+                if (message.IsRecord) {
+	                var record = message.AsRecord;
+
+	                var tags = new ActivityTagsCollection(Tags ?? [])
+		                .WithRequiredTag(TraceConstants.Tags.DatabaseRecordId, record.Id.ToString())
+		                .WithRequiredTag(TraceConstants.Tags.DatabaseSchemaFormat, record.Schema.DataFormat.ToString())
+		                .WithRequiredTag(TraceConstants.Tags.DatabaseSchemaName, record.Schema.SchemaName.ToString());
+
+	                var activity = KurrentActivitySource.StartSubscriptionActivity(message, tags);
+
+	                if (activity is not null)
+		                Activities.TryAdd(record.Id, activity);
+                }
             }
             catch (OperationCanceledException) {
                 yield break;
@@ -69,6 +98,12 @@ public record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
             yield return message;
         }
     }
+
+	internal void CompleteActivity(Record record) {
+		Activities.TryRemove(record.Id, out var activity);
+		activity?.SetStatus(ActivityStatusCode.Ok);
+		activity?.Dispose();
+	}
 }
 
 [PublicAPI]
@@ -85,7 +120,8 @@ public record StreamSubscriptionOptions : ReadStreamOptions {
 
 [PublicAPI]
 public record Subscription : Messages {
-    internal Subscription(string subscriptionId, Func<Channel<ReadMessage>> channelFactory) : base(channelFactory) => SubscriptionId = subscriptionId;
+	internal Subscription(string subscriptionId, Func<Channel<ReadMessage>> channelFactory, ActivityTagsCollection tags) : base(channelFactory, tags) =>
+		SubscriptionId = subscriptionId;
 
     /// <summary>
     /// Gets the unique identifier associated with the subscription.

@@ -1,96 +1,113 @@
-﻿using System.Diagnostics;
-using KurrentDB.Client.Extensions.OpenTelemetry;
+﻿// ReSharper disable InconsistentNaming
+
+// 1. Install OpenTelemetry NuGet Packages
+// dotnet add package OpenTelemetry.Exporter.OpenTelemetryProtocol
+// dotnet add package OpenTelemetry.Extensions.Hosting
+// dotnet add package OpenTelemetry.Instrumentation.Runtime
+
+// 2. Optional Hosting Extensions
+// dotnet add package Microsoft.Extensions.Hosting
+
+// Configure dashboard: https://aspiredashboard.com/
+
+using Kurrent;
+using Kurrent.Client;
+using Kurrent.Client.Extensions;
+using Kurrent.Client.Streams;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using OpenTelemetry.Exporter;
-using OpenTelemetry.Trace;
+using Microsoft.Extensions.Logging;
 using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
-#pragma warning disable CS8321 // Local function is declared but never used
-#pragma warning disable CS1587 // XML comment is not placed on a valid language element
+var builder = Host.CreateApplicationBuilder(args);
 
-/**
-# region import-required-packages
-// required
-dotnet add package EventStore.Client.Extensions.OpenTelemetry
+ConfigureOpenTelemetry(builder);
 
-// recommended
-dotnet add package OpenTelemetry.Exporter.Jaeger
-dotnet add package OpenTelemetry.Exporter.Console
-dotnet add package OpenTelemetry
-dotnet add package Microsoft.Extensions.Hosting
-dotnet add package OpenTelemetry.Extensions.Hosting
-# endregion import-required-packages
-**/
+builder.Services.AddHostedService<KurrentDiagnosticsService>();
 
-var settings = KurrentDBClientSettings.Create("kurrentdb://localhost:2113?tls=false");
+var host = builder.Build();
 
-settings.OperationOptions.ThrowOnAppendFailure = false;
-
-await using var client = new KurrentDBClient(settings);
-
-await TraceAppendToStream(client);
+await host.RunAsync();
 
 return;
 
-static async Task TraceAppendToStream(KurrentDBClient client) {
-	const string serviceName = "sample";
+static IHostApplicationBuilder ConfigureOpenTelemetry(IHostApplicationBuilder builder) {
+	builder.Logging.AddOpenTelemetry(logging => {
+			logging.IncludeFormattedMessage = true;
+			logging.IncludeScopes           = true;
+		}
+	);
 
-	var host = Host.CreateDefaultBuilder()
-		.ConfigureServices(
-			(_, services) => {
-				services.AddSingleton(new ActivitySource(serviceName));
-				services
-					.AddOpenTelemetry()
-					.ConfigureResource(builder => builder.AddService(serviceName))
-					.WithTracing(ConfigureTracerProviderBuilder);
-			}
-		)
-		.Build();
-
-	using (host) {
-		# region setup-client-for-tracing
-
-		host.Start();
-
-		var eventData = new EventData(
-			Uuid.NewUuid(),
-			"some-event",
-			"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
-		);
-
-		await client.AppendToStreamAsync(
-			Uuid.NewUuid().ToString(),
-			StreamState.Any,
-			new List<EventData> {
-				eventData
+	builder.Services.AddOpenTelemetry()
+		.ConfigureResource(c => c.AddService("diagnostics-sample"))
+		.WithTracing(tracing => {
+				tracing
+					.AddKurrentClientInstrumentation()
+					.AddConsoleExporter()
+					.AddOtlpExporter();
 			}
 		);
 
-		# endregion setup-client-for-tracing
+	return builder;
+}
+
+class KurrentDiagnosticsService(ILogger<KurrentDiagnosticsService> Logger) : IHostedService {
+	public async Task StartAsync(CancellationToken cancellationToken) {
+		Logger.LogInformation("KurrentDiagnosticsService starting");
+
+		var orderPlacedEvent = new OrderPlaced("customer-123");
+
+		var client = KurrentClientOptions.Build
+			.WithConnectionString("kurrentdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false")
+			.WithSchema(KurrentClientSchemaOptions.Disabled)
+			.WithResilience(KurrentClientResilienceOptions.FailFast)
+			.WithMessages(map => map.Map<OrderPlaced>())
+			.CreateClient();
+
+		var metadata = new Metadata()
+			.With("browser", "chrome")
+			.With("sessionId", "session-789");
+
+		var streamName = $"order-{Guid.NewGuid():N}";
+		var appendRequest = new AppendStreamRequestBuilder()
+			.ForStream(streamName)
+			.ExpectingState(ExpectedStreamState.NoStream)
+			.WithMessage(Message.New.WithValue(orderPlacedEvent).WithMetadata(metadata))
+			.Build();
+
+		Logger.LogInformation("Appending to '{Stream}'", streamName);
+		await client.Streams.Append(appendRequest, cancellationToken);
+
+		Logger.LogInformation("Subscribing to '{Stream}'", streamName);
+		await using var subscription = await client.Streams
+			.Subscribe(
+				new StreamSubscriptionOptions {
+					Stream    = appendRequest.Stream,
+					Start     = StreamRevision.Min,
+					Direction = ReadDirection.Forwards
+				}
+			)
+			.ThrowOnFailureAsync();
+
+		await foreach (var msg in subscription.WithCancellation(cancellationToken)) {
+			if (msg.IsRecord) {
+				var record = msg.AsRecord;
+				switch (record.Value) {
+					case OrderPlaced orderPlaced:
+						Logger.LogInformation("Received OrderPlaced record for CustomerId {CustomerId}", orderPlaced.CustomerId);
+						record.CompleteActivity(subscription);
+						break;
+				}
+			} else if (msg is { IsHeartbeat: true, AsHeartbeat.Type: HeartbeatType.CaughtUp })
+				Logger.LogInformation("Caught Up on stream {Stream}", streamName);
+		}
 	}
 
-	return;
-
-	static void ConfigureTracerProviderBuilder(TracerProviderBuilder tracerProviderBuilder) {
-		#region register-instrumentation
-
-		tracerProviderBuilder
-			.AddKurrentDBClientInstrumentation();
-
-		#endregion register-instrumentation
-
-		#region setup-exporter
-
-		tracerProviderBuilder
-			.AddConsoleExporter()
-			.AddJaegerExporter(
-				options => {
-					options.Endpoint = new Uri("http://localhost:4317");
-					options.Protocol = JaegerExportProtocol.UdpCompactThrift;
-				}
-			);
-
-		#endregion setup-exporter
+	public Task StopAsync(CancellationToken cancellationToken) {
+		Logger.LogInformation("KurrentDiagnosticsService stopping");
+		return Task.CompletedTask;
 	}
 }
+
+record OrderPlaced(string CustomerId);

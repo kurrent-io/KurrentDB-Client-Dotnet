@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Kurrent.Client.Registry;
+using KurrentDB.Diagnostics.Tracing;
 using JsonSerializer = Kurrent.Client.Schema.Serialization.Json.JsonSerializer;
 
 namespace Kurrent.Client.Streams;
@@ -57,6 +59,12 @@ class MetadataJsonConverter : JsonConverter<Metadata> {
             if (propertyName.Equals(SystemMetadataKeys.SchemaVersionId, StringComparison.OrdinalIgnoreCase))
                 return reader.TryGetGuid(out var versionId) && versionId != Guid.Empty
                     ? SchemaVersionId.From(versionId) : SchemaVersionId.None;
+
+            if (propertyName.Equals(TraceConstants.TraceId, StringComparison.OrdinalIgnoreCase))
+	            return ActivityTraceId.CreateFromString(reader.GetString());
+
+            if (propertyName.Equals(TraceConstants.SpanId, StringComparison.OrdinalIgnoreCase))
+	            return ActivitySpanId.CreateFromString(reader.GetString());
 
             if (reader.TryGetGuid(out var guid)) return guid;
             if (reader.TryGetDateTime(out var dateTime)) return dateTime;
