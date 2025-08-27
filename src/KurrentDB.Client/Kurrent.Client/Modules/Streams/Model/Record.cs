@@ -153,6 +153,6 @@ sealed class RecordDecoder(ISchemaSerializerProvider serializerProvider, SchemaR
 public static class RecordExtensions {
 	public static void CompleteActivity(this Record record, Subscription subscription) {
 		ArgumentNullException.ThrowIfNull(record);
-		Messages.CompleteActivity(record);
+		subscription.CompleteActivity(record);
 	}
 }
