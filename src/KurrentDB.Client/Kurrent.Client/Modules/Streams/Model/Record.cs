@@ -148,3 +148,11 @@ sealed class RecordDecoder(ISchemaSerializerProvider serializerProvider, SchemaR
 		return true;
 	}
 }
+
+[PublicAPI]
+public static class RecordExtensions {
+	public static void CompleteActivity(this Record record, Subscription subscription) {
+		ArgumentNullException.ThrowIfNull(record);
+		subscription.CompleteActivity(record);
+	}
+}

@@ -1,6 +1,9 @@
+// ReSharper disable RedundantCatchClause
+
 #pragma warning disable CS8509
 
 using Grpc.Core;
+using KurrentDB.Diagnostics;
 using static KurrentDB.Protocol.Streams.V2.MultiStreamAppendResponse;
 using Contracts = KurrentDB.Protocol.Streams.V2;
 
@@ -8,6 +11,8 @@ namespace Kurrent.Client.Streams;
 
 public partial class StreamsClient {
     public async ValueTask<Result<AppendStreamSuccesses, AppendStreamFailures>> Append(IAsyncEnumerable<AppendStreamRequest> requests, CancellationToken cancellationToken = default) {
+	    var activity = KurrentActivitySource.StartAppendActivity(Tags);
+
         try {
             using var session = ServiceClient.MultiStreamAppendSession(cancellationToken: cancellationToken);
 
@@ -34,12 +39,17 @@ public partial class StreamsClient {
 
             var response = await session.ResponseAsync;
 
-            return response.ResultCase switch {
-                ResultOneofCase.Success => response.Success.Map(),
-                ResultOneofCase.Failure => response.Failure.Map(),
-            };
+            if (response.ResultCase is ResultOneofCase.Failure) {
+	            var failures = response.Failure.Map();
+	            activity.FailActivity(failures);
+	            return failures;
+            }
+
+            activity.CompleteActivity();
+            return response.Success.Map();
         }
         catch (RpcException rex) {
+	        activity.FailActivity(rex);
             throw;
 
             // we have a problem here cause the error result must contain a list of failures or permission denied or others...
