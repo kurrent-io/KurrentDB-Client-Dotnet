@@ -20,7 +20,8 @@ public abstract class ClientModuleBase {
 	    Logger        = client.Options.LoggerFactory.CreateLogger(moduleName ?? GetType().Name);
 
 	    Tags = new ActivityTagsCollection()
-		    .WithOptionalTag(TelemetryTags.Database.User, client.Options.Security.Authentication.AsCredentials);
+		    .WithClientSettingsServerTags(client.Options)
+		    .WithOptionalTag(TelemetryTags.Database.User, client.Options.Security.Authentication.AsCredentials.Username);
     }
 
     KurrentClient KurrentClient { get; }
