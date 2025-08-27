@@ -4,7 +4,7 @@ using Kurrent.Client.Schema.Serialization;
 using Kurrent.Client.Streams;
 using KurrentDB.Client;
 using KurrentDB.Diagnostics;
-using KurrentDB.Diagnostics.Telemetry;
+using KurrentDB.Diagnostics.Tracing;
 using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Client;
@@ -20,8 +20,7 @@ public abstract class ClientModuleBase {
 	    Logger        = client.Options.LoggerFactory.CreateLogger(moduleName ?? GetType().Name);
 
 	    Tags = new ActivityTagsCollection()
-		    .WithClientSettingsServerTags(client.Options)
-		    .WithOptionalTag(TelemetryTags.Database.User, client.Options.Security.Authentication.AsCredentials.Username);
+		    .WithOptionalTag(TraceConstants.DatabaseUser, client.Options.Security.Authentication.AsCredentials.Username);
     }
 
     KurrentClient KurrentClient { get; }

@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Kurrent.Client;
 using KurrentDB.Client;
-using KurrentDB.Diagnostics.Telemetry;
+using KurrentDB.Diagnostics.Tracing;
 
 namespace KurrentDB.Diagnostics;
 
@@ -34,8 +34,8 @@ static class ActivityTagsCollectionExtensions {
 		var authorityParts = channelInfo.Channel.Target.Split(':');
 
 		return tags
-			.WithRequiredTag(TelemetryTags.Server.Address, authorityParts[0])
-			.WithRequiredTag(TelemetryTags.Server.Port, int.Parse(authorityParts[1]));
+			.WithRequiredTag(TraceConstants.ServerAddress, authorityParts[0])
+			.WithRequiredTag(TraceConstants.ServerPort, int.Parse(authorityParts[1]));
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -46,7 +46,7 @@ static class ActivityTagsCollectionExtensions {
 		var gossipSeed = settings.Endpoints[0];
 
 		return source
-			.WithRequiredTag(TelemetryTags.Server.Address, gossipSeed.Host)
-			.WithRequiredTag(TelemetryTags.Server.Port, gossipSeed.Port);
+			.WithRequiredTag(TraceConstants.ServerAddress, gossipSeed.Host)
+			.WithRequiredTag(TraceConstants.ServerPort, gossipSeed.Port);
 	}
 }

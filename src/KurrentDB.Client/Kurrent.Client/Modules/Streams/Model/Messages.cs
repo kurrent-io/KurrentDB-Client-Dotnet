@@ -1,5 +1,10 @@
+// ReSharper disable InconsistentNaming
+
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading.Channels;
 using Kurrent.Variant;
+using KurrentDB.Diagnostics;
 using static System.Threading.Interlocked;
 
 namespace Kurrent.Client.Streams;
@@ -10,9 +15,11 @@ public readonly partial record struct ReadMessage : IVariant<Record, Heartbeat> 
 }
 
 [PublicAPI]
-public record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
+public partial record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
     int _disposed;
     int _enumeratorCreated;
+
+    static readonly ConcurrentDictionary<Guid, Activity> Activities = new();
 
     Lazy<Channel<ReadMessage>> _lazyChannel;
 
@@ -51,7 +58,12 @@ public record Messages : IAsyncEnumerable<ReadMessage>, IAsyncDisposable {
         while (true) {
             ReadMessage message;
             try {
-                message = await reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                message = await reader.ReadAsync(cancellationToken);
+
+                var activity = KurrentActivitySource.StartSubscriptionActivity(message);
+
+                if (message.IsRecord && activity is not null)
+	                Activities.TryAdd(message.AsRecord.Id, activity);
             }
             catch (OperationCanceledException) {
                 yield break;

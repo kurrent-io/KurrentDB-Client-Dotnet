@@ -32,8 +32,9 @@ static class StreamsClientV2Mapper {
 			.Serialize(source.Value, context)
 			.ConfigureAwait(false);
 
-		source.Metadata[TracingConstants.Metadata.TraceId] = Activity.Current?.TraceId;
-		source.Metadata[TracingConstants.Metadata.SpanId]  = Activity.Current?.TraceId;
+		source.Metadata
+			.With(TraceConstants.MetadataTraceId, Activity.Current?.TraceId)
+			.With(TraceConstants.MetadataSpanId, Activity.Current?.SpanId);
 
 		return new Contracts.AppendRecord {
 			RecordId   = source.RecordId.ToString(),
