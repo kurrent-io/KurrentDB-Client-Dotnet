@@ -56,7 +56,7 @@ static class CertificateLoader {
         #if NET9_0_OR_GREATER
         return X509CertificateLoader.LoadCertificateFromFile(certPath);
         #else
-        return X509Certificate2.CreateFromPemFile(certPath);
+        return new(certPath);
         #endif
 
         return IsNullOrEmpty(password)
