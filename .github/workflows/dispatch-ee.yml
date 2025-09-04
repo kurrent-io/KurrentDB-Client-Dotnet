@@ -1,5 +1,5 @@
 name: Dispatch
-run-name: "Dispatch [RunId: ${{ github.run_id }}] [${{ inputs.correlation-id }}]"
+run-name: "Dispatch [${{ inputs.correlation-id }}]"
 
 on:
   workflow_dispatch:
