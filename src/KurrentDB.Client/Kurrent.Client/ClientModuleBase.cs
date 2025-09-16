@@ -1,7 +1,10 @@
+using System.Diagnostics;
 using Kurrent.Client.Schema;
 using Kurrent.Client.Schema.Serialization;
 using Kurrent.Client.Streams;
 using KurrentDB.Client;
+using KurrentDB.Diagnostics;
+using KurrentDB.Diagnostics.Tracing;
 using Microsoft.Extensions.Logging;
 
 namespace Kurrent.Client;
@@ -13,13 +16,20 @@ namespace Kurrent.Client;
 /// </summary>
 public abstract class ClientModuleBase {
     protected ClientModuleBase(KurrentClient client, string? moduleName = null) {
-        KurrentClient = client;
-        Logger        = client.Options.LoggerFactory.CreateLogger(moduleName ?? GetType().Name);
+	    KurrentClient = client;
+	    Logger        = client.Options.LoggerFactory.CreateLogger(moduleName ?? GetType().Name);
+
+	    Tags = new ActivityTagsCollection()
+		    .WithGrpcChannelServerTags(client.LegacyCallInvoker.ChannelTarget)
+		    .WithClientSettingsServerTags(client.Options.Endpoints)
+		    .WithOptionalTag(TraceConstants.Tags.DatabaseUser, client.Options.Security.Authentication.AsCredentials.Username)
+		    .WithRequiredTag(TraceConstants.Tags.DatabaseSystemName, "kurrentdb");
     }
 
     KurrentClient KurrentClient { get; }
 
-    protected ILogger Logger { get; }
+    protected ActivityTagsCollection Tags   { get; }
+    protected ILogger                Logger { get; }
 
     protected ISchemaSerializerProvider SerializerProvider => KurrentClient.SerializerProvider;
     protected ServerCapabilities        ServerCapabilities => KurrentClient.LegacyCallInvoker.ServerCapabilities;

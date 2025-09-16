@@ -6,6 +6,7 @@ using Google.Protobuf;
 using Google.Protobuf.Collections;
 using Kurrent.Client.Schema;
 using Kurrent.Client.Schema.Serialization;
+using KurrentDB.Diagnostics.Tracing;
 using Contracts = KurrentDB.Protocol.Streams.V2;
 
 namespace Kurrent.Client.Streams;
@@ -30,6 +31,10 @@ static class StreamsClientV2Mapper {
 			.GetSerializer(source.DataFormat)
 			.Serialize(source.Value, context)
 			.ConfigureAwait(false);
+
+		source.Metadata
+			.With(TraceConstants.TraceId, Activity.Current?.TraceId)
+			.With(TraceConstants.SpanId, Activity.Current?.SpanId);
 
 		return new Contracts.AppendRecord {
 			RecordId   = source.RecordId.ToString(),

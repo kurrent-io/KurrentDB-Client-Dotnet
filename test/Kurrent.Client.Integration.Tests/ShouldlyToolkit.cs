@@ -195,4 +195,26 @@ public static class ShouldlyResultExtensions {
 
         return obj;
     }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ShouldContainKeyValue(this IEnumerable<KeyValuePair<string, string?>> tags, string key, string? value, string? customMessage = null)
+    {
+        var tagList = tags as IList<KeyValuePair<string, string?>> ?? tags.ToList();
+        if (tagList.Any(t => t.Key == key && t.Value == value)) return;
+
+        throw new ShouldAssertException(
+            customMessage ?? $"Expected tag '{key}' with value '{value}' was not found"
+        );
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static void ShouldContainKeyValue(this IEnumerable<KeyValuePair<string, object?>> tags, string key, object? value, string? customMessage = null)
+    {
+        var tagList = tags as IList<KeyValuePair<string, object?>> ?? tags.ToList();
+        if (tagList.Any(t => t.Key == key && Equals(t.Value, value))) return;
+
+        throw new ShouldAssertException(
+            customMessage ?? $"Expected tag '{key}' with value '{value}' was not found"
+        );
+    }
 }
