@@ -1,13 +1,11 @@
 using System.Text.Json;
 using Humanizer;
-using static KurrentDB.Client.Constants;
 
 namespace KurrentDB.Client.Tests.Streams;
 
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:MultiStreamAppend")]
-public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture)
-	: KurrentDBPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
+public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentDBPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
 	[MinimumVersion.Fact(25, 1)]
 	public async Task append_events_with_invalid_metadata_format_throws_exceptions() {
 		// Arrange
@@ -15,7 +13,9 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 
 		var invalidMetadata = "invalid"u8.ToArray();
 
-		AppendStreamRequest[] requests = [new(stream, StreamState.NoStream, Fixture.CreateTestEvents(3, metadata: invalidMetadata)),];
+		AppendStreamRequest[] requests = [
+			new(stream, StreamState.NoStream, Fixture.CreateTestEvents(3, metadata: invalidMetadata))
+		];
 
 		// Act & Assert
 		var exception = await Fixture.Streams
@@ -54,9 +54,14 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 		var result = await Fixture.Streams.MultiStreamAppendAsync(requests);
 
 		// Assert
-		result.IsSuccess.ShouldBeTrue();
-		var success = result.ShouldBeOfType<MultiAppendSuccess>();
-		success.Successes.Count.ShouldBe(2);
+		result.Position.ShouldBePositive();
+		result.Responses.ShouldNotBeEmpty();
+
+		result.Responses.First().Stream.ShouldBe(stream1);
+		result.Responses.First().StreamRevision.ShouldBePositive();
+
+		result.Responses.Last().Stream.ShouldBe(stream2);
+		result.Responses.Last().StreamRevision.ShouldBePositive();
 
 		var stream1Events = await Fixture.Streams
 			.ReadStreamAsync(Direction.Forwards, stream1, StreamPosition.Start, 10)
@@ -72,12 +77,14 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 		stream2Events.Length.ShouldBe(2);
 
 		metadata.ShouldNotBeNull();
-		metadata[Metadata.SchemaName].ShouldBe("test-event-type");
-		metadata[Metadata.SchemaDataFormat].ShouldBe(SchemaDataFormat.Json);
+		metadata[Constants.Metadata.SchemaName].ShouldBe("test-event-type");
+		metadata[Constants.Metadata.SchemaFormat].ShouldBe(SchemaDataFormat.Json);
 		metadata["StringValue"].ShouldBe(expectedMetadata.StringValue);
 		metadata["BooleanValue"].ShouldBe(expectedMetadata.BooleanValue);
+
 		metadata["IntegerValue"].ShouldBe(expectedMetadata.IntegerValue);
 		metadata["DoubleValue"].ShouldBe(expectedMetadata.DoubleValue);
+
 		metadata["DateTimeValue"].ShouldBe(expectedMetadata.DateTimeValue);
 		metadata["TimeSpanValue"].ShouldBe(expectedMetadata.TimeSpanValue);
 		metadata["NullTimeSpanValue"].ShouldBeNull();
@@ -86,7 +93,7 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 
 		metadata["BooleanValue"]?.GetType().ShouldBe(typeof(bool));
 		metadata["StringValue"]?.GetType().ShouldBe(typeof(string));
-		metadata["IntegerValue"]?.GetType().ShouldBe(typeof(int));
+		metadata["IntegerValue"]?.GetType().ShouldBe(typeof(double));
 		metadata["DoubleValue"]?.GetType().ShouldBe(typeof(double));
 		metadata["DateTimeValue"]?.GetType().ShouldBe(typeof(DateTime));
 		metadata["TimeSpanValue"]?.GetType().ShouldBe(typeof(TimeSpan));
@@ -96,29 +103,44 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 	}
 
 	[MinimumVersion.Fact(25, 1)]
-	public async Task appending_events_with_failures() {
+	public async Task appending_events_with_stream_revision_conflicts() {
 		// Arrange
 		var stream1 = Fixture.GetStreamName();
 		var stream2 = Fixture.GetStreamName();
-		var stream3 = Fixture.GetStreamName();
 
 		AppendStreamRequest[] requests = [
-			new(stream1, StreamState.StreamExists, Fixture.CreateTestEvents(3).ToArray()), // does not exist
-			new(stream2, StreamState.NoStream, Fixture.CreateTestEvents(2).ToArray()),
-			new(stream3, StreamState.StreamExists, Fixture.CreateTestEvents(3).ToArray()), // does not exist
+			new(stream1, StreamState.StreamExists, Fixture.CreateTestEvents(3).ToArray()),
+			new(stream2, StreamState.StreamExists, Fixture.CreateTestEvents(3).ToArray()),
 		];
 
 		// Act
-		var result = await Fixture.Streams.MultiStreamAppendAsync(requests);
+		var appendTask = async () => await Fixture.Streams.MultiStreamAppendAsync(requests);
 
 		// Assert
-		result.IsFailure.ShouldBeTrue();
-		var failure = result.ShouldBeOfType<MultiAppendFailure>();
-		failure.Failures.Count.ShouldBe(2);
+		var rex = await appendTask.ShouldThrowAsync<WrongExpectedVersionException>();
+		rex.ExpectedStreamState.ShouldBe(StreamState.StreamExists);
+		rex.ActualStreamState.ShouldBe(StreamState.NoStream);
+	}
 
-		failure.Failures
-			.Select(f => f.ShouldBeOfType<WrongExpectedVersionException>())
-			.Count().ShouldBe(2);
+	[MinimumVersion.Fact(25, 1)]
+	public async Task appending_events_throws_deleted_exception_when_tombstoned() {
+		// Arrange
+		var stream = Fixture.GetStreamName();
+
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents());
+
+		await Fixture.Streams.TombstoneAsync(stream, StreamState.StreamExists);
+
+		AppendStreamRequest[] requests = [
+			new(stream, StreamState.NoStream, Fixture.CreateTestEvents(3).ToArray())
+		];
+
+		// Act
+		var appendTask = async () => await Fixture.Streams.MultiStreamAppendAsync(requests);
+
+		// Assert
+		var rex = await appendTask.ShouldThrowAsync<StreamDeletedException>();
+		rex.Stream.ShouldBe(stream);
 	}
 }
 

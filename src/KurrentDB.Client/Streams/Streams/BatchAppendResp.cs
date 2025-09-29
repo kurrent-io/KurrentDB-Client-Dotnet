@@ -19,19 +19,19 @@ namespace KurrentDB.Protocol.Streams.V1 {
 						Success.Position.PreparePosition),
 					_ => Position.End
 				}),
-			ResultOneofCase.Error => Error.Details switch {
-				{ } when Error.Details.Is(WrongExpectedVersion.Descriptor) =>
-					FromWrongExpectedVersion(StreamIdentifier, Error.Details.Unpack<WrongExpectedVersion>()),
-				{ } when Error.Details.Is(StreamDeleted.Descriptor) =>
+			ResultOneofCase.Error => Error.Details.FirstOrDefault() switch {
+				{ } detail when detail.Is(WrongExpectedVersion.Descriptor) =>
+					FromWrongExpectedVersion(StreamIdentifier, detail.Unpack<WrongExpectedVersion>()),
+				{ } detail when detail.Is(StreamDeleted.Descriptor) =>
 					throw new StreamDeletedException(StreamIdentifier!),
-				{ } when Error.Details.Is(AccessDenied.Descriptor) => throw new AccessDeniedException(),
-				{ } when Error.Details.Is(Timeout.Descriptor) => throw new RpcException(
+				{ } detail when detail.Is(AccessDenied.Descriptor) => throw new AccessDeniedException(),
+				{ } detail when detail.Is(Timeout.Descriptor) => throw new RpcException(
 					new Status(StatusCode.DeadlineExceeded, Error.Message)),
-				{ } when Error.Details.Is(Unknown.Descriptor) => throw new InvalidOperationException(Error.Message),
-				{ } when Error.Details.Is(MaximumAppendSizeExceeded.Descriptor) =>
+				{ } detail when detail.Is(Unknown.Descriptor) => throw new InvalidOperationException(Error.Message),
+				{ } detail when detail.Is(MaximumAppendSizeExceeded.Descriptor) =>
 					throw new MaximumAppendSizeExceededException(
-						Error.Details.Unpack<MaximumAppendSizeExceeded>().MaxAppendSize),
-				{ } when Error.Details.Is(BadRequest.Descriptor) => throw new InvalidOperationException(Error.Details
+						detail.Unpack<MaximumAppendSizeExceeded>().MaxAppendSize),
+				{ } detail when detail.Is(BadRequest.Descriptor) => throw new InvalidOperationException(detail
 					.Unpack<BadRequest>().Message),
 				_ => throw new InvalidOperationException($"Could not recognize {Error.Message}")
 			},

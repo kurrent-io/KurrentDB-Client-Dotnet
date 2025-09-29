@@ -41,11 +41,11 @@ static class Constants {
 	public static class Metadata {
 		const string SystemPrefix = "$";
 
-		public const string Type             = "type";
-		public const string Created          = "created";
-		public const string ContentType      = "content-type";
-		public const string SchemaName       = $"{SystemPrefix}schema.name";
-		public const string SchemaDataFormat = $"{SystemPrefix}schema.data-format";
+		public const string Type         = "type";
+		public const string Created      = "created";
+		public const string ContentType  = "content-type";
+		public const string SchemaName   = $"{SystemPrefix}schema.name";
+		public const string SchemaFormat = $"{SystemPrefix}schema.format";
 
 		public static readonly string[] RequiredMetadata = [Type, ContentType];
 

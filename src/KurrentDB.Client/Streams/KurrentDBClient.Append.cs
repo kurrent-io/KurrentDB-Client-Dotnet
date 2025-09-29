@@ -202,7 +202,7 @@ namespace KurrentDB.Client {
 				_settings          = settings;
 				_cancellationToken = cancellationToken;
 				_onException       = onException;
-				_channel           = Channel.CreateBounded<BatchAppendReq>(10000);
+				_channel           = System.Threading.Channels.Channel.CreateBounded<BatchAppendReq>(10000);
 				_pendingRequests   = new ConcurrentDictionary<Uuid, TaskCompletionSource<IWriteResult>>();
 				_isUsable          = new TaskCompletionSource<bool>();
 

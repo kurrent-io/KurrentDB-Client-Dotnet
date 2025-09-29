@@ -36,27 +36,7 @@ static async Task MultiStreamAppend(KurrentDBClient client) {
 		)
 	];
 
-	var result = await client.MultiStreamAppendAsync(requests);
-
-	if (result is MultiAppendSuccess { Successes: var successes })
-		foreach (var item in successes)
-			Console.WriteLine($"Stream: {item.Stream}, Position: {item.Position}");
-
-	else if (result is MultiAppendFailure { Failures: var failures })
-		foreach (var item in failures)
-			switch (item) {
-				case WrongExpectedVersionException ex:
-					Console.WriteLine($"Stream: {ex.StreamName}, Expected revision: {ex.ActualStreamState}");
-					break;
-
-				case TransactionMaxSizeExceededException ex:
-					Console.WriteLine($"Transaction size exceeded the maximum allowed size of {ex.MaxSize} bytes.");
-					break;
-
-				case StreamDeletedException ex:
-					Console.WriteLine($"Stream: {ex.Stream} has been deleted.");
-					break;
-			}
+	await client.MultiStreamAppendAsync(requests);
 }
 
 static async Task AppendToStream(KurrentDBClient client) {

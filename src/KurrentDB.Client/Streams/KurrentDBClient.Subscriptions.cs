@@ -187,7 +187,7 @@ namespace KurrentDB.Client {
 					cancellationToken: cancellationToken
 				);
 
-				_channel = Channel.CreateBounded<StreamMessage>(ReadBoundedChannelOptions);
+				_channel = System.Threading.Channels.Channel.CreateBounded<StreamMessage>(ReadBoundedChannelOptions);
 
 				_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 

@@ -7,7 +7,7 @@ option csharp_namespace = "KurrentDB.Protocol.Streams.V1";
 option java_package = "com.eventstore.dbclient.proto.streams";
 
 import "shared.proto";
-import "status.proto";
+import "google/rpc/status.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";

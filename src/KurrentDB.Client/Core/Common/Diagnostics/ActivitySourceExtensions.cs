@@ -27,30 +27,6 @@ static class ActivitySourceExtensions {
 		}
 	}
 
-	public static async ValueTask<MultiAppendWriteResult> TraceMultiStreamAppend(
-		this ActivitySource source,
-		Func<ValueTask<MultiAppendWriteResult>> tracedOperation,
-		ActivityTagsCollection? tags = null
-	) {
-		using var activity = StartActivity(source, Operations.MultiAppend, ActivityKind.Client, tags, Activity.Current?.Context);
-
-		try {
-			var result = await tracedOperation().ConfigureAwait(false);
-
-			if (result is MultiAppendFailure { Failures: var failures }) {
-				activity?.SetStatus(ActivityStatusCode.Error);
-				failures.ForEach(error => activity?.AddException(error));
-				return result;
-			}
-
-			activity?.StatusOk();
-			return result;
-		} catch (Exception ex) {
-			activity?.StatusError(ex);
-			throw;
-		}
-	}
-
 	public static void TraceSubscriptionEvent(
 		this ActivitySource source,
 		string? subscriptionId,

@@ -9,8 +9,7 @@ using KurrentDB.Diagnostics.Tracing;
 namespace KurrentDB.Client.Tests.Diagnostics;
 
 [Trait("Category", "Target:Diagnostics")]
-public class StreamsTracingInstrumentationTests(ITestOutputHelper output, DiagnosticsFixture fixture)
-	: KurrentDBPermanentTests<DiagnosticsFixture>(output, fixture) {
+public class StreamsTracingInstrumentationTests(ITestOutputHelper output, DiagnosticsFixture fixture) : KurrentDBPermanentTests<DiagnosticsFixture>(output, fixture) {
 	[Fact]
 	public async Task append_to_stream() {
 		var traceId = Fixture.CreateTraceId();
@@ -46,7 +45,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 		AppendStreamRequest[] requests = [new(stream1, StreamState.NoStream, seedEvents.Take(5)), new(stream2, StreamState.NoStream, seedEvents.Skip(5))];
 
 		// Act
-		var multiStreamAppendResult = await Fixture.Streams.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
+		var appendResult = await Fixture.Streams.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
 
 		await using var subscription = Fixture.Streams.SubscribeToAll(
 			FromAll.Start,
@@ -58,7 +57,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 		await Subscribe().WithTimeout();
 
 		// Assert
-		multiStreamAppendResult.IsSuccess.ShouldBeTrue();
+		appendResult.Position.ShouldBePositive();
 
 		var appendActivities    = Fixture.GetActivities(TracingConstants.Operations.MultiAppend, traceId);
 		var subscribeActivities = Fixture.GetActivities(TracingConstants.Operations.Subscribe, traceId);
@@ -104,7 +103,7 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 	}
 
 	[MinimumVersion.Fact(25, 1)]
-	public async Task multi_stream_append_with_failures() {
+	public async Task multi_stream_append_with_exceptions() {
 		var traceId = Fixture.CreateTraceId();
 
 		// Arrange
@@ -117,11 +116,10 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 		];
 
 		// Act
-		var multiStreamAppendResult = await Fixture.Streams.MultiStreamAppendAsync(requests);
+		var appendTask = async () => await Fixture.Streams.MultiStreamAppendAsync(requests);
+		var rex = await appendTask.ShouldThrowAsync<WrongExpectedVersionException>();
 
 		// Assert
-		multiStreamAppendResult.IsFailure.ShouldBeTrue();
-
 		var appendActivities = Fixture.GetActivities(TracingConstants.Operations.MultiAppend, traceId);
 
 		appendActivities.ShouldNotBeEmpty();
@@ -130,13 +128,14 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 
 		var activity = appendActivities.FirstOrDefault().ShouldNotBeNull();
 		activity.Status.ShouldBe(ActivityStatusCode.Error);
-		activity.Events.Count().ShouldBe(2);
+		activity.Events.ShouldHaveSingleItem();
 
-		activity.Events.ShouldAllBe(activityEvent =>
-			activityEvent.Tags.Any(tag => tag.Key == TelemetryTags.Exception.Message) &&
-			activityEvent.Tags.Any(tag => tag.Key == TelemetryTags.Exception.Stacktrace) &&
-			activityEvent.Tags.Any(tag => tag.Key == TelemetryTags.Exception.Type && (string?)tag.Value == typeof(WrongExpectedVersionException).FullName)
-		);
+		var activityEvent = activity.Events.First();
+
+		activityEvent.Name.ShouldBe(TelemetryTags.Exception.EventName);
+		activityEvent.Tags.Any(tag => tag.Key == TelemetryTags.Exception.Message).ShouldBeTrue();
+		activityEvent.Tags.Any(tag => tag.Key == TelemetryTags.Exception.Stacktrace).ShouldBeTrue();
+		activityEvent.Tags.Any(tag => tag.Key == TelemetryTags.Exception.Type && (string?)tag.Value == rex.GetType().FullName).ShouldBeTrue();
 	}
 
 	[Fact]

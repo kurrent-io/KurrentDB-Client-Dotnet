@@ -53,7 +53,7 @@ namespace KurrentDB.Client {
 						case ("event_store.client.persistent_subscriptions.persistentsubscriptions", "list"):
 							supportsPersistentSubscriptionsList = true;
 							continue;
-						case ("kurrentdb.protocol.v2.streamsservice", "multistreamappend"):
+						case ("kurrentdb.protocol.v2.streams.streamsservice", "appendsession"):
 							supportsMultiStreamAppend = true;
 							continue;
 					}

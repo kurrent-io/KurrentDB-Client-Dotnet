@@ -20,55 +20,11 @@ namespace KurrentDB.Client;
 [PublicAPI]
 public record AppendStreamRequest(string Stream, StreamState ExpectedState, IEnumerable<EventData> Messages);
 
-/// <summary>
-/// Represents the successful outcome of an append operation to a specific stream in the system.
-/// </summary>
-/// <param name="Stream">
-/// The name of the stream where the events have been successfully appended.
-/// </param>
-/// <param name="Position">
-/// The position in the stream after the append operation, indicating where the event(s) were written.
-/// </param>
 [PublicAPI]
-public record AppendStreamSuccess(string Stream, long Position);
-
-/// <summary>
-/// Represents the result of a multi-stream append operation in KurrentDB.
-/// </summary>
-/// <seealso cref="MultiAppendSuccess"/>
-/// <seealso cref="MultiAppendFailure"/>
-[PublicAPI]
-public abstract class MultiAppendWriteResult {
-	public abstract bool IsSuccess { get; }
-	public          bool IsFailure => !IsSuccess;
-}
+public record AppendResponse(string Stream, long StreamRevision);
 
 [PublicAPI]
-public sealed class MultiAppendSuccess : MultiAppendWriteResult {
-	public override bool                  IsSuccess => true;
-	public          AppendStreamSuccesses Successes { get; }
-
-	internal MultiAppendSuccess(AppendStreamSuccesses successes) =>
-		Successes = successes;
-}
-
-[PublicAPI]
-public sealed class MultiAppendFailure : MultiAppendWriteResult {
-	public override bool                 IsSuccess => false;
-	public          AppendStreamFailures Failures  { get; }
-
-	internal MultiAppendFailure(AppendStreamFailures failures) =>
-		Failures = failures;
-}
-
-[PublicAPI]
-public class AppendStreamSuccesses : List<AppendStreamSuccess> {
-	public AppendStreamSuccesses() { }
-	public AppendStreamSuccesses(IEnumerable<AppendStreamSuccess> input) : base(input) { }
-}
-
-[PublicAPI]
-public class AppendStreamFailures : List<Exception> {
-	public AppendStreamFailures() { }
-	public AppendStreamFailures(IEnumerable<Exception> input) : base(input) { }
+public readonly struct MultiStreamAppendResponse(long position, IEnumerable<AppendResponse>? responses = null) {
+	public readonly long                         Position  = position;
+	public readonly IEnumerable<AppendResponse>? Responses = responses;
 }
