@@ -4,7 +4,6 @@
 
 using System.Diagnostics;
 using Google.Protobuf;
-using Google.Protobuf.Collections;
 using Grpc.Core;
 using KurrentDB.Client.Diagnostics;
 using KurrentDB.Protocol.V2.Streams;
@@ -47,16 +46,12 @@ static class StreamsClientMapper {
 
 	public static AppendResponse Map(this KurrentDB.Protocol.V2.Streams.AppendResponse source) => new(source.Stream, source.StreamRevision);
 
-	public static IEnumerable<AppendResponse> Map(this RepeatedField<KurrentDB.Protocol.V2.Streams.AppendResponse> source) =>
-		source.Select(response => response.Map());
-
 	public static Exception MapRpcException(this RpcException ex) {
 		var status = ex.GetRpcStatus();
 
 		return ex.StatusCode switch {
 			StatusCode.Aborted            => HandleAborted(ex, status),
 			StatusCode.FailedPrecondition => HandleFailedPrecondition(ex, status),
-			StatusCode.NotFound           => HandleNotFound(ex, status),
 			StatusCode.InvalidArgument    => HandleInvalidArgument(ex, status),
 			_                             => ex
 		};
@@ -79,23 +74,26 @@ static class StreamsClientMapper {
 		return ex;
 	}
 
-	static Exception HandleNotFound(RpcException ex, Google.Rpc.Status? status) {
-		var notFound = status?.GetDetail<StreamNotFoundErrorDetails>();
-		if (notFound != null) return new StreamNotFoundException(notFound.Stream, ex);
-
-		return ex;
-	}
-
 	static Exception HandleInvalidArgument(RpcException ex, Google.Rpc.Status? status) {
 		var recordSizeExceeded = status?.GetDetail<AppendRecordSizeExceededErrorDetails>();
-		if (recordSizeExceeded != null) return new MaximumAppendSizeExceededException(recordSizeExceeded.MaxSize, ex);
+		if (recordSizeExceeded != null) return new AppendRecordSizeExceededException(
+			recordSizeExceeded.Stream,
+			recordSizeExceeded.RecordId,
+			recordSizeExceeded.Size,
+			recordSizeExceeded.MaxSize,
+			ex
+		);
 
 		return ex;
 	}
 
 	static Exception HandleAborted(RpcException ex, Google.Rpc.Status? status) {
 		var transactionSizeExceeded = status?.GetDetail<AppendTransactionSizeExceededErrorDetails>();
-		if (transactionSizeExceeded != null) return new TransactionMaxSizeExceededException(transactionSizeExceeded.MaxSize, ex);
+		if (transactionSizeExceeded != null) return new TransactionMaxSizeExceededException(
+			transactionSizeExceeded.Size,
+			transactionSizeExceeded.MaxSize,
+			ex
+		);
 
 		return ex;
 	}

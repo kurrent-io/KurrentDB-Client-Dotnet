@@ -4,30 +4,41 @@ namespace KurrentDB.Client {
 	/// <summary>
 	/// Exception thrown when an append exceeds the maximum size set by the server.
 	/// </summary>
-	public class MaximumAppendSizeExceededException : Exception {
+	public class AppendRecordSizeExceededException : Exception {
 		/// <summary>
-		/// The configured maximum append size.
+		/// The name of the stream where the append was attempted.
 		/// </summary>
-		public uint MaxAppendSize { get; }
+		public string Stream { get; }
 
 		/// <summary>
-		/// Constructs a new <see cref="MaximumAppendSizeExceededException"/>.
+		/// The identifier of the offending and oversized record.
 		/// </summary>
-		/// <param name="maxAppendSize"></param>
-		/// <param name="innerException"></param>
-		public MaximumAppendSizeExceededException(uint maxAppendSize, Exception? innerException = null) :
-			base($"Maximum Append Size of {maxAppendSize} Exceeded.", innerException) {
-			MaxAppendSize = maxAppendSize;
-		}
+		public string RecordId { get; }
 
 		/// <summary>
-		/// Constructs a new <see cref="MaximumAppendSizeExceededException"/>.
+		/// The size of the huge record in bytes.
 		/// </summary>
-		/// <param name="maxAppendSize"></param>
-		/// <param name="innerException"></param>
-		public MaximumAppendSizeExceededException(int maxAppendSize, Exception? innerException = null) : this(
-			(uint)maxAppendSize, innerException) {
+		public long Size { get; }
 
+		/// <summary>
+		/// The maximum allowed size of a single record that can be appended in bytes.
+		/// </summary>
+		public long MaxSize { get; }
+
+		/// <summary>
+		/// Constructs a new <see cref="AppendRecordSizeExceededException"/>.
+		/// </summary>
+		/// <param name="stream">The name of the stream where the append was attempted.</param>
+		/// <param name="recordId">The identifier of the offending and oversized record.</param>
+		/// <param name="size">The size of the huge record in bytes.</param>
+		/// <param name="maxSize">The maximum allowed size of a single record that can be appended in bytes.</param>
+		/// <param name="innerException">The inner exception, if any.</param>
+		public AppendRecordSizeExceededException(string stream, string recordId, long size, long maxSize, Exception? innerException = null)
+			: base($"The size of the record {recordId} ({size}) exceeds by maximum allowed size of {maxSize} bytes by {size - maxSize}", innerException) {
+			Stream   = stream;
+			RecordId = recordId;
+			Size     = size;
+			MaxSize  = maxSize;
 		}
 	}
 }

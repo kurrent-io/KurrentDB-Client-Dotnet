@@ -1,17 +1,20 @@
 namespace KurrentDB.Client;
 
-#pragma warning disable CS8509
 /// <summary>
 /// Exception thrown when a transaction exceeds the allowed maximum size limit.
 /// </summary>
-public class TransactionMaxSizeExceededException : Exception {
+public class TransactionMaxSizeExceededException(int size, int maxSize, Exception? innerException = null)
+	: Exception(
+		$"The total size of the append transaction ({size}) exceeds the maximum allowed size of {maxSize} bytes by {size - maxSize}",
+		innerException
+	) {
 	/// <summary>
-	/// The maximum size, in bytes, allowed for a transaction before it is considered invalid.
+	/// The size of the huge transaction in bytes.
 	/// </summary>
-	public readonly long MaxSize;
+	public int Size { get; } = size;
 
-	public TransactionMaxSizeExceededException(long maxSize, Exception? exception = null)
-		: base($"Transaction size exceeded the maximum allowed size of {maxSize} bytes.", exception) {
-		MaxSize = maxSize;
-	}
+	/// <summary>
+	/// The maximum allowed size of the append transaction in bytes.
+	/// </summary>
+	public int MaxSize { get; } = maxSize;
 }

@@ -20,11 +20,27 @@ namespace KurrentDB.Client;
 [PublicAPI]
 public record AppendStreamRequest(string Stream, StreamState ExpectedState, IEnumerable<EventData> Messages);
 
+/// <summary>
+/// Represents the outcome of an append operation.
+/// </summary>
+/// <param name="Stream">
+/// The name of the stream to which records were appended.
+/// </param>
+/// <param name="StreamRevision">
+/// The expected revision of the stream after the append operation.
+/// </param>
 [PublicAPI]
 public record AppendResponse(string Stream, long StreamRevision);
 
 [PublicAPI]
 public readonly struct MultiStreamAppendResponse(long position, IEnumerable<AppendResponse>? responses = null) {
-	public readonly long                         Position  = position;
+	/// <summary>
+	/// The position of the last appended record in the transaction.
+	/// </summary>
+	public readonly long Position = position;
+
+	/// <summary>
+	/// The collection of responses for each stream appended in the transaction.
+	/// </summary>
 	public readonly IEnumerable<AppendResponse>? Responses = responses;
 }
