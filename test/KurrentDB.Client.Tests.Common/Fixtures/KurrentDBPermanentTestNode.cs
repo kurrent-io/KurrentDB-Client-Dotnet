@@ -81,6 +81,7 @@ public class KurrentDBPermanentTestNode(KurrentDBFixtureOptions? options = null)
 			["EVENTSTORE_RUN_PROJECTIONS"]                  = "All",
 			["EVENTSTORE_CHUNK_SIZE"]                       = (1024 * 1024 * 1024).ToString(),
 			["EVENTSTORE_MAX_APPEND_SIZE"]                  = 100.Kilobytes().Bytes.ToString(CultureInfo.InvariantCulture),
+			["EVENTSTORE_MAX_APPEND_EVENT_SIZE"]            = 100.Kilobytes().Bytes.ToString(CultureInfo.InvariantCulture),
 			["EVENTSTORE_ADVERTISE_NODE_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}"
 		};
 
