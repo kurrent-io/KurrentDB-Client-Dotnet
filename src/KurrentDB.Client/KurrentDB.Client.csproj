@@ -44,6 +44,16 @@
         Access="internal"
         AdditionalImportDirs="Core/proto;$(PkgGoogle_Api_CommonProtos)\content\protos"
     />
+
+    <!-- kurrent -->
+    <Protobuf
+        ProtoRoot="Core/proto/kurrent"
+        Include="Core/proto/kurrent/**/*.proto"
+        Link="Core\proto\kurrent\%(RecursiveDir)/%(FileName)%(Extension)"
+        GrpcServices="Client"
+        Access="internal"
+        AdditionalImportDirs="Core/proto;$(PkgGoogle_Api_CommonProtos)\content\protos"
+    />
   </ItemGroup>
 
 	<!--    <ItemGroup Condition="'$(TargetFramework)' == 'net48'">-->

@@ -11,7 +11,6 @@ using KurrentDB.Client.Diagnostics;
 using KurrentDB.Diagnostics;
 using KurrentDB.Diagnostics.Telemetry;
 using KurrentDB.Protocol.V2.Streams;
-using KurrentDB.Protocol.V2.Streams.Errors;
 using static KurrentDB.Diagnostics.Tracing.TracingConstants;
 using static KurrentDB.Protocol.V2.Streams.StreamsService;
 
