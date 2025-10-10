@@ -1,13 +1,7 @@
-// ReSharper disable InconsistentNaming
-
-#pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
-
 using System.Diagnostics;
 using Google.Protobuf;
-using Grpc.Core;
 using KurrentDB.Client.Diagnostics;
 using KurrentDB.Protocol.V2.Streams;
-using KurrentDB.Protocol.V2.Streams.Errors;
 using static KurrentDB.Client.Constants.Metadata;
 using SchemaFormat = KurrentDB.Protocol.V2.Streams.SchemaFormat;
 
@@ -42,59 +36,5 @@ static class StreamsClientMapper {
 		};
 
 		return new ValueTask<AppendRecord>(record);
-	}
-
-	public static AppendResponse Map(this KurrentDB.Protocol.V2.Streams.AppendResponse source) => new(source.Stream, source.StreamRevision);
-
-	public static Exception MapRpcException(this RpcException ex) {
-		var status = ex.GetRpcStatus();
-
-		return ex.StatusCode switch {
-			StatusCode.Aborted            => HandleAborted(ex, status),
-			StatusCode.FailedPrecondition => HandleFailedPrecondition(ex, status),
-			StatusCode.InvalidArgument    => HandleInvalidArgument(ex, status),
-			_                             => ex
-		};
-	}
-
-	static Exception HandleFailedPrecondition(RpcException ex, Google.Rpc.Status? status) {
-		var revisionConflict = status?.GetDetail<StreamRevisionConflictErrorDetails>();
-		if (revisionConflict != null) {
-			return new WrongExpectedVersionException(
-				revisionConflict.Stream,
-				StreamState.StreamRevision((ulong)revisionConflict.ExpectedRevision),
-				StreamState.StreamRevision((ulong)revisionConflict.ActualRevision),
-				ex
-			);
-		}
-
-		var tombstoned = status?.GetDetail<StreamTombstonedErrorDetails>();
-		if (tombstoned != null) return new StreamDeletedException(tombstoned.Stream, ex);
-
-		return ex;
-	}
-
-	static Exception HandleInvalidArgument(RpcException ex, Google.Rpc.Status? status) {
-		var recordSizeExceeded = status?.GetDetail<AppendRecordSizeExceededErrorDetails>();
-		if (recordSizeExceeded != null) return new AppendRecordSizeExceededException(
-			recordSizeExceeded.Stream,
-			recordSizeExceeded.RecordId,
-			recordSizeExceeded.Size,
-			recordSizeExceeded.MaxSize,
-			ex
-		);
-
-		return ex;
-	}
-
-	static Exception HandleAborted(RpcException ex, Google.Rpc.Status? status) {
-		var transactionSizeExceeded = status?.GetDetail<AppendTransactionSizeExceededErrorDetails>();
-		if (transactionSizeExceeded != null) return new TransactionMaxSizeExceededException(
-			transactionSizeExceeded.Size,
-			transactionSizeExceeded.MaxSize,
-			ex
-		);
-
-		return ex;
 	}
 }

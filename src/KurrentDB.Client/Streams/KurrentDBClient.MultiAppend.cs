@@ -6,6 +6,7 @@
 #pragma warning disable CS8509 // The switch expression does not handle all possible values of its input type (it is not exhaustive).
 
 using System.Diagnostics;
+using Google.Rpc;
 using Grpc.Core;
 using KurrentDB.Client.Diagnostics;
 using KurrentDB.Diagnostics;
@@ -26,7 +27,7 @@ public partial class KurrentDBClient {
 	/// A task that represents the asynchronous operation, with a result of type <see cref="MultiStreamAppendResponse"/>, indicating the outcome of the operation.
 	/// <para>
 	/// On success, returns <see cref="MultiStreamAppendResponse"/> containing the successful append results.
-	/// <see cref="WrongExpectedVersionException"/>, <see cref="AccessDeniedException"/>, <see cref="StreamDeletedException"/>,  or <see cref="TransactionMaxSizeExceededException"/>.
+	/// <see cref="WrongExpectedVersionException"/>, <see cref="AccessDeniedException"/>, <see cref="StreamDeletedException"/>,  or <see cref="AppendTransactionMaxSizeExceededException"/>.
 	/// </para>
 	/// </returns>
 	/// <exception cref="InvalidOperationException">Thrown if the server does not support multi-stream append functionality (requires server version 25.1 or higher).</exception>
@@ -78,7 +79,15 @@ public partial class KurrentDBClient {
 
 				return new MultiStreamAppendResponse(response.Position, responses);
 			} catch (RpcException ex) {
-				throw ex.MapRpcException();
+				var status = ex.GetRpcStatus()!;
+
+				throw status.GetDetail<ErrorInfo>() switch {
+					{ Reason: "STREAM_REVISION_CONFLICT" }         => WrongExpectedVersionException.FromRpcException(ex),
+					{ Reason: "STREAM_TOMBSTONED" }                => StreamDeletedException.FromRpcException(ex),
+					{ Reason: "APPEND_RECORD_SIZE_EXCEEDED" }      => AppendRecordSizeExceededException.FromRpcException(ex),
+					{ Reason: "APPEND_TRANSACTION_SIZE_EXCEEDED" } => AppendTransactionMaxSizeExceededException.FromRpcException(ex),
+					_                                              => ex
+				};
 			}
 		}
 	}

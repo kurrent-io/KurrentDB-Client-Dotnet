@@ -1,4 +1,6 @@
 using System;
+using Grpc.Core;
+using KurrentDB.Protocol.V2.Streams.Errors;
 
 namespace KurrentDB.Client {
 	/// <summary>
@@ -39,6 +41,18 @@ namespace KurrentDB.Client {
 			RecordId = recordId;
 			Size     = size;
 			MaxSize  = maxSize;
+		}
+
+		public static AppendRecordSizeExceededException FromRpcException(RpcException ex) => FromRpcStatus(ex.GetRpcStatus()!);
+
+		public static AppendRecordSizeExceededException FromRpcStatus(Google.Rpc.Status ex) {
+			var details = ex.GetDetail<AppendRecordSizeExceededErrorDetails>();
+			return new AppendRecordSizeExceededException(
+				details.Stream,
+				details.RecordId,
+				details.Size,
+				details.MaxSize
+			);
 		}
 	}
 }

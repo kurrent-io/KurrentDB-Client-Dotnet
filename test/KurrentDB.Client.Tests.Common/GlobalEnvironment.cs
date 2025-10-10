@@ -23,7 +23,8 @@ public static class GlobalEnvironment {
 
 		static void EnsureDefaults(IConfiguration configuration) {
 			// internal defaults
-			configuration.EnsureValue("TESTCONTAINER_KURRENTDB_IMAGE", "docker.cloudsmith.io/eventstore/kurrent-staging/kurrentdb:ci");
+			// configuration.EnsureValue("TESTCONTAINER_KURRENTDB_IMAGE", "docker.cloudsmith.io/eventstore/kurrent-staging/kurrentdb:ci");
+			configuration.EnsureValue("TESTCONTAINER_KURRENTDB_IMAGE", "docker.cloudsmith.io/eventstore/kurrent-preview/kurrentdb:25.1.0-rc.1-x64-8.0-jammy");
 
 			// database defaults
 			configuration.EnsureValue("EVENTSTORE_TELEMETRY_OPTOUT", "true");
@@ -41,6 +42,8 @@ public static class GlobalEnvironment {
 			configuration.EnsureValue("EVENTSTORE_LOG_LEVEL", "Default");
 			configuration.EnsureValue("EVENTSTORE_DISABLE_LOG_FILE", "true");
 			configuration.EnsureValue("EVENTSTORE_MAX_APPEND_SIZE", $"{MaxAppendSize}");
+			configuration.EnsureValue("EVENTSTORE_MAX_APPEND_EVENT_SIZE", $"{MaxAppendSize}");
+
 		}
 	}
 

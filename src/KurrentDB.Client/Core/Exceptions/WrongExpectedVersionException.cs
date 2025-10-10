@@ -1,4 +1,6 @@
 using System;
+using Grpc.Core;
+using KurrentDB.Protocol.V2.Streams.Errors;
 
 namespace KurrentDB.Client {
 	/// <summary>
@@ -44,6 +46,17 @@ namespace KurrentDB.Client {
 			ExpectedStreamState = expectedStreamState;
 			ExpectedVersion = expectedStreamState.ToInt64();
 			ActualVersion = actualStreamState.ToInt64();
+		}
+
+		public static WrongExpectedVersionException FromRpcException(RpcException ex) => FromRpcStatus(ex.GetRpcStatus()!);
+
+		public static WrongExpectedVersionException FromRpcStatus(Google.Rpc.Status ex) {
+			var details = ex.GetDetail<StreamRevisionConflictErrorDetails>();
+			return new WrongExpectedVersionException(
+				details.Stream,
+				StreamState.StreamRevision((ulong)details.ExpectedRevision),
+				StreamState.StreamRevision((ulong)details.ActualRevision)
+			);
 		}
 	}
 }
