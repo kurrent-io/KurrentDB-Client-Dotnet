@@ -79,6 +79,7 @@ public class KurrentDBTemporaryTestNode(KurrentDBFixtureOptions? options = null)
 			["EVENTSTORE_DISABLE_LOG_FILE"]                 = "true",
 			["EVENTSTORE_CHUNK_SIZE"]                       = (1024 * 1024 * 1024).ToString(),
 			["EVENTSTORE_MAX_APPEND_SIZE"]                  = 100.Kilobytes().Bytes.ToString(CultureInfo.InvariantCulture),
+			["EVENTSTORE_MAX_APPEND_EVENT_SIZE"]            = 100.Kilobytes().Bytes.ToString(CultureInfo.InvariantCulture),
 			["EVENTSTORE_ADVERTISE_HTTP_PORT_TO_CLIENT_AS"] = $"{NetworkPortProvider.DefaultEsdbPort}"
 		};
 
