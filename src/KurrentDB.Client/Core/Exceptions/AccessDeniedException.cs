@@ -1,4 +1,4 @@
-using System;
+using Grpc.Core;
 
 namespace KurrentDB.Client {
 	/// <summary>
@@ -17,6 +17,12 @@ namespace KurrentDB.Client {
 		/// </summary>
 		public AccessDeniedException() : base("Access denied.") {
 
+		}
+
+		public static AccessDeniedException FromRpcException(RpcException ex) => FromRpcStatus(ex.GetRpcStatus()!);
+
+		public static AccessDeniedException FromRpcStatus(Google.Rpc.Status ex) {
+			return new(ex.Message, ex.ToRpcException());
 		}
 	}
 }

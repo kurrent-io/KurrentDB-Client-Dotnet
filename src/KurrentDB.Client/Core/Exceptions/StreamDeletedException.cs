@@ -1,6 +1,3 @@
-using Grpc.Core;
-using KurrentDB.Protocol.V2.Streams.Errors;
-
 namespace KurrentDB.Client {
 	/// <summary>
 	/// Exception thrown if an operation is attempted on a stream which
@@ -20,13 +17,6 @@ namespace KurrentDB.Client {
 		public StreamDeletedException(string stream, Exception? exception = null)
 			: base($"Event stream '{stream}' is deleted.", exception) {
 			Stream = stream;
-		}
-
-		public static StreamDeletedException FromRpcException(RpcException ex) => FromRpcStatus(ex.GetRpcStatus()!);
-
-		public static StreamDeletedException FromRpcStatus(Google.Rpc.Status ex) {
-			var details = ex.GetDetail<StreamTombstonedErrorDetails>();
-			return new StreamDeletedException(details.Stream);
 		}
 	}
 }

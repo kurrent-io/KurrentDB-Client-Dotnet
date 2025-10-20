@@ -139,7 +139,7 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 		var appendTask = async () => await Fixture.Streams.MultiStreamAppendAsync(requests);
 
 		// Assert
-		var rex = await appendTask.ShouldThrowAsync<StreamDeletedException>();
+		var rex = await appendTask.ShouldThrowAsync<StreamTombstonedException>();
 		rex.Stream.ShouldBe(stream);
 	}
 }

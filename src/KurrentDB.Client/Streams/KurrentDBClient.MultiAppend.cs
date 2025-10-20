@@ -80,10 +80,9 @@ public partial class KurrentDBClient {
 				return new MultiStreamAppendResponse(response.Position, responses);
 			} catch (RpcException ex) {
 				var status = ex.GetRpcStatus()!;
-
 				throw status.GetDetail<ErrorInfo>() switch {
 					{ Reason: "STREAM_REVISION_CONFLICT" }         => WrongExpectedVersionException.FromRpcException(ex),
-					{ Reason: "STREAM_TOMBSTONED" }                => StreamDeletedException.FromRpcException(ex),
+					{ Reason: "STREAM_TOMBSTONED" }                => StreamTombstonedException.FromRpcException(ex),
 					{ Reason: "APPEND_RECORD_SIZE_EXCEEDED" }      => AppendRecordSizeExceededException.FromRpcException(ex),
 					{ Reason: "APPEND_TRANSACTION_SIZE_EXCEEDED" } => AppendTransactionMaxSizeExceededException.FromRpcException(ex),
 					_                                              => ex

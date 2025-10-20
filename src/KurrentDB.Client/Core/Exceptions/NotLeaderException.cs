@@ -1,5 +1,6 @@
-using System;
 using System.Net;
+using Grpc.Core;
+using Kurrent.Rpc;
 
 namespace KurrentDB.Client {
 	/// <summary>
@@ -21,6 +22,16 @@ namespace KurrentDB.Client {
 		public NotLeaderException(string host, int port, Exception? exception = null) : base(
 			$"Not leader. New leader at {host}:{port}.", exception) {
 			LeaderEndpoint = new DnsEndPoint(host, port);
+		}
+
+		public static NotLeaderException FromRpcException(RpcException ex) => FromRpcStatus(ex.GetRpcStatus()!);
+
+		public static NotLeaderException FromRpcStatus(Google.Rpc.Status ex) {
+			var details = ex.GetDetail<NotLeaderNodeErrorDetails>();
+			return new NotLeaderException(
+				details.CurrentLeader.Host,
+				details.CurrentLeader.Port
+			);
 		}
 	}
 }
