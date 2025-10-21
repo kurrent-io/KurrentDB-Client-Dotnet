@@ -7,7 +7,7 @@ using KurrentDB.Diagnostics.Tracing;
 namespace KurrentDB.Client.Diagnostics;
 
 static class EventMetadataExtensions {
-	public static void InjectTracingContext(this Dictionary<string, object?> metadata, Activity? activity) {
+	public static void InjectTracingContext(this Dictionary<string, string> metadata, Activity? activity) {
 		if (!KurrentDBClientDiagnostics.ActivitySource.HasListeners() || activity is null) return;
 
 		metadata[TracingConstants.Metadata.TraceId] = activity.TraceId.ToString();

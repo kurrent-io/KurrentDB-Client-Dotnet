@@ -23,7 +23,7 @@ public static class GlobalEnvironment {
 
 		static void EnsureDefaults(IConfiguration configuration) {
 			// internal defaults
-			configuration.EnsureValue("TESTCONTAINER_KURRENTDB_IMAGE", "docker pull docker.cloudsmith.io/eventstore/kurrent-latest/kurrentdb:latest");
+			configuration.EnsureValue("TESTCONTAINER_KURRENTDB_IMAGE", "docker.cloudsmith.io/eventstore/kurrent-latest/kurrentdb:latest");
 
 			// database defaults
 			configuration.EnsureValue("EVENTSTORE_TELEMETRY_OPTOUT", "true");

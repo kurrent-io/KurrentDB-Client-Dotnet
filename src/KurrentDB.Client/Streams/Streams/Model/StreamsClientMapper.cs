@@ -16,10 +16,16 @@ static class StreamsClientMapper {
 	}
 
 	public static ValueTask<AppendRecord> Map(this EventData source) {
-		Dictionary<string, object?> metadata = new();
+		Dictionary<string, string> metadata;
 
-		if (!source.Metadata.IsEmpty)
-			metadata = MetadataDecoder.Decode(source.Metadata);
+		try {
+			metadata = source.Metadata.Decode() ?? new Dictionary<string, string>();
+		} catch (Exception ex) {
+			throw new ArgumentException(
+				"Failed to decode event metadata. The metadata may be missing, malformed, or not in valid JSON format. Please verify the event's metadata structure.",
+				ex
+			);
+		}
 
 		metadata.InjectTracingContext(Activity.Current);
 

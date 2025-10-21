@@ -1,6 +1,3 @@
-using System.Text.Json;
-using Humanizer;
-
 namespace KurrentDB.Client.Tests.Streams;
 
 [Trait("Category", "Target:Streams")]
@@ -22,7 +19,7 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 			.MultiStreamAppendAsync(requests).AsTask()
 			.ShouldThrowAsync<ArgumentException>();
 
-		Assert.Contains("Deserialization failed:", exception.Message);
+		exception.Message.ShouldContain("Failed to decode event metadata");
 	}
 
 	[MinimumVersion.Fact(25, 1)]
@@ -31,23 +28,13 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 		var stream1 = Fixture.GetStreamName();
 		var stream2 = Fixture.GetStreamName();
 
-		var expectedMetadata = new TestMetadata {
-			StringValue       = "Foo",
-			IntegerValue      = 0,
-			BooleanValue      = true,
-			DoubleValue       = 2.718281828,
-			DateTimeValue     = DateTime.UtcNow,
-			TimeSpanValue     = 2.5.Hours(),
-			NullTimeSpanValue = null,
-			ZeroTimeSpanValue = TimeSpan.Zero,
-			ByteArrayValue    = "Bar"u8.ToArray()
+		var expectedMetadata = new Dictionary<string, string> {
+			["Name"] = Fixture.Faker.Person.FullName
 		};
 
-		var metadataBytes = JsonSerializer.SerializeToUtf8Bytes(expectedMetadata);
-
 		AppendStreamRequest[] requests = [
-			new(stream1, StreamState.NoStream, Fixture.CreateTestEvents(3, metadata: metadataBytes).ToArray()),
-			new(stream2, StreamState.NoStream, Fixture.CreateTestEvents(2, metadata: metadataBytes).ToArray())
+			new(stream1, StreamState.NoStream, Fixture.CreateTestEvents(3, metadata: expectedMetadata.Encode()).ToArray()),
+			new(stream2, StreamState.NoStream, Fixture.CreateTestEvents(2, metadata: expectedMetadata.Encode()).ToArray())
 		];
 
 		// Act
@@ -71,35 +58,15 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 			.ReadStreamAsync(Direction.Forwards, stream2, StreamPosition.Start, 10)
 			.ToArrayAsync();
 
-		var metadata = MetadataDecoder.Decode(stream1Events.First().OriginalEvent.Metadata);
+		var metadata = stream1Events.First().Decode();
 
 		stream1Events.Length.ShouldBe(3);
 		stream2Events.Length.ShouldBe(2);
 
 		metadata.ShouldNotBeNull();
 		metadata[Constants.Metadata.SchemaName].ShouldBe("test-event-type");
-		metadata[Constants.Metadata.SchemaFormat].ShouldBe(SchemaDataFormat.Json);
-		metadata["StringValue"].ShouldBe(expectedMetadata.StringValue);
-		metadata["BooleanValue"].ShouldBe(expectedMetadata.BooleanValue);
-
-		metadata["IntegerValue"].ShouldBe(expectedMetadata.IntegerValue);
-		metadata["DoubleValue"].ShouldBe(expectedMetadata.DoubleValue);
-
-		metadata["DateTimeValue"].ShouldBe(expectedMetadata.DateTimeValue);
-		metadata["TimeSpanValue"].ShouldBe(expectedMetadata.TimeSpanValue);
-		metadata["NullTimeSpanValue"].ShouldBeNull();
-		metadata["ZeroTimeSpanValue"].ShouldBe(expectedMetadata.ZeroTimeSpanValue);
-		metadata["ByteArrayValue"].ShouldBe(expectedMetadata.ByteArrayValue);
-
-		metadata["BooleanValue"]?.GetType().ShouldBe(typeof(bool));
-		metadata["StringValue"]?.GetType().ShouldBe(typeof(string));
-		metadata["IntegerValue"]?.GetType().ShouldBe(typeof(double));
-		metadata["DoubleValue"]?.GetType().ShouldBe(typeof(double));
-		metadata["DateTimeValue"]?.GetType().ShouldBe(typeof(DateTime));
-		metadata["TimeSpanValue"]?.GetType().ShouldBe(typeof(TimeSpan));
-		metadata["NullTimeSpanValue"]?.GetType().ShouldBe(typeof(TimeSpan));
-		metadata["ZeroTimeSpanValue"]?.GetType().ShouldBe(typeof(TimeSpan));
-		metadata["ByteArrayValue"]?.GetType().ShouldBe(typeof(ReadOnlyMemory<byte>));
+		metadata[Constants.Metadata.SchemaFormat].ShouldBe(nameof(SchemaDataFormat.Json));
+		metadata["Name"].ShouldBe(expectedMetadata["Name"]);
 	}
 
 	[MinimumVersion.Fact(25, 1)]
@@ -142,16 +109,4 @@ public class MultiStreamAppendTests(ITestOutputHelper output, KurrentDBPermanent
 		var rex = await appendTask.ShouldThrowAsync<StreamTombstonedException>();
 		rex.Stream.ShouldBe(stream);
 	}
-}
-
-public class TestMetadata {
-	public string?   StringValue       { get; init; }
-	public int?      IntegerValue      { get; init; }
-	public bool?     BooleanValue      { get; init; }
-	public double?   DoubleValue       { get; init; }
-	public DateTime? DateTimeValue     { get; init; }
-	public TimeSpan? TimeSpanValue     { get; init; }
-	public TimeSpan? NullTimeSpanValue { get; init; }
-	public TimeSpan? ZeroTimeSpanValue { get; init; }
-	public byte[]?   ByteArrayValue    { get; init; }
 }
