@@ -27,7 +27,7 @@ public partial class KurrentDBClient {
 	/// A task that represents the asynchronous operation, with a result of type <see cref="MultiStreamAppendResponse"/>, indicating the outcome of the operation.
 	/// <para>
 	/// On success, returns <see cref="MultiStreamAppendResponse"/> containing the successful append results.
-	/// <see cref="WrongExpectedVersionException"/>, <see cref="AccessDeniedException"/>, <see cref="StreamDeletedException"/>,  or <see cref="AppendTransactionMaxSizeExceededException"/>.
+	/// <see cref="WrongExpectedVersionException"/>, <see cref="AccessDeniedException"/>, <see cref="StreamTombstonedException"/>, <see cref="AppendTransactionMaxSizeExceededException"/>.,  or <see cref="AppendRecordSizeExceededException"/>.
 	/// </para>
 	/// </returns>
 	/// <exception cref="InvalidOperationException">Thrown if the server does not support multi-stream append functionality (requires server version 25.1 or higher).</exception>

@@ -10,7 +10,7 @@ static class ValueMapper {
 		source.Aggregate(
 			new MapField<string, Value>(),
 			(seed, entry) => {
-				seed.Add(entry.Key, new Value { StringValue = entry.Value });
+				seed.Add(entry.Key, Value.ForString(entry.Value));
 				return seed;
 			}
 		);
