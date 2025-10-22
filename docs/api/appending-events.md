@@ -172,13 +172,24 @@ await client.MultiStreamAppendAsync(requests);
 The result returns the position of the last appended record in the transaction and a collection of responses for each stream appended in the transaction.
 
 ::: warning
-If you are storing metadata, it must currently be a valid JSON that can be deserialized into a
-`Dictionary<string, object?>`. This means any metadata you attach to an event should be structured as a JSON object, not as a primitive value or array.
+The metadata for an event must be a valid JSON object where both keys and values are strings. It is essential that the JSON is well-formed and not missing, as any malformed or absent metadata will result in an `ArgumentException` being thrown.
 
-When reading those events you can use the metadata decoder utility class to decode your metadata:
+You can use the provided `Encode` and `Decode` extension methods when writing
+and reading metadata. For example:
+
 ```cs
-var dictionary = MetadataDecoder.Decode(metadataBytes);
+var metadata = new Dictionary<string, string>
+{
+  { "userId", "user-456" }
+};
+
+// encode to bytes before appending
+var metadataBytes = metadata.Encode();
 ```
 
-This requirement ensures compatibility with KurrentDB's current metadata handling, and the restriction will be lifted in the next major release.
+And when reading metadata back:
+
+```cs
+var metadata = metadataBytes.Decode();
+```
 :::
