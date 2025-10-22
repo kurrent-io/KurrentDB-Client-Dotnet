@@ -22,7 +22,7 @@ string or client configuration.
 Add the `KurrentDB.Client` package to your project:
 
 ```bash
-dotnet add package KurrentDB.Client --version "1.0.*"
+dotnet add package KurrentDB.Client --version "1.1.*"
 ```
 
 ### Connection string
