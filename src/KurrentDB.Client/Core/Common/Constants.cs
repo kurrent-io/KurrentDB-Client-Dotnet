@@ -39,11 +39,15 @@ static class Constants {
 	}
 
 	public static class Metadata {
-		public const string Type        = "type";
-        public const string Created     = "created";
-        public const string ContentType = "content-type";
-		
-        public static readonly string[] RequiredMetadata   = [Type, ContentType];
+		const string SystemPrefix = "$";
+
+		public const string Type         = "type";
+		public const string Created      = "created";
+		public const string ContentType  = "content-type";
+		public const string SchemaName   = $"{SystemPrefix}schema.name";
+		public const string SchemaFormat = $"{SystemPrefix}schema.format";
+
+		public static readonly string[] RequiredMetadata = [Type, ContentType];
 
 		public static class ContentTypes {
 			public const string ApplicationJson        = "application/json";

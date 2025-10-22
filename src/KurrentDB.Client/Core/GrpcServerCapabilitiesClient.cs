@@ -1,5 +1,5 @@
-using EventStore.Client.ServerFeatures;
 using Grpc.Core;
+using static KurrentDB.Protocol.Users.V1.ServerFeatures;
 
 namespace KurrentDB.Client {
 	internal class GrpcServerCapabilitiesClient : IServerCapabilitiesClient {
@@ -13,7 +13,7 @@ namespace KurrentDB.Client {
 			CallInvoker callInvoker,
 			CancellationToken cancellationToken) {
 
-			var client = new ServerFeatures.ServerFeaturesClient(callInvoker);
+			var client = new ServerFeaturesClient(callInvoker);
 			using var call = client.GetSupportedMethodsAsync(
 				new(),
 				KurrentDBCallOptions.CreateNonStreaming(
@@ -29,6 +29,7 @@ namespace KurrentDB.Client {
 				var supportsPersistentSubscriptionsRestartSubsystem = false;
 				var supportsPersistentSubscriptionsReplayParked = false;
 				var supportsPersistentSubscriptionsList = false;
+				var supportsMultiStreamAppend = false;
 
 				var response = await call.ResponseAsync.ConfigureAwait(false);
 
@@ -52,6 +53,9 @@ namespace KurrentDB.Client {
 						case ("event_store.client.persistent_subscriptions.persistentsubscriptions", "list"):
 							supportsPersistentSubscriptionsList = true;
 							continue;
+						case ("kurrentdb.protocol.v2.streams.streamsservice", "appendsession"):
+							supportsMultiStreamAppend = true;
+							continue;
 					}
 				}
 
@@ -61,7 +65,8 @@ namespace KurrentDB.Client {
 					SupportsPersistentSubscriptionsGetInfo: supportsPersistentSubscriptionsGetInfo,
 					SupportsPersistentSubscriptionsRestartSubsystem: supportsPersistentSubscriptionsRestartSubsystem,
 					SupportsPersistentSubscriptionsReplayParked: supportsPersistentSubscriptionsReplayParked,
-					SupportsPersistentSubscriptionsList: supportsPersistentSubscriptionsList);
+					SupportsPersistentSubscriptionsList: supportsPersistentSubscriptionsList,
+					SupportsMultiStreamAppend: supportsMultiStreamAppend);
 
 			} catch (Exception ex) when (ex.GetBaseException() is RpcException rpcException &&
 				rpcException.StatusCode == StatusCode.Unimplemented) {

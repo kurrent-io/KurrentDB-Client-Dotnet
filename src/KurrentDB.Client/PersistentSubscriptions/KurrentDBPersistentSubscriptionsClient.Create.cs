@@ -1,5 +1,6 @@
 using EventStore.Client;
-using EventStore.Client.PersistentSubscriptions;
+using KurrentDB.Protocol.PersistentSubscriptions.V1;
+using static KurrentDB.Protocol.PersistentSubscriptions.V1.PersistentSubscriptions;
 
 namespace KurrentDB.Client {
 	partial class KurrentDBPersistentSubscriptionsClient {
@@ -9,7 +10,7 @@ namespace KurrentDB.Client {
 				[SystemConsumerStrategies.RoundRobin] = CreateReq.Types.ConsumerStrategy.RoundRobin,
 				[SystemConsumerStrategies.Pinned] = CreateReq.Types.ConsumerStrategy.Pinned,
 			};
-			
+
 		private static CreateReq.Types.StreamOptions StreamOptionsForCreateProto(string streamName, StreamPosition position) {
 			if (position == StreamPosition.Start) {
 				return new CreateReq.Types.StreamOptions {
@@ -202,7 +203,7 @@ namespace KurrentDB.Client {
 				throw new InvalidOperationException("The server does not support persistent subscriptions to $all.");
 			}
 
-			using var call = new PersistentSubscriptions.PersistentSubscriptionsClient(
+			using var call = new PersistentSubscriptionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					Stream = streamName != SystemStreams.AllStream

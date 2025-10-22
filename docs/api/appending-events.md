@@ -137,3 +137,59 @@ await client.AppendToStreamAsync(
   userCredentials: new UserCredentials("admin", "changeit")
 );
 ```
+
+## Append to multiple streams
+
+::: note
+This feature is only available in KurrentDB 25.1 and later. 
+:::
+
+You can append events to multiple streams in a single atomic operation. Either all streams are updated, or the entire operation fails.
+
+```cs
+using System.Text.Json;
+
+AppendStreamRequest[] requests = [
+	new(
+		"order-stream",
+		StreamState.Any,
+		[
+			new EventData(Uuid.NewUuid(), "OrderCreated", Encoding.UTF8.GetBytes("{\"orderId\": \"21345\", \"amount\": 99.99}"))
+		]
+	),
+	new(
+		"inventory-stream",
+		StreamState.Any,
+		[
+			new EventData(Uuid.NewUuid(), "ItemReserved", Encoding.UTF8.GetBytes("{\"itemId\": \"abc123\", \"quantity\": 2}"))
+		]
+	)
+];
+
+await client.MultiStreamAppendAsync(requests);
+```
+
+The result returns the position of the last appended record in the transaction and a collection of responses for each stream appended in the transaction.
+
+::: warning
+The metadata for an event must be a valid JSON object where both keys and values are strings. It is essential that the JSON is well-formed and not missing, as any malformed or absent metadata will result in an `ArgumentException` being thrown.
+
+You can use the provided `Encode` and `Decode` extension methods when writing
+and reading metadata. For example:
+
+```cs
+var metadata = new Dictionary<string, string>
+{
+  { "userId", "user-456" }
+};
+
+// encode to bytes before appending
+var metadataBytes = metadata.Encode();
+```
+
+And when reading metadata back:
+
+```cs
+var metadata = metadataBytes.Decode();
+```
+:::

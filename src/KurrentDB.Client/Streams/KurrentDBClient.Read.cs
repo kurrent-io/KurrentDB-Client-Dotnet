@@ -1,7 +1,8 @@
 using System.Threading.Channels;
-using EventStore.Client.Streams;
 using Grpc.Core;
-using static EventStore.Client.Streams.ReadResp.ContentOneofCase;
+using KurrentDB.Protocol.Streams.V1;
+using static KurrentDB.Protocol.Streams.V1.Streams;
+using static KurrentDB.Protocol.Streams.V1.ReadResp.ContentOneofCase;
 
 namespace KurrentDB.Client {
 	public partial class KurrentDBClient {
@@ -149,7 +150,7 @@ namespace KurrentDB.Client {
 					cancellationToken
 				);
 
-				_channel = Channel.CreateBounded<StreamMessage>(ReadBoundedChannelOptions);
+				_channel = System.Threading.Channels.Channel.CreateBounded<StreamMessage>(ReadBoundedChannelOptions);
 
 				_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 				var linkedCancellationToken = _cts.Token;
@@ -164,7 +165,7 @@ namespace KurrentDB.Client {
 				async Task PumpMessages() {
 					try {
 						var       callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
-						var       client      = new Streams.StreamsClient(callInvoker);
+						var       client      = new StreamsClient(callInvoker);
 						using var call        = client.Read(request, callOptions);
 						await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken)
 							               .ConfigureAwait(false)) {
@@ -348,7 +349,7 @@ namespace KurrentDB.Client {
 					cancellationToken
 				);
 
-				_channel = Channel.CreateBounded<StreamMessage>(ReadBoundedChannelOptions);
+				_channel = System.Threading.Channels.Channel.CreateBounded<StreamMessage>(ReadBoundedChannelOptions);
 
 				StreamName = request.Options.Stream.StreamIdentifier!;
 
@@ -368,7 +369,7 @@ namespace KurrentDB.Client {
 
 					try {
 						var       callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
-						var       client      = new Streams.StreamsClient(callInvoker);
+						var       client      = new StreamsClient(callInvoker);
 						using var call        = client.Read(request, callOptions);
 
 						await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken)

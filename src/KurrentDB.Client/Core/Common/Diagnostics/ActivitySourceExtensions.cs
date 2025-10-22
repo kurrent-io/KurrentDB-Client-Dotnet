@@ -1,9 +1,10 @@
+// ReSharper disable ConvertIfStatementToSwitchStatement
 // ReSharper disable ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
 
 using System.Diagnostics;
 using KurrentDB.Diagnostics;
 using KurrentDB.Diagnostics.Telemetry;
-using KurrentDB.Diagnostics.Tracing;
+using static KurrentDB.Diagnostics.Tracing.TracingConstants;
 
 namespace KurrentDB.Client.Diagnostics;
 
@@ -54,7 +55,7 @@ static class ActivitySourceExtensions {
 				userCredentials?.Username ?? settings.DefaultCredentials?.Username
 			);
 
-		StartActivity(source, TracingConstants.Operations.Subscribe, ActivityKind.Consumer, tags, parentContext)
+		StartActivity(source, Operations.Subscribe, ActivityKind.Consumer, tags, parentContext)
 			?.Dispose();
 	}
 
@@ -67,7 +68,7 @@ static class ActivitySourceExtensions {
 			return null;
 
 		(tags ??= new ActivityTagsCollection())
-			.WithRequiredTag(TelemetryTags.Database.System, "kurrent")
+			.WithRequiredTag(TelemetryTags.Database.System, KurrentDBClientDiagnostics.InstrumentationName)
 			.WithRequiredTag(TelemetryTags.Database.Operation, operationName);
 
 		return source

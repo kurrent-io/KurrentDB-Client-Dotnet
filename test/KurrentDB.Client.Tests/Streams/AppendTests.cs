@@ -485,21 +485,21 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 	[RetryFact]
 	public async Task fails_when_size_exceeds_max_append_size() {
 		// Arrange
-		var maxAppendSize    = (uint)100.Kilobytes().Bytes;
-		var stream           = Fixture.GetStreamName();
-		var eventsAppendSize = (uint)10.Megabytes().Bytes;
+		var stream = Fixture.GetStreamName();
+
+		var maxAppendSize = (uint)10.Megabytes().Bytes;
 
 		// Act
-		var (events, size) = Fixture.CreateTestEventsUpToMaxSize(eventsAppendSize);
+		var (events, size) = Fixture.CreateTestEventsUpToMaxSize(maxAppendSize);
 
 		// Assert
-		size.ShouldBeGreaterThan(maxAppendSize);
+		size.ShouldBeGreaterThan((uint)GlobalEnvironment.MaxAppendSize);
 
 		var ex = await Fixture.Streams
 			.AppendToStreamAsync(stream, StreamState.NoStream, events)
 			.ShouldThrowAsync<MaximumAppendSizeExceededException>();
 
-		ex.MaxAppendSize.ShouldBe(maxAppendSize);
+		ex.MaxAppendSize.ShouldBe((uint)GlobalEnvironment.MaxAppendSize);
 	}
 
 	[RetryFact]

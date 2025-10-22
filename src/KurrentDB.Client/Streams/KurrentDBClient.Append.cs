@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading.Channels;
-using EventStore.Client.Streams;
 using Google.Protobuf;
 using Grpc.Core;
 using Microsoft.Extensions.Logging;
@@ -9,6 +8,8 @@ using KurrentDB.Diagnostics;
 using KurrentDB.Diagnostics.Telemetry;
 using KurrentDB.Diagnostics.Tracing;
 using KurrentDB.Client.Diagnostics;
+using KurrentDB.Protocol.Streams.V1;
+using static KurrentDB.Protocol.Streams.V1.Streams;
 
 namespace KurrentDB.Client {
 	public partial class KurrentDBClient {
@@ -75,7 +76,7 @@ namespace KurrentDB.Client {
 			return KurrentDBClientDiagnostics.ActivitySource.TraceClientOperation(Operation, TracingConstants.Operations.Append, tags);
 
 			async ValueTask<IWriteResult> Operation() {
-				using var call = new Streams.StreamsClient(channelInfo.CallInvoker)
+				using var call = new StreamsClient(channelInfo.CallInvoker)
 					.Append(KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 
 				await call.RequestStream
@@ -201,7 +202,7 @@ namespace KurrentDB.Client {
 				_settings          = settings;
 				_cancellationToken = cancellationToken;
 				_onException       = onException;
-				_channel           = Channel.CreateBounded<BatchAppendReq>(10000);
+				_channel           = System.Threading.Channels.Channel.CreateBounded<BatchAppendReq>(10000);
 				_pendingRequests   = new ConcurrentDictionary<Uuid, TaskCompletionSource<IWriteResult>>();
 				_isUsable          = new TaskCompletionSource<bool>();
 
@@ -265,7 +266,7 @@ namespace KurrentDB.Client {
 						return;
 					}
 
-					_call = new Streams.StreamsClient(_channelInfo.CallInvoker).BatchAppend(
+					_call = new StreamsClient(_channelInfo.CallInvoker).BatchAppend(
 						KurrentDBCallOptions.CreateStreaming(
 							_settings,
 							userCredentials: _settings.DefaultCredentials,

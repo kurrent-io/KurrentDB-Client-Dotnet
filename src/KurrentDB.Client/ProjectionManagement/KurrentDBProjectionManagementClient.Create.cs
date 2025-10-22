@@ -1,5 +1,6 @@
 using EventStore.Client;
-using EventStore.Client.Projections;
+using KurrentDB.Protocol.Projections.V1;
+using static KurrentDB.Protocol.Projections.V1.Projections;
 
 namespace KurrentDB.Client {
 	public partial class KurrentDBProjectionManagementClient {
@@ -14,7 +15,7 @@ namespace KurrentDB.Client {
 		public async Task CreateOneTimeAsync(string query, TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Projections.ProjectionsClient(
+			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					OneTime = new Empty(),
@@ -38,7 +39,7 @@ namespace KurrentDB.Client {
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Projections.ProjectionsClient(
+			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					Continuous = new CreateReq.Types.Options.Types.Continuous {
@@ -63,7 +64,7 @@ namespace KurrentDB.Client {
 		public async Task CreateTransientAsync(string name, string query, TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
-			using var call = new Projections.ProjectionsClient(
+			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					Transient = new CreateReq.Types.Options.Types.Transient {

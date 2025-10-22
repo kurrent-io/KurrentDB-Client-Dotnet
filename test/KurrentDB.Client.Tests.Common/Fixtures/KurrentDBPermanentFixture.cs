@@ -1,10 +1,6 @@
 // ReSharper disable InconsistentNaming
 
-using System.Net;
-using Ductus.FluentDocker.Builders;
-using Ductus.FluentDocker.Extensions;
-using Ductus.FluentDocker.Services.Extensions;
-using KurrentDB.Client;
+using System.Net.Http;
 using KurrentDB.Client.Tests.FluentDocker;
 using Serilog;
 using static System.TimeSpan;
@@ -13,18 +9,15 @@ namespace KurrentDB.Client.Tests;
 
 [PublicAPI]
 public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposable {
-	static readonly ILogger Logger;
+	static readonly ILogger       Logger;
+	static readonly SemaphoreSlim WarmUpGatekeeper = new(1, 1);
 
 	static KurrentDBPermanentFixture() {
 		Logging.Initialize();
 		Logger = Serilog.Log.ForContext<KurrentDBPermanentFixture>();
 
-#if NET9_0_OR_GREATER
 		var httpClientHandler = new HttpClientHandler();
 		httpClientHandler.ServerCertificateCustomValidationCallback = delegate { return true; };
-#else
-		ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
-#endif
 	}
 
 	public KurrentDBPermanentFixture() : this(options => options) { }
@@ -38,21 +31,18 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 
 	public ILogger Log => Logger;
 
-	public ITestService          Service { get; }
-	public KurrentDBFixtureOptions Options { get; }
-	public Faker                 Faker   { get; } = new Faker();
+	public KurrentDBPermanentTestNode Service { get; }
+	public KurrentDBFixtureOptions    Options { get; }
+	public Faker                      Faker   { get; } = new();
 
-	public Version EventStoreVersion { get; private set; } = null!;
-
-	public bool IsKdb => EventStoreVersion.Major >= 25;
-
-	public bool EventStoreHasLastStreamPosition { get; private set; }
+	public Version DatabaseVersion       { get; private set; } = null!;
+	public bool    HasLastStreamPosition { get; private set; }
 
 	public KurrentDBClient                        Streams       { get; private set; } = null!;
-	public KurrentDBUserManagementClient          DBUsers         { get; private set; } = null!;
-	public KurrentDBProjectionManagementClient    DBProjections   { get; private set; } = null!;
+	public KurrentDBUserManagementClient          DBUsers       { get; private set; } = null!;
+	public KurrentDBProjectionManagementClient    DBProjections { get; private set; } = null!;
 	public KurrentDBPersistentSubscriptionsClient Subscriptions { get; private set; } = null!;
-	public KurrentDBOperationsClient              DBOperations    { get; private set; } = null!;
+	public KurrentDBOperationsClient              DBOperations  { get; private set; } = null!;
 
 	public bool SkipPsWarmUp { get; set; }
 
@@ -75,36 +65,30 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 			DefaultDeadline          = Options.DBClientSettings.DefaultDeadline
 		};
 
-	InterlockedBoolean            WarmUpCompleted { get; } = new InterlockedBoolean();
-	static readonly SemaphoreSlim WarmUpGatekeeper = new(1, 1);
+	InterlockedBoolean WarmUpCompleted { get; } = new();
 
-	public void CaptureTestRun(ITestOutputHelper outputHelper) {
-		var testRunId = Logging.CaptureLogs(outputHelper);
-		TestRuns.Add(testRunId);
-		Logger.Information(">>> Test Run {TestRunId} {Operation} <<<", testRunId, "starting");
-		Service.ReportStatus();
-	}
+	async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
 
 	public async Task InitializeAsync() {
 		await WarmUpGatekeeper.WaitAsync();
 
 		try {
 			await Service.Start();
-			EventStoreVersion               = GetKurrentVersion();
-			EventStoreHasLastStreamPosition = (EventStoreVersion?.Major ?? int.MaxValue) >= 21;
+			DatabaseVersion       = TestContainerService.Version;
+			HasLastStreamPosition = (DatabaseVersion?.Major ?? int.MaxValue) >= 21;
 
 			if (!WarmUpCompleted.CurrentValue) {
 				Logger.Warning("*** Warmup started ***");
 
 				await Task.WhenAll(
 					InitClient<KurrentDBUserManagementClient>(async x => DBUsers = await Task.FromResult(x)),
-					InitClient<KurrentDBClient>(async x => Streams = await Task.FromResult(x)),
+					InitClient<KurrentDBClient>(async x => Streams               = await Task.FromResult(x)),
 					InitClient<KurrentDBProjectionManagementClient>(
 						async x => DBProjections = await Task.FromResult(x),
 						Options.Environment["EVENTSTORE_RUN_PROJECTIONS"] != "None"
 					),
 					InitClient<KurrentDBPersistentSubscriptionsClient>(async x => Subscriptions = SkipPsWarmUp ? x : await Task.FromResult(x)),
-					InitClient<KurrentDBOperationsClient>(async x => DBOperations = await Task.FromResult(x))
+					InitClient<KurrentDBOperationsClient>(async x => DBOperations               = await Task.FromResult(x))
 				);
 
 				WarmUpCompleted.EnsureCalledOnce();
@@ -128,42 +112,6 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 			await action(client);
 			return client;
 		}
-
-		static Version GetKurrentVersion() {
-			const string versionPrefix     = "KurrentDB version";
-			const string esdbVersionPrefix = "EventStoreDB version";
-
-			using var cancellator = new CancellationTokenSource(FromSeconds(30));
-			using var eventstore = new Builder()
-				.UseContainer()
-				.UseImage(GlobalEnvironment.DockerImage)
-				.Command("--version")
-				.Build()
-				.Start();
-
-			using var log = eventstore.Logs(true, cancellator.Token);
-			var logs = log.ReadToEnd();
-			foreach (var line in logs) {
-				Logger.Information("KurrentDB: {Line}", line);
-				if (line.StartsWith(versionPrefix) &&
-				    Version.TryParse(new string(ReadVersion(line[(versionPrefix.Length + 1)..]).ToArray()), out var version)) {
-					return version;
-				}
-				
-				if (line.StartsWith(esdbVersionPrefix) &&
-				    Version.TryParse(new string(ReadVersion(line[(esdbVersionPrefix.Length + 1)..]).ToArray()), out var esdbVersion)) {
-					return esdbVersion;
-				}
-			}
-
-			throw new InvalidOperationException($"Could not determine server version from logs: {string.Join(Environment.NewLine, logs)}");
-
-			IEnumerable<char> ReadVersion(string s) {
-				foreach (var c in s.TakeWhile(c => c == '.' || char.IsDigit(c))) {
-					yield return c;
-				}
-			}
-		}
 	}
 
 	public async Task DisposeAsync() {
@@ -179,7 +127,12 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 			Logging.ReleaseLogs(testRunId);
 	}
 
-	async ValueTask IAsyncDisposable.DisposeAsync() => await DisposeAsync();
+	public void CaptureTestRun(ITestOutputHelper outputHelper) {
+		var testRunId = Logging.CaptureLogs(outputHelper);
+		TestRuns.Add(testRunId);
+		Logger.Information(">>> Test Run {TestRunId} {Operation} <<<", testRunId, "starting");
+		Service.ReportStatus();
+	}
 }
 
 public abstract class KurrentDBPermanentTests<TFixture> : IClassFixture<TFixture> where TFixture : KurrentDBPermanentFixture {

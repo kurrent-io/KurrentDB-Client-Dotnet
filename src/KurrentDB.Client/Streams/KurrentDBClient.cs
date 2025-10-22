@@ -2,10 +2,10 @@ using System.Text.Json;
 using System.Threading.Channels;
 using EventStore.Client;
 using Grpc.Core;
+using KurrentDB.Protocol.Streams.V1;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using ReadReq = EventStore.Client.Streams.ReadReq;
 
 namespace KurrentDB.Client {
 	/// <summary>

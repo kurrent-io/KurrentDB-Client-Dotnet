@@ -1,4 +1,6 @@
-﻿#pragma warning disable CS8321 // Local function is declared but never used
+﻿using System.Text.Json;
+
+#pragma warning disable CS8321 // Local function is declared but never used
 
 var settings = KurrentDBClientSettings.Create("kurrentdb://localhost:2113?tls=false");
 
@@ -6,12 +8,36 @@ settings.OperationOptions.ThrowOnAppendFailure = false;
 
 await using var client = new KurrentDBClient(settings);
 
+await MultiStreamAppend(client);
 await AppendToStream(client);
 await AppendWithConcurrencyCheck(client);
 await AppendWithNoStream(client);
 await AppendWithSameId(client);
 
 return;
+
+static async Task MultiStreamAppend(KurrentDBClient client) {
+	var metadata = JsonSerializer.SerializeToUtf8Bytes(
+		new {
+			TimeStamp = DateTime.UtcNow,
+		}
+	);
+
+	AppendStreamRequest[] requests = [
+		new(
+			"stream-one",
+			StreamState.NoStream,
+			[new EventData(Uuid.NewUuid(), "event-one", "hello"u8.ToArray(), metadata)]
+		),
+		new(
+			"stream-two",
+			StreamState.NoStream,
+			[new EventData(Uuid.NewUuid(), "event-one", "hello"u8.ToArray(), metadata)]
+		)
+	];
+
+	await client.MultiStreamAppendAsync(requests);
+}
 
 static async Task AppendToStream(KurrentDBClient client) {
 	#region append-to-stream
@@ -167,3 +193,5 @@ static async Task AppendOverridingUserCredentials(KurrentDBClient client, Cancel
 
 	#endregion overriding-user-credentials
 }
+
+record Metadata(DateTime TimeStamp);

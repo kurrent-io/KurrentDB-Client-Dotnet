@@ -1,6 +1,6 @@
 #nullable enable
 using EventStore.Client;
-using EventStore.Client.PersistentSubscriptions;
+using static KurrentDB.Protocol.PersistentSubscriptions.V1.PersistentSubscriptions;
 
 namespace KurrentDB.Client {
 	partial class KurrentDBPersistentSubscriptionsClient {
@@ -12,7 +12,7 @@ namespace KurrentDB.Client {
 			
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			if (channelInfo.ServerCapabilities.SupportsPersistentSubscriptionsRestartSubsystem) {
-				await new PersistentSubscriptions.PersistentSubscriptionsClient(channelInfo.CallInvoker)
+				await new PersistentSubscriptionsClient(channelInfo.CallInvoker)
 					.RestartSubsystemAsync(new Empty(), KurrentDBCallOptions
 						.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken))
 					.ConfigureAwait(false);
