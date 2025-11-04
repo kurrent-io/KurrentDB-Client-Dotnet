@@ -1,5 +1,7 @@
 name: Test
 
+run-name: ${{ inputs.correlation-id && format('Dispatch [{0}]', inputs.correlation-id) || 'Test' }}
+
 on:
   workflow_call:
     secrets:
@@ -24,6 +26,44 @@ on:
 
       tag:
         description: "The Docker image tag to use"
+        type: string
+        required: false
+
+      correlation-id:
+        description: "Optional CorrelationId to identify the workflow run"
+        type: string
+        required: false
+
+  workflow_dispatch:
+    inputs:
+      runtime:
+        description: "Runtime to test"
+        required: true
+        type: choice
+        default: ci
+        options:
+          - previous-lts
+          - lts
+          - ci 
+          - qa
+
+      registry:
+        description: "Docker registry to use"
+        type: string
+        required: false
+
+      image:
+        description: "Docker image to use"
+        type: string
+        required: false
+
+      tag:
+        description: "Docker image tag to use"
+        type: string
+        required: false
+
+      correlation-id:
+        description: "Optional CorrelationId to identify the workflow run"
         type: string
         required: false
 
@@ -55,10 +95,24 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Login to Cloudsmith
+      - name: Login to Cloudsmith via docker.cloudsmith.io
+        uses: docker/login-action@v3
+        with:
+          registry: docker.cloudsmith.io
+          username: ${{ secrets.CLOUDSMITH_CICD_USER }}
+          password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
+
+      - name: Login to Cloudsmith via docker.kurrent.io
         uses: docker/login-action@v3
         with:
           registry: docker.kurrent.io
+          username: ${{ secrets.CLOUDSMITH_CICD_USER }}
+          password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
+
+      - name: Login to Cloudsmith via docker.eventstore.com
+        uses: docker/login-action@v3
+        with:
+          registry: docker.eventstore.com
           username: ${{ secrets.CLOUDSMITH_CICD_USER }}
           password: ${{ secrets.CLOUDSMITH_CICD_TOKEN }}
 
