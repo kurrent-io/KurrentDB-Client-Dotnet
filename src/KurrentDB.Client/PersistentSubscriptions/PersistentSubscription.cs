@@ -28,7 +28,7 @@ namespace KurrentDB.Client {
 				.Messages
 				.GetAsyncEnumerator(cancellationToken);
 
-			var result = await enumerator.MoveNextAsync(cancellationToken).ConfigureAwait(false);
+			var result = await enumerator.MoveNextAsync().ConfigureAwait(false);
 
 			return (result, enumerator.Current) switch {
 				(true, PersistentSubscriptionMessage.SubscriptionConfirmation (var subscriptionId)) =>
@@ -118,7 +118,7 @@ namespace KurrentDB.Client {
 			_log.LogDebug("Persistent Subscription {subscriptionId} confirmed.", SubscriptionId);
 
 			try {
-				while (await _enumerator.MoveNextAsync(_cts.Token).ConfigureAwait(false)) {
+				while (await _enumerator.MoveNextAsync().ConfigureAwait(false)) {
 					if (_enumerator.Current is not PersistentSubscriptionMessage.Event(var resolvedEvent, var retryCount)) {
 						continue;
 					}

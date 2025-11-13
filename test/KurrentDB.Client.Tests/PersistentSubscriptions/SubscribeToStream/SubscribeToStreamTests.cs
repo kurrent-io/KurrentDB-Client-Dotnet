@@ -338,8 +338,8 @@ public class SubscribeToStreamTests(ITestOutputHelper output, KurrentDBPermanent
 		await using var subscription = Fixture.Subscriptions.SubscribeToStream(stream, group, userCredentials: TestCredentials.Root);
 		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
 		var retryCount = await subscription.Messages.OfType<PersistentSubscriptionMessage.Event>()
-			.SelectAwait(
-				async e => {
+			.Select(
+				async (PersistentSubscriptionMessage.Event e, CancellationToken _) => {
 					if (e.RetryCount > 4) {
 						await subscription.Ack(e.ResolvedEvent);
 					} else {

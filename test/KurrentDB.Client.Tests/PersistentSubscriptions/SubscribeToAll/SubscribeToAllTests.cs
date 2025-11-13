@@ -209,8 +209,8 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		// Act
 		var subscription = Fixture.Subscriptions.SubscribeToAll(group, userCredentials: TestCredentials.Root);
 		var retryCount = await subscription.Messages.OfType<PersistentSubscriptionMessage.Event>()
-			.SelectAwait(
-				async e => {
+			.Select(
+				async (PersistentSubscriptionMessage.Event e, CancellationToken _) => {
 					if (e.RetryCount > 4) {
 						await subscription.Ack(e.ResolvedEvent);
 					} else {
@@ -430,8 +430,8 @@ public class SubscribeToAllTests(ITestOutputHelper output, KurrentDBPermanentFix
 		}
 
 		await subscription!.Messages.OfType<PersistentSubscriptionMessage.Event>()
-			.SelectAwait(
-				async e => {
+			.Select(
+				async (PersistentSubscriptionMessage.Event e, CancellationToken ct) => {
 					await subscription.Ack(e.ResolvedEvent);
 					return e;
 				}
