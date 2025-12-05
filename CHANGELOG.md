@@ -67,7 +67,7 @@ All notable changes to this project will be documented in this file.
 - Drop support for `netcoreapp3.1` [EventStore-Client-Dotnet#204](https://github.com/EventStore/EventStore-Client-Dotnet/pull/204)
 
 ### Added
-- Allow channels to open extra connections if they reach the max streams per connection limit (i.e. too may concurrent grpc calls- 100 by default) [EventStore-Client-Dotnet#21q8](https://github.com/EventStore/EventStore-Client-Dotnet/pull/218)
+- Allow channels to open extra connections if they reach the max streams per connection limit (i.e. too may concurrent grpc calls- 100 by default) [EventStore-Client-Dotnet#218](https://github.com/EventStore/EventStore-Client-Dotnet/pull/218)
 - Correct the error message when deleting a stream using gRPC. [EventStore-Client-Dotnet#221](https://github.com/EventStore/EventStore-Client-Dotnet/pull/221)
 - Support `List()` over gRPC for listing persistent subscriptions [EventStore-Client-Dotnet#180](https://github.com/EventStore/EventStore-Client-Dotnet/pull/180)
 - Support `ReplayParked()` over gRPC for replaying parked messages [EventStore-Client-Dotnet#180](https://github.com/EventStore/EventStore-Client-Dotnet/pull/180)
