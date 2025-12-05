@@ -1,8 +1,13 @@
 # Changelog
 
+This changelog is for the EventStoreDB client. For the KurrentDB client release notes, please visit: https://github.com/kurrent-io/KurrentDB-Client-Dotnet/releases
+
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [23.1.0] - 2023-08-22
+
+### Added
+- Support authenticated gossip read request (DB-305) [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/253)
 
 ## [23.0.0] - 2023-02-08
 
