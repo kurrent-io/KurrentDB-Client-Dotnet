@@ -85,7 +85,7 @@ All notable changes to this project will be documented in this file.
 
 ### Breaking Changes
 - Remove autoAck from Persistent Subscriptions [EventStore-Client-DotNet#175](https://github.com/EventStore/EventStore-Client-Dotnet/pull/175)
-- Adjustments to Disposal [EventStore-Client-DotNet#189](https://github.com/EventStore/EventStore-Client-Dotnet/pull/189)- 
+- Adjustments to Disposal [EventStore-Client-DotNet#189](https://github.com/EventStore/EventStore-Client-Dotnet/pull/189)
 - Rename SoftDeleteAsync to DeleteAsync [EventStore-Client-DotNet#197](https://github.com/EventStore/EventStore-Client-Dotnet/pull/197)
 - Standardize gRPC Client Deadlines [EventStore-Client-DotNet#194](https://github.com/EventStore/EventStore-Client-Dotnet/pull/194)
 
