@@ -1,8 +1,64 @@
 # Changelog
 
+This changelog is for the EventStoreDB client. For the KurrentDB client release notes, please visit: https://github.com/kurrent-io/KurrentDB-Client-Dotnet/releases
+
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [23.3.0] - 2024-07-24
+
+### Added
+- DEV-303 - Support providing an x.509 certificate for user authentication [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/295)
+
+### Changed
+- Update bouncy castle to 2.3.1 [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/306)
+
+### Fixed
+- Fix StreamType/EventType filtering cases [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/309)
+- Fix tracing injection when event is non-JSON [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/317)
+- Fix check for parent context when extract propagation context fails [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/319)
+- Fix channel factory to use root ca if provided [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/325)
+- fix: unnecessary http message handler invocation [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/344)
+
+### Other
+- DEV-297 - Add tracing instrumentation of Append & Subscribe operations [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/294)
+- ESDB-147-8 - Move to Cloudsmith docker registry [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/288)
+- DEV-45-2 - Pull es-gencert-cli from Cloudsmith [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/298)
+- DEV-47 - Retain callback-based subscription APIs alongside AsyncEnumerable APIs [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/297)
+- Add OTel and User certificates samples [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/307)
+- Add missing endregion marker in samples [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/308)
+- DB-29-22 - Make CI Test Action More Configurable [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/300)
+- Tracing improvements [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/311)
+- Bump System.Text.Json from 8.0.3 to 8.0.4 in /src/EventStore.Client [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/315)
+- Bumped assembly copyright range end from 2020 to current year [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/318)
+- Account for nullable events [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/324)
+- Add github automated release configuration [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/327)
+- Account for standard ports when collecting tags [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/328)
+- Clarify server side filtering sample and align with docs [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/330)
+- Docs for legacy v23.3 [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/359)
+
+## [23.2.0] - 2024-05-04
+
+### Added
+- .Net 8.0 Support [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/275)
+- .NET 4.8 support [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/267)
+- Add certificate in http fallback handler [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/289)
+- Subscriptions Without Callbacks (DEV-112) [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/282)
+- DEV-92 - Add missing option tlsCAFile [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/281)
+- Add filtering to non-subscription reads of $all [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/278)
+
+### Fixed
+- DEV-125 - Fix partial append on error append to stream [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/283)
+- DEV-266 - Return null for discovery mode or multiple hosts in connection string [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/280)
+- Decode Base64 usernames/passwords as UTF-8 strings [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/269)
+
+### Other
+- Read semantic versions when reading server version [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/287)
+- Update CI badges [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/262)
+
+## [23.1.0] - 2023-08-22
+
+### Added
+- Support authenticated gossip read request (DB-305) [View](https://github.com/kurrent-io/KurrentDB-Client-Dotnet/pull/253)
 
 ## [23.0.0] - 2023-02-08
 
