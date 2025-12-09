@@ -38,14 +38,21 @@ namespace KurrentDB.Protocol.Streams.V1 {
 			_ => throw new InvalidOperationException()
 		};
 
-		private static WrongExpectedVersionResult FromWrongExpectedVersion(StreamIdentifier streamIdentifier,
-			WrongExpectedVersion wrongExpectedVersion) => new(streamIdentifier!,
+		private static WrongExpectedVersionResult FromWrongExpectedVersion(
+			StreamIdentifier streamIdentifier,
+			WrongExpectedVersion wrongExpectedVersion
+		) => new(
+			streamIdentifier!,
 			wrongExpectedVersion.ExpectedStreamPositionOptionCase switch {
 				ExpectedStreamPosition => wrongExpectedVersion.ExpectedStreamPosition,
-				_ => StreamState.Any,
-			}, wrongExpectedVersion.CurrentStreamRevisionOptionCase switch {
+				ExpectedStreamExists   => StreamState.StreamExists,
+				ExpectedNoStream       => StreamState.NoStream,
+				_                      => StreamState.Any,
+			},
+			wrongExpectedVersion.CurrentStreamRevisionOptionCase switch {
 				CurrentStreamRevision => wrongExpectedVersion.CurrentStreamRevision,
-				_ => StreamState.NoStream,
-			});
+				_                     => StreamState.NoStream,
+			}
+		);
 	}
 }
