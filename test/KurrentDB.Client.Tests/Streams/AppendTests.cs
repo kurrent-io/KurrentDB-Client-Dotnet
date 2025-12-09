@@ -6,6 +6,97 @@ namespace KurrentDB.Client.Tests.Streams;
 [Trait("Category", "Target:Streams")]
 [Trait("Category", "Operation:Append")]
 public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fixture) : KurrentDBPermanentTests<KurrentDBPermanentFixture>(output, fixture) {
+	[RetryFact]
+	public async Task throws_when_stream_does_not_exist_but_expected_to_exist() {
+		var stream = Fixture.GetStreamName();
+
+		var ex = await Fixture.Streams
+			.AppendToStreamAsync(stream, StreamState.StreamExists, Fixture.CreateTestEvents())
+			.ShouldThrowAsync<WrongExpectedVersionException>();
+
+		ex.ActualStreamState.ShouldBe(StreamState.NoStream);
+		ex.ActualVersion.ShouldBe(StreamState.NoStream.ToInt64());
+
+		ex.ExpectedStreamState.ShouldBe(StreamState.StreamExists);
+		ex.ExpectedVersion.ShouldBe(StreamState.StreamExists.ToInt64());
+	}
+
+	[RetryFact]
+	public async Task throws_when_stream_exists_but_expected_no_stream() {
+		var stream = Fixture.GetStreamName();
+
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents());
+
+		var ex = await Fixture.Streams
+			.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents())
+			.ShouldThrowAsync<WrongExpectedVersionException>();
+
+		ex.ActualStreamState.ShouldBe(StreamState.StreamRevision(0));
+		ex.ActualVersion.ShouldBe(StreamState.StreamRevision(0).ToInt64());
+
+		ex.ExpectedStreamState.ShouldBe(StreamState.NoStream);
+		ex.ExpectedVersion.ShouldBe(StreamState.NoStream.ToInt64());
+	}
+
+	[RetryFact]
+	public async Task returns_next_expected_stream_state_on_success() {
+		var stream = Fixture.GetStreamName();
+
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents(3));
+
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.StreamRevision(2),
+			Fixture.CreateTestEvents(),
+			options => { options.ThrowOnAppendFailure = false; }
+		);
+
+		Assert.Equal(StreamState.StreamRevision(3), writeResult.NextExpectedStreamState);
+	}
+
+	[RetryFact]
+	public async Task returns_wrong_expected_version_when_stream_does_not_exist_but_expected_to_exist() {
+		var stream = Fixture.GetStreamName();
+
+		var writeResult = await Fixture.Streams.AppendToStreamAsync(
+			stream,
+			StreamState.StreamExists,
+			Fixture.CreateTestEvents(),
+			options => { options.ThrowOnAppendFailure = false; }
+		);
+
+		var wrongExpectedVersionResult = Assert.IsType<WrongExpectedVersionResult>(writeResult);
+
+		Assert.Equal(StreamState.NoStream.ToInt64(), wrongExpectedVersionResult.ActualVersion);
+		Assert.Equal(StreamState.NoStream, wrongExpectedVersionResult.ActualStreamState);
+
+		Assert.Equal(StreamState.StreamExists, wrongExpectedVersionResult.NextExpectedStreamState);
+		Assert.Equal(StreamState.StreamExists.ToInt64(), wrongExpectedVersionResult.NextExpectedVersion);
+	}
+
+	[RetryFact]
+	public async Task returns_wrong_expected_version_when_stream_exists_but_expected_no_stream() {
+		var stream = Fixture.GetStreamName();
+
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents(2));
+
+		var writeResult = await Fixture.Streams
+			.AppendToStreamAsync(
+				stream,
+				StreamState.NoStream,
+				Fixture.CreateTestEvents(),
+				options => { options.ThrowOnAppendFailure = false; }
+			);
+
+		var wrongExpectedVersionResult = Assert.IsType<WrongExpectedVersionResult>(writeResult);
+
+		Assert.Equal(StreamState.StreamRevision(1).ToInt64(), wrongExpectedVersionResult.ActualVersion);
+		Assert.Equal(StreamState.StreamRevision(1), wrongExpectedVersionResult.ActualStreamState);
+
+		Assert.Equal(StreamState.NoStream, wrongExpectedVersionResult.NextExpectedStreamState);
+		Assert.Equal(StreamState.NoStream.ToInt64(), wrongExpectedVersionResult.NextExpectedVersion);
+	}
+
 	[Theory, ExpectedVersionCreateStreamTestCases]
 	public async Task appending_zero_events(StreamState expectedStreamState) {
 		var stream = $"{Fixture.GetStreamName()}_{expectedStreamState}";
@@ -281,35 +372,6 @@ public class AppendTests(ITestOutputHelper output, KurrentDBPermanentFixture fix
 			StreamState.StreamExists,
 			Fixture.CreateTestEvents()
 		);
-	}
-
-	[RetryFact]
-	public async Task
-		appending_with_stream_exists_expected_version_and_stream_does_not_exist_throws_wrong_expected_version() {
-		var stream = Fixture.GetStreamName();
-
-		var ex = await Fixture.Streams
-			.AppendToStreamAsync(stream, StreamState.StreamExists, Fixture.CreateTestEvents())
-			.ShouldThrowAsync<WrongExpectedVersionException>();
-
-		ex.ActualStreamState.ShouldBe(StreamState.NoStream);
-	}
-
-	[RetryFact]
-	public async Task
-		appending_with_stream_exists_expected_version_and_stream_does_not_exist_returns_wrong_expected_version() {
-		var stream = Fixture.GetStreamName();
-
-		var writeResult = await Fixture.Streams.AppendToStreamAsync(
-			stream,
-			StreamState.StreamExists,
-			Fixture.CreateTestEvents(),
-			options => { options.ThrowOnAppendFailure = false; }
-		);
-
-		var wrongExpectedVersionResult = Assert.IsType<WrongExpectedVersionResult>(writeResult);
-
-		Assert.Equal(StreamState.Any, wrongExpectedVersionResult.NextExpectedStreamState);
 	}
 
 	[RetryFact]

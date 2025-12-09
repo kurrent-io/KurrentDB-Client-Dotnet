@@ -1,4 +1,3 @@
-using System;
 using Grpc.Core;
 using KurrentDB.Protocol.V2.Streams.Errors;
 
@@ -24,7 +23,7 @@ namespace KurrentDB.Client {
 		public long? ActualVersion { get; }
 
 		/// <summary>
-		/// The current <see cref="StreamRevision" /> of the stream that the operation was attempted on.
+		/// The current <see cref="StreamState" /> of the stream that the operation was attempted on.
 		/// </summary>
 		public StreamState ActualStreamState { get; }
 
