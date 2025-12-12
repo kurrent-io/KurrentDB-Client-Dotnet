@@ -68,7 +68,7 @@ When connecting to an insecure instance, specify `tls=false` parameter. For exam
 First, create a client and get it connected to the database.
 
 ```cs
-var client = new EventStoreClient(EventStoreClientSettings.Create("kurrentdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false"));
+var client = new KurentDBClient(KurentDBClientSettings.Create("kurrentdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false"));
 ```
 
 The client instance can be used as a singleton across the whole application. It doesn't need to open or close the connection.

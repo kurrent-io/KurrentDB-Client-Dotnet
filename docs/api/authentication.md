@@ -35,9 +35,9 @@ To authenticate, include these two parameters in your connection string or const
 const string userCertFile = "/path/to/user.crt";
 const string userKeyFile  = "/path/to/user.key";
 
-var settings = EventStoreClientSettings.Create(
+var settings = KurentDBClientSettings.Create(
   $"kurrentdb://localhost:2113/?tls=true&tlsVerifyCert=true&userCertFile={userCertFile}&userKeyFile={userKeyFile}"
 );
 
-await using var client = new EventStoreClient(settings);
+await using var client = new KurentDBClient(settings);
 ```
