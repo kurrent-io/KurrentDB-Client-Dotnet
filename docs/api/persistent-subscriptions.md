@@ -14,7 +14,7 @@ You can read more about persistent subscriptions in the [server documentation](@
 
 ## Creating a client
 
-To work with persistent subscriptions, you need to create an instance of the `EventStorePersistentSubscriptionsClient`. This client is used to manage persistent subscriptions, including creating, updating, and deleting subscription groups.
+To work with persistent subscriptions, you need to create an instance of the `KurentDBPersistentSubscriptionsClient`. This client is used to manage persistent subscriptions, including creating, updating, and deleting subscription groups.
 
 ```cs
 await using var client = new KurrentDBPersistentSubscriptionsClient(
