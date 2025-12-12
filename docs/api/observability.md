@@ -10,13 +10,7 @@ store operations with distributed tracing support.
 
 ## Prerequisites
 
-Install the required OpenTelemetry package from NuGet:
-
-```bash
-dotnet add package EventStore.Client.Extensions.OpenTelemetry
-```
-
-You'll also need to install exporters for your chosen observability platform:
+You'll need to install exporters for your chosen observability platform:
 
 ```bash
 # For console output
@@ -34,11 +28,11 @@ dotnet add package Seq.Extensions.Logging
 
 ## Basic Configuration
 
-Configure instrumentation using the `AddEventStoreClientInstrumentation()`
+Configure instrumentation using the `AddKurentDBClientInstrumentation()`
 extension method. Here's a minimal setup:
 
 ```cs {15}
-using EventStore.Client.Extensions.OpenTelemetry;
+using KurrentDB.Client.Extensions.OpenTelemetry;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry.Resources;
@@ -52,7 +46,7 @@ var host = Host.CreateDefaultBuilder()
         services.AddOpenTelemetry()
             .ConfigureResource(builder => builder.AddService(serviceName))
             .WithTracing(tracerBuilder => tracerBuilder
-                .AddEventStoreClientInstrumentation()
+                .AddKurrentDBClientInstrumentation()
                 .AddConsoleExporter()
             );
     })
@@ -78,7 +72,7 @@ var host = Host.CreateDefaultBuilder()
         services.AddOpenTelemetry()
             .ConfigureResource(builder => builder.AddService("my-eventstore-app"))
             .WithTracing(tracerBuilder => tracerBuilder
-                .AddEventStoreClientInstrumentation()
+                .AddKurrentDBClientInstrumentation()
                 .AddConsoleExporter()
                 .AddJaegerExporter(options =>
                 {
@@ -132,16 +126,16 @@ Here's an example trace from a stream append operation:
 Activity.TraceId:            8da04787239dbb85c1f9c6fba1b1f0d6
 Activity.SpanId:             4352ec4a66a20b95
 Activity.TraceFlags:         Recorded
-Activity.ActivitySourceName: eventstoredb
+Activity.ActivitySourceName: kurrentdb
 Activity.DisplayName:        streams.append
 Activity.Kind:               Client
 Activity.StartTime:          2024-05-29T06:50:41.2519016Z
 Activity.Duration:           00:00:00.1500707
 Activity.Tags:
-    db.eventstoredb.stream: example-stream
+    db.kurrentdb.stream: example-stream
     server.address: localhost
     server.port: 2113
-    db.system: eventstoredb
+    db.system: kurrentdb
     db.operation: streams.append
     event.count: 3
 StatusCode: Ok
