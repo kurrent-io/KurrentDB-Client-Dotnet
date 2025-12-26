@@ -335,4 +335,113 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 			}
 		}
 	}
+
+	[Fact]
+	public async Task append_with_user_provided_tracing_context_preserves_metadata_values() {
+		// Arrange
+		var stream = Fixture.GetStreamName();
+
+		var userTraceId = ActivityTraceId.CreateRandom().ToString();
+		var userSpanId = ActivitySpanId.CreateRandom().ToString();
+
+		var metadataWithTracing = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new Dictionary<string, string> {
+			{ "$traceId", userTraceId },
+			{ "$spanId", userSpanId },
+			{ "customProperty", "customValue" }
+		});
+
+		var events = new[] {
+			new EventData(Uuid.NewUuid(), "test-event", "{\"data\":1}"u8.ToArray(), metadataWithTracing)
+		};
+
+		// Act
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
+
+		// Assert
+		var readResult = await Fixture.Streams
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+			.ToListAsync();
+
+		var storedMetadata = readResult[0].OriginalEvent.Metadata.ExtractTracingMetadata();
+
+		storedMetadata.TraceId.ShouldBe(userTraceId);
+		storedMetadata.SpanId.ShouldBe(userSpanId);
+	}
+
+	[MinimumVersion.Fact(25, 1)]
+	public async Task multi_append_with_user_provided_tracing_context_preserves_metadata_values() {
+		// Arrange
+		var stream1 = Fixture.GetStreamName();
+		var stream2 = Fixture.GetStreamName();
+
+		var userTraceId = ActivityTraceId.CreateRandom().ToString();
+		var userSpanId = ActivitySpanId.CreateRandom().ToString();
+
+		var metadataWithTracing = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new Dictionary<string, string> {
+			{ "$traceId", userTraceId },
+			{ "$spanId", userSpanId },
+			{ "customProperty", "customValue" }
+		});
+
+		var events1 = new[] {
+			new EventData(Uuid.NewUuid(), "test-event", "{\"data\":1}"u8.ToArray(), metadataWithTracing)
+		};
+		var events2 = Fixture.CreateTestEvents(1, metadata: Fixture.CreateTestJsonMetadata()).ToArray();
+
+		AppendStreamRequest[] requests = [
+			new(stream1, StreamState.NoStream, events1),
+			new(stream2, StreamState.NoStream, events2)
+		];
+
+		// Act
+		await Fixture.Streams.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
+
+		// Assert
+		var readResult = await Fixture.Streams
+			.ReadStreamAsync(Direction.Forwards, stream1, StreamPosition.Start)
+			.ToListAsync();
+
+		var storedMetadata = readResult[0].OriginalEvent.Metadata.ExtractTracingMetadata();
+
+		storedMetadata.TraceId.ShouldBe(userTraceId);
+		storedMetadata.SpanId.ShouldBe(userSpanId);
+	}
+
+	[Fact]
+	public async Task append_with_partial_tracing_context_overwrites_with_client_values() {
+		// Arrange
+		var stream = Fixture.GetStreamName();
+		var traceId = Fixture.CreateTraceId();
+
+		var userTraceId = ActivityTraceId.CreateRandom().ToString();
+
+		var metadataWithPartialTracing = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new Dictionary<string, string> {
+			{ "$traceId", userTraceId },
+			{ "customProperty", "customValue" }
+		});
+
+		var events = new[] {
+			new EventData(Uuid.NewUuid(), "test-event", "{\"data\":1}"u8.ToArray(), metadataWithPartialTracing)
+		};
+
+		// Act
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, events);
+
+		// Assert
+		var readResult = await Fixture.Streams
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start)
+			.ToListAsync();
+
+		var storedMetadata = readResult[0].OriginalEvent.Metadata.ExtractTracingMetadata();
+
+		storedMetadata.TraceId.ShouldNotBe(userTraceId);
+		storedMetadata.IsValid.ShouldBeTrue();
+
+		var appendActivities = Fixture.GetActivities(TracingConstants.Operations.Append, traceId);
+		appendActivities.ShouldNotBeEmpty();
+
+		var activity = appendActivities.First();
+		storedMetadata.TraceId.ShouldBe(activity.TraceId.ToString());
+		storedMetadata.SpanId.ShouldBe(activity.SpanId.ToString());
+	}
 }

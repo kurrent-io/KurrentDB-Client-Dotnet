@@ -10,6 +10,10 @@ static class EventMetadataExtensions {
 	public static void InjectTracingContext(this Dictionary<string, string> metadata, Activity? activity) {
 		if (!KurrentDBClientDiagnostics.ActivitySource.HasListeners() || activity is null) return;
 
+		if (metadata.ContainsKey(TracingConstants.Metadata.TraceId) &&
+		    metadata.ContainsKey(TracingConstants.Metadata.SpanId))
+			return;
+
 		metadata[TracingConstants.Metadata.TraceId] = activity.TraceId.ToString();
 		metadata[TracingConstants.Metadata.SpanId]  = activity.SpanId.ToString();
 	}
@@ -72,13 +76,28 @@ static class EventMetadataExtensions {
 			if (doc.RootElement.ValueKind != JsonValueKind.Object)
 				return utf8Json;
 
-			foreach (var prop in doc.RootElement.EnumerateObject())
-				prop.WriteTo(writer);
+			var hasTraceId = false;
+			var hasSpanId  = false;
 
-			writer.WritePropertyName(TracingConstants.Metadata.TraceId);
-			writer.WriteStringValue(tracingMetadata.TraceId);
-			writer.WritePropertyName(TracingConstants.Metadata.SpanId);
-			writer.WriteStringValue(tracingMetadata.SpanId);
+			foreach (var prop in doc.RootElement.EnumerateObject()) {
+				if (prop.NameEquals(TracingConstants.Metadata.TraceId)) {
+					hasTraceId = true;
+				} else if (prop.NameEquals(TracingConstants.Metadata.SpanId)) {
+					hasSpanId = true;
+				}
+
+				prop.WriteTo(writer);
+			}
+
+			// Only inject client tracing context if BOTH properties are missing.
+			// If both exist, we've already written the user-provided values above.
+			// If only one exists (partial), inject both client values (overwriting the partial).
+			if (!hasTraceId || !hasSpanId) {
+				writer.WritePropertyName(TracingConstants.Metadata.TraceId);
+				writer.WriteStringValue(tracingMetadata.TraceId);
+				writer.WritePropertyName(TracingConstants.Metadata.SpanId);
+				writer.WriteStringValue(tracingMetadata.SpanId);
+			}
 
 			writer.WriteEndObject();
 			writer.Flush();
