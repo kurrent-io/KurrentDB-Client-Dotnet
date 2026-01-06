@@ -10,8 +10,11 @@ static class EventMetadataExtensions {
 	public static void InjectTracingContext(this Dictionary<string, string> metadata, Activity? activity) {
 		if (!KurrentDBClientDiagnostics.ActivitySource.HasListeners() || activity is null) return;
 
-		metadata[TracingConstants.Metadata.TraceId] = activity.TraceId.ToString();
-		metadata[TracingConstants.Metadata.SpanId]  = activity.SpanId.ToString();
+		if (!metadata.ContainsKey(TracingConstants.Metadata.TraceId))
+			metadata[TracingConstants.Metadata.TraceId] = activity.TraceId.ToString();
+
+		if (!metadata.ContainsKey(TracingConstants.Metadata.SpanId))
+			metadata[TracingConstants.Metadata.SpanId] = activity.SpanId.ToString();
 	}
 
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -67,18 +70,29 @@ static class EventMetadataExtensions {
 			using var stream = new MemoryStream();
 			using var writer = new Utf8JsonWriter(stream);
 
-			writer.WriteStartObject();
-
 			if (doc.RootElement.ValueKind != JsonValueKind.Object)
 				return utf8Json;
+
+			var hasTraceId = doc.RootElement.TryGetProperty(TracingConstants.Metadata.TraceId, out _);
+			var hasSpanId  = doc.RootElement.TryGetProperty(TracingConstants.Metadata.SpanId, out _);
+
+			if (hasTraceId && hasSpanId)
+				return utf8Json;
+
+			writer.WriteStartObject();
 
 			foreach (var prop in doc.RootElement.EnumerateObject())
 				prop.WriteTo(writer);
 
-			writer.WritePropertyName(TracingConstants.Metadata.TraceId);
-			writer.WriteStringValue(tracingMetadata.TraceId);
-			writer.WritePropertyName(TracingConstants.Metadata.SpanId);
-			writer.WriteStringValue(tracingMetadata.SpanId);
+			if (!hasTraceId) {
+				writer.WritePropertyName(TracingConstants.Metadata.TraceId);
+				writer.WriteStringValue(tracingMetadata.TraceId);
+			}
+
+			if (!hasSpanId) {
+				writer.WritePropertyName(TracingConstants.Metadata.SpanId);
+				writer.WriteStringValue(tracingMetadata.SpanId);
+			}
 
 			writer.WriteEndObject();
 			writer.Flush();
