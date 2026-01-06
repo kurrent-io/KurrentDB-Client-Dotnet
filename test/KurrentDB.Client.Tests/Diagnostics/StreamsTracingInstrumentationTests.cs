@@ -1,10 +1,12 @@
 // ReSharper disable AccessToDisposedClosure
 
 using System.Diagnostics;
+using System.Text.Json;
 using KurrentDB.Client.Diagnostics;
 using KurrentDB.Client.Tests.Fixtures;
 using KurrentDB.Diagnostics.Telemetry;
 using KurrentDB.Diagnostics.Tracing;
+using static KurrentDB.Diagnostics.Tracing.TracingConstants;
 
 namespace KurrentDB.Client.Tests.Diagnostics;
 
@@ -201,6 +203,34 @@ public class StreamsTracingInstrumentationTests(ITestOutputHelper output, Diagno
 
 		var outputMetadata = readResult[0].OriginalEvent.Metadata.ToArray();
 		outputMetadata.ShouldBe(inputMetadata);
+	}
+
+	[Fact]
+	public async Task tracing_context_not_duplicated_when_already_present() {
+		// Arrange
+		var stream = Fixture.GetStreamName();
+
+		using var activity = new Activity(Guid.NewGuid().ToString("N"));
+		activity.Start();
+
+		var metadata = new Dictionary<string, string> {
+			[Metadata.TraceId] = activity.TraceId.ToString(),
+			[Metadata.SpanId]  = activity.SpanId.ToString()
+		};
+
+		// Act
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents(metadata: JsonSerializer.SerializeToUtf8Bytes(metadata)));
+
+		// Assert
+		var result = await Fixture.Streams
+			.ReadStreamAsync(Direction.Forwards, stream, StreamPosition.Start, maxCount: 1)
+			.ToListAsync();
+
+		var tracingMetadata = result.First().OriginalEvent.Metadata.ExtractTracingMetadata();
+
+		tracingMetadata.ShouldNotBe(TracingMetadata.None);
+		tracingMetadata.TraceId.ShouldBe(activity.TraceId.ToString());
+		tracingMetadata.SpanId.ShouldBe(activity.SpanId.ToString());
 	}
 
 	[Fact]
