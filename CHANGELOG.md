@@ -1,8 +1,10 @@
 # Changelog
 
-This changelog is for the EventStoreDB client. For the KurrentDB client release notes, please visit: https://github.com/kurrent-io/KurrentDB-Client-Dotnet/releases
+## Latest Release Notes has Moved
 
-All notable changes to this project will be documented in this file.
+For the latest release notes, please visit: https://github.com/kurrent-io/KurrentDB-Client-Dotnet/releases
+
+This file only contains the EventStoreDB client prior to the 2025 Kurrent rebrand.
 
 ## [23.3.0] - 2024-07-24
 
