@@ -2,33 +2,104 @@
 
 Comprehensive reference for the `KurrentDB.Client` NuGet package.
 
-## Connection String Parameters
+## Connection String
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `tls` | bool | `true` | Enable TLS encryption |
-| `tlsVerifyCert` | bool | `true` | Verify server TLS certificate |
-| `tlsCaFile` | string | — | Path to CA certificate file for custom CAs |
-| `connectionName` | string | — | Identifies the client in server logs |
-| `defaultDeadline` | int | `10000` | Default operation timeout in milliseconds |
-| `keepAliveInterval` | int | `10000` | gRPC keep-alive ping interval (ms), `-1` for infinite |
-| `keepAliveTimeout` | int | `10000` | gRPC keep-alive timeout (ms), `-1` for infinite |
-| `nodePreference` | string | `leader` | Preferred node: `leader`, `follower`, `random`, `readonlyreplica` |
-| `maxDiscoverAttempts` | int | `10` | Maximum gossip discovery attempts |
-| `discoveryInterval` | int | `100` | Gossip discovery polling interval (ms) |
-| `gossipTimeout` | int | `5000` | Gossip request timeout (ms) |
-| `throwOnAppendFailure` | bool | `true` | Throw on append failure vs return `WrongExpectedVersionResult` |
-| `userCertFile` | string | — | Path to user certificate PEM file (certificate auth) |
-| `userKeyFile` | string | — | Path to user private key PEM file (certificate auth) |
+### Format
 
-**Connection string format:**
 ```
 scheme://[user:password@]host[:port][,host[:port]...][?key=value[&key=value...]]
 ```
 
-**Supported schemes:** `esdb`, `esdb+discover`, `kdb`, `kdb+discover`, `kurrent`, `kurrent+discover`, `kurrentdb`, `kurrentdb+discover`
+Default port is `2113`. Parameters are case-insensitive. Duplicate keys are not allowed and will throw `DuplicateKeyException`.
 
-The `+discover` suffix enables cluster gossip discovery. Without it, the client connects directly to the specified node(s).
+### Supported Schemes
+
+All schemes are functionally equivalent — they differ only in name:
+
+| Scheme | Discovery Variant | Notes |
+|--------|------------------|-------|
+| `esdb` | `esdb+discover` | Original EventStoreDB scheme, still fully supported |
+| `kdb` | `kdb+discover` | Short alias |
+| `kurrent` | `kurrent+discover` | Alias |
+| `kurrentdb` | `kurrentdb+discover` | Canonical KurrentDB scheme |
+
+Without `+discover`, the client connects directly to the specified node(s). With `+discover`, the client uses gossip-based discovery to find cluster members — required for clusters, optional for single nodes.
+
+**Single node vs cluster:** When one host is provided without `+discover`, the client treats it as a single-node direct connection. When multiple hosts are provided, or `+discover` is used, hosts are treated as gossip seeds for cluster discovery.
+
+### Parameters
+
+#### TLS & Security
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `tls` | bool | `true` | Enable TLS encryption. Set to `false` for insecure (unencrypted) connections. Maps to `ConnectivitySettings.Insecure` (inverted). |
+| `tlsVerifyCert` | bool | `true` | Verify the server's TLS certificate chain. Set to `false` to accept self-signed certificates (development only). Maps to `ConnectivitySettings.TlsVerifyCert`. |
+| `tlsCaFile` | string | — | Absolute or relative path to a CA certificate file (PEM or DER). Used to trust a private CA. Throws `InvalidClientCertificateException` if the file doesn't exist or has an invalid format. Maps to `ConnectivitySettings.TlsCaFile`. |
+| `userCertFile` | string | — | Path to client certificate PEM file for certificate-based authentication (server 24.6+). **Must** be paired with `userKeyFile`. Maps to `ConnectivitySettings.ClientCertificate`. |
+| `userKeyFile` | string | — | Path to client private key PEM file. **Must** be paired with `userCertFile`. Throws `InvalidClientCertificateException` if only one is set or files don't exist. |
+
+#### Timeouts & Keep-Alive
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `defaultDeadline` | int | `10000` | Default timeout for all operations, in milliseconds. Maps to `DefaultDeadline`. |
+| `keepAliveInterval` | int | `10000` | gRPC keep-alive ping interval in milliseconds. Use `-1` for infinite (disable pings). Must be `>= 0` or `-1`. Maps to `ConnectivitySettings.KeepAliveInterval`. |
+| `keepAliveTimeout` | int | `10000` | gRPC keep-alive ping timeout in milliseconds. If a ping response is not received within this time, the connection is considered dead. Use `-1` for infinite. Must be `>= 0` or `-1`. Maps to `ConnectivitySettings.KeepAliveTimeout`. |
+
+#### Cluster Discovery
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `nodePreference` | string | `leader` | Preferred node type for operations. Values: `leader` (write-capable node), `follower` (read-optimized, redirects writes), `random` (any node), `readonlyreplica` (read-only replica node). Maps to `ConnectivitySettings.NodePreference`. |
+| `maxDiscoverAttempts` | int | `10` | Maximum number of gossip discovery attempts before throwing `DiscoveryException`. Maps to `ConnectivitySettings.MaxDiscoverAttempts`. |
+| `discoveryInterval` | int | `100` | Interval between discovery attempts, in milliseconds. Maps to `ConnectivitySettings.DiscoveryInterval`. |
+| `gossipTimeout` | int | `5000` | Timeout for a single gossip request, in milliseconds. Maps to `ConnectivitySettings.GossipTimeout`. |
+
+#### Client Behavior
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `connectionName` | string | — | A name identifying this client connection in server logs and diagnostics. Maps to `ConnectionName`. |
+| `throwOnAppendFailure` | bool | `true` | When `true`, `AppendToStreamAsync` throws `WrongExpectedVersionException` on concurrency conflicts. When `false`, it returns a `WrongExpectedVersionResult` instead, allowing non-exception control flow. Maps to `OperationOptions.ThrowOnAppendFailure`. |
+
+### Examples
+
+```
+# Insecure local development
+kurrentdb://localhost:2113?tls=false
+
+# With credentials, TLS enabled, skip cert verification
+kurrentdb://admin:changeit@localhost:2113?tls=true&tlsVerifyCert=false
+
+# Cluster discovery with follower preference
+kurrentdb+discover://admin:changeit@node1:2113,node2:2113,node3:2113?nodePreference=follower&maxDiscoverAttempts=5
+
+# Custom CA certificate
+kurrentdb://admin:changeit@localhost:2113?tls=true&tlsCaFile=/path/to/ca.crt
+
+# Client certificate authentication (no user:pass needed)
+kurrentdb://localhost:2113?tls=true&userCertFile=/path/to/user.crt&userKeyFile=/path/to/user.key
+
+# Named connection with custom timeouts
+kurrentdb://admin:changeit@localhost:2113?connectionName=order-service&defaultDeadline=30000&keepAliveInterval=5000
+
+# Non-throwing append failures
+kurrentdb://admin:changeit@localhost:2113?throwOnAppendFailure=false
+```
+
+### Parsing Errors
+
+| Exception | Cause |
+|-----------|-------|
+| `NoSchemeException` | Connection string has no `://` separator |
+| `InvalidSchemeException` | Scheme is not one of the 8 supported values |
+| `InvalidHostException` | Malformed host (empty, non-numeric port) |
+| `InvalidUserCredentialsException` | User info is not in `user:password` format |
+| `InvalidKeyValuePairException` | Query parameter is not in `key=value` format |
+| `DuplicateKeyException` | Same parameter key appears more than once |
+| `InvalidSettingException` | Unknown parameter name, or value has wrong type (e.g., non-integer for `maxDiscoverAttempts`) |
+| `InvalidClientCertificateException` | Certificate/key file not found, invalid format, or only one of `userCertFile`/`userKeyFile` provided |
 
 ## KurrentDBClientSettings
 
