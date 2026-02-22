@@ -1,0 +1,5 @@
+{
+  "name": "kurrentdb-dotnet",
+  "description": "KurrentDB .NET Client SDK guidance — connection setup, event appending/reading, subscriptions, projections, and migration from EventStoreDB",
+  "version": "1.0.0"
+}
