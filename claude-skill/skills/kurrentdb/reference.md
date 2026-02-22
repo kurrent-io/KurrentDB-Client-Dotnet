@@ -337,20 +337,18 @@ public ValueTask<MultiStreamAppendResponse> MultiStreamAppendAsync(
 **Supporting types:**
 
 ```csharp
-public class AppendStreamRequest {
-    public string Stream { get; set; }
-    public StreamState ExpectedState { get; set; }
-    public IAsyncEnumerable<EventData> Messages { get; set; }
-}
+// Positional record — use constructor syntax, NOT object initializers
+public record AppendStreamRequest(
+    string Stream,
+    StreamState ExpectedState,
+    IEnumerable<EventData> Messages   // NOT IAsyncEnumerable
+);
 
-public class AppendResponse {
-    public string Stream { get; }
-    public ulong StreamRevision { get; }
-}
+public record AppendResponse(string Stream, long StreamRevision);
 
-public class MultiStreamAppendResponse {
-    public Position Position { get; }
-    public IEnumerable<AppendResponse> Responses { get; }
+public readonly struct MultiStreamAppendResponse(long position, IEnumerable<AppendResponse>? responses = null) {
+    public readonly long Position;
+    public readonly IEnumerable<AppendResponse>? Responses;
 }
 ```
 

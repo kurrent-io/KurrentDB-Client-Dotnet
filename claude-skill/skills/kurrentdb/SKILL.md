@@ -122,23 +122,15 @@ var result = await client.AppendToStreamAsync("order-123", StreamState.StreamRev
 
 ### Multi-Stream Append (Server 25.1+)
 
-Atomic writes across multiple streams in a single transaction:
+Atomic writes across multiple streams in a single transaction. `AppendStreamRequest` is a positional record — use constructor syntax with `IEnumerable<EventData>`:
 
 ```csharp
-var requests = new[] {
-    new AppendStreamRequest {
-        Stream = "order-123",
-        ExpectedState = StreamState.Any,
-        Messages = ToAsyncEnumerable([orderEvent])
-    },
-    new AppendStreamRequest {
-        Stream = "inventory-abc",
-        ExpectedState = StreamState.Any,
-        Messages = ToAsyncEnumerable([inventoryEvent])
-    }
-};
+AppendStreamRequest[] requests = [
+    new("order-123", StreamState.Any, [orderEvent]),
+    new("inventory-abc", StreamState.Any, [inventoryEvent])
+];
 
-var response = await client.MultiStreamAppendAsync(requests.ToAsyncEnumerable());
+var response = await client.MultiStreamAppendAsync(requests);
 // response.Responses contains per-stream results
 // response.Position contains the log position
 ```
