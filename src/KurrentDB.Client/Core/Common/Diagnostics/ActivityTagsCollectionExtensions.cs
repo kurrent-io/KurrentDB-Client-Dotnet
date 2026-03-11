@@ -13,9 +13,12 @@ static class ActivityTagsCollectionExtensions {
         
         var authorityParts = channelInfo.Channel.Target.Split(':');
 
-        return tags
-            .WithRequiredTag(TelemetryTags.Server.Address, authorityParts[0])
-            .WithRequiredTag(TelemetryTags.Server.Port, int.Parse(authorityParts[1]));
+        tags = tags.WithRequiredTag(TelemetryTags.Server.Address, authorityParts[0]);
+
+        if (authorityParts.Length > 1)
+            tags = tags.WithRequiredTag(TelemetryTags.Server.Port, int.Parse(authorityParts[1]));
+
+        return tags;
     }
     
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
