@@ -30,6 +30,7 @@ namespace KurrentDB.Client {
 				var supportsPersistentSubscriptionsReplayParked = false;
 				var supportsPersistentSubscriptionsList = false;
 				var supportsMultiStreamAppend = false;
+				var supportsAppendRecords = false;
 
 				var response = await call.ResponseAsync.ConfigureAwait(false);
 
@@ -56,6 +57,9 @@ namespace KurrentDB.Client {
 						case ("kurrentdb.protocol.v2.streams.streamsservice", "appendsession"):
 							supportsMultiStreamAppend = true;
 							continue;
+						case ("kurrentdb.protocol.v2.streams.streamsservice", "appendrecords"):
+							supportsAppendRecords = true;
+							continue;
 					}
 				}
 
@@ -66,7 +70,8 @@ namespace KurrentDB.Client {
 					SupportsPersistentSubscriptionsRestartSubsystem: supportsPersistentSubscriptionsRestartSubsystem,
 					SupportsPersistentSubscriptionsReplayParked: supportsPersistentSubscriptionsReplayParked,
 					SupportsPersistentSubscriptionsList: supportsPersistentSubscriptionsList,
-					SupportsMultiStreamAppend: supportsMultiStreamAppend);
+					SupportsMultiStreamAppend: supportsMultiStreamAppend,
+					SupportsAppendRecords: supportsAppendRecords);
 
 			} catch (Exception ex) when (ex.GetBaseException() is RpcException rpcException &&
 				rpcException.StatusCode == StatusCode.Unimplemented) {
