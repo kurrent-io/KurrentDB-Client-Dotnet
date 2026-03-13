@@ -22,7 +22,7 @@
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 
-		<PackageReference Include="System.Linq.AsyncEnumerable" Version="10.0.0" />
+		<PackageReference Include="System.Linq.AsyncEnumerable" Version="10.0.5" />
 	</ItemGroup>
 
   <ItemGroup>
