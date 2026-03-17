@@ -353,7 +353,7 @@ namespace KurrentDB.Client {
 
 				StreamName = request.Options.Stream.StreamIdentifier!;
 
-				var tcs = new TaskCompletionSource<ReadState>();
+				var tcs = new TaskCompletionSource<ReadState>(TaskCreationOptions.RunContinuationsAsynchronously);
 				_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 				var linkedCancellationToken = _cts.Token;
 #pragma warning disable CS0612
