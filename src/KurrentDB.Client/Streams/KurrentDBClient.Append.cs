@@ -204,7 +204,7 @@ namespace KurrentDB.Client {
 				_onException       = onException;
 				_channel           = System.Threading.Channels.Channel.CreateBounded<BatchAppendReq>(10000);
 				_pendingRequests   = new ConcurrentDictionary<Uuid, TaskCompletionSource<IWriteResult>>();
-				_isUsable          = new TaskCompletionSource<bool>();
+				_isUsable          = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
 
 				_ = Task.Run(() => Duplex(channelInfoTask), cancellationToken);
 			}
@@ -242,7 +242,7 @@ namespace KurrentDB.Client {
 				async ValueTask<IWriteResult> Operation() {
 					var correlationId = Uuid.NewUuid();
 
-					var complete = _pendingRequests.GetOrAdd(correlationId, new TaskCompletionSource<IWriteResult>());
+					var complete = _pendingRequests.GetOrAdd(correlationId, new TaskCompletionSource<IWriteResult>(TaskCreationOptions.RunContinuationsAsynchronously));
 
 					try {
 						foreach (var appendRequest in GetRequests(events, options, correlationId))
