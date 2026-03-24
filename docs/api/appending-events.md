@@ -138,58 +138,132 @@ await client.AppendToStreamAsync(
 );
 ```
 
-## Append to multiple streams
+## Atomic appends
 
-::: note
-This feature is only available in KurrentDB 25.1 and later. 
+KurrentDB provides two operations for appending events to one or more streams in a single atomic transaction: `AppendRecords` and `MultiStreamAppend`. Both guarantee that either all writes succeed or the entire operation fails, but they differ in how records are organized, ordered, and validated.
+
+|                        | `AppendRecords`                                                                                                 | `MultiStreamAppend`                                                                             |
+|------------------------|-----------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| **Available since**    | KurrentDB 26.1                                                                                                  | KurrentDB 25.1                                                                                  |
+| **Record ordering**    | Interleaved. Records from different streams can be mixed, and their exact order is preserved in the global log. | Grouped. All records for a stream are sent together; ordering across streams is not guaranteed. |
+| **Consistency checks** | Decoupled. Can validate the state of any stream, including streams not being written to.                        | Coupled. Expected state is specified per stream being written to.                               |
+
+::: warning
+Metadata must be a valid JSON object, using string keys and string values only.
+Binary metadata is not supported in this version to maintain compatibility with
+KurrentDB's metadata handling. This restriction will be lifted in the next major
+release.
 :::
 
-You can append events to multiple streams in a single atomic operation. Either all streams are updated, or the entire operation fails.
+### AppendRecords
+
+::: note
+This feature is only available in KurrentDB 26.1 and later.
+:::
+
+`AppendRecords` appends events to one or more streams atomically. Each record specifies which stream it targets, and the exact order of records is preserved in the global log across all streams.
+
+#### Single stream
+
+The simplest usage appends events to a single stream:
 
 ```cs
-using System.Text.Json;
+var eventOne = new EventData(
+  Uuid.NewUuid(), "OrderPlaced", "{\"orderId\": \"123\"}"u8.ToArray()
+);
 
+var eventTwo = new EventData(
+  Uuid.NewUuid(), "OrderShipped", "{\"orderId\": \"123\"}"u8.ToArray()
+);
+
+await client.AppendRecordsAsync("order-123", [eventOne, eventTwo]);
+```
+
+When no expected state is provided, no consistency check is performed, which is equivalent to `StreamState.Any`.
+
+You can also pass an expected stream state for optimistic concurrency:
+
+```cs
+await client.AppendRecordsAsync(
+  "order-123",
+  StreamState.NoStream,
+  [eventOne, eventTwo]
+);
+```
+
+#### Multiple streams
+
+Use `AppendRecord` to target different streams. Records can be interleaved freely, and the global log preserves the exact order you specify:
+
+```cs
+var records = new[] {
+  new AppendRecord("order-stream", new EventData(
+    Uuid.NewUuid(), "OrderCreated", "{\"orderId\": \"123\"}"u8.ToArray()
+  )),
+  new AppendRecord("inventory-stream", new EventData(
+    Uuid.NewUuid(), "ItemReserved", "{\"itemId\": \"abc\", \"quantity\": 2}"u8.ToArray()
+  )),
+  new AppendRecord("order-stream", new EventData(
+    Uuid.NewUuid(), "OrderConfirmed", "{\"orderId\": \"123\"}"u8.ToArray()
+  )),
+};
+
+await client.AppendRecordsAsync(records);
+```
+
+#### Consistency checks
+
+Consistency checks let you validate the state of any stream, including streams you are not writing to, before the append is committed. All checks are evaluated atomically: if any check fails, the entire operation is rejected and an `AppendConsistencyViolationException` is thrown with details about every failing check and the actual state observed.
+
+```cs
+var records = new[] {
+  new AppendRecord("order-stream", new EventData(
+    Uuid.NewUuid(), "OrderConfirmed", "{\"orderId\": \"123\"}"u8.ToArray()
+  )),
+};
+
+var checks = new[] {
+  // ensure the inventory stream exists before confirming the order,
+  // even though we are not writing to it
+  new ConsistencyCheck.StreamStateCheck("inventory-stream", StreamState.StreamExists),
+};
+
+await client.AppendRecordsAsync(records, checks);
+```
+
+Because checks are decoupled from writes, you can validate the state of streams you are not writing to, enabling patterns where a business decision depends on the state of multiple streams but the resulting event is written to only one of them.
+
+### MultiStreamAppend
+
+::: note
+This feature is only available in KurrentDB 25.1 and later.
+:::
+
+`MultiStreamAppend` appends events to one or more streams atomically. Records are grouped per stream using `AppendStreamRequest`, where each request specifies a stream name, an expected state, and the events for that stream.
+
+```cs
 AppendStreamRequest[] requests = [
-	new(
-		"order-stream",
-		StreamState.Any,
-		[
-			new EventData(Uuid.NewUuid(), "OrderCreated", Encoding.UTF8.GetBytes("{\"orderId\": \"21345\", \"amount\": 99.99}"))
-		]
-	),
-	new(
-		"inventory-stream",
-		StreamState.Any,
-		[
-			new EventData(Uuid.NewUuid(), "ItemReserved", Encoding.UTF8.GetBytes("{\"itemId\": \"abc123\", \"quantity\": 2}"))
-		]
-	)
+  new(
+    "order-stream",
+    StreamState.Any,
+    [
+      new EventData(Uuid.NewUuid(), "OrderCreated",
+        Encoding.UTF8.GetBytes("{\"orderId\": \"21345\", \"amount\": 99.99}"))
+    ]
+  ),
+  new(
+    "inventory-stream",
+    StreamState.Any,
+    [
+      new EventData(Uuid.NewUuid(), "ItemReserved",
+        Encoding.UTF8.GetBytes("{\"itemId\": \"abc123\", \"quantity\": 2}"))
+    ]
+  )
 ];
 
 await client.MultiStreamAppendAsync(requests);
 ```
 
-The result returns the position of the last appended record in the transaction and a collection of responses for each stream appended in the transaction.
+Each stream can only appear once in the request. The expected state is validated per stream before the transaction is committed.
 
-::: warning
-The metadata for an event must be a valid JSON object where both keys and values are strings. It is essential that the JSON is well-formed and not missing, as any malformed or absent metadata will result in an `ArgumentException` being thrown.
-
-You can use the provided `Encode` and `Decode` extension methods when writing
-and reading metadata. For example:
-
-```cs
-var metadata = new Dictionary<string, string>
-{
-  { "userId", "user-456" }
-};
-
-// encode to bytes before appending
-var metadataBytes = metadata.Encode();
-```
-
-And when reading metadata back:
-
-```cs
-var metadata = metadataBytes.Decode();
-```
-:::
+The result returns the position of the last appended record in the transaction and a collection of responses for each stream.

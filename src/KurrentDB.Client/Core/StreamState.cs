@@ -18,6 +18,10 @@ namespace KurrentDB.Client {
 		/// </summary>
 		public static readonly StreamState StreamExists = new StreamState(Constants.StreamExists);
 
+		internal static readonly StreamState Deleted = new StreamState(Constants.Deleted);
+
+		internal static readonly StreamState Tombstoned = new StreamState(Constants.Tombstoned);
+
 		public static StreamState StreamRevision(ulong value) => new StreamState((long)value);
 
 		private readonly long _value;
@@ -26,6 +30,8 @@ namespace KurrentDB.Client {
 			public const int NoStream = -1;
 			public const int Any = -2;
 			public const int StreamExists = -4;
+			public const int Deleted = -5;
+			public const int Tombstoned = -6;
 		}
 
 		internal StreamState(long value) {
@@ -33,6 +39,8 @@ namespace KurrentDB.Client {
 				case Constants.NoStream:
 				case Constants.Any:
 				case Constants.StreamExists:
+				case Constants.Deleted:
+				case Constants.Tombstoned:
 					_value = value;
 					return;
 				default:
@@ -84,6 +92,8 @@ namespace KurrentDB.Client {
 			Constants.NoStream => nameof(NoStream),
 			Constants.Any => nameof(Any),
 			Constants.StreamExists => nameof(StreamExists),
+			Constants.Deleted => nameof(Deleted),
+			Constants.Tombstoned => nameof(Tombstoned),
 			_ => _value.ToString()
 		};
 	}
