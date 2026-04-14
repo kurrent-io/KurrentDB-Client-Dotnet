@@ -47,7 +47,8 @@ namespace KurrentDB.Client {
 			ActualVersion = actualStreamState.ToInt64();
 		}
 
-		public static WrongExpectedVersionException FromRpcException(RpcException ex) => FromRpcStatus(ex.GetRpcStatus()!);
+		public static WrongExpectedVersionException FromRpcException(RpcException ex) =>
+			FromRpcStatus(ex.GetRpcStatus() ?? throw ex);
 
 		public static WrongExpectedVersionException FromRpcStatus(Google.Rpc.Status ex) {
 			var details = ex.GetDetail<StreamRevisionConflictErrorDetails>();
