@@ -4,18 +4,25 @@ using KurrentDB.Client.Diagnostics;
 using KurrentDB.Protocol.V2.Streams;
 using static KurrentDB.Client.Constants.Metadata;
 using SchemaFormat = KurrentDB.Protocol.V2.Streams.SchemaFormat;
+using Contracts = KurrentDB.Protocol.V2.Streams;
 
 namespace KurrentDB.Client;
 
 static class StreamsClientMapper {
-	public static async IAsyncEnumerable<AppendRecord> Map(this IEnumerable<EventData> source) {
+	public static async IAsyncEnumerable<Contracts.AppendRecord> Map(this IEnumerable<EventData> source) {
 		foreach (var message in source)
 			yield return await message
 				.Map()
 				.ConfigureAwait(false);
 	}
 
-	public static ValueTask<AppendRecord> Map(this EventData source) {
+	public static async ValueTask<Contracts.AppendRecord> Map(this AppendRecord source) {
+		var record = await source.Record.Map().ConfigureAwait(false);
+		record.Stream = source.Stream;
+		return record;
+	}
+
+	public static ValueTask<Contracts.AppendRecord> Map(this EventData source) {
 		Dictionary<string, string> metadata;
 
 		try {
@@ -29,7 +36,7 @@ static class StreamsClientMapper {
 
 		metadata.InjectTracingContext(Activity.Current);
 
-		var record = new AppendRecord {
+		var record = new Contracts.AppendRecord {
 			RecordId = source.EventId.ToString(),
 			Data     = ByteString.CopyFrom(source.Data.Span),
 			Schema = new SchemaInfo {
@@ -41,6 +48,6 @@ static class StreamsClientMapper {
 			Properties = { metadata.MapToMapValue() }
 		};
 
-		return new ValueTask<AppendRecord>(record);
+		return new ValueTask<Contracts.AppendRecord>(record);
 	}
 }

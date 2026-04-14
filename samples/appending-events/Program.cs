@@ -8,6 +8,9 @@ settings.OperationOptions.ThrowOnAppendFailure = false;
 
 await using var client = new KurrentDBClient(settings);
 
+await AppendRecords(client);
+await AppendRecordsMultipleStreams(client);
+await AppendRecordsWithConsistencyCheck(client);
 await MultiStreamAppend(client);
 await AppendToStream(client);
 await AppendWithConcurrencyCheck(client);
@@ -15,6 +18,59 @@ await AppendWithNoStream(client);
 await AppendWithSameId(client);
 
 return;
+
+static async Task AppendRecords(KurrentDBClient client) {
+	#region append-records
+
+	var eventOne = new EventData(
+		Uuid.NewUuid(),
+		"some-event",
+		"{\"id\": \"1\" \"value\": \"some value\"}"u8.ToArray()
+	);
+
+	var eventTwo = new EventData(
+		Uuid.NewUuid(),
+		"some-event",
+		"{\"id\": \"2\" \"value\": \"some other value\"}"u8.ToArray()
+	);
+
+	await client.AppendRecordsAsync(
+		"some-stream",
+		[eventOne, eventTwo]
+	);
+
+	#endregion append-records
+}
+
+static async Task AppendRecordsMultipleStreams(KurrentDBClient client) {
+	#region append-records-multiple-streams
+
+	var records = new[] {
+		new AppendRecord("stream-one", new EventData(Uuid.NewUuid(), "event-one", "{\"id\": \"1\"}"u8.ToArray())),
+		new AppendRecord("stream-two", new EventData(Uuid.NewUuid(), "event-two", "{\"id\": \"2\"}"u8.ToArray())),
+		new AppendRecord("stream-one", new EventData(Uuid.NewUuid(), "event-three", "{\"id\": \"3\"}"u8.ToArray())),
+	};
+
+	await client.AppendRecordsAsync(records);
+
+	#endregion append-records-multiple-streams
+}
+
+static async Task AppendRecordsWithConsistencyCheck(KurrentDBClient client) {
+	#region append-records-with-consistency-check
+
+	var records = new[] {
+		new AppendRecord("stream-one", new EventData(Uuid.NewUuid(), "some-event", "{\"id\": \"1\"}"u8.ToArray())),
+	};
+
+	var checks = new[] {
+		new ConsistencyCheck.StreamStateCheck("stream-one", StreamState.NoStream),
+	};
+
+	await client.AppendRecordsAsync(records, checks);
+
+	#endregion append-records-with-consistency-check
+}
 
 static async Task MultiStreamAppend(KurrentDBClient client) {
 	var metadata = JsonSerializer.SerializeToUtf8Bytes(
