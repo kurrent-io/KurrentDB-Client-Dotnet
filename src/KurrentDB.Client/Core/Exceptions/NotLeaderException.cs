@@ -24,7 +24,8 @@ namespace KurrentDB.Client {
 			LeaderEndpoint = new DnsEndPoint(host, port);
 		}
 
-		public static NotLeaderException FromRpcException(RpcException ex) => FromRpcStatus(ex.GetRpcStatus()!);
+		public static NotLeaderException FromRpcException(RpcException ex) =>
+			FromRpcStatus(ex.GetRpcStatus() ?? throw ex);
 
 		public static NotLeaderException FromRpcStatus(Google.Rpc.Status ex) {
 			var details = ex.GetDetail<NotLeaderNodeErrorDetails>();

@@ -19,7 +19,8 @@ namespace KurrentDB.Client {
 
 		}
 
-		public static AccessDeniedException FromRpcException(RpcException ex) => FromRpcStatus(ex.GetRpcStatus()!);
+		public static AccessDeniedException FromRpcException(RpcException ex) =>
+			FromRpcStatus(ex.GetRpcStatus() ?? throw ex);
 
 		public static AccessDeniedException FromRpcStatus(Google.Rpc.Status ex) {
 			return new(ex.Message, ex.ToRpcException());

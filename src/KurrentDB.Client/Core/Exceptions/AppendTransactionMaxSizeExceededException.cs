@@ -21,7 +21,8 @@ public class AppendTransactionMaxSizeExceededException(int size, int maxSize, Ex
 	/// </summary>
 	public int MaxSize { get; } = maxSize;
 
-	public static AppendTransactionMaxSizeExceededException FromRpcException(RpcException ex) => FromRpcStatus(ex.GetRpcStatus()!);
+	public static AppendTransactionMaxSizeExceededException FromRpcException(RpcException ex) =>
+		FromRpcStatus(ex.GetRpcStatus() ?? throw ex);
 
 	public static AppendTransactionMaxSizeExceededException FromRpcStatus(Google.Rpc.Status ex) {
 		var details = ex.GetDetail<AppendTransactionSizeExceededErrorDetails>();

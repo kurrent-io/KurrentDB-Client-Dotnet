@@ -43,7 +43,8 @@ namespace KurrentDB.Client {
 			MaxSize  = maxSize;
 		}
 
-		public static AppendRecordSizeExceededException FromRpcException(RpcException ex) => FromRpcStatus(ex.GetRpcStatus()!);
+		public static AppendRecordSizeExceededException FromRpcException(RpcException ex) =>
+			FromRpcStatus(ex.GetRpcStatus() ?? throw ex);
 
 		public static AppendRecordSizeExceededException FromRpcStatus(Google.Rpc.Status ex) {
 			var details = ex.GetDetail<AppendRecordSizeExceededErrorDetails>();

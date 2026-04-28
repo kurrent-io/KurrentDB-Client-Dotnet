@@ -19,7 +19,8 @@ public class StreamTombstonedException : Exception {
 		Stream = stream;
 	}
 
-	public static StreamTombstonedException FromRpcException(RpcException ex) => FromRpcStatus(ex.GetRpcStatus()!);
+	public static StreamTombstonedException FromRpcException(RpcException ex) =>
+		FromRpcStatus(ex.GetRpcStatus() ?? throw ex);
 
 	public static StreamTombstonedException FromRpcStatus(Google.Rpc.Status ex) {
 		var details = ex.GetDetail<StreamTombstonedErrorDetails>();
