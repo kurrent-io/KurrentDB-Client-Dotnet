@@ -10,15 +10,16 @@ namespace KurrentDB.Client {
 		/// <param name="query"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
-		/// <param name="cancellationToken"></param>
 		/// <param name="engineVersion">
 		/// The projection engine version to use. The engine version is pinned at create time and cannot be changed later.
 		/// Defaults to <see cref="ProjectionEngineVersion.V1"/>.
 		/// </param>
+		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public async Task CreateOneTimeAsync(string query, TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default,
-			ProjectionEngineVersion engineVersion = ProjectionEngineVersion.V1) {
+			UserCredentials? userCredentials = null,
+			ProjectionEngineVersion engineVersion = ProjectionEngineVersion.V1,
+			CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
@@ -39,17 +40,17 @@ namespace KurrentDB.Client {
 		/// <param name="trackEmittedStreams"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
-		/// <param name="cancellationToken"></param>
 		/// <param name="engineVersion">
 		/// The projection engine version to use. The engine version is pinned at create time and cannot be changed later.
 		/// Defaults to <see cref="ProjectionEngineVersion.V1"/>. <see cref="ProjectionEngineVersion.V2"/> does not support
 		/// <paramref name="trackEmittedStreams"/>.
 		/// </param>
+		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public async Task CreateContinuousAsync(string name, string query, bool trackEmittedStreams = false,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default,
-			ProjectionEngineVersion engineVersion = ProjectionEngineVersion.V1) {
+			ProjectionEngineVersion engineVersion = ProjectionEngineVersion.V1,
+			CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
@@ -72,15 +73,16 @@ namespace KurrentDB.Client {
 		/// <param name="query"></param>
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
-		/// <param name="cancellationToken"></param>
 		/// <param name="engineVersion">
 		/// The projection engine version to use. The engine version is pinned at create time and cannot be changed later.
 		/// Defaults to <see cref="ProjectionEngineVersion.V1"/>.
 		/// </param>
+		/// <param name="cancellationToken"></param>
 		/// <returns></returns>
 		public async Task CreateTransientAsync(string name, string query, TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default,
-			ProjectionEngineVersion engineVersion = ProjectionEngineVersion.V1) {
+			UserCredentials? userCredentials = null,
+			ProjectionEngineVersion engineVersion = ProjectionEngineVersion.V1,
+			CancellationToken cancellationToken = default) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
