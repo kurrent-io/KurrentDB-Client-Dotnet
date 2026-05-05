@@ -11,15 +11,21 @@ namespace KurrentDB.Client {
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
+		/// <param name="engineVersion">
+		/// The projection engine version to use. The engine version is pinned at create time and cannot be changed later.
+		/// Defaults to <see cref="ProjectionEngineVersion.V1"/>.
+		/// </param>
 		/// <returns></returns>
 		public async Task CreateOneTimeAsync(string query, TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default,
+			ProjectionEngineVersion engineVersion = ProjectionEngineVersion.V1) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
-					OneTime = new Empty(),
-					Query = query
+					OneTime       = new Empty(),
+					Query         = query,
+					EngineVersion = (int)engineVersion
 				}
 			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
@@ -34,19 +40,26 @@ namespace KurrentDB.Client {
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
+		/// <param name="engineVersion">
+		/// The projection engine version to use. The engine version is pinned at create time and cannot be changed later.
+		/// Defaults to <see cref="ProjectionEngineVersion.V1"/>. <see cref="ProjectionEngineVersion.V2"/> does not support
+		/// <paramref name="trackEmittedStreams"/>.
+		/// </param>
 		/// <returns></returns>
 		public async Task CreateContinuousAsync(string name, string query, bool trackEmittedStreams = false,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+			CancellationToken cancellationToken = default,
+			ProjectionEngineVersion engineVersion = ProjectionEngineVersion.V1) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
 				Options = new CreateReq.Types.Options {
 					Continuous = new CreateReq.Types.Options.Types.Continuous {
-						Name = name,
+						Name                = name,
 						TrackEmittedStreams = trackEmittedStreams
 					},
-					Query = query
+					Query         = query,
+					EngineVersion = (int)engineVersion
 				}
 			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
@@ -60,9 +73,14 @@ namespace KurrentDB.Client {
 		/// <param name="deadline"></param>
 		/// <param name="userCredentials"></param>
 		/// <param name="cancellationToken"></param>
+		/// <param name="engineVersion">
+		/// The projection engine version to use. The engine version is pinned at create time and cannot be changed later.
+		/// Defaults to <see cref="ProjectionEngineVersion.V1"/>.
+		/// </param>
 		/// <returns></returns>
 		public async Task CreateTransientAsync(string name, string query, TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default,
+			ProjectionEngineVersion engineVersion = ProjectionEngineVersion.V1) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
@@ -70,7 +88,8 @@ namespace KurrentDB.Client {
 					Transient = new CreateReq.Types.Options.Types.Transient {
 						Name = name
 					},
-					Query = query
+					Query         = query,
+					EngineVersion = (int)engineVersion
 				}
 			}, KurrentDBCallOptions.CreateNonStreaming(Settings, deadline, userCredentials, cancellationToken));
 			await call.ResponseAsync.ConfigureAwait(false);
