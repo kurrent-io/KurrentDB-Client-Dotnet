@@ -7,15 +7,15 @@ namespace KurrentDB.Client {
 		/// <summary>
 		/// Creates a one-time projection.
 		/// </summary>
-		/// <param name="query"></param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials"></param>
+		/// <param name="query">The JavaScript source of the projection.</param>
+		/// <param name="deadline">The maximum time to wait for the operation to complete.</param>
+		/// <param name="userCredentials">The <see cref="UserCredentials"/> to use for the operation.</param>
 		/// <param name="engineVersion">
 		/// The projection engine version to use. The engine version is pinned at create time and cannot be changed later.
 		/// Defaults to <see cref="ProjectionEngineVersion.V1"/>.
 		/// </param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
+		/// <param name="cancellationToken">The token used to cancel the operation.</param>
+		/// <returns>A <see cref="Task"/> that completes when the projection has been created.</returns>
 		public async Task CreateOneTimeAsync(string query, TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			ProjectionEngineVersion engineVersion = ProjectionEngineVersion.V1,
@@ -35,18 +35,18 @@ namespace KurrentDB.Client {
 		/// <summary>
 		/// Creates a continuous projection.
 		/// </summary>
-		/// <param name="name"></param>
-		/// <param name="query"></param>
-		/// <param name="trackEmittedStreams"></param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials"></param>
+		/// <param name="name">The name of the projection.</param>
+		/// <param name="query">The JavaScript source of the projection.</param>
+		/// <param name="trackEmittedStreams">Whether the streams emitted by this projection should be tracked.</param>
+		/// <param name="deadline">The maximum time to wait for the operation to complete.</param>
+		/// <param name="userCredentials">The <see cref="UserCredentials"/> to use for the operation.</param>
 		/// <param name="engineVersion">
 		/// The projection engine version to use. The engine version is pinned at create time and cannot be changed later.
 		/// Defaults to <see cref="ProjectionEngineVersion.V1"/>. <see cref="ProjectionEngineVersion.V2"/> does not support
 		/// <paramref name="trackEmittedStreams"/>.
 		/// </param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
+		/// <param name="cancellationToken">The token used to cancel the operation.</param>
+		/// <returns>A <see cref="Task"/> that completes when the projection has been created.</returns>
 		public async Task CreateContinuousAsync(string name, string query, bool trackEmittedStreams = false,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			ProjectionEngineVersion engineVersion = ProjectionEngineVersion.V1,
@@ -69,16 +69,16 @@ namespace KurrentDB.Client {
 		/// <summary>
 		/// Creates a transient projection.
 		/// </summary>
-		/// <param name="name"></param>
-		/// <param name="query"></param>
-		/// <param name="deadline"></param>
-		/// <param name="userCredentials"></param>
+		/// <param name="name">The name of the projection.</param>
+		/// <param name="query">The JavaScript source of the projection.</param>
+		/// <param name="deadline">The maximum time to wait for the operation to complete.</param>
+		/// <param name="userCredentials">The <see cref="UserCredentials"/> to use for the operation.</param>
 		/// <param name="engineVersion">
 		/// The projection engine version to use. The engine version is pinned at create time and cannot be changed later.
 		/// Defaults to <see cref="ProjectionEngineVersion.V1"/>.
 		/// </param>
-		/// <param name="cancellationToken"></param>
-		/// <returns></returns>
+		/// <param name="cancellationToken">The token used to cancel the operation.</param>
+		/// <returns>A <see cref="Task"/> that completes when the projection has been created.</returns>
 		public async Task CreateTransientAsync(string name, string query, TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null,
 			ProjectionEngineVersion engineVersion = ProjectionEngineVersion.V1,
