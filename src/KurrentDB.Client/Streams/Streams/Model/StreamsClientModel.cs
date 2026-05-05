@@ -33,6 +33,20 @@ public record AppendStreamRequest(string Stream, StreamState ExpectedState, IEnu
 public record AppendResponse(string Stream, long StreamRevision);
 
 [PublicAPI]
+public readonly struct AppendRecordsResponse(long position, IEnumerable<AppendResponse>? responses = null) {
+	/// <summary>
+	/// The position of the last appended record in the transaction.
+	/// </summary>
+	public readonly long Position = position;
+
+	/// <summary>
+	/// The collection of responses for each stream appended in the transaction.
+	/// </summary>
+	public readonly IEnumerable<AppendResponse>? Responses = responses;
+}
+
+// TODO: MultiStreamAppendResponse will be removed in a future version. Use AppendRecordsResponse instead.
+[PublicAPI]
 public readonly struct MultiStreamAppendResponse(long position, IEnumerable<AppendResponse>? responses = null) {
 	/// <summary>
 	/// The position of the last appended record in the transaction.
