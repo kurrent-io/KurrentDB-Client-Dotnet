@@ -7,7 +7,13 @@ namespace KurrentDB.Client {
 	/// </remarks>
 	public enum ProjectionEngineVersion {
 		/// <summary>
-		/// The original projection engine. This is the default.
+		/// No engine version specified. The server treats this the same as <see cref="V1"/>.
+		/// This is the default value of the enum.
+		/// </summary>
+		Unspecified = 0,
+
+		/// <summary>
+		/// The original projection engine. Selected by default when no engine version is specified.
 		/// </summary>
 		V1 = 1,
 
