@@ -46,6 +46,33 @@ public class ProjectionManagementTests(ITestOutputHelper output, ProjectionManag
 		);
 	}
 
+	[Fact]
+	public async Task continuous_v2_engine() {
+		var name = Fixture.GetProjectionName();
+
+		await Fixture.DBProjections.CreateContinuousAsync(
+			name,
+			"fromAll().when({$init: function (state, ev) {return {};}});",
+			userCredentials: TestCredentials.Root,
+			engineVersion: ProjectionEngineVersion.V2
+		);
+	}
+
+	[Fact]
+	public async Task continuous_v2_engine_throws_when_track_emitted_streams_enabled() {
+		var ex = await Assert.ThrowsAsync<ArgumentException>(
+			() => Fixture.DBProjections.CreateContinuousAsync(
+				Fixture.GetProjectionName(),
+				"fromAll().when({$init: function (state, ev) {return {};}});",
+				trackEmittedStreams: true,
+				userCredentials: TestCredentials.Root,
+				engineVersion: ProjectionEngineVersion.V2
+			)
+		);
+
+		Assert.Equal("trackEmittedStreams", ex.ParamName);
+	}
+
 	static readonly string[] Names = ["$streams", "$stream_by_category", "$by_category", "$by_event_type", "$by_correlation_id"];
 
 	public class CustomFixture : KurrentDBTemporaryFixture {
