@@ -59,7 +59,7 @@ public class ProjectionManagementTests(ITestOutputHelper output, ProjectionManag
 	}
 
 	[Fact]
-	public async Task continuous_v2_engine_with_track_emitted_streams_throws() {
+	public async Task continuous_v2_engine_throws_when_track_emitted_streams_enabled() {
 		var ex = await Assert.ThrowsAsync<ArgumentException>(
 			() => Fixture.DBProjections.CreateContinuousAsync(
 				Fixture.GetProjectionName(),
