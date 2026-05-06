@@ -51,6 +51,11 @@ namespace KurrentDB.Client {
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
 			ProjectionEngineVersion engineVersion = ProjectionEngineVersion.V1,
 			CancellationToken cancellationToken = default) {
+			if (engineVersion == ProjectionEngineVersion.V2 && trackEmittedStreams)
+				throw new ArgumentException(
+					$"{nameof(trackEmittedStreams)} is not supported when {nameof(engineVersion)} is {nameof(ProjectionEngineVersion.V2)}.",
+					nameof(trackEmittedStreams));
+
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).CreateAsync(new CreateReq {
