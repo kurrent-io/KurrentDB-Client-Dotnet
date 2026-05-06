@@ -58,6 +58,21 @@ public class ProjectionManagementTests(ITestOutputHelper output, ProjectionManag
 		);
 	}
 
+	[Fact]
+	public async Task continuous_v2_engine_with_track_emitted_streams_throws() {
+		var ex = await Assert.ThrowsAsync<ArgumentException>(
+			() => Fixture.DBProjections.CreateContinuousAsync(
+				Fixture.GetProjectionName(),
+				"fromAll().when({$init: function (state, ev) {return {};}});",
+				trackEmittedStreams: true,
+				userCredentials: TestCredentials.Root,
+				engineVersion: ProjectionEngineVersion.V2
+			)
+		);
+
+		Assert.Equal("trackEmittedStreams", ex.ParamName);
+	}
+
 	static readonly string[] Names = ["$streams", "$stream_by_category", "$by_category", "$by_event_type", "$by_correlation_id"];
 
 	public class CustomFixture : KurrentDBTemporaryFixture {
