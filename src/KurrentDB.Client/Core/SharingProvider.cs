@@ -86,7 +86,9 @@ namespace KurrentDB.Client {
 		private async Task FillBoxAsync(TaskCompletionSource<TOutput> box, TInput input) {
 			if (_disposed) {
 				Log.LogDebug("{type} will not be produced, factory is closed!", typeof(TOutput).Name);
-				box.TrySetException(new ObjectDisposedException(GetType().ToString()));
+				if (box.TrySetException(new ObjectDisposedException(GetType().ToString())))
+					_ = box.Task.Exception;
+
 				return;
 			}
 			
@@ -99,7 +101,11 @@ namespace KurrentDB.Client {
 				await Task.Yield(); // avoid risk of stack overflow
 				Log.LogDebug(ex, "{type} production failed. Retrying in {delay}", typeof(TOutput).Name, _factoryRetryDelay);
 				await Task.Delay(_factoryRetryDelay).ConfigureAwait(false);
-				box.TrySetException(ex);
+				// no consumer may ever await this box, observe the exception so retries
+				// don't surface it as an UnobservedTaskException
+				if (box.TrySetException(ex))
+					_ = box.Task.Exception;
+
 				OnBroken(box, _initialInput);
 			}
 		}

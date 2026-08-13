@@ -289,10 +289,19 @@ namespace KurrentDB.Client {
 				async Task Send() {
 					if (_call is null) return;
 
-					await foreach (var appendRequest in _channel.Reader.ReadAllAsync(_cancellationToken).ConfigureAwait(false))
-						await _call.RequestStream.WriteAsync(appendRequest).ConfigureAwait(false);
+					try {
+						await foreach (var appendRequest in _channel.Reader.ReadAllAsync(_cancellationToken).ConfigureAwait(false))
+							await _call.RequestStream.WriteAsync(appendRequest).ConfigureAwait(false);
 
-					await _call.RequestStream.CompleteAsync().ConfigureAwait(false);
+						await _call.RequestStream.CompleteAsync().ConfigureAwait(false);
+					}
+					catch (OperationCanceledException) {
+					}
+					catch (Exception ex) {
+						// this task is fire and forget, complete the channel instead of
+						// letting the exception surface as an UnobservedTaskException
+						_channel.Writer.TryComplete(ex);
+					}
 				}
 
 				async Task Receive() {
