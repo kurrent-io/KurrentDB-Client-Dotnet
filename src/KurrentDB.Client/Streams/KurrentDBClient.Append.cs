@@ -296,6 +296,9 @@ namespace KurrentDB.Client {
 						await _call.RequestStream.CompleteAsync().ConfigureAwait(false);
 					}
 					catch (OperationCanceledException) {
+						// the send loop is the only channel consumer, close the channel
+						// so producers don't keep writing into an undrained channel
+						_channel.Writer.TryComplete();
 					}
 					catch (Exception ex) {
 						// this task is fire and forget, complete the channel instead of
