@@ -413,7 +413,11 @@ namespace KurrentDB.Client {
 						_channel.Writer.Complete();
 					}
 					catch (Exception ex) {
-						tcs.TrySetException(ex);
+						// ReadState is rarely awaited, observe the exception so abandoned
+						// reads don't surface it as an UnobservedTaskException
+						if (tcs.TrySetException(ex))
+							_ = tcs.Task.Exception;
+
 						_channel.Writer.TryComplete(ex);
 					}
 				}
