@@ -1,4 +1,5 @@
-﻿using KurrentDB.Client;
+﻿using System.Runtime.CompilerServices;
+using KurrentDB.Client;
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
 
@@ -168,6 +169,45 @@ public class SharingProviderTests {
 		var ex = await Assert.ThrowsAsync<Exception>(async () => { await sut.CurrentAsync; });
 
 		Assert.Equal("input 0", ex.Message);
+	}
+
+	[RetryFact]
+	public async Task FactoryFailuresDoNotLeakUnobservedTaskExceptions() {
+		const string marker = "sharing-provider-unobserved-marker";
+
+		var leaked = 0;
+
+		EventHandler<UnobservedTaskExceptionEventArgs> onUnobserved = (_, e) => {
+			if (e.Exception.GetBaseException().Message.Contains(marker)) {
+				e.SetObserved();
+				Interlocked.Increment(ref leaked);
+			}
+		};
+
+		TaskScheduler.UnobservedTaskException += onUnobserved;
+
+		try {
+			await ChurnFailingProvider();
+
+			GC.Collect();
+			GC.WaitForPendingFinalizers();
+			GC.Collect();
+
+			Assert.Equal(0, leaked);
+		} finally {
+			TaskScheduler.UnobservedTaskException -= onUnobserved;
+		}
+
+		[MethodImpl(MethodImplOptions.NoInlining)]
+		static async Task ChurnFailingProvider() {
+			using var sut = new SharingProvider<int, int>(
+				(_, _) => throw new(marker),
+				TimeSpan.FromMilliseconds(1),
+				0
+			);
+
+			await Task.Delay(200);
+		}
 	}
 
 	[RetryFact]
