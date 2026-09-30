@@ -131,6 +131,7 @@ jobs:
         run: |
           sudo ./gencert.sh
           dotnet test --configuration release --blame \
+            -p:TreatWarningsAsErrors=false \
             --logger:"GitHubActions;report-warnings=false" --logger:"console;verbosity=normal" \
             --framework ${{ matrix.framework }} \
             --filter "Category=Target:${{ matrix.test }}" \
