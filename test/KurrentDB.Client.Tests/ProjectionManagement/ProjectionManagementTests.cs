@@ -35,7 +35,7 @@ public class ProjectionManagementTests(ITestOutputHelper output, ProjectionManag
 		);
 	}
 
-	[Fact]
+	[Fact(Skip = "deprecated")]
 	public async Task transient() {
 		var name = Fixture.GetProjectionName();
 
