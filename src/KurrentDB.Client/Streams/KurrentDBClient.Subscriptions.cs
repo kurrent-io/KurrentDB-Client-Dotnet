@@ -156,9 +156,6 @@ namespace KurrentDB.Client {
 					async IAsyncEnumerable<StreamMessage> GetMessages() {
 						try {
 							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)) {
-								if (message is StreamMessage.SubscriptionConfirmation(var subscriptionId))
-                                    SubscriptionId = subscriptionId;
-
 								yield return message;
 							}
                         }
@@ -204,10 +201,6 @@ namespace KurrentDB.Client {
 						var channelInfo = await selectChannelInfo(_cts.Token).ConfigureAwait(false);
 						var client      = new StreamsClient(channelInfo.CallInvoker);
 						_call = client.Read(_request, _callOptions);
-
-						// SubscriptionId is only set once the consumer reads the confirmation, which can be after
-						// this loop has already received events, so keep our own copy for tracing them.
-						string? subscriptionId = null;
                         await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
                             StreamMessage subscriptionMessage =
                                 response.ContentCase switch {
@@ -232,12 +225,14 @@ namespace KurrentDB.Client {
                                     _          => StreamMessage.Unknown.Instance
                                 };
 
+                            // set here rather than when the consumer reads the confirmation,
+                            // so that events received before then are traced with it
                             if (subscriptionMessage is StreamMessage.SubscriptionConfirmation confirmation)
-                                subscriptionId = confirmation.SubscriptionId;
+                                SubscriptionId = confirmation.SubscriptionId;
 
                             if (subscriptionMessage is StreamMessage.Event evt)
                                 KurrentDBClientDiagnostics.ActivitySource.TraceSubscriptionEvent(
-                                    subscriptionId,
+                                    SubscriptionId,
                                     evt.ResolvedEvent,
                                     channelInfo,
                                     _settings,
