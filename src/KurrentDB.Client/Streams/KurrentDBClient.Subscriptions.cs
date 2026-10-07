@@ -204,6 +204,10 @@ namespace KurrentDB.Client {
 						var channelInfo = await selectChannelInfo(_cts.Token).ConfigureAwait(false);
 						var client      = new StreamsClient(channelInfo.CallInvoker);
 						_call = client.Read(_request, _callOptions);
+
+						// SubscriptionId is only set once the consumer reads the confirmation, which can be after
+						// this loop has already received events, so keep our own copy for tracing them.
+						string? subscriptionId = null;
                         await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
                             StreamMessage subscriptionMessage =
                                 response.ContentCase switch {
@@ -228,9 +232,12 @@ namespace KurrentDB.Client {
                                     _          => StreamMessage.Unknown.Instance
                                 };
 
+                            if (subscriptionMessage is StreamMessage.SubscriptionConfirmation confirmation)
+                                subscriptionId = confirmation.SubscriptionId;
+
                             if (subscriptionMessage is StreamMessage.Event evt)
                                 KurrentDBClientDiagnostics.ActivitySource.TraceSubscriptionEvent(
-                                    SubscriptionId,
+                                    subscriptionId,
                                     evt.ResolvedEvent,
                                     channelInfo,
                                     _settings,
