@@ -156,9 +156,6 @@ namespace KurrentDB.Client {
 					async IAsyncEnumerable<StreamMessage> GetMessages() {
 						try {
 							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)) {
-								if (message is StreamMessage.SubscriptionConfirmation(var subscriptionId))
-                                    SubscriptionId = subscriptionId;
-
 								yield return message;
 							}
                         }
@@ -228,14 +225,22 @@ namespace KurrentDB.Client {
                                     _          => StreamMessage.Unknown.Instance
                                 };
 
-                            if (subscriptionMessage is StreamMessage.Event evt)
-                                KurrentDBClientDiagnostics.ActivitySource.TraceSubscriptionEvent(
-                                    SubscriptionId,
-                                    evt.ResolvedEvent,
-                                    channelInfo,
-                                    _settings,
-                                    userCredentials
-                                );
+                            switch (subscriptionMessage) {
+                                case StreamMessage.SubscriptionConfirmation confirmation:
+                                    // set here rather than when the consumer reads the confirmation,
+                                    // so that events received before then are traced with it
+                                    SubscriptionId = confirmation.SubscriptionId;
+                                    break;
+                                case StreamMessage.Event evt:
+                                    KurrentDBClientDiagnostics.ActivitySource.TraceSubscriptionEvent(
+                                        SubscriptionId,
+                                        evt.ResolvedEvent,
+                                        channelInfo,
+                                        _settings,
+                                        userCredentials
+                                    );
+                                    break;
+                            }
 
                             await _channel.Writer
                                 .WriteAsync(subscriptionMessage, _cts.Token)
