@@ -207,9 +207,6 @@ namespace KurrentDB.Client {
 					async IAsyncEnumerable<PersistentSubscriptionMessage> GetMessages() {
                         try {
                             await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)) {
-                                if (message is PersistentSubscriptionMessage.SubscriptionConfirmation(var subscriptionId)) 
-                                    SubscriptionId = subscriptionId;
-
                                 yield return message;
                             }
                         }
@@ -269,14 +266,22 @@ namespace KurrentDB.Client {
 								_ => PersistentSubscriptionMessage.Unknown.Instance
 							};
 
-							if (subscriptionMessage is PersistentSubscriptionMessage.Event evnt)
-								KurrentDBClientDiagnostics.ActivitySource.TraceSubscriptionEvent(
-									SubscriptionId,
-									evnt.ResolvedEvent,
-									channelInfo,
-									settings,
-									userCredentials
-								);
+							switch (subscriptionMessage) {
+								case PersistentSubscriptionMessage.SubscriptionConfirmation confirmation:
+									// set here rather than when the consumer reads the confirmation,
+									// so that events received before then are traced with it
+									SubscriptionId = confirmation.SubscriptionId;
+									break;
+								case PersistentSubscriptionMessage.Event evnt:
+									KurrentDBClientDiagnostics.ActivitySource.TraceSubscriptionEvent(
+										SubscriptionId,
+										evnt.ResolvedEvent,
+										channelInfo,
+										settings,
+										userCredentials
+									);
+									break;
+							}
 
 							await _channel.Writer.WriteAsync(subscriptionMessage, _cts.Token).ConfigureAwait(false);
 						}

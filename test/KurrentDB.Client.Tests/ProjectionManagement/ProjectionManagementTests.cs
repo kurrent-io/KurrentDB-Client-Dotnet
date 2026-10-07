@@ -1,6 +1,8 @@
 // ReSharper disable InconsistentNaming
 // ReSharper disable ClassNeverInstantiated.Local
 
+using Grpc.Core;
+using KurrentDB.Client.Tests.FluentDocker;
 using KurrentDB.Client.Tests.TestNode;
 
 namespace KurrentDB.Client.Tests;
@@ -39,11 +41,19 @@ public class ProjectionManagementTests(ITestOutputHelper output, ProjectionManag
 	public async Task transient() {
 		var name = Fixture.GetProjectionName();
 
-		await Fixture.DBProjections.CreateTransientAsync(
+		var create = () => Fixture.DBProjections.CreateTransientAsync(
 			name,
 			"fromAll().when({$init: function (state, ev) {return {};}});",
 			userCredentials: TestCredentials.Root
 		);
+
+		// the server no longer supports transient projections from 26.2
+		if (TestContainerService.Version >= new Version(26, 2)) {
+			var ex = await Assert.ThrowsAsync<RpcException>(create);
+			Assert.Equal(StatusCode.FailedPrecondition, ex.StatusCode);
+		} else {
+			await create();
+		}
 	}
 
 	[Fact]
