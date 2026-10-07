@@ -77,7 +77,7 @@ namespace KurrentDB.Client {
 					},
 					Count         = (ulong)maxCount,
 					UuidOption    = new() { Structured    = new() },
-					ControlOption = new() { Compatibility = 1 },
+					ControlOption = new() { Compatibility = ReadCompatibilityLevel.Level1_StreamPositions },
 					Filter        = GetFilterOptions(eventFilter)
 				}
 			};
@@ -261,7 +261,7 @@ namespace KurrentDB.Client {
 						Count         = (ulong)maxCount,
 						UuidOption    = new() { Structured = new() },
 						NoFilter      = new(),
-						ControlOption = new() { Compatibility = 1 }
+						ControlOption = new() { Compatibility = ReadCompatibilityLevel.Level1_StreamPositions }
 					}
 				},
 				Settings,

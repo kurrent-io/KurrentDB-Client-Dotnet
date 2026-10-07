@@ -34,6 +34,8 @@ namespace KurrentDB.Client {
 
 				var response = await call.ResponseAsync.ConfigureAwait(false);
 
+				var supportsSubscriptionFellBehind = ServerCapabilities.VersionSupportsSubscriptionFellBehind(response.EventStoreServerVersion);
+
 				foreach (var supportedMethod in response.Methods) {
 					switch (supportedMethod.ServiceName, supportedMethod.MethodName) {
 						case ("event_store.client.streams.streams", "batchappend"):
@@ -71,7 +73,8 @@ namespace KurrentDB.Client {
 					SupportsPersistentSubscriptionsReplayParked: supportsPersistentSubscriptionsReplayParked,
 					SupportsPersistentSubscriptionsList: supportsPersistentSubscriptionsList,
 					SupportsMultiStreamAppend: supportsMultiStreamAppend,
-					SupportsAppendRecords: supportsAppendRecords);
+					SupportsAppendRecords: supportsAppendRecords,
+					SupportsSubscriptionFellBehind: supportsSubscriptionFellBehind);
 
 			} catch (Exception ex) when (ex.GetBaseException() is RpcException rpcException &&
 				rpcException.StatusCode == StatusCode.Unimplemented) {

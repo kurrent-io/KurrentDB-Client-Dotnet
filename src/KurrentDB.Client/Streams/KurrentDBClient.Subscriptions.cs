@@ -59,7 +59,8 @@ namespace KurrentDB.Client {
 					All           = ReadReq.Types.Options.Types.AllOptions.FromSubscriptionPosition(start),
 					Subscription  = new ReadReq.Types.Options.Types.SubscriptionOptions(),
 					Filter        = GetFilterOptions(filterOptions)!,
-					UuidOption    = new() { Structured = new() }
+					UuidOption    = new() { Structured = new() },
+					ControlOption = SubscriptionControlOption
 				}
 			},
 			Settings,
@@ -117,13 +118,20 @@ namespace KurrentDB.Client {
 					ResolveLinks = resolveLinkTos,
 					Stream = ReadReq.Types.Options.Types.StreamOptions.FromSubscriptionPosition(streamName, start),
 					Subscription = new ReadReq.Types.Options.Types.SubscriptionOptions(),
-					UuidOption = new() { Structured = new() }
+					UuidOption = new() { Structured = new() },
+					ControlOption = SubscriptionControlOption
 				}
 			},
 			Settings,
 			userCredentials,
 			cancellationToken
 		);
+
+		// only declared for rich liveness, so that requests are unchanged by default
+		ReadReq.Types.Options.Types.ControlOption? SubscriptionControlOption =>
+			Settings.EnableRichSubscriptionLiveness
+				? new() { Compatibility = ReadCompatibilityLevel.Level2_FellBehindMessage }
+				: null;
 
 		/// <summary>
 		/// A class that represents the result of a subscription operation. You may either enumerate this instance directly or <see cref="Messages"/>. Do not enumerate more than once.
@@ -136,12 +144,21 @@ namespace KurrentDB.Client {
 			private readonly KurrentDBClientSettings            _settings;
 			private          AsyncServerStreamingCall<ReadResp>? _call;
 
+			private readonly TaskCompletionSource<StreamSubscriptionFeatures> _features =
+				new(TaskCreationOptions.RunContinuationsAsynchronously);
+
 			private int _messagesEnumerated;
 
 			/// <summary>
 			/// The server-generated unique identifier for the subscription.
 			/// </summary>
 			public string? SubscriptionId { get; private set; }
+
+			/// <summary>
+			/// The <see cref="StreamSubscriptionFeatures"/> of the subscription. Completes once connected, before
+			/// <see cref="StreamMessage.SubscriptionConfirmation"/> is yielded, and fails if it could not connect.
+			/// </summary>
+			public Task<StreamSubscriptionFeatures> Features => _features.Task;
 
 			/// <summary>
 			/// An <see cref="IAsyncEnumerable{StreamMessage}"/>. Do not enumerate more than once.
@@ -192,6 +209,11 @@ namespace KurrentDB.Client {
 					_request.Options.NoFilter = new();
 				}
 
+				// read once as the settings are mutable. independent of server support:
+				// an older server can still send a richer CaughtUp
+				var richLiveness = settings.EnableRichSubscriptionLiveness;
+				var toAll        = _request.Options.StreamOptionCase == ReadReq.Types.Options.StreamOptionOneofCase.All;
+
 				_ = PumpMessages();
 
 				return;
@@ -199,7 +221,12 @@ namespace KurrentDB.Client {
 				async Task PumpMessages() {
 					try {
 						var channelInfo = await selectChannelInfo(_cts.Token).ConfigureAwait(false);
-						var client      = new StreamsClient(channelInfo.CallInvoker);
+
+						_features.TrySetResult(new() {
+							RichLiveness = richLiveness && channelInfo.ServerCapabilities.SupportsSubscriptionFellBehind
+						});
+
+						var client = new StreamsClient(channelInfo.CallInvoker);
 						_call = client.Read(_request, _callOptions);
                         await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
                             StreamMessage subscriptionMessage =
@@ -220,8 +247,26 @@ namespace KurrentDB.Client {
                                             response.Checkpoint.PreparePosition
                                         )
                                     ),
-                                    CaughtUp   => StreamMessage.CaughtUp.Instance,
-                                    FellBehind => StreamMessage.FellBehind.Instance,
+                                    // without it, the data-less singletons
+                                    CaughtUp when !richLiveness   => StreamMessage.CaughtUp.Instance,
+                                    FellBehind when !richLiveness => StreamMessage.FellBehind.Instance,
+                                    // the type follows the subscription, not what the server populated
+                                    CaughtUp when toAll => new StreamMessage.AllStreamCaughtUp {
+                                        Timestamp = response.CaughtUp.Timestamp?.ToDateTime(),
+                                        Position  = response.CaughtUp.Position is { } caughtUpAt ? new Position(caughtUpAt.CommitPosition, caughtUpAt.PreparePosition) : null
+                                    },
+                                    CaughtUp => new StreamMessage.StreamCaughtUp {
+                                        Timestamp      = response.CaughtUp.Timestamp?.ToDateTime(),
+                                        StreamPosition = response.CaughtUp.HasStreamRevision ? StreamPosition.FromInt64(response.CaughtUp.StreamRevision) : null
+                                    },
+                                    FellBehind when toAll => new StreamMessage.AllStreamFellBehind {
+                                        Timestamp = response.FellBehind.Timestamp?.ToDateTime(),
+                                        Position  = response.FellBehind.Position is { } fellBehindAt ? new Position(fellBehindAt.CommitPosition, fellBehindAt.PreparePosition) : null
+                                    },
+                                    FellBehind => new StreamMessage.StreamFellBehind {
+                                        Timestamp      = response.FellBehind.Timestamp?.ToDateTime(),
+                                        StreamPosition = response.FellBehind.HasStreamRevision ? StreamPosition.FromInt64(response.FellBehind.StreamRevision) : null
+                                    },
                                     _          => StreamMessage.Unknown.Instance
                                 };
 
@@ -249,6 +294,10 @@ namespace KurrentDB.Client {
 
 						_channel.Writer.Complete();
 					} catch (Exception ex) {
+						// no-op once connected. observed here as the failure is also reported through the messages
+						if (_features.TrySetException(ex))
+							_ = _features.Task.Exception;
+
 						_channel.Writer.TryComplete(ex);
 					}
 				}
