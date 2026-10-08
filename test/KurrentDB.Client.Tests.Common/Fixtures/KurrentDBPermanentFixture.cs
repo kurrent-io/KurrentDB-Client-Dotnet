@@ -62,7 +62,8 @@ public partial class KurrentDBPermanentFixture : IAsyncLifetime, IAsyncDisposabl
 			OperationOptions         = Options.DBClientSettings.OperationOptions,
 			ConnectivitySettings     = Options.DBClientSettings.ConnectivitySettings,
 			DefaultCredentials       = Options.DBClientSettings.DefaultCredentials,
-			DefaultDeadline          = Options.DBClientSettings.DefaultDeadline
+			DefaultDeadline          = Options.DBClientSettings.DefaultDeadline,
+			EnableRichSubscriptionLiveness = Options.DBClientSettings.EnableRichSubscriptionLiveness
 		};
 
 	InterlockedBoolean WarmUpCompleted { get; } = new();

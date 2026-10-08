@@ -62,15 +62,87 @@ namespace KurrentDB.Client {
 		/// <summary>
 		/// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that the subscription is live.
 		/// </summary>
+		/// <remarks>
+		/// With <see cref="KurrentDBClientSettings.EnableRichSubscriptionLiveness"/>, this is a
+		/// <see cref="StreamCaughtUp"/> or <see cref="AllStreamCaughtUp"/>.
+		/// </remarks>
 		public record CaughtUp : StreamMessage {
 			internal static readonly CaughtUp Instance = new();
 		}
 
 		/// <summary>
+		/// A <see cref="CaughtUp"/> for a stream subscription.
+		/// </summary>
+		public sealed record StreamCaughtUp : CaughtUp {
+			/// <summary>
+			/// The server's clock (UTC) when the subscription caught up. May be absent on older servers.
+			/// </summary>
+			public DateTime? Timestamp { get; init; }
+
+			/// <summary>
+			/// The last event the subscription has sent, or its start position if none yet. Absent only when it
+			/// started from the beginning and has sent nothing, or the server does not send it.
+			/// </summary>
+			public StreamPosition? StreamPosition { get; init; }
+		}
+
+		/// <summary>
+		/// A <see cref="CaughtUp"/> for a subscription to $all.
+		/// </summary>
+		public sealed record AllStreamCaughtUp : CaughtUp {
+			/// <summary>
+			/// The server's clock (UTC) when the subscription caught up. May be absent on older servers.
+			/// </summary>
+			public DateTime? Timestamp { get; init; }
+
+			/// <summary>
+			/// The last event or checkpoint the subscription has sent, or its start position if none yet. Absent
+			/// only when it started from the beginning and has sent nothing, or the server does not send it.
+			/// </summary>
+			public Position? Position { get; init; }
+		}
+
+		/// <summary>
 		/// A <see cref="KurrentDB.Client.StreamMessage"/> indicating that the subscription has switched to catch up mode.
 		/// </summary>
+		/// <remarks>
+		/// Only received with <see cref="KurrentDBClientSettings.EnableRichSubscriptionLiveness"/>, as a
+		/// <see cref="StreamFellBehind"/> or <see cref="AllStreamFellBehind"/>.
+		/// </remarks>
 		public record FellBehind : StreamMessage {
 			internal static readonly FellBehind Instance = new();
+		}
+
+		/// <summary>
+		/// A <see cref="FellBehind"/> for a stream subscription.
+		/// </summary>
+		public sealed record StreamFellBehind : FellBehind {
+			/// <summary>
+			/// The server's clock (UTC) when the subscription fell behind. May be absent on older servers.
+			/// </summary>
+			public DateTime? Timestamp { get; init; }
+
+			/// <summary>
+			/// The last event the subscription has sent, or its start position if none yet. Absent only when it
+			/// started from the beginning and has sent nothing, or the server does not send it.
+			/// </summary>
+			public StreamPosition? StreamPosition { get; init; }
+		}
+
+		/// <summary>
+		/// A <see cref="FellBehind"/> for a subscription to $all.
+		/// </summary>
+		public sealed record AllStreamFellBehind : FellBehind {
+			/// <summary>
+			/// The server's clock (UTC) when the subscription fell behind. May be absent on older servers.
+			/// </summary>
+			public DateTime? Timestamp { get; init; }
+
+			/// <summary>
+			/// The last event or checkpoint the subscription has sent, or its start position if none yet. Absent
+			/// only when it started from the beginning and has sent nothing, or the server does not send it.
+			/// </summary>
+			public Position? Position { get; init; }
 		}
 
 		/// <summary>

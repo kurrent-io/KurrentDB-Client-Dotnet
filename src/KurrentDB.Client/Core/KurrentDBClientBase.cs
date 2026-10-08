@@ -22,6 +22,11 @@ namespace KurrentDB.Client {
 		/// The <see cref="KurrentDBClientSettings"/>.
 		protected KurrentDBClientSettings Settings { get; }
 
+		/// <summary>
+		/// Gets a copy of the client's settings.
+		/// </summary>
+		public KurrentDBClientSettings GetSettings() => Settings.Clone();
+
 		/// Constructs a new <see cref="KurrentDBClientBase"/>.
 		protected KurrentDBClientBase(
 			KurrentDBClientSettings? settings,
