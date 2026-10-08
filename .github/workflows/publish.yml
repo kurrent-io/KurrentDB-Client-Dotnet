@@ -56,6 +56,10 @@ jobs:
     needs: [vulnerability-scan]
     runs-on: ubuntu-latest
     name: publish
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -117,10 +121,17 @@ jobs:
           dotnet tool restore
           find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/kurrent-io/index.json --skip-duplicate
 
+      - name: NuGet Login
+        id: nuget_login
+        if: github.event.inputs.dry_run != 'true' || github.event_name == 'push'
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       - name: Dotnet Push to Nuget.org
         shell: bash
         if: github.event.inputs.dry_run != 'true' || github.event_name == 'push'
         run: |
           dotnet nuget list source
           dotnet tool restore
-          find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ secrets.KURRENT_NUGET_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+          find . -name "*.nupkg" | xargs -n1 dotnet nuget push --api-key=${{ steps.nuget_login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
