@@ -51,14 +51,10 @@ namespace KurrentDB.Client {
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
 #if !NETFRAMEWORK
-		[UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Type members are preserved")]
+		[RequiresUnreferencedCode("This methods requires Reflection support in JSON serialization. Use the overload that accepts JsonTypeInfo<T> instead.")]
 		[RequiresDynamicCode("This methods requires Reflection support in JSON serialization. Use the overload that accepts JsonTypeInfo<T> instead.")]
 #endif
-		public async Task<T> GetResultAsync<
-#if !NETFRAMEWORK
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-#endif
-			T>(
+		public async Task<T> GetResultAsync<T>(
 			string name, string? partition = null,
 			JsonSerializerOptions? serializerOptions = null,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
@@ -167,14 +163,10 @@ namespace KurrentDB.Client {
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
 #if !NETFRAMEWORK
-		[UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Type members are preserved")]
+		[RequiresUnreferencedCode("This methods requires Reflection support in JSON serialization. Use the overload that accepts JsonTypeInfo<T> instead.")]
 		[RequiresDynamicCode("This methods requires Reflection support in JSON serialization. Use the overload that accepts JsonTypeInfo<T> instead.")]
 #endif
-		public async Task<T> GetStateAsync<
-#if  !NETFRAMEWORK
-			[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
-#endif
-			T>(
+		public async Task<T> GetStateAsync<T>(
 			string name, string? partition = null,
 			JsonSerializerOptions? serializerOptions = null, TimeSpan? deadline = null,
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
