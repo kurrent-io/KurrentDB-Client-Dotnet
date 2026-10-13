@@ -65,7 +65,7 @@ namespace KurrentDB.Client {
 			CancellationToken cancellationToken = default
 		)
 			=> JsonSerializer.Deserialize<T>(
-				(await GetRawResultAsync(name, partition, deadline, userCredentials, cancellationToken)).Span,
+				(await GetRawResultAsync(name, partition, deadline, userCredentials, cancellationToken).ConfigureAwait(false)).Span,
 				serializerOptions
 			)!;
 
@@ -87,7 +87,7 @@ namespace KurrentDB.Client {
 			CancellationToken cancellationToken = default
 		)
 			=> JsonSerializer.Deserialize(
-				(await GetRawResultAsync(name, partition, deadline, userCredentials, cancellationToken)).Span,
+				(await GetRawResultAsync(name, partition, deadline, userCredentials, cancellationToken).ConfigureAwait(false)).Span,
 				typeInfo
 			)!;
 
@@ -111,7 +111,7 @@ namespace KurrentDB.Client {
 			return stream.ToArray();
 		}
 
-		private async ValueTask<Value> GetResultInternalAsync(string name, string? partition,
+		async ValueTask<Value> GetResultInternalAsync(string name, string? partition,
 		                                                      TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new ProjectionsClient(
@@ -180,7 +180,7 @@ namespace KurrentDB.Client {
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
 		)
 			=> JsonSerializer.Deserialize<T>(
-				(await GetRawStateAsync(name, partition, deadline, userCredentials, cancellationToken)).Span,
+				(await GetRawStateAsync(name, partition, deadline, userCredentials, cancellationToken).ConfigureAwait(false)).Span,
 				serializerOptions
 			)!;
 
@@ -201,7 +201,7 @@ namespace KurrentDB.Client {
 			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
 		)
 			=> JsonSerializer.Deserialize(
-				(await GetRawStateAsync(name, partition, deadline, userCredentials, cancellationToken)).Span,
+				(await GetRawStateAsync(name, partition, deadline, userCredentials, cancellationToken).ConfigureAwait(false)).Span,
 				typeInfo
 			)!;
 
@@ -224,7 +224,7 @@ namespace KurrentDB.Client {
 			return stream.ToArray();
 		}
 
-		private async ValueTask<Value> GetStateInternalAsync(string name, string? partition, TimeSpan? deadline,
+		async ValueTask<Value> GetStateInternalAsync(string name, string? partition, TimeSpan? deadline,
 		                                                     UserCredentials? userCredentials, CancellationToken cancellationToken) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new ProjectionsClient(
