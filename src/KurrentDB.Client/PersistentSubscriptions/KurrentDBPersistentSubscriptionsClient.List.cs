@@ -72,9 +72,9 @@ namespace KurrentDB.Client {
 			}
 
 			try {
-				var result = await HttpGet<IList<PersistentSubscriptionDto>>("/subscriptions",
+				var result = await HttpGet("/subscriptions",
 						onNotFound: () => throw new PersistentSubscriptionNotFoundException(string.Empty, string.Empty),
-						channelInfo, deadline, userCredentials, cancellationToken)
+						channelInfo, KurrentDBJsonSerializerContext.Default.IListPersistentSubscriptionDto, deadline, userCredentials, cancellationToken)
 					.ConfigureAwait(false);
 
 				return result.Select(PersistentSubscriptionInfo.From);
@@ -98,9 +98,9 @@ namespace KurrentDB.Client {
 			ChannelInfo channelInfo, TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
 
 			var path = $"/subscriptions/{UrlEncode(streamName)}";
-			var result = await HttpGet<IList<PersistentSubscriptionDto>>(path,
+			var result = await HttpGet(path,
 					onNotFound: () => throw new PersistentSubscriptionNotFoundException(streamName, string.Empty),
-					channelInfo, deadline, userCredentials, cancellationToken)
+					channelInfo, KurrentDBJsonSerializerContext.Default.IListPersistentSubscriptionDto, deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 			return result.Select(PersistentSubscriptionInfo.From);
 		}

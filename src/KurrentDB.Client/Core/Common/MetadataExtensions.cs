@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Grpc.Core;
 
@@ -10,13 +11,17 @@ static class MetadataExtensions {
 	/// <param name="metadata">The dictionary to encode.</param>
 	/// <returns>UTF-8 encoded JSON bytes representing the metadata.</returns>
 	public static ReadOnlyMemory<byte> Encode(this Dictionary<string, string> metadata) =>
-		JsonSerializer.SerializeToUtf8Bytes(metadata);
+		JsonSerializer.SerializeToUtf8Bytes(metadata, KurrentDBJsonSerializerContext.Default.DictionaryStringString);
 
 	/// <summary>
 	/// Encodes an anonymous object as JSON metadata bytes.
 	/// </summary>
 	/// <param name="metadata">The object to encode.</param>
 	/// <returns>UTF-8 encoded JSON bytes representing the metadata.</returns>
+#if !NETFRAMEWORK
+	[RequiresUnreferencedCode("This methods requires Reflection support in JSON serialization.")]
+	[RequiresDynamicCode("This methods requires Reflection support in JSON serialization.")]
+#endif
 	public static ReadOnlyMemory<byte> Encode(this object metadata) =>
 		JsonSerializer.SerializeToUtf8Bytes(metadata);
 
@@ -29,7 +34,7 @@ static class MetadataExtensions {
 		if (metadata.IsEmpty)
 			return null;
 
-		return JsonSerializer.Deserialize<Dictionary<string, string>>(metadata.Span);
+		return JsonSerializer.Deserialize(metadata.Span, KurrentDBJsonSerializerContext.Default.DictionaryStringString);
 	}
 
 	/// <summary>

@@ -57,7 +57,7 @@ static class EventMetadataExtensions {
 			return eventMetadata.Span;
 
 		return eventMetadata.IsEmpty
-			? JsonSerializer.SerializeToUtf8Bytes(tracingMetadata)
+			? JsonSerializer.SerializeToUtf8Bytes(tracingMetadata, KurrentDBJsonSerializerContext.Default.TracingMetadata)
 			: TryInjectTracingMetadata(eventMetadata, tracingMetadata).ToArray();
 	}
 

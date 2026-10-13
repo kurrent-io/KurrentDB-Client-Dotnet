@@ -2,7 +2,9 @@
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -54,7 +56,32 @@ namespace KurrentDB.Client {
 			};
 		}
 
+#if !NETFRAMEWORK
+		[RequiresUnreferencedCode("This methods requires Reflection support in JSON serialization.")]
+		[RequiresDynamicCode("This methods requires Reflection support in JSON serialization.")]
+#endif
 		internal async Task<T> HttpGetAsync<T>(string path, ChannelInfo channelInfo, TimeSpan? deadline,
+			UserCredentials? userCredentials, Action onNotFound, CancellationToken cancellationToken) {
+
+			var json = await HttpGetStringAsync(path, channelInfo, deadline, userCredentials, onNotFound, cancellationToken)
+				.ConfigureAwait(false);
+
+			return EnsureDeserialized(JsonSerializer.Deserialize<T>(json, _jsonSettings));
+		}
+
+		internal async Task<T> HttpGetAsync<T>(string path, ChannelInfo channelInfo, JsonTypeInfo<T> typeInfo,
+			TimeSpan? deadline, UserCredentials? userCredentials, Action onNotFound, CancellationToken cancellationToken) {
+
+			var json = await HttpGetStringAsync(path, channelInfo, deadline, userCredentials, onNotFound, cancellationToken)
+				.ConfigureAwait(false);
+
+			return EnsureDeserialized(JsonSerializer.Deserialize(json, typeInfo));
+		}
+
+		static T EnsureDeserialized<T>(T? result) =>
+			result ?? throw new InvalidOperationException("Unable to deserialize response into object of type " + typeof(T));
+
+		async Task<string> HttpGetStringAsync(string path, ChannelInfo channelInfo, TimeSpan? deadline,
 			UserCredentials? userCredentials, Action onNotFound, CancellationToken cancellationToken) {
 
 			var request = CreateRequest(path, HttpMethod.Get, channelInfo, userCredentials);
@@ -62,17 +89,10 @@ namespace KurrentDB.Client {
 			var httpResult = await HttpSendAsync(request, onNotFound, deadline, cancellationToken).ConfigureAwait(false);
 
 #if NET
-			var json = await httpResult.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+			return await httpResult.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 #else
-			var json = await httpResult.Content.ReadAsStringAsync().ConfigureAwait(false);
+			return await httpResult.Content.ReadAsStringAsync().ConfigureAwait(false);
 #endif
-
-			var result = JsonSerializer.Deserialize<T>(json, _jsonSettings);
-			if (result == null) {
-				throw new InvalidOperationException("Unable to deserialize response into object of type " + typeof(T));
-			}
-
-			return result;
 		}
 
 		internal async Task HttpPostAsync(string path, string query, ChannelInfo channelInfo, TimeSpan? deadline,

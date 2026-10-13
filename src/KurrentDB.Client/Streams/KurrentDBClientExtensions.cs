@@ -5,12 +5,6 @@ namespace KurrentDB.Client {
 	///  A set of extension methods for an <see cref="KurrentDBClient"/>.
 	/// </summary>
 	public static class KurrentDBClientExtensions {
-		private static readonly JsonSerializerOptions SystemSettingsJsonSerializerOptions = new JsonSerializerOptions {
-			Converters = {
-				SystemSettingsJsonConverter.Instance
-			},
-		};
-
 		/// <summary>
 		/// Writes <see cref="SystemSettings"/> to the $settings stream.
 		/// </summary>
@@ -30,7 +24,7 @@ namespace KurrentDB.Client {
 			return dbClient.AppendToStreamAsync(SystemStreams.SettingsStream, StreamState.Any,
 				new[] {
 					new EventData(Uuid.NewUuid(), SystemEventTypes.Settings,
-						JsonSerializer.SerializeToUtf8Bytes(settings, SystemSettingsJsonSerializerOptions))
+						JsonSerializer.SerializeToUtf8Bytes(settings, KurrentDBJsonSerializerContext.Default.SystemSettings))
 				}, deadline: deadline, userCredentials: userCredentials, cancellationToken: cancellationToken);
 		}
 

@@ -65,9 +65,9 @@ namespace KurrentDB.Client {
 			ChannelInfo channelInfo, TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
 			
 			var path = $"/subscriptions/{UrlEncode(streamName)}/{UrlEncode(groupName)}/info";
-			var result = await HttpGet<PersistentSubscriptionDto>(path,
+			var result = await HttpGet(path,
 					onNotFound: () => throw new PersistentSubscriptionNotFoundException(streamName, groupName),
-					channelInfo, deadline, userCredentials, cancellationToken)
+					channelInfo, KurrentDBJsonSerializerContext.Default.PersistentSubscriptionDto, deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 			
 			return PersistentSubscriptionInfo.From(result);
