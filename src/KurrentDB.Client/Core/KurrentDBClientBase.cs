@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization.Metadata;
 using KurrentDB.Client.Interceptors;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
@@ -99,12 +101,26 @@ namespace KurrentDB.Client {
 		}
 
 		/// Returns the result of an HTTP Get request based on the client settings.
+#if !NETFRAMEWORK
+		[RequiresUnreferencedCode("This methods requires Reflection support in JSON serialization.")]
+		[RequiresDynamicCode("This methods requires Reflection support in JSON serialization.")]
+#endif
 		protected async Task<T> HttpGet<T>(
 			string path, Action onNotFound, ChannelInfo channelInfo,
 			TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken
 		) {
 			return await _httpFallback.Value
 				.HttpGetAsync<T>(path, channelInfo, deadline, userCredentials, onNotFound, cancellationToken)
+				.ConfigureAwait(false);
+		}
+
+		/// Returns the result of an HTTP Get request based on the client settings.
+		protected async Task<T> HttpGet<T>(
+			string path, Action onNotFound, ChannelInfo channelInfo, JsonTypeInfo<T> typeInfo,
+			TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken
+		) {
+			return await _httpFallback.Value
+				.HttpGetAsync(path, channelInfo, typeInfo, deadline, userCredentials, onNotFound, cancellationToken)
 				.ConfigureAwait(false);
 		}
 

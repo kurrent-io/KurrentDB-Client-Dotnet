@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Google.Protobuf.WellKnownTypes;
 using KurrentDB.Protocol.Projections.V1;
 using static KurrentDB.Protocol.Projections.V1.Projections;
@@ -48,10 +50,48 @@ namespace KurrentDB.Client {
 		/// <param name="cancellationToken"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public async Task<T> GetResultAsync<T>(string name, string? partition = null,
-			JsonSerializerOptions? serializerOptions = null, 
+#if !NETFRAMEWORK
+		[RequiresUnreferencedCode("This methods requires Reflection support in JSON serialization. Use the overload that accepts JsonTypeInfo<T> instead.")]
+		[RequiresDynamicCode("This methods requires Reflection support in JSON serialization. Use the overload that accepts JsonTypeInfo<T> instead.")]
+#endif
+		public async Task<T> GetResultAsync<T>(
+			string name, string? partition = null,
+			JsonSerializerOptions? serializerOptions = null,
 			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
-			CancellationToken cancellationToken = default) {
+			CancellationToken cancellationToken = default
+		)
+			=> JsonSerializer.Deserialize<T>(
+				(await GetRawResultAsync(name, partition, deadline, userCredentials, cancellationToken).ConfigureAwait(false)).Span,
+				serializerOptions
+			)!;
+
+		/// <summary>
+		/// Gets the result of a projection.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="partition"></param>
+		/// <param name="typeInfo"></param>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
+		public async Task<T> GetResultAsync<T>(
+			string name, string? partition,
+			JsonTypeInfo<T> typeInfo,
+			TimeSpan? deadline = null, UserCredentials? userCredentials = null,
+			CancellationToken cancellationToken = default
+		)
+			=> JsonSerializer.Deserialize(
+				(await GetRawResultAsync(name, partition, deadline, userCredentials, cancellationToken).ConfigureAwait(false)).Span,
+				typeInfo
+			)!;
+
+		async Task<ReadOnlyMemory<byte>> GetRawResultAsync(
+			string name, string? partition,
+			TimeSpan? deadline, UserCredentials? userCredentials,
+			CancellationToken cancellationToken
+		) {
 			var value = await GetResultInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 #if NET
@@ -59,17 +99,16 @@ namespace KurrentDB.Client {
 #else
 			using var stream = new MemoryStream();
 #endif
-			await using var writer = new Utf8JsonWriter(stream);
-			var serializer = new ValueSerializer();
+			await using var writer     = new Utf8JsonWriter(stream);
+			var             serializer = new ValueSerializer();
 			serializer.Write(writer, value, DefaultJsonSerializerOptions);
 			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 			stream.Position = 0;
-
-			return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
+			return stream.ToArray();
 		}
 
-		private async ValueTask<Value> GetResultInternalAsync(string name, string? partition,
-			TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
+		async ValueTask<Value> GetResultInternalAsync(string name, string? partition,
+		                                                      TimeSpan? deadline, UserCredentials? userCredentials, CancellationToken cancellationToken) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).ResultAsync(new ResultReq {
@@ -123,9 +162,44 @@ namespace KurrentDB.Client {
 		/// <param name="cancellationToken"></param>
 		/// <typeparam name="T"></typeparam>
 		/// <returns></returns>
-		public async Task<T> GetStateAsync<T>(string name, string? partition = null,
+#if !NETFRAMEWORK
+		[RequiresUnreferencedCode("This methods requires Reflection support in JSON serialization. Use the overload that accepts JsonTypeInfo<T> instead.")]
+		[RequiresDynamicCode("This methods requires Reflection support in JSON serialization. Use the overload that accepts JsonTypeInfo<T> instead.")]
+#endif
+		public async Task<T> GetStateAsync<T>(
+			string name, string? partition = null,
 			JsonSerializerOptions? serializerOptions = null, TimeSpan? deadline = null,
-			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default) {
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
+		)
+			=> JsonSerializer.Deserialize<T>(
+				(await GetRawStateAsync(name, partition, deadline, userCredentials, cancellationToken).ConfigureAwait(false)).Span,
+				serializerOptions
+			)!;
+
+		/// <summary>
+		/// Gets the state of a projection.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <param name="partition"></param>
+		/// <param name="typeInfo"></param>
+		/// <param name="deadline"></param>
+		/// <param name="userCredentials"></param>
+		/// <param name="cancellationToken"></param>
+		/// <typeparam name="T"></typeparam>
+		/// <returns></returns>
+		public async Task<T> GetStateAsync<T>(
+			string name, string? partition,
+			JsonTypeInfo<T> typeInfo, TimeSpan? deadline = null,
+			UserCredentials? userCredentials = null, CancellationToken cancellationToken = default
+		)
+			=> JsonSerializer.Deserialize(
+				(await GetRawStateAsync(name, partition, deadline, userCredentials, cancellationToken).ConfigureAwait(false)).Span,
+				typeInfo
+			)!;
+
+		async Task<ReadOnlyMemory<byte>> GetRawStateAsync(string name, string? partition ,
+		                                                  TimeSpan? deadline,
+		                                                  UserCredentials? userCredentials, CancellationToken cancellationToken) {
 			var value = await GetStateInternalAsync(name, partition, deadline, userCredentials, cancellationToken)
 				.ConfigureAwait(false);
 
@@ -134,17 +208,16 @@ namespace KurrentDB.Client {
 #else
 			using var stream = new MemoryStream();
 #endif
-			await using var writer = new Utf8JsonWriter(stream);
-			var serializer = new ValueSerializer();
+			await using var writer     = new Utf8JsonWriter(stream);
+			var             serializer = new ValueSerializer();
 			serializer.Write(writer, value, DefaultJsonSerializerOptions);
 			await writer.FlushAsync(cancellationToken).ConfigureAwait(false);
 			stream.Position = 0;
-
-			return JsonSerializer.Deserialize<T>(stream.ToArray(), serializerOptions)!;
+			return stream.ToArray();
 		}
 
-		private async ValueTask<Value> GetStateInternalAsync(string name, string? partition, TimeSpan? deadline,
-			UserCredentials? userCredentials, CancellationToken cancellationToken) {
+		async ValueTask<Value> GetStateInternalAsync(string name, string? partition, TimeSpan? deadline,
+		                                                     UserCredentials? userCredentials, CancellationToken cancellationToken) {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			using var call = new ProjectionsClient(
 				channelInfo.CallInvoker).StateAsync(new StateReq {

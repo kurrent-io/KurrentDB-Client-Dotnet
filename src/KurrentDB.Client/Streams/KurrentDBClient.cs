@@ -1,4 +1,3 @@
-using System.Text.Json;
 using System.Threading.Channels;
 using EventStore.Client;
 using Grpc.Core;
@@ -12,12 +11,6 @@ namespace KurrentDB.Client {
 	/// The client used for operations on streams.
 	/// </summary>
 	public sealed partial class KurrentDBClient : KurrentDBClientBase {
-		static readonly JsonSerializerOptions StreamMetadataJsonSerializerOptions = new() {
-			Converters = {
-				StreamMetadataJsonConverter.Instance
-			},
-		};
-
 		static BoundedChannelOptions ReadBoundedChannelOptions = new(1) {
 			SingleReader                  = true,
 			SingleWriter                  = true,

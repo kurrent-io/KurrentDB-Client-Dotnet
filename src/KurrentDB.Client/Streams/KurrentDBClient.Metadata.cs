@@ -25,8 +25,8 @@ namespace KurrentDB.Client {
 					}
 
 					return StreamMetadataResult.Create(streamName, resolvedEvent.OriginalEventNumber,
-						JsonSerializer.Deserialize<StreamMetadata>(resolvedEvent.Event.Data.Span,
-							StreamMetadataJsonSerializerOptions));
+						JsonSerializer.Deserialize(resolvedEvent.Event.Data.Span,
+							KurrentDBJsonSerializerContext.Default.StreamMetadata));
 				}
 
 			} catch (StreamNotFoundException) {
@@ -70,7 +70,7 @@ namespace KurrentDB.Client {
 			var channelInfo = await GetChannelInfo(cancellationToken).ConfigureAwait(false);
 			return await AppendToStreamInternal(channelInfo, appendReq, new[] {
 				new EventData(Uuid.NewUuid(), SystemEventTypes.StreamMetadata,
-					JsonSerializer.SerializeToUtf8Bytes(metadata, StreamMetadataJsonSerializerOptions)),
+					JsonSerializer.SerializeToUtf8Bytes(metadata, KurrentDBJsonSerializerContext.Default.StreamMetadata)),
 			}, operationOptions, deadline, userCredentials, cancellationToken).ConfigureAwait(false);
 		}
 	}
