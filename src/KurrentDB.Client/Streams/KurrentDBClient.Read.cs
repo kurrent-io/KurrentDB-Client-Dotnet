@@ -97,12 +97,15 @@ namespace KurrentDB.Client {
 
 		/// <summary>
 		/// A class that represents the result of a read operation on the $all stream. You may either enumerate this instance directly or <see cref="Messages"/>. Do not enumerate more than once.
+		/// Enumerating releases the underlying call. If the result is never enumerated, dispose it.
 		/// </summary>
-		public class ReadAllStreamResult : IAsyncEnumerable<ResolvedEvent> {
+		public class ReadAllStreamResult : IAsyncEnumerable<ResolvedEvent>, IAsyncDisposable, IDisposable {
 			readonly Channel<StreamMessage>  _channel;
 			readonly CancellationTokenSource _cts;
+			readonly CancellationToken       _token;
 
 			int _messagesEnumerated;
+			int _released;
 
 			/// <summary>
 			/// The last <see cref="Position"/> of the $all stream, if available.
@@ -122,7 +125,7 @@ namespace KurrentDB.Client {
 						}
 
 						try {
-							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)
+							await foreach (var message in _channel.Reader.ReadAllAsync(_token)
 								               .ConfigureAwait(false)) {
 								if (message is StreamMessage.LastAllStreamPosition(var position)) {
 									LastPosition = position;
@@ -132,7 +135,7 @@ namespace KurrentDB.Client {
 							}
 						}
 						finally {
-							_cts.Cancel();
+							Release();
 						}
 					}
 				}
@@ -152,8 +155,8 @@ namespace KurrentDB.Client {
 
 				_channel = System.Threading.Channels.Channel.CreateBounded<StreamMessage>(ReadBoundedChannelOptions);
 
-				_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-				var linkedCancellationToken = _cts.Token;
+				_cts   = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+				_token = _cts.Token;
 
 				if (request.Options.FilterOptionCase == ReadReq.Types.Options.FilterOptionOneofCase.None)
 					request.Options.NoFilter = new();
@@ -164,10 +167,10 @@ namespace KurrentDB.Client {
 
 				async Task PumpMessages() {
 					try {
-						var       callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
+						var       callInvoker = await selectCallInvoker(_token).ConfigureAwait(false);
 						var       client      = new StreamsClient(callInvoker);
 						using var call        = client.Read(request, callOptions);
-						await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken)
+						await foreach (var response in call.ResponseStream.ReadAllAsync(_token)
 							               .ConfigureAwait(false)) {
 							await _channel.Writer.WriteAsync(
 								response.ContentCase switch {
@@ -183,7 +186,7 @@ namespace KurrentDB.Client {
 									),
 									_ => StreamMessage.Unknown.Instance
 								},
-								linkedCancellationToken
+								_token
 							).ConfigureAwait(false);
 						}
 
@@ -193,6 +196,23 @@ namespace KurrentDB.Client {
 						_channel.Writer.TryComplete(ex);
 					}
 				}
+			}
+
+			void Release() {
+				if (Interlocked.Exchange(ref _released, 1) == 1)
+					return;
+
+				_cts.Cancel();
+				_cts.Dispose();
+			}
+
+			/// <inheritdoc />
+			public void Dispose() => Release();
+
+			/// <inheritdoc />
+			public ValueTask DisposeAsync() {
+				Release();
+				return default;
 			}
 
 			/// <inheritdoc />
@@ -209,7 +229,7 @@ namespace KurrentDB.Client {
 					}
 				}
 				finally {
-					_cts.Cancel();
+					Release();
 				}
 			}
 		}
@@ -273,12 +293,15 @@ namespace KurrentDB.Client {
 
 		/// <summary>
 		/// A class that represents the result of a read operation on a stream. You may either enumerate this instance directly or <see cref="Messages"/>. Do not enumerate more than once.
+		/// Enumerating releases the underlying call. If the result is never enumerated, dispose it.
 		/// </summary>
-		public class ReadStreamResult : IAsyncEnumerable<ResolvedEvent> {
+		public class ReadStreamResult : IAsyncEnumerable<ResolvedEvent>, IAsyncDisposable, IDisposable {
 			readonly Channel<StreamMessage>  _channel;
 			readonly CancellationTokenSource _cts;
+			readonly CancellationToken       _token;
 
 			int _messagesEnumerated;
+			int _released;
 
 			/// <summary>
 			/// The name of the stream.
@@ -308,7 +331,7 @@ namespace KurrentDB.Client {
 						}
 
 						try {
-							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
+							await foreach (var message in _channel.Reader.ReadAllAsync(_token).ConfigureAwait(false)) {
 								switch (message) {
 									case StreamMessage.FirstStreamPosition(var streamPosition):
 										FirstStreamPosition = streamPosition;
@@ -326,7 +349,7 @@ namespace KurrentDB.Client {
 							}
 						}
 						finally {
-							_cts.Cancel();
+							Release();
 						}
 					}
 				}
@@ -354,8 +377,8 @@ namespace KurrentDB.Client {
 				StreamName = request.Options.Stream.StreamIdentifier!;
 
 				var tcs = new TaskCompletionSource<ReadState>(TaskCreationOptions.RunContinuationsAsynchronously);
-				_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-				var linkedCancellationToken = _cts.Token;
+				_cts   = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+				_token = _cts.Token;
 #pragma warning disable CS0612
 				ReadState = tcs.Task;
 #pragma warning restore CS0612
@@ -368,17 +391,17 @@ namespace KurrentDB.Client {
 					var firstMessageRead = false;
 
 					try {
-						var       callInvoker = await selectCallInvoker(linkedCancellationToken).ConfigureAwait(false);
+						var       callInvoker = await selectCallInvoker(_token).ConfigureAwait(false);
 						var       client      = new StreamsClient(callInvoker);
 						using var call        = client.Read(request, callOptions);
 
-						await foreach (var response in call.ResponseStream.ReadAllAsync(linkedCancellationToken)
+						await foreach (var response in call.ResponseStream.ReadAllAsync(_token)
 							               .ConfigureAwait(false)) {
 							if (!firstMessageRead) {
 								firstMessageRead = true;
 
 								if (response.ContentCase != StreamNotFound || request.Options.Stream == null) {
-									await _channel.Writer.WriteAsync(StreamMessage.Ok.Instance, linkedCancellationToken)
+									await _channel.Writer.WriteAsync(StreamMessage.Ok.Instance, _token)
 										.ConfigureAwait(false);
 
 									tcs.SetResult(Client.ReadState.Ok);
@@ -406,7 +429,7 @@ namespace KurrentDB.Client {
 									),
 									_ => StreamMessage.Unknown.Instance
 								},
-								linkedCancellationToken
+								_token
 							).ConfigureAwait(false);
 						}
 
@@ -421,6 +444,23 @@ namespace KurrentDB.Client {
 						_channel.Writer.TryComplete(ex);
 					}
 				}
+			}
+
+			void Release() {
+				if (Interlocked.Exchange(ref _released, 1) == 1)
+					return;
+
+				_cts.Cancel();
+				_cts.Dispose();
+			}
+
+			/// <inheritdoc />
+			public void Dispose() => Release();
+
+			/// <inheritdoc />
+			public ValueTask DisposeAsync() {
+				Release();
+				return default;
 			}
 
 			/// <inheritdoc />
@@ -441,7 +481,7 @@ namespace KurrentDB.Client {
 					}
 				}
 				finally {
-					_cts.Cancel();
+					Release();
 				}
 			}
 		}
