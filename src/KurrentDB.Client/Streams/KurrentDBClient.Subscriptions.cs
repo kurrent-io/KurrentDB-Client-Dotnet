@@ -140,6 +140,7 @@ namespace KurrentDB.Client {
 			private readonly ReadReq                             _request;
 			private readonly Channel<StreamMessage>              _channel;
 			private readonly CancellationTokenSource             _cts;
+			private readonly CancellationToken                   _token;
 			private readonly CallOptions                         _callOptions;
 			private readonly KurrentDBClientSettings            _settings;
 			private          AsyncServerStreamingCall<ReadResp>? _call;
@@ -148,6 +149,7 @@ namespace KurrentDB.Client {
 				new(TaskCreationOptions.RunContinuationsAsynchronously);
 
 			private int _messagesEnumerated;
+			private int _released;
 
 			/// <summary>
 			/// The server-generated unique identifier for the subscription.
@@ -172,16 +174,12 @@ namespace KurrentDB.Client {
 
 					async IAsyncEnumerable<StreamMessage> GetMessages() {
 						try {
-							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)) {
+							await foreach (var message in _channel.Reader.ReadAllAsync(_token)) {
 								yield return message;
 							}
                         }
                         finally {
-#if NET8_0_OR_GREATER
-                            await _cts.CancelAsync().ConfigureAwait(false);
-#else
-                            _cts.Cancel();
-#endif
+                            Release();
                         }
                     }
 				}
@@ -203,7 +201,8 @@ namespace KurrentDB.Client {
 
 				_channel = System.Threading.Channels.Channel.CreateBounded<StreamMessage>(ReadBoundedChannelOptions);
 
-				_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+				_cts   = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+				_token = _cts.Token;
 
 				if (_request.Options.FilterOptionCase == ReadReq.Types.Options.FilterOptionOneofCase.None) {
 					_request.Options.NoFilter = new();
@@ -220,7 +219,7 @@ namespace KurrentDB.Client {
 
 				async Task PumpMessages() {
 					try {
-						var channelInfo = await selectChannelInfo(_cts.Token).ConfigureAwait(false);
+						var channelInfo = await selectChannelInfo(_token).ConfigureAwait(false);
 
 						_features.TrySetResult(new() {
 							RichLiveness = richLiveness && channelInfo.ServerCapabilities.SupportsSubscriptionFellBehind
@@ -228,7 +227,7 @@ namespace KurrentDB.Client {
 
 						var client = new StreamsClient(channelInfo.CallInvoker);
 						_call = client.Read(_request, _callOptions);
-                        await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
+                        await foreach (var response in _call.ResponseStream.ReadAllAsync(_token).ConfigureAwait(false)) {
                             StreamMessage subscriptionMessage =
                                 response.ContentCase switch {
                                     Confirmation          => new StreamMessage.SubscriptionConfirmation(response.Confirmation.SubscriptionId),
@@ -288,7 +287,7 @@ namespace KurrentDB.Client {
                             }
 
                             await _channel.Writer
-                                .WriteAsync(subscriptionMessage, _cts.Token)
+                                .WriteAsync(subscriptionMessage, _token)
                                 .ConfigureAwait(false);
                         }
 
@@ -303,34 +302,22 @@ namespace KurrentDB.Client {
 				}
 			}
 
-			/// <inheritdoc />
-			public async ValueTask DisposeAsync() {
-                //TODO SS: Check if `CastAndDispose` is still relevant
-				await CastAndDispose(_cts).ConfigureAwait(false);
-				await CastAndDispose(_call).ConfigureAwait(false);
+			void Release() {
+				if (Interlocked.Exchange(ref _released, 1) == 1)
+					return;
 
-				return;
-
-				static async ValueTask CastAndDispose(IDisposable? resource) {
-					switch (resource) {
-						case null:
-							return;
-
-						case IAsyncDisposable disposable:
-							await disposable.DisposeAsync().ConfigureAwait(false);
-							break;
-
-						default:
-							resource.Dispose();
-							break;
-					}
-				}
+				_cts.Cancel();
+				_cts.Dispose();
+				_call?.Dispose();
 			}
 
 			/// <inheritdoc />
-			public void Dispose() {
-				_cts.Dispose();
-				_call?.Dispose();
+			public void Dispose() => Release();
+
+			/// <inheritdoc />
+			public ValueTask DisposeAsync() {
+				Release();
+				return default;
 			}
 
 			/// <inheritdoc />
@@ -344,11 +331,7 @@ namespace KurrentDB.Client {
 					}
 				}
                 finally {
-#if NET8_0_OR_GREATER
-                    await _cts.CancelAsync().ConfigureAwait(false);
-#else
-                    _cts.Cancel();
-#endif
+                    Release();
 				}
 			}
 		}
