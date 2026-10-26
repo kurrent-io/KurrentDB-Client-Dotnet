@@ -226,8 +226,9 @@ namespace KurrentDB.Client {
 						});
 
 						var client = new StreamsClient(channelInfo.CallInvoker);
-						_call = client.Read(_request, _callOptions);
-                        await foreach (var response in _call.ResponseStream.ReadAllAsync(_token).ConfigureAwait(false)) {
+						using var call = client.Read(_request, _callOptions);
+						_call = call;
+                        await foreach (var response in call.ResponseStream.ReadAllAsync(_token).ConfigureAwait(false)) {
                             StreamMessage subscriptionMessage =
                                 response.ContentCase switch {
                                     Confirmation          => new StreamMessage.SubscriptionConfirmation(response.Confirmation.SubscriptionId),
