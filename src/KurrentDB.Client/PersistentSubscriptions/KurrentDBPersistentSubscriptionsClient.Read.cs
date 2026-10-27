@@ -173,7 +173,7 @@ namespace KurrentDB.Client {
             
             readonly ReadReq                                _request;
             readonly Channel<PersistentSubscriptionMessage> _channel;
-            readonly CancellationTokenSource                _cts;
+            readonly ReadLifetime                           _lifetime;
             readonly CallOptions                            _callOptions;
 
             AsyncDuplexStreamingCall<ReadReq, ReadResp>? _call;
@@ -206,12 +206,12 @@ namespace KurrentDB.Client {
 
 					async IAsyncEnumerable<PersistentSubscriptionMessage> GetMessages() {
                         try {
-                            await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)) {
+                            await foreach (var message in _channel.Reader.ReadAllAsync(_lifetime.Token)) {
                                 yield return message;
                             }
                         }
                         finally {
-                            _cts.Cancel();
+                            Release();
                         }
 					}
 				}
@@ -226,17 +226,16 @@ namespace KurrentDB.Client {
 				StreamName = streamName;
 				GroupName  = groupName;
 
-				_request = request;
+				_request  = request;
+				_lifetime = new ReadLifetime(cancellationToken);
 
 				_callOptions = KurrentDBCallOptions.CreateStreaming(
 					settings,
 					userCredentials: userCredentials,
-					cancellationToken: cancellationToken
+					cancellationToken: _lifetime.Token
 				);
 
 				_channel = System.Threading.Channels.Channel.CreateBounded<PersistentSubscriptionMessage>(ReadBoundedChannelOptions);
-
-				_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
 				_ = PumpMessages();
 
@@ -244,14 +243,15 @@ namespace KurrentDB.Client {
 
 				async Task PumpMessages() {
 					try {
-                        var channelInfo = await selectChannelInfo(_cts.Token).ConfigureAwait(false);
+                        var channelInfo = await selectChannelInfo(_lifetime.Token).ConfigureAwait(false);
                         var client      = new PersistentSubscriptionsClient(channelInfo.CallInvoker);
 
-						_call = client.Read(_callOptions);
+						using var call = client.Read(_callOptions);
+						_call = call;
 
-						await _call.RequestStream.WriteAsync(_request).ConfigureAwait(false);
+						await call.RequestStream.WriteAsync(_request).ConfigureAwait(false);
 
-						await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
+						await foreach (var response in call.ResponseStream.ReadAllAsync(_lifetime.Token).ConfigureAwait(false)) {
 							PersistentSubscriptionMessage subscriptionMessage = response.ContentCase switch {
 								SubscriptionConfirmation => new PersistentSubscriptionMessage.SubscriptionConfirmation(
 									response.SubscriptionConfirmation.SubscriptionId
@@ -283,7 +283,7 @@ namespace KurrentDB.Client {
 									break;
 							}
 
-							await _channel.Writer.WriteAsync(subscriptionMessage, _cts.Token).ConfigureAwait(false);
+							await _channel.Writer.WriteAsync(subscriptionMessage, _lifetime.Token).ConfigureAwait(false);
 						}
 
 						_channel.Writer.TryComplete();
@@ -314,6 +314,9 @@ namespace KurrentDB.Client {
 						}
 
 						_channel.Writer.TryComplete(ex);
+					}
+					finally {
+						_lifetime.Detach();
 					}
 				}
 			}
@@ -440,33 +443,15 @@ namespace KurrentDB.Client {
 						e.CustomMetadata.ToByteArray()
 					);
 
-			/// <inheritdoc />
-			public async ValueTask DisposeAsync() {
-				await CastAndDispose(_cts).ConfigureAwait(false);
-				await CastAndDispose(_call).ConfigureAwait(false);
-
-				return;
-
-				static async Task CastAndDispose(IDisposable? resource) {
-					switch (resource) {
-						case null:
-							return;
-
-						case IAsyncDisposable resourceAsyncDisposable:
-							await resourceAsyncDisposable.DisposeAsync().ConfigureAwait(false);
-							break;
-
-						default:
-							resource.Dispose();
-							break;
-					}
-				}
-			}
+			void Release() => _lifetime.Dispose();
 
 			/// <inheritdoc />
-			public void Dispose() {
-				_cts.Dispose();
-				_call?.Dispose();
+			public void Dispose() => Release();
+
+			/// <inheritdoc />
+			public ValueTask DisposeAsync() {
+				Release();
+				return default;
 			}
 
 			/// <inheritdoc />

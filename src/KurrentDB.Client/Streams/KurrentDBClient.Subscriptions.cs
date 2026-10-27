@@ -51,7 +51,7 @@ namespace KurrentDB.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) => new(
-			async _ => await GetChannelInfo(cancellationToken).ConfigureAwait(false),
+			async ct => await GetChannelInfo(ct).ConfigureAwait(false),
 			new ReadReq {
 				Options = new ReadReq.Types.Options {
 					ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
@@ -111,7 +111,7 @@ namespace KurrentDB.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) => new(
-			async _ => await GetChannelInfo(cancellationToken).ConfigureAwait(false),
+			async ct => await GetChannelInfo(ct).ConfigureAwait(false),
 			new ReadReq {
 				Options = new ReadReq.Types.Options {
 					ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
@@ -137,12 +137,11 @@ namespace KurrentDB.Client {
 		/// A class that represents the result of a subscription operation. You may either enumerate this instance directly or <see cref="Messages"/>. Do not enumerate more than once.
 		/// </summary>
 		public class StreamSubscriptionResult : IAsyncEnumerable<ResolvedEvent>, IAsyncDisposable, IDisposable {
-			private readonly ReadReq                             _request;
-			private readonly Channel<StreamMessage>              _channel;
-			private readonly CancellationTokenSource             _cts;
-			private readonly CallOptions                         _callOptions;
-			private readonly KurrentDBClientSettings            _settings;
-			private          AsyncServerStreamingCall<ReadResp>? _call;
+			private readonly ReadReq                 _request;
+			private readonly Channel<StreamMessage>  _channel;
+			private readonly ReadLifetime            _lifetime;
+			private readonly CallOptions             _callOptions;
+			private readonly KurrentDBClientSettings _settings;
 
 			private readonly TaskCompletionSource<StreamSubscriptionFeatures> _features =
 				new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -172,16 +171,12 @@ namespace KurrentDB.Client {
 
 					async IAsyncEnumerable<StreamMessage> GetMessages() {
 						try {
-							await foreach (var message in _channel.Reader.ReadAllAsync(_cts.Token)) {
+							await foreach (var message in _channel.Reader.ReadAllAsync(_lifetime.Token)) {
 								yield return message;
 							}
                         }
                         finally {
-#if NET8_0_OR_GREATER
-                            await _cts.CancelAsync().ConfigureAwait(false);
-#else
-                            _cts.Cancel();
-#endif
+                            Release();
                         }
                     }
 				}
@@ -194,16 +189,15 @@ namespace KurrentDB.Client {
 			) {
 				_request  = request;
 				_settings = settings;
+				_lifetime = new ReadLifetime(cancellationToken);
 
 				_callOptions = KurrentDBCallOptions.CreateStreaming(
 					settings,
 					userCredentials: userCredentials,
-					cancellationToken: cancellationToken
+					cancellationToken: _lifetime.Token
 				);
 
 				_channel = System.Threading.Channels.Channel.CreateBounded<StreamMessage>(ReadBoundedChannelOptions);
-
-				_cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
 				if (_request.Options.FilterOptionCase == ReadReq.Types.Options.FilterOptionOneofCase.None) {
 					_request.Options.NoFilter = new();
@@ -220,15 +214,15 @@ namespace KurrentDB.Client {
 
 				async Task PumpMessages() {
 					try {
-						var channelInfo = await selectChannelInfo(_cts.Token).ConfigureAwait(false);
+						var channelInfo = await selectChannelInfo(_lifetime.Token).ConfigureAwait(false);
 
 						_features.TrySetResult(new() {
 							RichLiveness = richLiveness && channelInfo.ServerCapabilities.SupportsSubscriptionFellBehind
 						});
 
 						var client = new StreamsClient(channelInfo.CallInvoker);
-						_call = client.Read(_request, _callOptions);
-                        await foreach (var response in _call.ResponseStream.ReadAllAsync(_cts.Token).ConfigureAwait(false)) {
+						using var call = client.Read(_request, _callOptions);
+                        await foreach (var response in call.ResponseStream.ReadAllAsync(_lifetime.Token).ConfigureAwait(false)) {
                             StreamMessage subscriptionMessage =
                                 response.ContentCase switch {
                                     Confirmation          => new StreamMessage.SubscriptionConfirmation(response.Confirmation.SubscriptionId),
@@ -288,7 +282,7 @@ namespace KurrentDB.Client {
                             }
 
                             await _channel.Writer
-                                .WriteAsync(subscriptionMessage, _cts.Token)
+                                .WriteAsync(subscriptionMessage, _lifetime.Token)
                                 .ConfigureAwait(false);
                         }
 
@@ -300,37 +294,21 @@ namespace KurrentDB.Client {
 
 						_channel.Writer.TryComplete(ex);
 					}
-				}
-			}
-
-			/// <inheritdoc />
-			public async ValueTask DisposeAsync() {
-                //TODO SS: Check if `CastAndDispose` is still relevant
-				await CastAndDispose(_cts).ConfigureAwait(false);
-				await CastAndDispose(_call).ConfigureAwait(false);
-
-				return;
-
-				static async ValueTask CastAndDispose(IDisposable? resource) {
-					switch (resource) {
-						case null:
-							return;
-
-						case IAsyncDisposable disposable:
-							await disposable.DisposeAsync().ConfigureAwait(false);
-							break;
-
-						default:
-							resource.Dispose();
-							break;
+					finally {
+						_lifetime.Detach();
 					}
 				}
 			}
 
+			void Release() => _lifetime.Dispose();
+
 			/// <inheritdoc />
-			public void Dispose() {
-				_cts.Dispose();
-				_call?.Dispose();
+			public void Dispose() => Release();
+
+			/// <inheritdoc />
+			public ValueTask DisposeAsync() {
+				Release();
+				return default;
 			}
 
 			/// <inheritdoc />
@@ -344,11 +322,7 @@ namespace KurrentDB.Client {
 					}
 				}
                 finally {
-#if NET8_0_OR_GREATER
-                    await _cts.CancelAsync().ConfigureAwait(false);
-#else
-                    _cts.Cancel();
-#endif
+                    Release();
 				}
 			}
 		}
