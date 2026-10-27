@@ -51,7 +51,7 @@ namespace KurrentDB.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) => new(
-			async _ => await GetChannelInfo(cancellationToken).ConfigureAwait(false),
+			async ct => await GetChannelInfo(ct).ConfigureAwait(false),
 			new ReadReq {
 				Options = new ReadReq.Types.Options {
 					ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
@@ -111,7 +111,7 @@ namespace KurrentDB.Client {
 			UserCredentials? userCredentials = null,
 			CancellationToken cancellationToken = default
 		) => new(
-			async _ => await GetChannelInfo(cancellationToken).ConfigureAwait(false),
+			async ct => await GetChannelInfo(ct).ConfigureAwait(false),
 			new ReadReq {
 				Options = new ReadReq.Types.Options {
 					ReadDirection = ReadReq.Types.Options.Types.ReadDirection.Forwards,
@@ -137,19 +137,16 @@ namespace KurrentDB.Client {
 		/// A class that represents the result of a subscription operation. You may either enumerate this instance directly or <see cref="Messages"/>. Do not enumerate more than once.
 		/// </summary>
 		public class StreamSubscriptionResult : IAsyncEnumerable<ResolvedEvent>, IAsyncDisposable, IDisposable {
-			private readonly ReadReq                             _request;
-			private readonly Channel<StreamMessage>              _channel;
-			private readonly CancellationTokenSource             _cts;
-			private readonly CancellationToken                   _token;
-			private readonly CallOptions                         _callOptions;
-			private readonly KurrentDBClientSettings            _settings;
-			private          AsyncServerStreamingCall<ReadResp>? _call;
+			private readonly ReadReq                 _request;
+			private readonly Channel<StreamMessage>  _channel;
+			private readonly ReadLifetime            _lifetime;
+			private readonly CallOptions             _callOptions;
+			private readonly KurrentDBClientSettings _settings;
 
 			private readonly TaskCompletionSource<StreamSubscriptionFeatures> _features =
 				new(TaskCreationOptions.RunContinuationsAsynchronously);
 
 			private int _messagesEnumerated;
-			private int _released;
 
 			/// <summary>
 			/// The server-generated unique identifier for the subscription.
@@ -174,7 +171,7 @@ namespace KurrentDB.Client {
 
 					async IAsyncEnumerable<StreamMessage> GetMessages() {
 						try {
-							await foreach (var message in _channel.Reader.ReadAllAsync(_token)) {
+							await foreach (var message in _channel.Reader.ReadAllAsync(_lifetime.Token)) {
 								yield return message;
 							}
                         }
@@ -192,17 +189,15 @@ namespace KurrentDB.Client {
 			) {
 				_request  = request;
 				_settings = settings;
+				_lifetime = new ReadLifetime(cancellationToken);
 
 				_callOptions = KurrentDBCallOptions.CreateStreaming(
 					settings,
 					userCredentials: userCredentials,
-					cancellationToken: cancellationToken
+					cancellationToken: _lifetime.Token
 				);
 
 				_channel = System.Threading.Channels.Channel.CreateBounded<StreamMessage>(ReadBoundedChannelOptions);
-
-				_cts   = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-				_token = _cts.Token;
 
 				if (_request.Options.FilterOptionCase == ReadReq.Types.Options.FilterOptionOneofCase.None) {
 					_request.Options.NoFilter = new();
@@ -219,7 +214,7 @@ namespace KurrentDB.Client {
 
 				async Task PumpMessages() {
 					try {
-						var channelInfo = await selectChannelInfo(_token).ConfigureAwait(false);
+						var channelInfo = await selectChannelInfo(_lifetime.Token).ConfigureAwait(false);
 
 						_features.TrySetResult(new() {
 							RichLiveness = richLiveness && channelInfo.ServerCapabilities.SupportsSubscriptionFellBehind
@@ -227,8 +222,7 @@ namespace KurrentDB.Client {
 
 						var client = new StreamsClient(channelInfo.CallInvoker);
 						using var call = client.Read(_request, _callOptions);
-						_call = call;
-                        await foreach (var response in call.ResponseStream.ReadAllAsync(_token).ConfigureAwait(false)) {
+                        await foreach (var response in call.ResponseStream.ReadAllAsync(_lifetime.Token).ConfigureAwait(false)) {
                             StreamMessage subscriptionMessage =
                                 response.ContentCase switch {
                                     Confirmation          => new StreamMessage.SubscriptionConfirmation(response.Confirmation.SubscriptionId),
@@ -288,7 +282,7 @@ namespace KurrentDB.Client {
                             }
 
                             await _channel.Writer
-                                .WriteAsync(subscriptionMessage, _token)
+                                .WriteAsync(subscriptionMessage, _lifetime.Token)
                                 .ConfigureAwait(false);
                         }
 
@@ -300,17 +294,13 @@ namespace KurrentDB.Client {
 
 						_channel.Writer.TryComplete(ex);
 					}
+					finally {
+						_lifetime.Detach();
+					}
 				}
 			}
 
-			void Release() {
-				if (Interlocked.Exchange(ref _released, 1) == 1)
-					return;
-
-				_cts.Cancel();
-				_cts.Dispose();
-				_call?.Dispose();
-			}
+			void Release() => _lifetime.Dispose();
 
 			/// <inheritdoc />
 			public void Dispose() => Release();
