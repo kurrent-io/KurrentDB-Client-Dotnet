@@ -30,6 +30,18 @@ public class ReadResultReleasesCallerTokenTests(ITestOutputHelper output, Kurren
 	}
 
 	[Fact]
+	public async Task read_state_only_without_dispose_unregisters_from_caller_token_once_pump_completes() {
+		using var parent = new CancellationTokenSource();
+
+		for (var i = 0; i < Reads; i++) {
+			var missing = Fixture.Streams.ReadStreamAsync(Direction.Forwards, Fixture.GetStreamName(), StreamPosition.Start, cancellationToken: parent.Token);
+			Assert.Equal(ReadState.StreamNotFound, await missing.ReadState);
+		}
+
+		await AssertNoRegistrations(parent);
+	}
+
+	[Fact]
 	public async Task read_all_unregisters_from_caller_token() {
 		using var parent = new CancellationTokenSource();
 
@@ -52,6 +64,25 @@ public class ReadResultReleasesCallerTokenTests(ITestOutputHelper output, Kurren
 
 			await using var unread = Fixture.Streams.SubscribeToStream(stream, FromStream.Start, cancellationToken: parent.Token);
 			await unread.Features;
+		}
+
+		await AssertNoRegistrations(parent);
+	}
+
+	[Fact]
+	public async Task persistent_subscription_unregisters_from_caller_token() {
+		var stream = Fixture.GetStreamName();
+		var group  = Fixture.GetGroupName();
+		await Fixture.Streams.AppendToStreamAsync(stream, StreamState.NoStream, Fixture.CreateTestEvents(1));
+		await Fixture.Subscriptions.CreateToStreamAsync(stream, group, new PersistentSubscriptionSettings());
+
+		using var parent = new CancellationTokenSource();
+
+		for (var i = 0; i < Reads; i++) {
+			await foreach (var _ in Fixture.Subscriptions.SubscribeToStream(stream, group, cancellationToken: parent.Token).Messages)
+				break;
+
+			await using var unread = Fixture.Subscriptions.SubscribeToStream(stream, group, cancellationToken: parent.Token);
 		}
 
 		await AssertNoRegistrations(parent);

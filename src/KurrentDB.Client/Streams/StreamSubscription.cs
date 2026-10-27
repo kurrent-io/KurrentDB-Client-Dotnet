@@ -28,24 +28,28 @@ namespace KurrentDB.Client {
 			Func<StreamSubscription, Position, CancellationToken, Task>? checkpointReached = null,
 			CancellationToken cancellationToken = default
 		) {
-			var messages = subscription.Messages;
+			var enumerator = subscription.Messages.GetAsyncEnumerator(cancellationToken);
 
-			var enumerator = messages.GetAsyncEnumerator(cancellationToken);
-			if (!await enumerator.MoveNextAsync().ConfigureAwait(false) ||
-			    enumerator.Current is not StreamMessage.SubscriptionConfirmation(var subscriptionId)) {
-				throw new InvalidOperationException($"Subscription to {enumerator} could not be confirmed.");
+			try {
+				if (!await enumerator.MoveNextAsync().ConfigureAwait(false) ||
+				    enumerator.Current is not StreamMessage.SubscriptionConfirmation(var subscriptionId)) {
+					throw new InvalidOperationException("Subscription could not be confirmed.");
+				}
+
+				return new StreamSubscription(
+					subscription,
+					enumerator,
+					subscriptionId,
+					eventAppeared,
+					subscriptionDropped,
+					log,
+					checkpointReached,
+					cancellationToken
+				);
+			} catch {
+				await enumerator.DisposeAsync().ConfigureAwait(false);
+				throw;
 			}
-
-			return new StreamSubscription(
-				subscription,
-				enumerator,
-				subscriptionId,
-				eventAppeared,
-				subscriptionDropped,
-				log,
-				checkpointReached,
-				cancellationToken
-			);
 		}
 
 		private StreamSubscription(
@@ -69,7 +73,7 @@ namespace KurrentDB.Client {
 
 			_log.LogDebug("Subscription {subscriptionId} confirmed.", SubscriptionId);
 
-			Task.Run(Subscribe, cancellationToken);
+			Task.Run(Subscribe);
 		}
 
 		private async Task Subscribe() {
