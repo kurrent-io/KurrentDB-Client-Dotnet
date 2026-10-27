@@ -137,6 +137,8 @@ namespace KurrentDB.Client {
 				);
 
 				SubscriptionDropped(SubscriptionDroppedReason.Disposed, ex);
+			} catch (OperationCanceledException) when (_cts.IsCancellationRequested) {
+				SubscriptionDropped(SubscriptionDroppedReason.Disposed);
 			} catch (Exception ex) {
 				if (_subscriptionDroppedInvoked == 0) {
 					_log.LogError(
