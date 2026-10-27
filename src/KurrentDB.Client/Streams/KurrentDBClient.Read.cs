@@ -144,14 +144,10 @@ namespace KurrentDB.Client {
 				KurrentDBClientSettings settings, TimeSpan? deadline, UserCredentials? userCredentials,
 				CancellationToken cancellationToken
 			) {
-				_lifetime = new ReadLifetime(cancellationToken);
+				var callOptions = KurrentDBCallOptions.CreateStreaming(settings, deadline, userCredentials);
 
-				var callOptions = KurrentDBCallOptions.CreateStreaming(
-					settings,
-					deadline,
-					userCredentials,
-					_lifetime.Token
-				);
+				_lifetime   = new ReadLifetime(cancellationToken);
+				callOptions = callOptions.WithCancellationToken(_lifetime.Token);
 
 				_channel = System.Threading.Channels.Channel.CreateBounded<StreamMessage>(ReadBoundedChannelOptions);
 
@@ -357,14 +353,10 @@ namespace KurrentDB.Client {
 				KurrentDBClientSettings settings, TimeSpan? deadline, UserCredentials? userCredentials,
 				CancellationToken cancellationToken
 			) {
-				_lifetime = new ReadLifetime(cancellationToken);
+				var callOptions = KurrentDBCallOptions.CreateStreaming(settings, deadline, userCredentials);
 
-				var callOptions = KurrentDBCallOptions.CreateStreaming(
-					settings,
-					deadline,
-					userCredentials,
-					_lifetime.Token
-				);
+				_lifetime   = new ReadLifetime(cancellationToken);
+				callOptions = callOptions.WithCancellationToken(_lifetime.Token);
 
 				_channel = System.Threading.Channels.Channel.CreateBounded<StreamMessage>(ReadBoundedChannelOptions);
 
