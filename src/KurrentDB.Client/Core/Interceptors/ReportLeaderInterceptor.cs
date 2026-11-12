@@ -1,4 +1,5 @@
 using System;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -6,7 +7,7 @@ using Grpc.Core.Interceptors;
 
 namespace KurrentDB.Client.Interceptors {
 	// this has become more general than just detecting leader changes.
-	// triggers the action on any rpc exception with StatusCode.Unavailable
+	// triggers the action on any rpc exception with StatusCode.Unavailable or a broken connection
 	internal class ReportLeaderInterceptor : Interceptor {
 		private readonly Action<ReconnectionRequired> _onReconnectionRequired;
 
@@ -65,17 +66,34 @@ namespace KurrentDB.Client.Interceptors {
 		}
 
 		private void OnReconnectionRequired(Task task) {
-			ReconnectionRequired reconnectionRequired = task.Exception?.InnerException switch {
-				NotLeaderException ex => new ReconnectionRequired.NewLeader(ex.LeaderEndpoint),
-				RpcException {
-					StatusCode: StatusCode.Unavailable
-					// or StatusCode.Unknown or TODO: use RPC exceptions on server 
-				} => ReconnectionRequired.Rediscover.Instance,
-				_ => ReconnectionRequired.None.Instance
-			};
+			var reconnectionRequired = GetReconnectionRequired(task.Exception?.InnerException);
 
 			if (reconnectionRequired is not ReconnectionRequired.None)
 				_onReconnectionRequired(reconnectionRequired);
+		}
+
+		internal static ReconnectionRequired GetReconnectionRequired(Exception? exception) =>
+			exception switch {
+				NotLeaderException ex => new ReconnectionRequired.NewLeader(ex.LeaderEndpoint),
+				RpcException {
+					StatusCode: StatusCode.Unavailable
+					// or StatusCode.Unknown or TODO: use RPC exceptions on server
+				} => ReconnectionRequired.Rediscover.Instance,
+				RpcException ex when IsBrokenConnection(ex) => ReconnectionRequired.Rediscover.Instance,
+				_ => ReconnectionRequired.None.Instance
+			};
+
+		// The HTTP/2 connection failed, e.g. because the node stopped answering keepalive pings after it froze or
+		// the network to it failed. Grpc.Net.Client reports these as StatusCode.Internal rather than Unavailable,
+		// and the node may no longer be the leader, so look for the leader again instead of redialling it.
+		private static bool IsBrokenConnection(RpcException exception) {
+#if NET
+			for (var current = exception.Status.DebugException; current is not null; current = current.InnerException) {
+				if (current is HttpProtocolException)
+					return true;
+			}
+#endif
+			return false;
 		}
 
 		private class StreamWriter<T> : IClientStreamWriter<T> {
